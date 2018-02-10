@@ -1,5 +1,7 @@
 # The Racecar Robot Repository - diploma thesis
 
+This directory contains the source code for the `racer` Raspberry PI computer - this means the code for _the planning algorithm itself_ and also the Docker configuration and additional ROS packages for communication with the `commander` PC.
+
 This guide will describe how to use this repository to install and run all necessary programs in order to use the race car.
 
 ## Requirements
