@@ -14,7 +14,7 @@ catkin_init_workspace
 # setup the Scanse Sweep IMU
 git clone https://github.com/scanse/sweep-ros.git
 cd sweep-ros
-rosdep install -a -y -r
+rosdep install -a -y -r --as-root apt:false
 cd ..
 
 # build the workspace
@@ -25,7 +25,6 @@ source devel/setup.bash
 
 # setup the Razor IMU
 echo "> setup the IMU"
-apt-get install ros-kinetic-razor-imu-9dof -y
 roscd razor_imu_9dof/config
 cat razor.yaml | sed s/ttyUSB0/imu/ > my_razor.yaml
 
