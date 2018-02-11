@@ -3,7 +3,9 @@ FROM esteve/ros:kinetic-ros-base-armhf
 RUN apt-get update && apt-get install -y \
    git \
    net-tools \
-   ros-kinetic-razor-imu-9dof
+   ros-kinetic-razor-imu-9dof \
+   ros-kinetic-pcl-conversions \
+   ros-kinetic-pointcloud-to-laserscan
 
 # Install Sweep SDK
 RUN git clone https://github.com/scanse/sweep-sdk && \
@@ -17,8 +19,14 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
   cd ../../../ && \
   rm -rf sweep-sdk
 
-ADD . /robot
+# Prepare catkin workspace directory structure
+# and download the sweep package for ROS
+RUN mkdir -p ros_catkin_ws/src && \
+  cd ros_catkin_ws/src && \
+  git clone https://github.com/scanse/sweep-ros  
 
-ENV ROS_IP 192.168.12.147
+ADD . /racer-raspberry
+
+ENV ROS_IP 192.168.1.2
 
 CMD ["bash"]
