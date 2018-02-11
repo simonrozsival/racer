@@ -2,7 +2,8 @@ FROM esteve/ros:kinetic-ros-base-armhf
 
 RUN apt-get update && apt-get install -y \
    git \
-   net-tools
+   net-tools \
+   ros-kinetic-razor-imu-9dof
 
 # Install Sweep SDK
 RUN git clone https://github.com/scanse/sweep-sdk && \
