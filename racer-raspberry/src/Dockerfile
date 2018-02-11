@@ -1,7 +1,8 @@
 FROM esteve/ros:kinetic-ros-base-armhf
 
 RUN apt-get update && apt-get install -y \
-   git
+   git \
+   net-tools
 
 # Install Sweep SDK
 RUN git clone https://github.com/scanse/sweep-sdk && \
@@ -17,4 +18,6 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
 
 ADD . /robot
 
-CMD ["sh /robot/initialize.sh"]
+ENV ROS_IP 192.168.12.147
+
+CMD ["bash"]
