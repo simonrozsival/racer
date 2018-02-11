@@ -17,4 +17,6 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
 
 ADD . /robot
 
+ENV ROS_IP 192.168.1.2
+
 CMD ["sh /robot/initialize.sh"]
