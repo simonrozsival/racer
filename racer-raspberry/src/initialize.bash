@@ -3,7 +3,6 @@ source /ros_entrypoint.sh
 
 # create catkin workspace
 echo "> create catkin workspace"
-mkdir -p /ros_catkin_ws/src
 cd /ros_catkin_ws/src
 catkin_init_workspace
 
@@ -11,15 +10,13 @@ catkin_init_workspace
 # echo "> copy custom package into the workspace"
 # cp -r /robot/src/racer_package .
 
-# setup the Scanse Sweep IMU
-git clone https://github.com/scanse/sweep-ros.git
+# install dependencies for the Scanse Sweep LIDAR
 cd sweep-ros
 rosdep install -a -y -r --as-root apt:false
-cd ..
 
 # build the workspace
 echo "> build the workspace"
-cd ..
+cd ../..
 catkin_make
 source devel/setup.bash
 
