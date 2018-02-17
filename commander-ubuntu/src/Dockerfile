@@ -1,6 +1,7 @@
 FROM osrf/ros:kinetic-desktop-full
 
 RUN apt-get update && apt-get install -y \
+   ssh \
    iputils-ping \
    net-tools \
    curl \
@@ -15,6 +16,7 @@ RUN apt-get update && apt-get install -y \
    ros-kinetic-razor-imu-9dof \
    ros-kinetic-pcl-conversions \
    ros-kinetic-pointcloud-to-laserscan \
+   ros-kinetic-hector-slam \
    && rm -rf /var/likb/apt/lists/*
 
 # Prepare Catkin workspace directory structure
@@ -38,7 +40,8 @@ RUN cd ros_catkin_ws/src && git clone https://github.com/scanse/sweep-ros
 ENV ROS_MASTER_URI http://192.168.0.2:11311
 ENV ROS_IP 192.168.0.1
 
-ADD . /commander-ubuntu
+ADD initialize.bash /initialize.bash
+ADD ros_catkin_ws /ros_catkin_ws
 
 CMD ["bash"]
 
