@@ -1,5 +1,7 @@
 FROM esteve/ros:kinetic-ros-base-armhf
 
+ENV ROS_IP 192.168.0.2
+
 RUN apt-get update && apt-get install -y \
    git \
    net-tools \
