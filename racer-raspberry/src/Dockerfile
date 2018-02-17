@@ -25,3 +25,10 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
 # and download the sweep package for ROS
 RUN mkdir -p ros_catkin_ws/src && \
   cd ros_catkin_ws/src && \
+  git clone https://github.com/scanse/sweep-ros
+
+ADD . /racer-raspberry
+
+ENV ROS_IP 192.168.1.2
+
+CMD ["bash"]
