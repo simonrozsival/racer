@@ -35,8 +35,8 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
 # Download Sweep ROS package
 RUN cd ros_catkin_ws/src && git clone https://github.com/scanse/sweep-ros
 
-ENV ROS_MASTER_URI http://192.168.1.2:11311
-ENV ROS_IP 192.168.1.1
+ENV ROS_MASTER_URI http://192.168.0.2:11311
+ENV ROS_IP 192.168.0.1
 
 ADD . /commander-ubuntu
 
