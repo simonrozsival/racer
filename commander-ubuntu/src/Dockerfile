@@ -17,6 +17,9 @@ RUN apt-get update && apt-get install -y \
    ros-kinetic-pcl-conversions \
    ros-kinetic-pointcloud-to-laserscan \
    ros-kinetic-hector-slam \
+   ros-kinetic-rosserial \
+   ros-kinetic-rosserial-arduino \
+   ros-kinetic-angles \
    && rm -rf /var/likb/apt/lists/*
 
 # Prepare Catkin workspace directory structure
