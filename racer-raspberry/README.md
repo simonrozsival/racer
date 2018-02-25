@@ -14,16 +14,15 @@ This guide will describe how to use this repository to install and run all neces
 
 ## Build The Docker Image
 
-Build the image from the given Dockerfile like this:
+Build and run the image from the given Dockerfile like this:
 
 ```
-(sudo) docker build -t <tag> .
+(sudo) ./build-run-start.sh <image_name>:<tag> <container_name>
 ```
 
-Select some tag which is not used by any other container on your local machine. After the image is built, you can run this image with the provided bash script:
+Select some tag which is not used by any other container on your local machine. When the container is running(check using `docker ps -l`), start a new bash shell inside the container using:
 
 ```
-./start-docker.sh <tag>
+docker exec -it <container_name> bash
 ```
 
-Replace `<tag>` with the tag of your container.
