@@ -57,28 +57,28 @@
 \def\ThesisTitle{Thesis title}
 
 % Author of the thesis
-\def\ThesisAuthor{Name Surname}
+\def\ThesisAuthor{Šimon Rozsíval}
 
 % Year when the thesis is submitted
-\def\YearSubmitted{YEAR}
+\def\YearSubmitted{2018}
 
 % Name of the department or institute, where the work was officially assigned
 % (according to the Organizational Structure of MFF UK in English,
 % or a full name of a department outside MFF)
-\def\Department{Name of the department}
+\def\Department{Department of Theoretical Computer Science and Mathematical Logic}
 
 % Is it a department (katedra), or an institute (ústav)?
-\def\DeptType{Department}
+\def\DeptType{Department of Theoretical Computer Science and Mathematical Logic}
 
 % Thesis supervisor: name, surname and titles
-\def\Supervisor{Supervisor's Name}
+\def\Supervisor{Prof. RNDr. Roman Barták, Ph.D.}
 
 % Supervisor's department (again according to Organizational structure of MFF)
-\def\SupervisorsDepartment{department}
+\def\SupervisorsDepartment{Department of Theoretical Computer Science and Mathematical Logic}
 
 % Study programme and specialization
-\def\StudyProgramme{study programme}
-\def\StudyBranch{study branch}
+\def\StudyProgramme{Computer Science}
+\def\StudyBranch{Artificial Intelligence}
 
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, a person who lent the software, etc.)
@@ -114,11 +114,15 @@ Abstract.
 \tableofcontents
 
 %%% Each chapter is kept in a separate file
-\include{preface}
-\include{chap01}
-\include{chap02}
-
-\include{epilog}
+\include{chapters/01_introduction}
+\include{chapters/02_autonomous_driving_background}
+\include{chapters/03_related_work}
+\include{chapters/04_dynamic_model}
+\include{chapters/05_control}
+\include{chapters/06_trajectory_planning}
+\include{chapters/07_experimental_car_platform}
+\include{chapters/08_experiments}
+\include{chapters/09_conclusion}
 
 %%% Bibliography
 \include{bibliography}
