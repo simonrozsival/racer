@@ -11,7 +11,12 @@ catkin_package(
   DEPENDS
 )
 
-add_executable(joystick_controller src/controller.cpp)
+file(GLOB SOURCES
+  src/*.h
+  src/*.cpp
+)
+
+add_executable(joystick_controller ${SOURCES})
 target_link_librarries(joystick_controller ${catkin_LIBRARIES})
 
 install(
