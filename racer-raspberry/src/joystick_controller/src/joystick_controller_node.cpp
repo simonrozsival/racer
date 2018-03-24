@@ -5,6 +5,7 @@
 #include "JoystickTransformer.h"
 
 #define DRIVING_TOPIC "/racer/driving/commands"
+#define JOY_TOPIC "joy"
 
 int main(int argc, char **argv)
 {
