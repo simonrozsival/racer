@@ -2,17 +2,21 @@
 
 # first of all update rosdep
 echo "> update rosdep"
-rosdep update --as-root
+rosdep update --as-root apt:false
 
-# build catkin workspace
+# prepare catkin workspace
 echo "> build the workspace"
 cd /ros_catkin_ws/src
 catkin_init_workspace
-cd sweep-ros
+
+# install sweep dependencies
+cd /ros_catkin_ws/src/sweep-ros
 rosdep install -a -y -r --as-root apt:false
-cd ../..
+
+# build the workspace
+cd /ros_catkin_ws
 catkin_make
-source devel/setup.bash
+source /ros_catkin_ws/devel/setup.bash
 
 echo "> ready"
 
