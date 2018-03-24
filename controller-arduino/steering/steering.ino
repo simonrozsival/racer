@@ -15,7 +15,7 @@
 #include <Servo.h>
 
 // #define BAUD_RATE 115200
-#define BAUD_RATE 9600
+#define BAUD_RATE 57600
 
 #define STEERING_PIN 9
 #define ESC_PIN 10
@@ -32,8 +32,8 @@
 #define SPEED_MIN_FORWARD 95
 #define SPEED_FULL_FORWARD 110
 
-const char driving_topic[] = "/racer/driving/commands";
-const char driving_status_topic[] = "/racer/driving/status";
+#define DRIVING_TOPIC "/racer/driving/commands"
+#define DRIVING_STATUS_TOPIC "/racer/driving/status"
 
 double fmap(double value, double in_min, double in_max, double out_min, double out_max);
 void drive_callback(const geometry_msgs::Twist& twist_msg);
@@ -42,8 +42,8 @@ ros::NodeHandle node_handle;
 
 std_msgs::String status_msg;
 
-ros::Publisher driving_status(driving_status_topic, &status_msg);
-ros::Subscriber<geometry_msgs::Twist> driving(driving_topic, &drive_callback);
+ros::Publisher driving_status(DRIVING_STATUS_TOPIC, &status_msg);
+ros::Subscriber<geometry_msgs::Twist> driving(DRIVING_TOPIC, &drive_callback);
 
 Servo steering_servo;
 Servo esc_servo; // the ESC works like a Servo
@@ -53,7 +53,7 @@ void setup() {
 
   node_handle.initNode();
   node_handle.advertise(driving_status);
-  node_handle.subscribe(driving);  
+  node_handle.subscribe(driving);
 
   steering_servo.attach(STEERING_PIN);
   esc_servo.attach(ESC_PIN);
@@ -70,11 +70,16 @@ void loop() {
 }
 
 void drive_callback(const geometry_msgs::Twist& twist_msg) {
-  int steering_angle = fmap(twist_msg.angular.z, 0.0, 1.0, STEERING_LEFT, STEERING_RIGHT);
-  int throttle = fmap(twist_msg.linear.x, 0.0, 1.0, SPEED_FULL_STOP, SPEED_FULL_FORWARD);
+  int steering_angle = fmap(twist_msg.angular.z, -1.0, 1.0, STEERING_LEFT, STEERING_RIGHT);
+  int throttle = fmap(twist_msg.linear.x, 0.0, 1.0, SPEED_MIN_FORWARD, SPEED_FULL_FORWARD);
 
   steering_servo.write(steering_angle);
   esc_servo.write(throttle);
+
+  char buffer[50];
+  int n = sprintf(buffer, "steering: %d (%f), throttle: %d (%f)", steering_angle, twist_msg.angular.z, throttle, twist_msg.linear.x);
+  status_msg.data = buffer;
+  driving_status.publish(&status_msg);
 }
 
 double fmap(double value, double in_min, double in_max, double out_min, double out_max) {
