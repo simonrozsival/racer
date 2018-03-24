@@ -11,7 +11,8 @@ RUN apt-get update && apt-get install -y \
    ros-kinetic-pointcloud-to-laserscan \
    ros-kinetic-hector-slam \
    ros-kinetic-rosserial-arduino \
-   ros-kinetic-rosserial
+   ros-kinetic-rosserial \
+   ros-kinetic-joy
 
 # Install Sweep SDK
 RUN git clone https://github.com/scanse/sweep-sdk && \
@@ -33,5 +34,6 @@ RUN mkdir -p /ros_catkin_ws/src && \
   git clone https://github.com/scanse/sweep-ros
 
 ADD launcher /ros_catkin_ws/src/launcher 
+ADD joystick_controller /ros_catkin_ws/src/joystick_controller
 
 CMD ["bash"]
