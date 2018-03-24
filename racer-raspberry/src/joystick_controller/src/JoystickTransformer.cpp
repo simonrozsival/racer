@@ -5,12 +5,12 @@ JoystickTransformer::JoystickTransformer(const ros::Publisher &publisher)
 {
 }
 
-void JoystickTransformer::process_joystick_input(const sensor_msgs::Joy::ConstPtr &msg)
+void JoystickTransformer::process_joystick_input(const sensor_msgs::Joy::ConstPtr &joy)
 {
-    bool stop = !msg[DRIVE_BUTTON];
+    bool stop = !joy->buttons[DRIVE_BUTTON];
     if (stop)
     {
-        stop();
+        this->stop();
         return;
     }
 
