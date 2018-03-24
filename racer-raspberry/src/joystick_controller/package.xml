@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>joystick_controller</name>
+  <version>1.0.0</version>
+  <description>This package allows to controll the steering of the car using a remote controller (joystick)</description>
+  <maintainer email="simon@rozsival.com">Simon Rozsival</maintainer>
+  <license>MIT</license>
+  <url type="website">https://github.com/simonrozsival/racer</url>
+  <author email="simon@rozsival.com">Simon Rozsival</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>roscpp</build_depend>
+  <build_depend>joy</build_depend>
+  <build_depend>geometry_msgs</build_depend>
+  
+  <exec_depend>roscpp</exec_depend>
+  <exec_depend>joy</exec_depend>
+  <exec_depend>geometry_msgs</exec_depend>
+</package>
