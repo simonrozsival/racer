@@ -24,7 +24,7 @@ docker build -t $IMAGE_NAME ./src
 echo
 echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
-	--device /dev/input/js0:/dev/joystick \
+        --device /dev/imu \
 	--net=host \
 	--publish-all \
 	--name $CONTAINER_NAME \
