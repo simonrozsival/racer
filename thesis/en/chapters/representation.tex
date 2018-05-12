@@ -48,7 +48,7 @@ For the purposes of this thesis we will use the Cartesian coordinate system whic
 
 \section{State Space}
 
-We can represent this state of the vehicle with a configuration $( \, \vec{x}, \vec{v}, \alpha, \theta ) \,$, where $\vec(x)$ is the position vector, $\vec{v}$ is the vector of the instantaneous velocity, $\alpha$ is the steering angle of the front wheels, and $\theta$ is the orientation of the vehicle.
+We can represent this state of the vehicle with a configuration $( \, \vec{x}, \vec{v}, \alpha, \theta ) \,$, where $\vec{x}$ is the position vector, $\vec{v}$ is the vector of the instantaneous velocity, $\alpha$ is the steering angle of the front wheels, and $\theta$ is the orientation of the vehicle.
 
 The difference between the orientation of the vehicle and the angle of the velocity is called the slip angle. We assume that only the front wheels can be steered as it is common for most car-like vehicles.
 
@@ -80,9 +80,9 @@ Our actions do not change the state of the vehicle (position, velocity, orientat
 
 We should also consider hardware limitations of the actuators of a vehicle. It takes some time $t_{adj} > 0$ for them to switch from the previous action to the new action. It should be obvious that this time period is not constant and will differ for different pairs of actions based on the amount of change in the. We can imagine this as the time it would take a human driver to turn the steering wheel and press the accelerator paddle into the desired position.
 
-The first way how to deal with this problem would be to add another parameter $t \in ( \, t_{adj}, \infinity) \,$ which would describe the time period in seconds for which the action should be applied.
+The first way how to deal with this problem would be to add another parameter $t \in ( \, t_{adj}, \infty ) \,$ which would describe the time period in seconds for which the action should be applied.
 
-A second way might be to choose a constant time period $t_{const} \in ( \, t_{adj}, \infinity) \,$ in seconds for every action. This implicit representation of time would keep the actions simple and reduce the number dimensions of the search space for the planning algorithm. On the other hand we might need to repeat one action several times to achieve the same maneuvers which could be achieved by one longer action (e.g. a U-turn maneuver) and the resulting plans will be longer.
+A second way might be to choose a constant time period $t_{const} \in ( \, t_{adj}, \infty ) \,$ in seconds for every action. This implicit representation of time would keep the actions simple and reduce the number dimensions of the search space for the planning algorithm. On the other hand we might need to repeat one action several times to achieve the same maneuvers which could be achieved by one longer action (e.g. a U-turn maneuver) and the resulting plans will be longer.
 
 We can address this problem by compressing the plan by merging repeating actions into a single action and a discrete parameter $r \in { \, 2, 3, 4, ..., r_{max} } \,, r_{max} \in \natural$ which will describe how many times the action should be repeated. This will shift our representation of time towards the first approach, but will still keep the action space discrete and finite.
 
