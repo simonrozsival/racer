@@ -31,7 +31,9 @@ RUN git clone https://github.com/scanse/sweep-sdk && \
 # and download the sweep package for ROS
 RUN mkdir -p /ros_catkin_ws/src && \
   cd /ros_catkin_ws/src && \
-  git clone https://github.com/scanse/sweep-ros
+  git clone https://github.com/scanse/sweep-ros && \
+  git clone https://github.com/yoshito-n-students/bno055_usb_stick && \
+  git clone https://github.com/yoshito-n-students/bno055_usb_stick_msgs
 
 ADD launcher /ros_catkin_ws/src/launcher 
 ADD joystick_controller /ros_catkin_ws/src/joystick_controller

@@ -1,8 +1,9 @@
 <launch>
 
-  <arg name="razor_config_file" default="$(find razor_imu_9dof)/config/my_razor.yaml"/>
-  <node pkg="razor_imu_9dof" type="imu_node.py" name="imu_node" output="screen">
-    <rosparam file="$(arg razor_config_file)" command="load"/>
+  <node pkg="bno055_usb_stick" type="bno055_usb_stick_node" name="imu_node" output="screen">
+    <param name="port" type="string" value="/dev/imu" />
+    <param name="publish_tf" type="bool" value="true" />
+    <param name="frame_id" type="string" value="odom_frame" />
   </node>
 
   <node name="sweep_node" pkg="sweep_ros" type="sweep_node" output="screen">
@@ -15,6 +16,7 @@
     <remap from="cloud_in" to="pc2"/>
     <rosparam>
       target_frame: laser_frame # Leave disabled to output scan in pointcloud frame
+      odom_frame: odom_frame
       transform_tolerance: 0.001
       min_height: -1.0
       max_height: 1.0
@@ -26,11 +28,18 @@
       range_max: 40.0
       use_inf: true
 
+      use_tf_scan_transformation: true
+      use_tf_pose_start_estimate: true
+      pub_map_odom_transform: true
+      advertise_map_service: true
+      map_with_known_poses: true
+      pub_odometry: true
+
       # Concurrency level, affects number of pointclouds queued for processing and number of threads used
       # 0 : Detect number of cores
       # 1 : Single threaded
       # 2->inf : Parallelism level
-      concurrency_level: 1
+      concurrency_level: 2
     </rosparam>
   </node>
 
