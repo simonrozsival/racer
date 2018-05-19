@@ -23,7 +23,7 @@ The precondition to autonomous driving is the ability to reliably measure observ
 
 From these measurements we create a map of the world and calculate the position, orientation, and velocity of the vehicle. By comparing the known map of the world with the measurements we can then detect obstacles.
 
-We used two sensors to obtain these data: a Scanse Sweep LIDAR \cite{sweep} and a SparkFun 9DoF Razor IMU M0 \cite{imu}.
+We used two sensors to obtain these data: a Scanse Sweep LIDAR \cite{sweep} and a Bosch BNO055 IMU \cite{imu}.
 
 \paragraph{Scanse Sweep LIDAR} is a low-cost 2D 360\textdegree LIDAR (Light Detection And Ranging) with reasonable scanning frequency and sample rate. It is based on the Garmin LIDAR-Lite v3 \cite{lidar-lite} 1D range finder. LIDAR periodically scans its surroundings and returns distances to the nearest objects within its maximum range (which is theoretically 40 meters in case of the Sweep). Sweep can be connected to a computer using single USB cable which also serves as a \SI{5}{V} power supply.
 
@@ -31,9 +31,7 @@ This information can be used to create an occupancy grid where some points can b
 
 In certain scenarios the distance information from the LIDAR is not enough to detect movement of the sensor. This may occur for example when going through a corridor with smooth walls. The algorithm cannot detect any areas which could be used to calculate the translation transformation.
 
-\paragraph{SparkFun 9DoF Razor IMU M0} is an IMU (Inertial Measurement Unit) with nine degrees of freedom. This board contains three sensors: three axis gyroscope, three axis magnetometer, and three axis accelerometer. Readings from these sensors can be used to determine the velocity of the vehicle it is mounted on as well as the orientation of the vehicle. The IMU can be connected to a computer using one USB port which also serves as a power supply.
-
-The board was flashed with a firmware which runs a sensor fusion algorithm Direction Cosine Matrix (DCM) \cite{dcm} and outputs the pre-processed on a serial port.
+\paragraph{Bosch BNO055 IMU} is an IMU (Inertial Measurement Unit) with nine degrees of freedom. This board contains three sensors: three axis gyroscope, three axis magnetometer, and three axis accelerometer. Readings from these sensors can be used to determine the velocity of the vehicle it is mounted on as well as the orientation of the vehicle. The IMU can be connected to a computer using one USB port which also serves as a power supply.
 
 \section{Computational Hardware}
 
