@@ -1,50 +1,8 @@
-\chapter{Representation}
+\chapter{State Space and Action Space Representation}
 
 This chapter contains a discussion about the possible ways of representing the important properties of the abstraction of the world in which the autonomous vehicle will perform computations in order to achieve its goal.
 
-We will discuss namely the way to represent the map of the world, the racing track, the coordinate system which will define the position of objects in the map, the definition of the racing track, the state space of the vehicle, the space of possible actions, and the way we will consider the temporal nature of the problem.
-
-\section{Map of the World}
-
-For the purposes of localization and navigation we need to have a good representation of the regions which are free and the regions which are occupied by various obstacles (e.g., walls). The map will be used to determine the location of the vehicle based on the readings from the sensors, identifying obstacles, and determining whether certain point of the world is free or occupied so we can avoid any collisions.
-
-We assume that we will be given the map of the racing track in advance and that the robot does not have to explore the world in the first place. During the race, there still might be some unexpected obstacles which have to be detected. We can use an implementation of the two dimensional \textit{Simultaneous Localization and Mapping} (SLAM) algorithm \cite{SLAM} to preform this task for us.
-
-\paragraph{SLAM} collects the readings from various sensors of a robot (e.g., distance to the nearest landmarks obtained from a laser scan, odometry data) and compares this information to the previous known location of the robot and the map which has been created so far. The laser scan is compared to the map which was compiled so up to this point. A transformation (rotation and translation) will be found to overlap with the known map and the precise location of the robot. The odometric data are used to estimate the new position of the robot and assist in the searching for the best transformation. The map can then be extended in the parts where previous readings were missing (e.g., when the robot turns around a corner) and improved in the regions where the laser scan readings are overlapping with the previous readings.
-
-% todo: Add an image of the matching step
-
-\begin{subparagraph}
-For each point of the world we should be able to say what is its status. Points which have not been examined yet will be marked as \textit{unknown}. All of the already examined points will be assigned a probability with which the point is inside an obstacle region. The value of 0 will mark a certainly free space and a value of 1 a certain obstacle. Values between 0 and 1 can be caused by conflicting readings (e.g., a region where there was an obstacle, but it was removed or vice versa) or due to an error in the sensor reading or the fact that the point is close to the maximum range of the sensor and the reading is not considered very reliable.
-\end{subparagraph}
-
-\paragraph{Occupancy Grid} is a data structure which represents a map with the properties described in the previous paragraph of a fixed width and height and with fixed horizontal and vertical resolution. It is essentially a two dimensional array of numbers representing whether the fact that the state is unknown (e.g., $-1$) or the probability of an obstacle (e.g., a real number from the interval of $[0; 1]$ or an integer from some range like $[0; 100]$. The advantage of this data structures are the fast test of whether the certain point is occupied or not which is useful both for finding the best transformation of the laser scan during SLAM or for testing collisions in the planning algorithm for verifying if a certain action can be used or not.
-
-% todo: Add an image of an example of an occpupancy grid visualisation
-
-\begin{subparagraph}
-The occupancy grid data structure is a widely used data structure by various SLAM libraries like Hector SLAM \cite{hector}, gmapping \cite{gmapping}, or Google Cartographer \cite{google_cartographer}. We will therefore use the occupancy grid as a representation of the world map in this thesis.
-\end{subparagraph}
-
-For the sake of simplicity we assume that the map we will be given at the start of the race will contain precise information of the racing track marked as certainly free regions and a continuous border of the race track marked as a certain obstacle. The map will not include obstacles placed along the track.
-
-\section{Racing Track}
-
-Prior to the start of a race we must be given a sequence of points in the free regions of the map. Straight lines between two consecutive points should always lay inside of a free region of the map (but there might be an obstacle which is not marked in the map). The order of these points defines the direction in which the track should be driven through.
-
-The vehicle does not have to travel along the lines between those points nor does it have to hit any of these points with the exception of the first and the last point.
-
-The vehicle will be placed at the location of the first point and the orientation of the vehicle will be the same as the angle between the first two points. The last point of the sequence marks the finishing point of the race track. The vehicle should come to a halt at this point.
-
-To achieve a racing track which consists of several loops, a number of laps can be given. It is then assumed that the sequence should be repeated this number of times and the very first point will be considered to be also the goal point.
-
-\section{Coordinate System}
-
-The most straightforward way of representing the position of a vehicle in the 2D map is to use the Cartesian coordinate system - each point of the plane will be represented by a two dimensional vector of real numbers denoting the distance along the $x$ and $y$ from a defined origin.
-
-A different approach would be for example to find a reference path (e.g., the center line of the track) along the racing track and parametrize the track as a curvature profile that would be a function of the distance along the path. Additionally we would store the distance to the inside and outside tack boundaries along the reference path. This method was used in a dissertation thesis by Nitin R. Kapania \cite{dissertation} successfully for fast generation path planning.
-
-For the purposes of this thesis we will use the Cartesian coordinate system which will provide sufficient means for path planning and it will be easy to use these coordinates to check for collisions with obstacles in the occupancy grid.
+We will discuss namely the state space of the vehicle, the space of possible actions, and the way we will consider the temporal nature of the problem.
 
 \section{State Space}
 
