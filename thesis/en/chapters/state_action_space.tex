@@ -12,7 +12,7 @@ The difference between the orientation of the vehicle and the angle of the veloc
 
 \section{Vehicle Control Actions}
 
-To control the vehicle, we must be able to to control its longitudal and lateral velocities. Robots can be divided into two basic classes of holonomic and non-holonomic driving robots.
+To control the vehicle, we must be able to to control its longitudinal and lateral velocities. Robots can be divided into two basic classes of holonomic and non-holonomic driving robots.
 
 \paragraph{Holonomic} drive robots have the number of degrees of freedom of movement equal to the total number of the degrees of freedom \cite{}. A robot with holonomic drive can move in any direction it needs to. An example of holonomic drive can be robots with omni-wheels or castor wheels.
 
@@ -22,11 +22,11 @@ We will assume that our car-like robot has a non-holonomic drive and that it is 
 
 The vehicle is moving continuously in the environment and potentially at high speeds. Any action we will apply to the vehicle cannot change the velocities instantaneously and directly. Actions will be used to control the actuators of the vehicle and these will create forces which will cause the changes of movement of the vehicle.
 
-A typical car-like vehicle has a way of adjusting the longitudal velocity by applying throttle or by breaking. We assume that the vehicle has only front wheel steering and the rear tires are fixed and always aligned with the orientation vehicle.
+A typical car-like vehicle has a way of adjusting the longitudinal velocity by applying throttle or by breaking. We assume that the vehicle has only front wheel steering and the rear tires are fixed and always aligned with the orientation vehicle.
 
 We define an action as a pair $( \, t, \phi ) \,$ where $t \in [ \, -1, 1 ] \,$ is the amount of applied throttle ($-1$ is full reverse, $0$ is no throttle, $1$ is full forward throttle) and $\phi$ is the desired steering angle of the front wheels ($-1$ is the maximum angle to the left, $0$ is the orientation of the vehicle, $1$ is the maximum angle to the right). To achieve breaking an action with the required amount of throttle with an opposite sign to the direction of motion should be used.
 
-When this abstraction is applied to a specific hardware platform it should be possible to reduce the number of the actions because of hardware limitations. The actuators do not have infinite resolution and thus the $( \, -1, 1 ) \,$ interval can be divided into a constant number of subintervals which correspond to the same amount of throttle or the same steering angle. This means that the number of actions is reduced to $mn$ where $m$ is the number of different steering angle and $n$ is the number of different throttle levels the actuators can achieve.
+When this abstraction is applied to a specific hardware platform it should be possible to reduce the number of the actions because of hardware limitations. The actuators do not have infinite resolution and thus the $( \, -1, 1 ) \,$ interval can be divided into a constant number of sub-intervals which correspond to the same amount of throttle or the same steering angle. This means that the number of actions is reduced to $mn$ where $m$ is the number of different steering angle and $n$ is the number of different throttle levels the actuators can achieve.
 
 This gives us a finite and discrete set of actions we can use to control the motion of the vehicle.
 
