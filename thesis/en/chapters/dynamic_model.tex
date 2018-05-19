@@ -1,6 +1,6 @@
 \chapter{Vehicle Model}
 
-To compare different plans produced by our planning algorithm we need a way of simulating the way the vehicle will behave when the plan is executed. If we would know the exact state of the vehicle after performing each action starting in the initial state, we could determine whether the plan keeps the vehicle on the track, avoids all of the obstacles, and what the time for reaching the goal state is. This would enable us to pick a safe time-optimal plan for the racing car.
+We need to be able to simulate the motion of the vehicle during the process of trajectory planning. If we would know the exact state of the vehicle after performing each action starting in the initial state, we could determine whether the plan keeps the vehicle on the track, avoids all of the obstacles, and what the time for reaching the goal state is. This would enable us to pick a safe time-optimal plan for the racing car.
 
 \section{Problem Definition}
 
@@ -12,9 +12,31 @@ Given the non-deterministic nature of the real world and the hardware limitation
 
 % todo: how to fight this problem? probabilities? what about cumulation of error?
 
-\section{The Half-bicycle Model}
+\section{The Kinematic Bicycle Model}
 
-One of the simplest kinematic models of a vehicle is the half-bicycle model.
+One of the simplest vehicle models used for trajectory planning is the kinematic bicycle model \cite{bicycleModel}. In this model we merge the two front wheels (resp. the two rear wheel) into a single wheel located at the center of the axle. The control inputs then consists of acceleration \(t\) and the front wheel steering angle \(\phi\). The schema of this model can be seen in figure ~\ref{fig:bicycleModel}.
+
+We can describe the model using these equations:
+
+\begin{align*}
+    x' &= |\vec{v}|\cos\big(\psi + \beta(\phi)\big) \\
+    y' &= |\vec{v}|\sin\big(\psi + \beta(\phi)\big) \\
+    v' &= t \\
+    \psi &= \frac{|\vec{v}|}{l_r}\sin\big(\beta(\phi)\big),
+\end{align*}
+
+where \(\beta(\phi)\) is the slip angle at the center of gravity:
+
+\[
+    \beta (\phi) = \arctan\Big(\tan(\psi)\frac{l_r}{l_f + l_r}\Big).
+\]
+
+\begin{figure}
+    \includegraphics[width=\textwidth]{../img/bicycle-model.png}
+    \centering
+    \caption{The kinematic vehicle model schema \cite{bicycleModel}}
+    \label{fig:bicycleModel}
+\end{figure}
 
 \section{Machine Learning}
 
@@ -24,13 +46,13 @@ A downside of this approach is that with each change of the vehicle parameters (
 
 An upside of the machine learning model can be that with enough data, the model can learn to consider the dynamics of the vehicle which are hard to describe with equations or which would be computationally expensive (e.g., drifting, the slip angle) \cite{}.
 
-\section{Training Data}
+\subsection{Training Data}
 
 We can collect data by driving the vehicle on a test track while collecting the data from its sensors. This gives us two streams of data: a stream of actions we used to control the vehicle and a stream of vehicle states which was calculated based on the data from the sensors. All of these data will contain timestamps, but will be most definitely emitted with different frequencies and out of sync. The actions must be sent at a constant time period $t_{const}$. The frequency of the vehicle states depends directly on the capabilities of the sensors, most notably the rotation speed of the LIDAR. We can assume that the frequency at which we collect the data from the controller is higher than the frequency at which we collect vehicle states.
 
 The training data should contain all possible actions and all possible vehicle states in terms of velocity and orientation as the vehicle model does not consider the absolute position of the vehicle when the action is performed.
 
-\section{Reinforcement Learning}
+\subsection{Reinforcement Learning}
 
 It would be hard to use supervised learning to train a model using our data set. We do not know the state of the vehicle at the time when we perform some action with the exception of the initial state and the first action and we would not know the exact state at the and of performing the given action because the next state might be measured with a considerable delay.
 
