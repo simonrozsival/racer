@@ -10,13 +10,14 @@
     <param name="serial_port" type="string" value="/dev/sweep"/>
     <param name="serial_baudrate" type="int" value="115200"/>
     <param name="frame_id" type="string" value="laser_frame"/>
+    <param name="rotation_speed" type="int" value="10"/>
+    <param name="sample_rate" type="int" value="1000"/>
   </node>
 
   <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
     <remap from="cloud_in" to="pc2"/>
     <rosparam>
-      target_frame: laser_frame # Leave disabled to output scan in pointcloud frame
-      odom_frame: odom_frame
+      target_frame: laser_frame
       transform_tolerance: 0.001
       min_height: -1.0
       max_height: 1.0
@@ -28,13 +29,6 @@
       range_max: 40.0
       use_inf: true
 
-      use_tf_scan_transformation: true
-      use_tf_pose_start_estimate: true
-      pub_map_odom_transform: true
-      advertise_map_service: true
-      map_with_known_poses: true
-      pub_odometry: true
-
       # Concurrency level, affects number of pointclouds queued for processing and number of threads used
       # 0 : Detect number of cores
       # 1 : Single threaded
@@ -43,9 +37,9 @@
     </rosparam>
   </node>
 
-  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 base_link laser 100" />
+  <node pkg="tf" type="static_transform_publisher" name="link1_broadcaster" args="1 0 0 0 0 0 base_link laser_frame 100" />
 
-  <node pkg="hector_mapping" type="hector_mapping" name="hector_height_mapping" output="screen">
+  <node pkg="hector_mapping" type="hector_mapping" name="hector_mapping" output="screen">
     <param name="scan_topic" value="scan" />
     <param name="base_frame" value="base_link" />
     <param name="odom_frame" value="base_link" />
@@ -59,8 +53,8 @@
     <param name="update_factor_free" value="0.45"/>
     <param name="map_update_distance_thresh" value="0.02"/>
     <param name="map_update_angle_thresh" value="0.1"/>
-    <param name="map_resolution" value="0.05"/>
-    <param name="map_size" value="1024"/>
+    <param name="map_resolution" value="0.1"/>
+    <param name="map_size" value="512"/>
     <param name="map_start_x" value="0.5"/>
     <param name="map_start_y" value="0.5"/>
   </node>
