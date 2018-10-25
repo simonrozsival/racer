@@ -1,0 +1,26 @@
+\chapter*{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+
+\section*{Autonomous Vehicles}
+
+\section*{Autonomous Racing Cars}
+
+\section*{Aim of the Thesis}
+
+The aim of this thesis is to create an on-line trajectory planning algorithm for an autonomous racing car. This algorithm should then be tested on a custom experimental car platform.
+
+An inspiration for this thesis is the F1/10 project of the University in Pennsylvania \cite{f1tenth}. We follow the recommendations and instructions to build a car platform using similar hardware and use the software tools and libraries recommended in this project. The thesis will then focus mainly on the design and implementation of the planning algorithm.
+
+Since we are not using any standard vehicle model, like the TurtleBot \cite{turtlebot}, we must implement other related algorithms ourselves to create a fully functional autonomous vehicle. Namely it will be necessary to provide means for localization and mapping, obstacle detection, model the movement of the vehicle and control the vehicle hardware to drive precisely according to the plan created by the planning algorithm.
+
+All of the related problems will be described in this thesis, but they won't be analysed and discussed as thoroughly as the planning algorithm.
+
+\section*{Thesis Organization}
+
+First, we analyze the related works and the state of the research in this area.
+
+Secondly, we will describe several algorithms and systems of the vehicle platform which are necessary to create a fully functional self-driving race car.
+
+Then we will discuss and design the fast trajectory planning algorithm.
+
+A custom experimental car platform will then be described and we will discuss the performance of the planning algorithm based on experiments conducted on this platform.

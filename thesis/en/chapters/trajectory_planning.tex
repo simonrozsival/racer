@@ -1,0 +1,25 @@
+\chapter{Trajectory Planning}
+
+\section{Problem Definition}
+
+Given the initial state of the vehicle \( s_{init} \in S \) and a goal region \( S_g \subseteq S \) the trajectory planning problem consists of finding a plan \( p \subseteq S_{free} \times A = ( s_i, a_i )_{i=0}^{n} \) such that \( s_0 = s_{init} \), \( s_n \in S_g \), and \( \forall i \in { 0, 1, ..., n-1 }: s_{i+1} = v(s_i, a_i) \) where \(v\) is the vehicle model function.
+
+In other words, we are looking for a sequence of states such that the first state matches the initial state and the last state is one of the goal states and for any two states \( s_i, s_{i+1} \) the vehicle model describes a transition between these two states using the action \( a_i \).
+
+Given all the feasible plans \(P\) and a cost function \(J\) we can select the optimal feasible plan \(p^*\) by minimizing the value of the cost function:
+
+\[ J(p^*) = \min_{p \in P} J(p) \]
+
+% CITATIONS???
+
+\subsection{Admissible Plan}
+
+\subsection{Optimal Plan}
+
+\section{Planning Algorithm Description}
+
+\section{Evaluation of the Algorithm}
+
+\subsection{Quality of the Trajectories}
+
+\subsection{Performance}
