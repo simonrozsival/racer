@@ -34,3 +34,8 @@ service udev reload
 sleep 2
 service udev restart
 
+#
+# Setup networking - static IP of the Raspberry PI for the wlan interface
+#
+
+sudo echo "interface wlan0\nstatic ip_address=192.168.0.2" >> /etc/dhcpcd.conf
