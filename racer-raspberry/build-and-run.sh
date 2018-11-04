@@ -46,14 +46,20 @@ echo
 echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
         --device $IMU_PORT:/dev/imu \
-        --device $SWEEP_PORT:/dev/lidar \
-	--device $JOY_PORT:/dev/joystick \
+        --device $LIDAR_PORT:/dev/lidar \
+	--device $JOYSTICK_PORT:/dev/joystick \
 	--net=host \
 	--publish-all \
 	--name $CONTAINER_NAME \
 	-i \
 	$IMAGE_NAME \
 	bash < ./src/initialize.bash
+
+if [ $? -ne 0 ]
+then
+	echo "Running docker container failed."
+	exit 3
+fi
 
 # start the container
 echo
