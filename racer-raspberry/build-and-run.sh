@@ -10,21 +10,21 @@ fi
 IMAGE_NAME=$1
 CONTAINER_NAME=$2
 
-# test if the Scanse Sweep Lidar is connected to the correct port
-SPEEP_PORT="/dev/ttyUSB0"
+# test if the Lidar is connected to the correct port
+LIDAR_PORT="/dev/lidar"
 ls -l $SWEEP_PORT > /dev/null 2> /dev/null
 if [ $? -ne 0 ]
 then
-	echo "The Scanse Sweep Lidar is not connected on $SWEEP_PORT"
+	echo "The LIDAR is not connected on $SWEEP_PORT"
 	exit 1
 fi
 
-# test if the Bosch IMU is connected to the correct port
-IMU_PORT="/dev/ttyACM0"
+# test if the IMU is connected to the correct port
+IMU_PORT="/dev/imu"
 ls -l $IMU_PORT > /dev/null 2> /dev/null
 if [ $? -ne 0 ]
 then
-	echo "Thie Bosch IMU BNO055 is not connected on $IMU_PORT"
+	echo "Thie IMU is not connected on $IMU_PORT"
 	exit 2
 fi
 
@@ -37,7 +37,7 @@ echo
 echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
         --device $IMU_PORT:/dev/imu \
-        --device $SWEEP_PORT:/dev/sweep \
+        --device $SWEEP_PORT:/dev/lidar \
 	--net=host \
 	--publish-all \
 	--name $CONTAINER_NAME \
