@@ -28,6 +28,15 @@ then
 	exit 2
 fi
 
+# optional joystick
+JOYSTICK_PORT="/dev/input/js0"
+ls -l $JOYSTICK_PORT > /dev/null 2> /dev/null
+if [ $? -ne 0 ]
+then
+	echo "Joystick is not connected."
+	JOYSTICK_PORT="/dev/null"
+fi
+
 # build docker image
 echo "> build image $IMAGE_NAME"
 docker build -t $IMAGE_NAME ./src
@@ -38,6 +47,7 @@ echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
         --device $IMU_PORT:/dev/imu \
         --device $SWEEP_PORT:/dev/lidar \
+	--device $JOY_PORT:/dev/joystick \
 	--net=host \
 	--publish-all \
 	--name $CONTAINER_NAME \
