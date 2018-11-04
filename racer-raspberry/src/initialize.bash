@@ -6,20 +6,17 @@ echo "> create catkin workspace"
 cd /ros_catkin_ws/src
 catkin_init_workspace
 
-# install dependencies for the Scanse Sweep LIDAR
-cd /ros_catkin_ws/src/sweep-ros
-rosdep install -a -y -r --as-root apt:false
+# install dependencies for the raspicam
+cd /ros_catkin_ws
+echo 'yaml https://raw.githubusercontent.com/UbiquityRobotics/rosdep/master/raspberry-pi.yaml' > /etc/ros/rosdep/sources.list.d/30-ubiquity.list
+rosdep update
+rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y --as-root apt:false
 
 # build the workspace
 echo "> build the workspace"
 cd /ros_catkin_ws
 catkin_make
 source /ros_catkin_ws/devel/setup.bash
-
-# setup Hector SLAM
-echo "> setup the Hector SLAM"
-roscd hector_slam_launch/launch
-# todo
 
 echo "> ready"
 
