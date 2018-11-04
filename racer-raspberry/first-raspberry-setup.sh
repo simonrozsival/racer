@@ -5,7 +5,7 @@
 #
 
 # Tools
-sudo apt install git vim
+sudo apt install git vim dirmngr
 
 # Docker
 curl -fsSL get.docker.com -o get-docker.sh && sh get-docker.sh
