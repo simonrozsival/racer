@@ -9,7 +9,8 @@ RUN apt-get update && apt-get install -y \
    ros-kinetic-hector-slam \
    ros-kinetic-rosserial-arduino \
    ros-kinetic-rosserial \
-   ros-kinetic-joy
+   ros-kinetic-joy \
+   ros-kinetic-amcl
 
 RUN apt-get update && \
     apt-get install -y wget software-properties-common python-software-properties && \

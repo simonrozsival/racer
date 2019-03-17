@@ -20,5 +20,3 @@ source /ros_catkin_ws/devel/setup.bash
 
 echo "> ready"
 
-echo "> removing self"
-rm ./initialize.bash 
