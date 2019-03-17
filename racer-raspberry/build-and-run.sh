@@ -28,23 +28,24 @@ then
 	exit 2
 fi
 
-# optional joystick
-JOYSTICK_PORT="/dev/input/js0"
-ls -l $JOYSTICK_PORT > /dev/null 2> /dev/null
-if [ $? -ne 0 ]
-then
-	echo "Joystick is not connected."
-	JOYSTICK_PORT="/dev/null"
-fi
-
 # arduino which controlls the steering
 ARDUINO_PORT="/dev/ttyUSB1"
 ls -l $ARDUINO_PORT > /dev/null 2> /dev/null
 if [ $? -ne 0 ]
 then
-	echo "Arduino is not connected."
+	echo "Arduino (ESC and servo control) is not connected."
 	exit 3
 fi
+
+# arduino which collects information from the wheel encoders
+ARDUINO_2_PORT="/dev/ttyUSB2"
+ls -l $ARDUINO_2_PORT > /dev/null 2> /dev/null
+if [ $? -ne 0 ]
+then
+	echo "Arduino (wheel encoders) is not connected."
+	exit 3
+fi
+
 
 
 # build docker image
@@ -52,13 +53,12 @@ echo "> build image $IMAGE_NAME"
 docker build -t $IMAGE_NAME ./src
 
 # run the docker with access to the LIDAR
-echo
 echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
         --device $IMU_PORT:/dev/imu \
         --device $LIDAR_PORT:/dev/lidar \
-	--device $JOYSTICK_PORT:/dev/input/js0 \
 	--device $ARDUINO_PORT:/dev/arduino \
+	--device $ARDUINO_2_PORT:/dev/arduino_odometry \
 	--device /dev/vchiq \
 	--net=host \
 	--publish-all \

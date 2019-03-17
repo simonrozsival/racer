@@ -1,6 +1,6 @@
 FROM esteve/ros:kinetic-ros-base-armhf
 
-ENV ROS_IP 192.168.0.2
+ENV ROS_IP 192.168.0.147
 
 RUN apt-get update && apt-get install -y \
    git \
@@ -9,7 +9,6 @@ RUN apt-get update && apt-get install -y \
    ros-kinetic-hector-slam \
    ros-kinetic-rosserial-arduino \
    ros-kinetic-rosserial \
-   ros-kinetic-joy \
    ros-kinetic-amcl
 
 RUN apt-get update && \
@@ -18,8 +17,7 @@ RUN apt-get update && \
     add-apt-repository -y "deb http://archive.raspberrypi.org/debian/ stretch main" && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 82B129927FA3303E && \
     apt-get update && \
-    apt-get install -y libraspberrypi-dev
-
+    apt-get install -y libraspberrypi-dev libraspberrypi-bin
 
 # Prepare catkin workspace directory structure
 # and download the necessary packages for ROS from GitHub
@@ -28,9 +26,10 @@ RUN mkdir -p /ros_catkin_ws/src && \
   git clone https://github.com/eaibot/ydlidar && \
   git clone https://github.com/yoshito-n-students/bno055_usb_stick && \
   git clone https://github.com/yoshito-n-students/bno055_usb_stick_msgs && \
-  git clone https://github.com/ubiquityrobotics/raspicam_node
+  git clone https://github.com/UbiquityRobotics/raspicam_node
 
 ADD launcher /ros_catkin_ws/src/launcher 
-ADD joystick_controller /ros_catkin_ws/src/joystick_controller
+
+RUN usermod -a -G video root
 
 CMD ["bash"]
