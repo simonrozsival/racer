@@ -4,6 +4,8 @@
 #include <iostream>
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
+#include <geometry_msgs/Twist.h>
+#include <std_msgs/Float64.h>
 
 #include "VehicleState.h"
 #include "VehicleModel.h"
