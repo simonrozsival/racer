@@ -37,6 +37,16 @@ then
 	JOYSTICK_PORT="/dev/null"
 fi
 
+# arduino which controlls the steering
+ARDUINO_PORT="/dev/ttyUSB1"
+ls -l $ARDUINO_PORT > /dev/null 2> /dev/null
+if [ $? -ne 0 ]
+then
+	echo "Arduino is not connected."
+	exit 3
+fi
+
+
 # build docker image
 echo "> build image $IMAGE_NAME"
 docker build -t $IMAGE_NAME ./src
@@ -47,7 +57,9 @@ echo "> run the image $IMAGE_NAME as container $CONTAINER_NAME"
 docker run \
         --device $IMU_PORT:/dev/imu \
         --device $LIDAR_PORT:/dev/lidar \
-	--device $JOYSTICK_PORT:/dev/joystick \
+	--device $JOYSTICK_PORT:/dev/input/js0 \
+	--device $ARDUINO_PORT:/dev/arduino \
+	--device /dev/vchiq \
 	--net=host \
 	--publish-all \
 	--name $CONTAINER_NAME \
@@ -58,7 +70,7 @@ docker run \
 if [ $? -ne 0 ]
 then
 	echo "Running docker container failed."
-	exit 3
+	exit 4
 fi
 
 # start the container

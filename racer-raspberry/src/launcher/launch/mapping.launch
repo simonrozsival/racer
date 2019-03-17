@@ -39,4 +39,6 @@
     <param name="map_start_y" value="0.5"/>
   </node>
 
+  <include file="$(find joystick_controller)/launch/joy-control.launch" />
+
 </launch>
