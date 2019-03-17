@@ -9,10 +9,6 @@
 
 #include "VehicleState.h"
 
-#define DRIVE_BUTTON 0
-#define THROTTLE_AXIS 1
-#define STEERING_AXIS 0
-
 class VehicleModel
 {
   public:
@@ -25,10 +21,14 @@ class VehicleModel
       VehicleState& state,
       const double step,
       const double steering_angle,
-      const double elapsed_time);
+      const double elapsed_time) const;
 
-    const double max_steering_angle() {
+    const double max_steering_angle() const {
       return max_steering_angle_;
+    }
+
+    const double rear_wheel_radius() const {
+      return rear_wheel_radius_;
     }
 
   private:
