@@ -47,6 +47,14 @@
     <param name="port" value="/dev/arduino_odometry" />
   </node>
 
+  <node pkg="odometry" type="odometry_node" name="odometry_node">
+    <param name="base_link" value="base_link" />
+    <param name="odom_frame" value="odom" />
+    <param name="wheelbase" type="double" value="0.3" />
+    <param name="rear_wheel_radius" type="double" value="0.1" />
+    <param name="max_steering_angle" type="double" value="30" />
+  </node>
+
   <!-- camera doesn't work at the moment -->
   <!--include file="$(find raspicam_node)/launch/camerav2_410x308_30fps.launch" /-->
 
