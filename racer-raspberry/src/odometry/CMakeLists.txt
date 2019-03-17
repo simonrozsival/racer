@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(odometry)
+project(odometry_node)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 add_compile_options(-std=c++11)
@@ -11,7 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   nav_msgs
   geometry_msgs
   roscpp
-  std_msgs,
+  std_msgs
   tf
 )
 
@@ -100,7 +100,7 @@ find_package(Boost REQUIRED COMPONENTS system)
 # DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-  LIBRARIES odometry
+  LIBRARIES odometry_node
   CATKIN_DEPENDS tf nav_msgs geometry_msgs roscpp std_msgs 
 #  DEPENDS system_lib
 )
