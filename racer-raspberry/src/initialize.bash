@@ -1,6 +1,9 @@
 # setup the ROS enviromnment
 source /ros_entrypoint.sh
 
+# install programs for debugging
+apt install -y vim
+
 # create catkin workspace
 echo "> create catkin workspace"
 cd /ros_catkin_ws/src
@@ -16,7 +19,11 @@ rosdep install --from-paths src --ignore-src --rosdistro=kinetic -y --as-root ap
 echo "> build the workspace"
 cd /ros_catkin_ws
 catkin_make
-source /ros_catkin_ws/devel/setup.bash
+
+# load the workspace
+echo "> load the workspace"
+echo "source /ros_catkin_ws/devel/setup.bash" >> ~/.bashrc
+source ~/.bashrc
 
 echo "> ready"
 

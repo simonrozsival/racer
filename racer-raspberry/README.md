@@ -9,8 +9,8 @@ This guide will describe how to use this repository to install and run all neces
 - The source code of this repository is intended to run on Raspberry Pi 3 (processor architecture `armv71`)
 - User must have privileges to run Docker
 - Docker must be installed on the OS
-- The Scanse Sweep LIDAR must be connected to the computer and be accessible at `/dev/ttyUSB0`
-- The Razor IMU 9DOF with the correct firmware (see http://wiki.ros.org/razor\_imu\_9dof) must be connected to the computer via usb and be accessible at `/dev/ttyACM0`
+- The YDLIDAR X2 must be connected to the computer and be accessible at `/dev/lidar`
+- The Bosch BNO051 with the correct firmwar must be connected to the computer via usb and be accessible at `/dev/ttyACM0`
 
 ## Build The Docker Image
 

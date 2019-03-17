@@ -22,7 +22,7 @@
   <node pkg="hector_mapping" type="hector_mapping" name="hector_mapping" output="screen">
     <param name="scan_topic" value="scan" />
     <param name="base_frame" value="base_link" />
-    <param name="odom_frame" value="base_link" />
+    <param name="odom_frame" value="odom" />
     <param name="output_timing" value="false"/>
     <param name="advertise_map_service" value="true"/>
     <param name="use_tf_scan_transformation" value="true"/>
@@ -39,6 +39,15 @@
     <param name="map_start_y" value="0.5"/>
   </node>
 
-  <include file="$(find joystick_controller)/launch/joy-control.launch" />
+  <node pkg="rosserial_python" type="serial_node.py" name="arduino_control">
+    <param name="port" value="/dev/arduino" />
+  </node>
+
+  <node pkg="rosserial_python" type="serial_node.py" name="arduino_odometry">
+    <param name="port" value="/dev/arduino_odometry" />
+  </node>
+
+  <!-- camera doesn't work at the moment -->
+  <!--include file="$(find raspicam_node)/launch/camerav2_410x308_30fps.launch" /-->
 
 </launch>
