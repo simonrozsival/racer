@@ -1,10 +1,10 @@
 /*
    Raceing car steering
-   - receives commands from the '/racer/driving/commands' topic from ROS on a Raspberry PI through serial port
+   - receives commands from the '/racer/commands' topic from ROS through serial port
    - translates throttle and steering commands into servo control
-   - publishes actions in the '/racer/driving/status' channel
    - if the user takes over control using the RC controler, the PWM signals are forwarded to the servos
-     and the corresponding messages are published in the `/racer/driving/commands` topic
+     and the corresponding messages are published in the `/racer/commands` topic and any further commands
+     received through this topic are ignored
 
    Please make sure you have installed the `ros_lib` library for running ROS node on an Arduino with the
    `ros-kinetic-angles` package installed (so the `geometry_msgs/Twist.h` header file is available).
