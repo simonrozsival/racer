@@ -55,6 +55,9 @@
 \usepackage[allow-number-unit-breaks]{siunitx}
 \usepackage{textcomp}
 
+%% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
+\usepackage[]{algorithm2e}
+
 %%% Basic information on the thesis
 
 % Thesis title in English (exactly as in the formal assignment)
@@ -120,13 +123,9 @@ Abstract.
 %%% Each chapter is kept in a separate file
 \include{chapters/introduction}
 \include{chapters/autonomous_driving_background}
-\include{chapters/related_work}
-\include{chapters/localization}
-\include{chapters/state_action_space}
-\include{chapters/dynamic_model}
-\include{chapters/control}
+\include{chapters/racing_agent}
 \include{chapters/trajectory_planning}
-\include{chapters/experimental_car_platform}
+\include{chapters/control}
 \include{chapters/experiments}
 \include{chapters/conclusion}
 
