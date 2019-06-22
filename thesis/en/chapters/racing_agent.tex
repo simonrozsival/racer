@@ -64,34 +64,38 @@ The goal of the track analysis algorithm is to find interesting points of the tr
 
 We will implement this process with a two step algorithm which will identify the apexes of corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle, and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a subsequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$.
 
-The shortest path search can be various ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which explores the grid using circles of variable radii which depend on the distance to the closest obstacle. The outline of the algorithm is described in algorithm~\ref{alg:space_exploration}.
+The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if there is a circle in the set of closed circles which contains the center of the new circle and the new circle contains the center of the old circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance travelled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in figure~\ref{fig:sehs_space_exploration}.
 
-\begin{algorithm}[]
-\SetAlgoLined
-\KwResult{Shortest path through the occupancy grid}
- $r_i\set MaxRadius(i)$\;
- $O\gets\{(i, r_i)\}$\;
- $C\gets\emptyset$\;
- \While{$O \neq \emptyset$}{
-  $(c, r)\gets Top(O)$\;
-  $O\getsO-\{(c, r)\}$\;
-  
-  \eIf{condition}{
-   instructions1\;
-   instructions2\;
-   }{
-   instructions3\;
-  }
+To find the path from the initial position through the check points and to the finish line position, we will simply find the path from the initial point to the first checkpoint and then starting from the last circle of the previous path to the next check point. We repeat this until we close the circuit by reaching the initial position again. The path of circles we find might not be optimal. We can further improve it by iterating over the path it and smoothing it as shown in algorithm~\ref{alg:sehs_smoothing}.
 
-  $C\getsC\cup\{(c, r)\}$\;
- }
- \caption{Space Exploration}
- \label{alg:space_exploration}
-\end{algorithm}
+With the path of circles around the circuit, we can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}
 
-Algorithm.png 
+% big TODO: finish the algorithm
 
-% SELECTION OF VISIBLE POINTS
+%\begin{algorithm}[]
+%\SetAlgoLined
+%\SetKwFunction{Top}{Top}
+%\SetKwFunction{MaxRadius}{MaxRadius}
+%\SetKwFunction{Contains}{Contains}
+%\KwResult{Shortest path through the occupancy grid}
+%\Input{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
+% $r_0\set \MaxRadius(\vec{x}_0)$\;
+% $O\gets\{(\vec{x}_0, r_0)\}$\;
+% $C\gets\emptyset$\;
+% \While{$O \neq \emptyset$}{
+%  $(\vec{x}, r)\gets \Top(O)$\;
+%  $O\gets O\sub\{(\vec{x}, r)\}$\;
+%
+%  \eIf{\Contains($(\vec{x}, r), \vec{g}$)} % if 
+%
+%
+%  $C\getsC\cup\{(x, y, r)\}$\;
+% }
+% \caption{Space Exploration}
+% \label{alg:space_exploration}
+%\end{algorithm}
+
+% todo algorithm smoothing out
 
 % do I need to prove 
 
