@@ -1,8 +1,6 @@
 \chapter{Artificial Racing Agent}
 
-In this chapter we will first analyze how racing drivers approach the task of car racing. We will then use this information to design a behavior of an autonomous agent and divide the problem into the subproblems of vehicle modeling, analysis of racing circuit topology, trajectory planning, and trajectory following. These subproblems will be described in more detail in the following chapters.
-
-% todo: is this paragraph too broad? too much information about the other chapters?
+In this chapter we will first analyze how human racing drivers approach the task of car racing. We will then use this information to design a behavior of an autonomous agent and decompose the problem into several smaller tasks. We will discuss how we can analyze the racing track and prepare it for trajectory planning.
 
 \section{Racing Line}
 
@@ -38,25 +36,46 @@ The agent can use the information about its initial state and calculate a time-o
 
 \subsection{Decision Process}
 
-We will divide the decision process of the agent into several sub-problems: localization, track analysis and waypoint selection, trajectory planning, and trajectory following. The outputs of some of these sub-problems are inputs of the other and they form the nodes of a dependency graph of the decision process which is visualized in Figure~\ref{fig:racing_agent_diagram}. Vehicle modeling is also a separate problem and it is key to planning of feasible trajectories and for reliable trajectory following.
+An agent is sometimes described in the form of an agent function. This function takes the data from the sensors and outputs a command for the actuators. The command is then executed and it has an effect on the environment. In the next step we measure the changed state of the environment and the agent reacts to this changed state. The agent can select the next command in an order to correct the outcome of the previous command when it is different from the predicted outcome. This process is then repeated over and over in a so-called closed-feedback loop.
 
-\begin{figure}[p]\centering
+In order to avoid describing the logic of the racing agent in a single complicated function, we can divide the decision process of the agent into several smaller independent sub-problems: localization, track analysis and waypoint selection, trajectory planning, and trajectory following. Some of these sub-problems output information which is necessary as an input for another of these sub-problems they form nodes of a dependency graph of the decision process which is visualized in Figure~\ref{fig:racing_agent_diagram}.
+
+There is one more reason to decompose the task into independent subproblems. The rate at which the nodes produce outputs is different and they work asynchronously. While the trajectory following node should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning node will have much lower output frequency.
+
+\begin{figure}[]\centering
 \includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
 \caption{A diagram of the decision process of the racing agent.}
 \label{fig:racing_agent_diagram}
 \end{figure}
 
-As the vehicle moves on the track, the agent needs to know its current position, orientation, and speed. A localization algorithm collects the data from different sensors and estimates the current state of the vehicle. The accuracy and the frequency of state updates depend greatly on the capabilities of the sensors and the processing power of the on-board computer. The responsibility of the localization algorithm is to publishes the vehicle state updates as frequently as possible and without a long delay between the time at which the data came from the sensors and at which it will be used as an input for trajectory planning and trajectory following.
+\paragraph{Track analysis} Before the race begins, the agent analyses the track and finds the corners and bends on the track and marks a coordinate of a point near the apex of the corner. This analysis will give us the opportunity to focus the planning effort only to driving through the next few corners directly ahead of of the agent.
 
-Before the race begins, the agent analyses the track and finds all the corners and bends on the track and marks a coordinate of a point near the apex of the corner. Later during the race, it will keep track of which of these points was the last one which was reached and it selects the following $n$ waypoints as the next goal for trajectory planning. The constant $n\in\mathbb{N}$ is the planning lookahead of the agent.
+\paragraph{Vehicle model} Vehicle modeling is also a separate problem. The description of the behavior of the vehicle with a set of differential equations is key to a successful planning of feasible trajectories and for accurate trajectory following.
 
-The trajectory planning algorithm searches for a feasible trajectory from the last state of the vehicle estimated by the localization node through the waypoints selected by the track analysis. We expect the planning algorithm to find solutions quickly, because we reduced the size of the configuration space which is explored by the planning algorithm by limiting the lookahead distance to only a few corners ahead of the agent. The trajectory planning node will start planning a new trajectory as soon as it finishes planning the previous one as the initial conditions change as the vehicle follows the previous trajectory.
+\paragraph{Localization} As the vehicle moves on the track, the agent needs to know its current position, orientation, and speed. A localization algorithm collects the data from different sensors and estimates the current state of the vehicle. The accuracy and the frequency of state updates depend greatly on the capabilities of the sensors and the processing power of the on-board computer. The responsibility of the localization algorithm is to publishes the vehicle state updates as frequently as possible and without a long delay between the time at which the data came from the sensors and at which it will be used as an input for trajectory planning and trajectory following.
 
-The latest reference trajectory and the current estimate of the state of the vehicle is used to calculate the next command for the actuators of the vehicle. In the ideal case, this trajectory following node will send the commands to the hardware at the maximum possible rate which the hardware is capable of. In practice we are limited by the rate at which we receive the state estimates from the localization node. The trajectory following node is also responsible for collision avoidance either by actively guiding the vehicle around the obstacles it might hit, or by slowing down the vehicle while waiting for a new reference trajectory.
+\paragraph{Waypoint selection} During the race, the agent will keep track of which of the waypoints discovered during track analysis it drove past the last. The waypoint selection node will publish the following $n$ waypoints as the next goal for trajectory planning. The parameter $n\in\mathbb{N}$ is the lookahead of the agent. The selection of this parameter is a trade off between the quality of the trajectory and the size of the configuration space that will be search. This directly affects the update rate of the trajectory planning node.
+
+\paragraph{Trajectory planning} The trajectory planning algorithm finds a feasible trajectory from the last state of the vehicle estimated by the localization node through the selected waypoints. The trajectory planning node will start planning a new trajectory as soon as it finishes planning the previous one. As the agent drives along the circuit and drives past a waypoint, the trajectory planning algorithm receives a new sequence of waypoints and the next trajectory it plans will account also for the next corner of the circuit within the lookahead instance. Planning can be a slow process even when we try to reduce the size of the search space as much as possible. For the practical application, the planning algorithm must update the trajectories faster than the vehicle moves through the circuit. If the agent comes to the end of an old reference trajectory and it has no update, it has to stop and wait for an update. This would obviously affect the lap time which is undesirable.
+
+\paragraph{Trajectory following} The latest reference trajectory and the current estimate of the state of the vehicle is used to calculate the next command for the actuators of the vehicle. In the ideal case, this trajectory following node will send the commands to the hardware at the maximum possible rate which the hardware is capable of. In practice we are limited by the rate at which we receive the state estimates from the localization node. The trajectory following node is also responsible for collision avoidance either by actively guiding the vehicle around the obstacles it might hit, or by slowing down the vehicle while waiting for a new reference trajectory.
 
 \subsection{Track Analysis}
 
-The definition of a racing circuit is given by an occupancy grid, initial coordinates of the vehicle in the grid and its heading direction, and at least two more checkpoints which define the direction in which the agent must drive along the circuit. An occupancy grid is a two dimensional table where the cells correspond to a square areas with an equal side length. The cells contain the information of whether it is safe to go through the area or if there is an obstacle in the area and the cell is not safe to go through.
+The definition of a racing circuit is given by an occupancy grid, initial coordinates of the vehicle in the grid and its heading direction, and at least two more checkpoints which define the direction in which the agent must drive along the circuit. An occupancy grid can be formalized with the following definition:
+
+\begin{defn}\label{def:occupancy_grid}
+    Occupancy grid $G\in\{0, 1\}^{m\times n}$ of resolution $r\in\mathbb{R}$ is a two dimensional table of $m$ rows and $n$ columns which corresponds to a rectangular area of the environment of the width of $m * r$ meters and the length of $n * r$ meters. The cells of the table fill the area as square tiles of the side length of $r$ meters. The value of a cell $G_{ij}$ reflects on the state of its corresponding area:
+    
+\[   
+G_{ij} = 
+     \begin{cases}
+       0\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
+       0\text{,} &\quad\text{if the corresponding tile contains an obstacle} \\
+       1\text{,} &\quad\text{otherwise.}
+     \end{cases}
+\]
+\end{defn}
 
 The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. It would be hard to define how a corner and its apex look like in an occupancy grid, but we can make a simple observation and derive a simple algorithm which will produce good approximate solutions. We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. We can then remove the imaginary rubber walls and start walking along the string starting at the initial position of the vehicle. We will mark the furthest point which is directly visible from the place where we're standing. We will then imaginary walk to this point and repeat the process, until we can see the first point we marked. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This thought process is visualized in figure~\ref{fig:thought_process} on different track layouts.
 
@@ -64,36 +83,95 @@ The goal of the track analysis algorithm is to find interesting points of the tr
 
 We will implement this process with a two step algorithm which will identify the apexes of corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle, and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a subsequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$.
 
-The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if there is a circle in the set of closed circles which contains the center of the new circle and the new circle contains the center of the old circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance travelled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in figure~\ref{fig:sehs_space_exploration}.
+The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance travelled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
+
+\vspace{1cm}
+\begin{algorithm}[H]
+    \SetAlgoLined
+    \DontPrintSemicolon
+    
+    \SetKwFunction{Top}{Top}
+    \SetKwFunction{MaxRadius}{MaxRadius}
+    \SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
+    \SetKwFunction{ReconstructPath}{ReconstructPath}
+
+    \KwIn{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
+    \KwOut{Sequence of circles}
+    \Parameter{Number of expanded children $k$, minimum radius $r_{min}$}
+    
+    $r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
+    $O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
+    $C\gets\emptyset$ \Comment*[r]{Closed set}
+    $P\gets\emptyset$ \Comment*[r]{Set of transitions}
+    
+    \While{$O \neq \emptyset$}{
+        $(\vec{x}, r)\gets $\Top{$O$}\;
+        $O\gets O\setminus\{(\vec{x}, r)\}$\;
+
+        \If{$\|\vec{x} - \vec{g}\| \leq r$}{
+            \KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
+        }
+
+        \For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
+            $r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
+
+            \If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
+                $O\gets O\cup \{(\vec{p'}, r')\}$\;
+                $P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
+            }
+        }
+
+        $C\gets C\cup\{(\vec{x}, r)\}$\;
+    }
+
+    \caption{Space Exploration}
+    \label{alg:space_exploration}
+\end{algorithm}
+\vspace{1cm}
 
 To find the path from the initial position through the check points and to the finish line position, we will simply find the path from the initial point to the first checkpoint and then starting from the last circle of the previous path to the next check point. We repeat this until we close the circuit by reaching the initial position again. The path of circles we find might not be optimal. We can further improve it by iterating over the path it and smoothing it as shown in algorithm~\ref{alg:sehs_smoothing}.
 
 With the path of circles around the circuit, we can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}
 
-% big TODO: finish the algorithm
+\vspace{1cm}
+\begin{algorithm}[H]
+    \caption{Waypoint Selection}
+    \label{alg:find_apexes}
 
-%\begin{algorithm}[]
-%\SetAlgoLined
-%\SetKwFunction{Top}{Top}
-%\SetKwFunction{MaxRadius}{MaxRadius}
-%\SetKwFunction{Contains}{Contains}
-%\KwResult{Shortest path through the occupancy grid}
-%\Input{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
-% $r_0\set \MaxRadius(\vec{x}_0)$\;
-% $O\gets\{(\vec{x}_0, r_0)\}$\;
-% $C\gets\emptyset$\;
-% \While{$O \neq \emptyset$}{
-%  $(\vec{x}, r)\gets \Top(O)$\;
-%  $O\gets O\sub\{(\vec{x}, r)\}$\;
-%
-%  \eIf{\Contains($(\vec{x}, r), \vec{g}$)} % if 
-%
-%
-%  $C\getsC\cup\{(x, y, r)\}$\;
-% }
-% \caption{Space Exploration}
-% \label{alg:space_exploration}
-%\end{algorithm}
+    \SetAlgoLined
+    \DontPrintSemicolon
+    
+    \SetKwFunction{AreDirectlyVisible}{AreDirectlyVisible}
+
+    \KwIn{Occupancy grid $G$, sequence of $n$ points $(\vec{x_i})_{i=0}^{n}$}
+    \KwOut{Sequence of points}
+    
+    $r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
+    $O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
+    $C\gets\emptyset$ \Comment*[r]{Closed set}
+    $P\gets\emptyset$ \Comment*[r]{Set of transitions}
+    
+    \While{$O \neq \emptyset$}{
+        $(\vec{x}, r)\gets $\Top{$O$}\;
+        $O\gets O\setminus\{(\vec{x}, r)\}$\;
+
+        \If{$\|\vec{x} - \vec{g}\| \leq r$}{
+            \KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
+        }
+
+        \For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
+            $r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
+
+            \If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
+                $O\gets O\cup \{(\vec{p'}, r')\}$\;
+                $P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
+            }
+        }
+
+        $C\gets C\cup\{(\vec{x}, r)\}$\;
+    }
+\end{algorithm}
+\vspace{1cm}
 
 % todo algorithm smoothing out
 

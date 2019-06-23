@@ -56,7 +56,12 @@
 \usepackage{textcomp}
 
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
-%\usepackage[]{algorithm2e}
+\usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
+\SetKwComment{Comment}{$\triangleright$\ }{}
+\SetKwInOut{Parameter}{parameter}
+
+%% Custom settings
+\renewcommand\vec{\bm}
 
 %%% Basic information on the thesis
 
