@@ -67,21 +67,23 @@ The definition of a racing circuit is given by an occupancy grid, initial coordi
 \begin{defn}\label{def:occupancy_grid}
     Occupancy grid $G\in\{0, 1\}^{m\times n}$ of resolution $r\in\mathbb{R}$ is a two dimensional table of $m$ rows and $n$ columns which corresponds to a rectangular area of the environment of the width of $m * r$ meters and the length of $n * r$ meters. The cells of the table fill the area as square tiles of the side length of $r$ meters. The value of a cell $G_{ij}$ reflects on the state of its corresponding area:
     
-\[   
-G_{ij} = 
+\[
+G_{ij} =
      \begin{cases}
-       0\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
-       0\text{,} &\quad\text{if the corresponding tile contains an obstacle} \\
+       -1\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
+       0\text{,} &\quad\text{or if the corresponding tile contains an obstacle} \\
        1\text{,} &\quad\text{otherwise.}
      \end{cases}
 \]
 \end{defn}
 
-The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. It would be hard to define how a corner and its apex look like in an occupancy grid, but we can make a simple observation and derive a simple algorithm which will produce good approximate solutions. We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. We can then remove the imaginary rubber walls and start walking along the string starting at the initial position of the vehicle. We will mark the furthest point which is directly visible from the place where we're standing. We will then imaginary walk to this point and repeat the process, until we can see the first point we marked. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This thought process is visualized in figure~\ref{fig:thought_process} on different track layouts.
+The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. In order to achieve this, we can make a simple observation and derive an algorithm which will produce good approximate solutions.
+
+We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in figure~\ref{fig:thought_process} on different track layouts.
 
 % figure with the analysis of the track
 
-We will implement this process with a two step algorithm which will identify the apexes of corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle, and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a subsequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$.
+We will implement this process with a three step algorithm which will identify the corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a subsequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).3
 
 The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance travelled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
 
@@ -146,29 +148,6 @@ With the path of circles around the circuit, we can now proceed the second step 
     \KwIn{Occupancy grid $G$, sequence of $n$ points $(\vec{x_i})_{i=0}^{n}$}
     \KwOut{Sequence of points}
     
-    $r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
-    $O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
-    $C\gets\emptyset$ \Comment*[r]{Closed set}
-    $P\gets\emptyset$ \Comment*[r]{Set of transitions}
-    
-    \While{$O \neq \emptyset$}{
-        $(\vec{x}, r)\gets $\Top{$O$}\;
-        $O\gets O\setminus\{(\vec{x}, r)\}$\;
-
-        \If{$\|\vec{x} - \vec{g}\| \leq r$}{
-            \KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
-        }
-
-        \For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
-            $r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
-
-            \If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
-                $O\gets O\cup \{(\vec{p'}, r')\}$\;
-                $P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
-            }
-        }
-
-        $C\gets C\cup\{(\vec{x}, r)\}$\;
     }
 \end{algorithm}
 \vspace{1cm}
