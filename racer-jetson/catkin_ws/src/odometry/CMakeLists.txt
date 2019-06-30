@@ -102,7 +102,7 @@ catkin_package(
 #  INCLUDE_DIRS include
   LIBRARIES odometry_node
   CATKIN_DEPENDS tf nav_msgs geometry_msgs roscpp std_msgs 
-#  DEPENDS system_lib
+  DEPENDS system_lib
 )
 
 ###########
