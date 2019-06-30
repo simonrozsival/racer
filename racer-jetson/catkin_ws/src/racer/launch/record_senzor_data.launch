@@ -1,0 +1,34 @@
+
+<launch>
+
+  <node pkg="bno055_usb_stick" type="bno055_usb_stick_node" name="imu_node" output="screen">
+    <param name="port" type="string" value="/dev/imu" />
+    <param name="publish_tf" type="bool" value="true" />
+    <param name="frame_id" type="string" value="imu_frame" />
+  </node>
+
+  <node name="ydliar" pkg="ydlidar" type="ydlidar_node" output="screen">
+    <param name="port" type="string" value="/dev/lidar" />
+    <param name="baudrate" type="int" value="115200" />
+    <param name="frame_id" type="string" value="laser_frame" />
+    <param name="frequency" type="int" value="10" />
+    <param name="sample_rate" type="int" value="5" />
+    <param name="range_min" type="double" value="0.35" />
+    <param name="range_max" type="double" value="16" />
+  </node>
+
+  <node pkg="rosserial_python" type="serial_node.py" name="arduino_control">
+    <param name="port" value="/dev/arduino" />
+  </node>
+
+  <node pkg="rosserial_python" type="serial_node.py" name="arduino_odometry">
+    <param name="port" value="/dev/arduino_odometry" />
+  </node>
+
+  <!-- camera doesn't work at the moment -->
+  <!--include file="$(find raspicam_node)/launch/camerav2_410x308_30fps.launch" /-->
+
+  <node pkg="rosbag" type="record" name="record_sensor_data"
+    args="record -o ~/sensor_data_$(date) /imu /scan /racer/wheel_encoders" />
+
+</launch>
