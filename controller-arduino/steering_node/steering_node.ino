@@ -26,8 +26,8 @@
 
 #define PWM_OFF_CENTER_TOLERANCE 100
 
-#include "driving_logic.h"
-#include "utils.h"
+#include "./utils.h"
+#include "./driving_logic.h"
 
 #define PIN_OUTPUT_THROTTLE 10
 #define PIN_OUTPUT_STEERING 9
@@ -43,20 +43,16 @@ ros::Subscriber<geometry_msgs::Twist> driving(DRIVING_TOPIC, &drive_callback);
 Servo servo_steering;
 Servo servo_throttle;
 
-bool reverse;
-
 void setup() {
   node_handle.initNode();
   node_handle.advertise(manual_driving);
   node_handle.subscribe(driving);
 
   attach_rc_input_interrupts();
-  init_dricing_logic();
+  init_driving_logic();
 
   servo_steering.attach(PIN_OUTPUT_STEERING);
   servo_throttle.attach(PIN_OUTPUT_THROTTLE);
-
-  autonomous_mode = true;
 }
 
 void loop() {
@@ -67,7 +63,7 @@ void loop() {
 
   servo_steering.writeMicroseconds(steering_pwm);
 
-  if (!reverse && throttle_pwm < THROTTLE_FULL_PWM) {
+  if (!reverse && throttle_pwm < THROTTLE_NONE_PWM) {
     // switching into reverse is a bit more complicated than just setting PWM between THROTTLE_REVERSE_PWM and THROTTLE_NONE_PWM
     // the PWM has to be set to THROTTLE_REVERSE_PWM for a while, then return back to THROTTLE_NONE_PWM and then go to the `autonomous_throttle` value
     // this will dealy the algorithm a bit and it will 
