@@ -32,6 +32,11 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
+  double max_speed, acceleration;
+
+  node.param<double>("vehicle_max_speed", max_speed, 3.0);
+  node.param<double>("vehicle_acceleration", acceleration, 2.0);
+
   racing::vehicle_properties vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
@@ -39,24 +44,24 @@ int main(int argc, char* argv[]) {
     0.55, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     1.0 / 6.0 * M_PI, // max steering angle (rad)
-    2.0, // speed (ms^-1)
-    2.0 // acceleration (ms^-2)
+    max_speed, // speed (ms^-1)
+    acceleration // acceleration (ms^-2)
   );
 
   const auto actions = racing::kinematic_model::action::create_actions(5, 15);
   const auto detector = racing::collision_detector::precalculate(120, vehicle, cell_size);
   
   const racing::trajectory_error_calculator error_calculator(
-    50.0, // position weight
-    3.0, // heading weight
+    30.0, // position weight
+    20.0, // heading weight
     10.0, // velocity weight
     1.0,
-    20.0, // distance to obstacle weight
+    5.0, // distance to obstacle weight
     vehicle.radius() * 5
   );
 
   const double integration_step_s = 1.0 / 20.0;
-  const double prediction_horizon_s = 1.0;
+  const double prediction_horizon_s = 0.5;
 
   racing::kinematic_model::state_transition model(
     std::make_unique<math::euler_method>(integration_step_s), vehicle);
@@ -81,7 +86,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
 
-  ros::Rate rate(20); // Hz
+  ros::Rate rate(12); // Hz
 
   while (ros::ok()) {
     if (follower.is_initialized()) {
