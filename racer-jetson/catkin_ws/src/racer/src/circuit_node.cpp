@@ -16,6 +16,8 @@
 #include "racer/WaypointMsg.h"
 #include "racer/WaypointsMsg.h"
 
+#include "utils.h"
+
 std::mutex odom_lock;
 std::mutex analysis_lock;
 
@@ -26,6 +28,7 @@ double waypoint_radius, vehicle_radius;
 int lookahead;
 
 // state variables
+std::unique_ptr<racing::vehicle_position> position;
 std::unique_ptr<racing::occupancy_grid> grid;
 std::string frame_id;
 std::unique_ptr<std::vector<math::circle>> waypoints;
@@ -50,6 +53,10 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
 void circuit_update(const racer::CircuitMsg::ConstPtr& circuit) {
   std::cout << "got circuit definition" << std::endl;
 
+  if (!position) {
+    throw "The position of the vehicle is not known yet.";
+  }
+
   if (!grid) {
     throw "Map must be published before the circuit definition.";
   }
@@ -63,11 +70,24 @@ void circuit_update(const racer::CircuitMsg::ConstPtr& circuit) {
   for (const auto& check_point : circuit->check_points) {
     check_points.push_back(math::point(check_point.x, check_point.y));
   }
+  check_points.push_back(position->location()); // copy the first 
 
+  std::vector<math::circle> initial_definition;
+  for (const auto c : check_points) {
+    initial_definition.push_back(math::circle(c, 0.1));
+  }
+
+  waypoints = std::make_unique<std::vector<math::circle>>(initial_definition);
+  return;
   std::cout << "start" << std::endl;
 
-  racing::vehicle_position start_position(circuit->start_x, circuit->start_y, circuit->start_orientation_angle);
-  auto apexes = analysis.find_apexes(vehicle_radius, start_position, check_points);
+  auto apexes = analysis.find_apexes(vehicle_radius, *position, check_points);
+
+  if (apexes.size() == 0) {
+    std::cout << "cannot find apexes - there might not be enough room for the careful algorithm to fit ghe car through" << std::endl;
+    std::cout << "select different checkpoints, decrease the radius of the car, or create a new map" << std::endl;
+    return;
+  }
 
   std::cout << "found apexes" << std::endl;
 
@@ -83,19 +103,18 @@ void circuit_update(const racer::CircuitMsg::ConstPtr& circuit) {
   std::cout << "analysis completed. number of waypoints: " << waypoints->size() << std::endl;
 }
 
-void odometry_update(const nav_msgs::Odometry::ConstPtr& position) {
+void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
+  auto state = std::move(msg_to_state(*odom));
+  position = std::make_unique<racing::vehicle_position>(state->position);
+
   if (!waypoints) {
     return;
   }
 
   std::lock_guard<std::mutex> guard(odom_lock);
-  
-  math::point vehicle_location(
-    position->pose.pose.position.x,
-    position->pose.pose.position.y);
 
   for (int i = 0; i < waypoints->size(); ++i) {
-    if ((*waypoints)[i].contains(vehicle_location)) {
+    if ((*waypoints)[i].contains(position->location())) {
       next_waypoint = i + 1;
       break;
     }
@@ -114,7 +133,7 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("waypoints_visualization_topic", waypoints_visualization_topic, "/racer/visualization/waypoints");
 
-  node.param<double>("vehicle_radius", vehicle_radius, 0.4); // m
+  node.param<double>("vehicle_radius", vehicle_radius, 0.3); // m
   node.param<double>("waypoint_radius", waypoint_radius, 1.0); // m
 
   node.param<double>("max_distance_between_waypoints", max_distance_between_waypoints, 10.0); // m

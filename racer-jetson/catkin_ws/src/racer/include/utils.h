@@ -32,7 +32,7 @@ std::unique_ptr<racing::kinematic_model::state> msg_to_state(
         tf::getYaw(pose.orientation)
     );
 
-    return std::make_unique<state>(
+    return std::make_unique<racing::kinematic_model::state>(
         initial_postition,
         sqrt(pow(twist.linear.x, 2) + pow(twist.linear.y, 2)),
         0 // we assume the steering angle is always zero in the beginning
