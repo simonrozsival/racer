@@ -51,16 +51,16 @@ void attach_rc_input_interrupts() {
   pinMode(PIN_RC_INPUT_THROTTLE, INPUT);
 
   // read the initial state
-  rc_last_state[STEERING] = digitalRead(pins[STEERING]);
-  rc_last_state[THROTTLE] = digitalRead(pins[THROTTLE]);
+  rc_input_state[STEERING] = digitalRead(pins[STEERING]);
+  rc_input_state[THROTTLE] = digitalRead(pins[THROTTLE]);
 
   attachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_STEERING), rc_input_steering_changed, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_THROTTLE), rc_input_throttle_changed, CHANGE);
 }
 
-detach_rc_input_interrupts() {
-  detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_STEERING);
-  detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_THROTTLE);
+void detach_rc_input_interrupts() {
+  detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_STEERING));
+  detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_THROTTLE));
 }
 
 #endif

@@ -4,14 +4,14 @@
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
 
-#include "utils.h"
-#include "rc_input.h"
+#include "./utils.h"
+#include "./rc_input.h"
 
-bool autonomous_mode;
+bool autonomous_mode, reverse;
 bool has_autonomous_steering_data;
 int autonomous_steering_angle, autonomous_throttle;
 
-void init_dricing_logic() {
+void init_driving_logic() {
   has_autonomous_steering_data = false;
   autonomous_mode = true;
   reverse = false;
@@ -26,15 +26,15 @@ void drive_callback(const geometry_msgs::Twist& twist_msg) {
 }
 
 bool is_offcenter(const unsigned int value, int center_pwm) {
-  return abs(value - center_pwm) < PWM_OFF_CENTER_TOLERANCE);
+  return abs(value - center_pwm) < PWM_OFF_CENTER_TOLERANCE;
 }
 
 void select_inputs(int* steering_pwm, int* throttle_pwm) {
-  *steering_pwm = read_rc_input(rc_input[STEERING], STEERING_CENTER_PWM);
-  *throttle_pwm = read_rc_input(rc_input[THROTTLE], THROTTLE_NONE_PWM);
+  *steering_pwm = rc_input[STEERING];
+  *throttle_pwm = rc_input[THROTTLE];
 
   if (autonomous_mode) {
-    if (is_offcenter(*steering_pwm, STEERING_CENTER_PWM) || is_offcenter(*throttle_pwm, THROTTLE_NONE_PWM))) {
+    if (is_offcenter(*steering_pwm, STEERING_CENTER_PWM) || is_offcenter(*throttle_pwm, THROTTLE_NONE_PWM)) {
       // user took control over the vehicle
       autonomous_mode = false;
     } else if (has_autonomous_steering_data) {
