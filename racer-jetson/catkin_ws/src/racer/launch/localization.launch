@@ -12,7 +12,7 @@
   <include file="$(find racer)/launch/ydlidar.launch" />
   <include file="$(find racer)/launch/arduinos.launch" />
 
-  <!--node pkg="tf" type="static_transform_publisher" name="base_link_2_imu_frame" args="0 0 0 0 0 0 imu_frame base_link 20" /-->
+  <node pkg="tf" type="static_transform_publisher" name="odom_2_map" args="0 0 0 0 0 0 odom map 20" />
   <node pkg="tf" type="static_transform_publisher" name="base_link_2_laser_frame" args="0.125 0 0.135 0 0 0 laser_frame base_link 20" />
 
   <node pkg="odometry_node" type="node" name="odometry" />
