@@ -15,7 +15,7 @@ class Follower {
     std::string frame_id;
 
     Follower(const racing::dwa& strategy)
-      : strategy_(strategy), next_waypoint_(0)
+      : strategy_(strategy), next_waypoint_(0), stop_(racing::kinematic_model::action(-1, 0))
     {
     }
 
@@ -34,9 +34,10 @@ class Follower {
 
   private:
     const racing::dwa& strategy_;
-
+    const racing::kinematic_model::action stop_;
     int next_waypoint_;
 
+    double last_update_;
     std::unique_ptr<racing::occupancy_grid> grid_;
     std::unique_ptr<racing::kinematic_model::state> last_known_state_;
     std::unique_ptr<racing::kinematic_model::trajectory> reference_trajectory_;
