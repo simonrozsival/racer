@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     actions,
     discretization);
 
-  ros::Rate rate(8);
+  ros::Rate rate(1);
 
   while (ros::ok()) {
     if (!planner.is_initialized() && has_map) {
