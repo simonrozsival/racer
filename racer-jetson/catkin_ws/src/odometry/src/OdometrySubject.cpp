@@ -105,6 +105,11 @@ void OdometrySubject::publish_state_estimate(const VehicleState &state) const
     odom.twist.twist.linear.y = 0;
     odom.twist.twist.angular.z = state.angular_velocity;
 
+    //set covariance
+    odom.pose.covariance[0] = 0.2; // x
+    odom.pose.covariance[7] = 0.2; // y
+    odom.pose.covariance[35] = 0.4; // yaw
+
     //publish the message
     odometry_topic_.publish(odom);
 }
