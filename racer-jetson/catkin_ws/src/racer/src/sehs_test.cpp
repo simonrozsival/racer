@@ -5,7 +5,7 @@
 
 #include "../include/sehs/space_exploration.h"
 
-#include "../include/racing/dwa.h"
+#include "../include/racing/following_strategies/dwa.h"
 
 #include "../include/racing/circuit.h"
 // #include "../include/racing/circuits/circuit_1550326083351.h"
