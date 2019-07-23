@@ -3,9 +3,8 @@
 
 #include <iostream>
 
-#include "../racing/circuit.h"
-#include "../racing/vehicle_model/kinematic_bicycle_model.h"
-#include "./math.h"
+#include "racing/circuit.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 using namespace racing::kinematic_model;
 

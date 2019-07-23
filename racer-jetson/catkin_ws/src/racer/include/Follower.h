@@ -6,7 +6,7 @@
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racing/dwa.h"
+#include "racing/following_strategies/dwa.h"
 #include "racing/occupancy_grid_collisions.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 

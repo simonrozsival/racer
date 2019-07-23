@@ -1,8 +1,8 @@
 #ifndef PURE_PURSUIT_H_
 #define PURE_PURSUIT_H_
 
-#include "./vehicle_model/vehicle.h"
-#include "./vehicle_model/kinematic_bicycle_model.h"
+#include "racing/vehicle_model/vehicle.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 namespace racing {
 

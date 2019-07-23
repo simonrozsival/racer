@@ -7,7 +7,7 @@
 #include "../include/astar/hybrid_astar.h"
 #include "../include/astar/sehs.h"
 
-#include "../include/racing/dwa.h"
+#include "../include/racing/following_strategies/dwa.h"
 
 #include "../include/racing/circuit.h"
 // #include "../include/racing/circuits/circuit_complex.h"
