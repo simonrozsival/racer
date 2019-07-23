@@ -1,7 +1,7 @@
 <launch>
 
   <arg name="map" />
-  <node name="map_server" pkg="map_server" type="map_server" args="$(find racer)/maps/$(arg map).yaml" />-->
+  <node name="map_server" pkg="map_server" type="map_server" args="$(find racer)/maps/$(arg map).yaml" />
 
   <!--node pkg="bno055_usb_stick" type="bno055_usb_stick_node" name="imu_node" output="screen">
     <param name="port" type="string" value="/dev/imu" />
