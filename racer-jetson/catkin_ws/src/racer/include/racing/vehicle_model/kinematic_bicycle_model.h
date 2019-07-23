@@ -4,8 +4,10 @@
 #include <iostream>
 #include <algorithm>
 
+#include "vehicle_position.h"
+#include "vehicle.h"
 #include "base_vehicle_model.h"
-#include "../math/base_integrator.h"
+#include "math/base_integrator.h"
 
 namespace racing {
     namespace kinematic_model {
@@ -107,13 +109,13 @@ namespace racing {
             }
         };
 
-        class state_transition : base_vehicle_model<state, action> {
+        class model : base_vehicle_model<state, action> {
         private:
             const std::unique_ptr<math::base_integrator> integrator_;
-            const vehicle_properties vehicle_;
+            const vehicle vehicle_;
 
         public:
-            state_transition(std::unique_ptr<math::base_integrator> integrator, vehicle_properties vehicle)
+            model(std::unique_ptr<math::base_integrator> integrator, const vehicle& vehicle)
                 : integrator_(std::move(integrator)), vehicle_(vehicle)
             {
             }

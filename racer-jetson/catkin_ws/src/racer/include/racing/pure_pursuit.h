@@ -1,14 +1,15 @@
 #ifndef PURE_PURSUIT_H_
 #define PURE_PURSUIT_H_
 
-#include "./kinematic_bicycle_model.h"
+#include "./vehicle_model/vehicle.h"
+#include "./vehicle_model/kinematic_bicycle_model.h"
 
 namespace racing {
 
   class pure_pursuit {
   public:
     pure_pursuit(
-        const vehicle_properties& vehicle,
+        const vehicle& vehicle,
         double min_lookahead,
         double lookahead_coef)
       : vehicle_(vehicle), min_lookahead_(min_lookahead), lookahead_coef_(lookahead_coef)
@@ -42,7 +43,7 @@ namespace racing {
     }
 
   private:
-    const vehicle_properties& vehicle_;
+    const vehicle& vehicle_;
     double min_lookahead_;
     double lookahead_coef_;
   };

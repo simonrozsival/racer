@@ -5,7 +5,8 @@
 
 #include "astar.h"
 #include "../math/euler_method_integrator.h"
-#include "../racing/kinematic_bicycle_model.h"
+#include "../racing/vehicle_model/vehicle.h"
+#include "../racing/vehicle_model/kinematic_bicycle_model.h"
 #include "../racing/circuit.h"
 
 using namespace racing::kinematic_model;
@@ -25,7 +26,7 @@ namespace astar {
             std::unique_ptr<state> initial_state,
             std::unique_ptr<TDiscreteState> discrete_state,
             double time_step_s,
-            racing::vehicle_properties vehicle,
+            racing::vehicle vehicle,
             const std::list<action>& available_actions,
             const discretization<TDiscreteState>& discretization,
             const racing::circuit& circuit)
@@ -126,8 +127,8 @@ namespace astar {
 
     private:
         double time_step_s_;
-        const state_transition transition_;
-        const racing::vehicle_properties vehicle_;
+        const model transition_;
+        const racing::vehicle vehicle_;
         const std::list<action>& available_actions_;
         const discretization<TDiscreteState>& discretization_;
         const racing::circuit& circuit_;

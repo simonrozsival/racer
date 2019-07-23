@@ -56,7 +56,7 @@ void write_csv_points(const std::vector<math::point> points, std::string file_na
 template <typename TDiscreteState>
 trajectory find_trajectory(
     const racing::circuit& circuit,
-    const racing::vehicle_properties& vehicle,
+    const racing::vehicle& vehicle,
     const astar::discretization<TDiscreteState>& discretization,
     double time_step_s) {
 
@@ -90,7 +90,7 @@ trajectory find_trajectory(
 trajectory follow(
     const trajectory& solution,
     const racing::vehicle_position& start_position,
-    const racing::vehicle_properties& vehicle,
+    const racing::vehicle& vehicle,
     const double resolution,
     double time_step_s,
     int waypoints_count,
@@ -101,7 +101,7 @@ trajectory follow(
     const double action_selection_period = 1.0 / 6.0;
 
     auto available_actions_for_following = action::create_actions(5, 11);
-    state_transition model(std::make_unique<math::euler_method>(time_step_s), vehicle);
+    model model(std::make_unique<math::euler_method>(time_step_s), vehicle);
     auto grid = racing::occupancy_grid::load(map, resolution);
     racing::trajectory_error_calculator error_calculator(20.0, 20.0, 1.0, 15.0, 10.0, vehicle.radius() * 5);
     auto collision_detector = racing::collision_detector::precalculate(72, vehicle, resolution);
@@ -190,8 +190,8 @@ trajectory follow(
 
 int main(int argc, char* argv[]) {
 
-    racing::vehicle_properties vehicleA(.155, .31, .45, .65, pi / 6.0, pi / 6.0, 8.0, 5.0);
-    racing::vehicle_properties vehicleB(.155, .31, .35, .55, pi / 5.8, pi / 8.0, 10.0, 5.0);
+    racing::vehicle vehicleA(.155, .31, .45, .65, pi / 6.0, pi / 6.0, 8.0, 5.0);
+    racing::vehicle vehicleB(.155, .31, .35, .55, pi / 5.8, pi / 8.0, 10.0, 5.0);
     double time_step_s = 1.0 / 100.0;
 
     auto grid = racing::occupancy_grid::load(map, cell_size);

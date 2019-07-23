@@ -8,7 +8,8 @@
 #include <vector>
 
 #include "../math/primitives.h"
-#include "./kinematic_bicycle_model.h"
+#include "./vehicle_model/vehicle.h"
+#include "./vehicle_model/kinematic_bicycle_model.h"
 
 namespace racing {
 
@@ -28,7 +29,7 @@ namespace racing {
     struct footprint {
         const std::list<index2d> occupied_cells;
 
-        static footprint of(double angle, const racing::vehicle_properties& vehicle, double cell_size) {
+        static footprint of(double angle, const racing::vehicle& vehicle, double cell_size) {
             std::list<index2d> cells;
 
             double a = vehicle.wheelbase + cell_size / 2;
@@ -198,7 +199,7 @@ namespace racing {
         {
         }
 
-        static std::unique_ptr<collision_detector> precalculate(std::size_t rotations, const racing::vehicle_properties& vehicle, double cell_size) {
+        static std::unique_ptr<collision_detector> precalculate(std::size_t rotations, const racing::vehicle& vehicle, double cell_size) {
             std::vector<footprint> footprints;
 
             const double step = pi / (double)rotations;
