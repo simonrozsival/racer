@@ -11,7 +11,7 @@
 #include <stdexcept>
 
 #include "../circuit.h"
-#include "../occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 
 inline std::vector<std::string> read_pgm(std::string map_image) {
     std::ifstream file(map_image, std::ifstream::in);

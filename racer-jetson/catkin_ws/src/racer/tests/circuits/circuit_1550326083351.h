@@ -7,7 +7,7 @@
 #include <algorithm>
 
 #include "../circuit.h"
-#include "../occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 
 const std::vector<std::string> map = {
     "########################################################################################################################################################################################################",
