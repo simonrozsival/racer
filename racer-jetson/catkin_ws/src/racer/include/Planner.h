@@ -10,7 +10,8 @@
 #include "racer_msgs/Waypoints.h"
 
 #include "astar/hybrid_astar.h"
-#include "racing/kinematic_bicycle_model.h"
+#include "racing/vehicle_model/vehicle.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/occupancy_grid_collisions.h"
 
 using namespace astar::hybrid_astar;
@@ -18,7 +19,7 @@ using namespace astar::hybrid_astar;
 class Planner {
   public:
     Planner(
-      const racing::vehicle_properties& model,
+      const racing::vehicle& model,
       const std::list<racing::kinematic_model::action>& available_actions,
       const astar::discretization<astar::hybrid_astar::discrete_state>& discretization)
       : model_(model),
@@ -39,7 +40,7 @@ class Planner {
       const racer_msgs::Waypoints& waypoints) const;
 
   private:
-    const racing::vehicle_properties model_;
+    const racing::vehicle model_;
     const double time_step_s_;
     const int maximum_number_of_expanded_nodes_;
     const std::list<racing::kinematic_model::action> available_actions_;

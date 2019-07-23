@@ -10,7 +10,7 @@
 #include "racer_msgs/Trajectory.h"
 
 #include "math/primitives.h"
-#include "racing/kinematic_bicycle_model.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "Planner.h"
 
 std::mutex lock;
@@ -59,7 +59,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
   
-  racing::vehicle_properties vehicle(
+  racing::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
     0.35, // safe width

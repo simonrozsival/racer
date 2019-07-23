@@ -4,7 +4,7 @@
 #include <iostream>
 
 #include "../racing/circuit.h"
-#include "../racing/kinematic_bicycle_model.h"
+#include "../racing/vehicle_model/kinematic_bicycle_model.h"
 #include "./math.h"
 
 using namespace racing::kinematic_model;
@@ -88,7 +88,7 @@ namespace racing {
         dwa(
             int steps,
             const std::list<action>& available_actions,
-            const state_transition& model,
+            const model& model,
             const collision_detector& detector,
             const trajectory_error_calculator& trajectory_error_calculator)
             : steps_(steps),
@@ -130,7 +130,7 @@ namespace racing {
     private:
         const int steps_;
         const std::list<action>& available_actions_;
-        const state_transition& model_;
+        const model& model_;
         const trajectory_error_calculator& trajectory_error_calculator_;
         const collision_detector& collision_detector_;
 

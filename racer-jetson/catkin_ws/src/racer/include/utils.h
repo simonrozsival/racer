@@ -11,7 +11,7 @@
 #include "racer_msgs/Trajectory.h"
 
 #include "racing/occupancy_grid_collisions.h"
-#include "racing/kinematic_bicycle_model.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 std::unique_ptr<racing::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid& map) {  
   return std::make_unique<racing::occupancy_grid>(

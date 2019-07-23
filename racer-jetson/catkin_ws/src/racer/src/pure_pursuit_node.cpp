@@ -8,8 +8,7 @@
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racing/kinematic_bicycle_model.h"
-#include "racing/base_vehicle_model.h"
+#include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/occupancy_grid_collisions.h"
 #include "racing/dwa.h"
 #include "math/euler_method_integrator.h"
@@ -37,7 +36,7 @@ int main(int argc, char* argv[]) {
   node.param<double>("vehicle_max_speed", max_speed, 3.0);
   node.param<double>("vehicle_acceleration", acceleration, 2.0);
 
-  racing::vehicle_properties vehicle(
+  racing::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
     0.35, // safe width
@@ -63,7 +62,7 @@ int main(int argc, char* argv[]) {
   const double integration_step_s = 1.0 / 20.0;
   const double prediction_horizon_s = 0.5;
 
-  racing::kinematic_model::state_transition model(
+  racing::kinematic_model::model model(
     std::make_unique<math::euler_method>(integration_step_s), vehicle);
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));

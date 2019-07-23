@@ -55,7 +55,7 @@ void write_csv(const std::list<math::circle> circles, std::string file_name) {
 
 int smain(int argc, char* argv[]) {
 
-    racing::vehicle_properties vehicle(.155, .31, .35, .5, pi / 6.0, pi / 6.0, 12.0, 10.0);
+    racing::vehicle vehicle(.155, .31, .35, .5, pi / 6.0, pi / 6.0, 12.0, 10.0);
 
     auto grid = racing::occupancy_grid::load(map, cell_size);
     std::list<math::point> circuit_definition{ waypoints.begin(), waypoints.end() };
