@@ -8,11 +8,13 @@
 #include "../include/racing/following_strategies/dwa.h"
 
 #include "../include/racing/circuit.h"
-// #include "../include/racing/circuits/circuit_1550326083351.h"
-// #include "../include/racing/circuits/circuit_complex.h"
-#include "../include/racing/circuits/circuit_small.h"
-// #include "../include/racing/circuits/circuit_livingroom.h"
 #include "../include/racing/track_analysis.h"
+
+// #include "./circuits/circuit_1550326083351.h"
+// #include "./circuits/circuit_complex.h"
+#include "./circuits/circuit_small.h"
+// #include "./circuits/circuit_livingroom.h"
+
 
 
 const std::string base_path = "C:\\Users\\simon\\results\\";
