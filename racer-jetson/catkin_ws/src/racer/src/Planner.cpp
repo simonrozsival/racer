@@ -20,10 +20,10 @@ void Planner::initialize(const nav_msgs::OccupancyGrid& map) {
   collision_detector_ = std::move(racing::collision_detector::precalculate(18, model_, map.info.resolution));
 }
 
-racer::TrajectoryMsg Planner::plan(
+racer_msgs::Trajectory Planner::plan(
   const nav_msgs::OccupancyGrid& map,
   const nav_msgs::Odometry& odom,
-  const racer::WaypointsMsg& waypoints) const {
+  const racer_msgs::Waypoints& waypoints) const {
 
   auto initial_state = std::move(msg_to_state(odom));
   auto discrete_initial_state = discretization_.discretize(*initial_state);
@@ -61,13 +61,13 @@ racer::TrajectoryMsg Planner::plan(
     maximum_number_of_expanded_nodes_
   );
 
-  racer::TrajectoryMsg trajectory;
+  racer_msgs::Trajectory trajectory;
   trajectory.header.stamp = ros::Time::now();
   trajectory.header.frame_id = map.header.frame_id;
 
   double prev_heading_angle = initial_heading_angle;
   for (const auto& step : solution.steps) {
-    racer::TrajectoryStateMsg state;
+    racer_msgs::TrajectoryState state;
     
     state.pose.position.x = step.step.position.x;
     state.pose.position.y = step.step.position.y;

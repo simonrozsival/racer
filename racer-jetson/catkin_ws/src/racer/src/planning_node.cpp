@@ -6,8 +6,8 @@
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/Path.h"
 
-#include "racer/WaypointsMsg.h"
-#include "racer/TrajectoryMsg.h"
+#include "racer_msgs/Waypoints.h"
+#include "racer_msgs/Trajectory.h"
 
 #include "math/primitives.h"
 #include "racing/kinematic_bicycle_model.h"
@@ -17,7 +17,7 @@ std::mutex lock;
 
 nav_msgs::Odometry last_known_position;
 nav_msgs::OccupancyGrid last_known_map;
-racer::WaypointsMsg next_waypoints;
+racer_msgs::Waypoints next_waypoints;
 
 bool has_map = false;
 bool has_odom = false;
@@ -35,7 +35,7 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& position) {
   has_odom = true;
 }
 
-void waypoints_update(const racer::WaypointsMsg::ConstPtr& waypoints) {
+void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   std::lock_guard<std::mutex> guard(lock);
   next_waypoints = *waypoints;
   has_goal = true;
@@ -55,8 +55,8 @@ int main(int argc, char* argv[]) {
 
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
-  ros::Subscriber waypoints_sub = node.subscribe<racer::WaypointsMsg>(waypoints_topic, 1, waypoints_update);
-  ros::Publisher trajectory_pub = node.advertise<racer::TrajectoryMsg>(trajectory_topic, 1);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
+  ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
   
   racing::vehicle_properties vehicle(
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
       ROS_INFO("planning...");
 
       nav_msgs::Odometry odom;
-      racer::WaypointsMsg waypoints;
+      racer_msgs::Waypoints waypoints;
       nav_msgs::OccupancyGrid map;
       {
         std::lock_guard<std::mutex> guard(lock);
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
         map = last_known_map;
       }
 
-      racer::TrajectoryMsg trajectory = planner.plan(map, odom, waypoints);
+      racer_msgs::Trajectory trajectory = planner.plan(map, odom, waypoints);
       
       nav_msgs::Path path;
       path.header = trajectory.header;

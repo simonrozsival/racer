@@ -5,8 +5,8 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
-#include "racer/TrajectoryMsg.h"
-#include "racer/WaypointsMsg.h"
+#include "racer_msgs/Trajectory.h"
+#include "racer_msgs/Waypoints.h"
 
 #include "racing/kinematic_bicycle_model.h"
 #include "racing/base_vehicle_model.h"
@@ -80,8 +80,8 @@ int main(int argc, char* argv[]) {
   
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
-  ros::Subscriber trajectory_sub = node.subscribe<racer::TrajectoryMsg>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer::WaypointsMsg>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
+  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
