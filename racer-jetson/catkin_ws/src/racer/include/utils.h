@@ -8,7 +8,7 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "geometry_msgs/Pose.h"
 #include "geometry_msgs/Twist.h"
-#include "racer/TrajectoryMsg.h"
+#include "racer_msgs/Trajectory.h"
 
 #include "racing/occupancy_grid_collisions.h"
 #include "racing/kinematic_bicycle_model.h"
@@ -44,7 +44,7 @@ std::unique_ptr<racing::kinematic_model::state> msg_to_state(const nav_msgs::Odo
 }
 
 std::unique_ptr<racing::kinematic_model::trajectory> msg_to_trajectory(
-    const racer::TrajectoryMsg& msg) {
+    const racer_msgs::Trajectory& msg) {
     std::list<racing::kinematic_model::trajectory_step> steps;
     for (const auto& step : msg.trajectory) {
         steps.emplace_back(

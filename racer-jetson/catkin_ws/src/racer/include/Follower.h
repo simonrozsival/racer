@@ -3,8 +3,8 @@
 
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
-#include "racer/TrajectoryMsg.h"
-#include "racer/WaypointsMsg.h"
+#include "racer_msgs/Trajectory.h"
+#include "racer_msgs/Waypoints.h"
 
 #include "racing/dwa.h"
 #include "racing/occupancy_grid_collisions.h"
@@ -23,8 +23,8 @@ class Follower {
 
     void map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
     void state_observed(const nav_msgs::Odometry::ConstPtr& odometry);
-    void trajectory_observed(const racer::TrajectoryMsg::ConstPtr& trajectory);
-    void waypoints_observed(const racer::WaypointsMsg::ConstPtr& waypoints);
+    void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
+    void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
 
     std::unique_ptr<racing::kinematic_model::action> select_driving_command() const;
 

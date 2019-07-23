@@ -6,8 +6,8 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Odometry.h"
 #include "geometry_msgs/PoseStamped.h"
-#include "racer/TrajectoryMsg.h"
-#include "racer/WaypointsMsg.h"
+#include "racer_msgs/Trajectory.h"
+#include "racer_msgs/Waypoints.h"
 
 #include "astar/hybrid_astar.h"
 #include "racing/kinematic_bicycle_model.h"
@@ -33,10 +33,10 @@ class Planner {
     bool is_initialized() const;
     void initialize(const nav_msgs::OccupancyGrid& map);
 
-    racer::TrajectoryMsg plan(
+    racer_msgs::Trajectory plan(
       const nav_msgs::OccupancyGrid& map,
       const nav_msgs::Odometry& state,
-      const racer::WaypointsMsg& waypoints) const;
+      const racer_msgs::Waypoints& waypoints) const;
 
   private:
     const racing::vehicle_properties model_;

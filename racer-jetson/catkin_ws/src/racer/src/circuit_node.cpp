@@ -12,9 +12,9 @@
 #include "nav_msgs/OccupancyGrid.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "visualization_msgs/Marker.h"
-#include "racer/CircuitMsg.h"
-#include "racer/WaypointMsg.h"
-#include "racer/WaypointsMsg.h"
+#include "racer_msgs/Circuit.h"
+#include "racer_msgs/Waypoint.h"
+#include "racer_msgs/Waypoints.h"
 
 #include "utils.h"
 
@@ -50,7 +50,7 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   frame_id = map->header.frame_id;
 }
 
-void circuit_update(const racer::CircuitMsg::ConstPtr& circuit) {
+void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   std::cout << "got circuit definition" << std::endl;
 
   if (!position) {
@@ -141,10 +141,10 @@ int main(int argc, char* argv[]) {
   node.param<int>("lookahead", lookahead, 3);
 
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber circuit_sub = node.subscribe<racer::CircuitMsg>(circuit_topic, 1, circuit_update);
+  ros::Subscriber circuit_sub = node.subscribe<racer_msgs::Circuit>(circuit_topic, 1, circuit_update);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
 
-  ros::Publisher waypoints_pub = node.advertise<racer::WaypointsMsg>(waypoints_topic, 1, true);
+  ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1);
 
   ros::Rate rate(20);
@@ -152,14 +152,14 @@ int main(int argc, char* argv[]) {
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);
     if (waypoints && next_waypoint >= 0) {
-      racer::WaypointsMsg msg;
+      racer_msgs::Waypoints msg;
       msg.header.stamp = ros::Time::now();
       msg.header.frame_id = frame_id;
       msg.next_waypoint = next_waypoint;
 
       for (std::size_t i = 0; i < lookahead; ++i) {
         const auto& waypoint = (*waypoints)[(next_waypoint + i) % waypoints->size()];
-        racer::WaypointMsg wp;
+        racer_msgs::Waypoint wp;
         wp.position.x = waypoint.center.x;
         wp.position.y = waypoint.center.y;
         wp.radius = waypoint.radius;

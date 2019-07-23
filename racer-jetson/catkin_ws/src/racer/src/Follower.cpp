@@ -10,7 +10,7 @@ void Follower::map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   frame_id = map->header.frame_id;
 }
 
-void Follower::trajectory_observed(const racer::TrajectoryMsg::ConstPtr& trajectory) {
+void Follower::trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory) {
   reference_trajectory_ = std::move(msg_to_trajectory(*trajectory));
 }
 
@@ -36,7 +36,7 @@ void Follower::state_observed(const nav_msgs::Odometry::ConstPtr& odom) {
   last_update_ = ros::Time().now().toSec();
 }
 
-void Follower::waypoints_observed(const racer::WaypointsMsg::ConstPtr& waypoints) {
+void Follower::waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   next_waypoint_ = waypoints->next_waypoint;
 }
 
