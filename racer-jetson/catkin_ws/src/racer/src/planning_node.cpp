@@ -9,8 +9,8 @@
 #include "racer/WaypointsMsg.h"
 #include "racer/TrajectoryMsg.h"
 
-#include "racing-cpp/math/primitives.h"
-#include "racing-cpp/racing/kinematic_bicycle_model.h"
+#include "math/primitives.h"
+#include "racing/kinematic_bicycle_model.h"
 #include "Planner.h"
 
 std::mutex lock;
