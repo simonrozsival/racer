@@ -7,7 +7,7 @@
 #include "racer_msgs/Waypoints.h"
 
 #include "racing/following_strategies/dwa.h"
-#include "racing/occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 class Follower {
@@ -15,7 +15,7 @@ class Follower {
     std::string frame_id;
 
     Follower(const racing::dwa& strategy)
-      : strategy_(strategy), next_waypoint_(0), stop_(racing::kinematic_model::action(-1, 0))
+      : strategy_(strategy), next_waypoint_(0), stop_(racing::kinematic_model::action(0, 0))
     {
     }
 
