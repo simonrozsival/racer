@@ -3,10 +3,10 @@
 #include <vector>
 #include <tf/transform_datatypes.h>
 
-#include "racing-cpp/math/primitives.h"
-#include "racing-cpp/racing/circuit.h"
-#include "racing-cpp/astar/astar.h"
-#include "racing-cpp/astar/hybrid_astar.h"
+#include "math/primitives.h"
+#include "racing/circuit.h"
+#include "astar/astar.h"
+#include "astar/hybrid_astar.h"
 
 #include "utils.h"
 

@@ -9,9 +9,9 @@
 #include "racer/TrajectoryMsg.h"
 #include "racer/WaypointsMsg.h"
 
-#include "racing-cpp/astar/hybrid_astar.h"
-#include "racing-cpp/racing/kinematic_bicycle_model.h"
-#include "racing-cpp/racing/occupancy_grid_collisions.h"
+#include "astar/hybrid_astar.h"
+#include "racing/kinematic_bicycle_model.h"
+#include "racing/occupancy_grid_collisions.h"
 
 using namespace astar::hybrid_astar;
 

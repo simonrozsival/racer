@@ -3,10 +3,10 @@
 #include <vector>
 #include <mutex>
 
-#include "racing-cpp/math/primitives.h"
-#include "racing-cpp/racing/track_analysis.h"
-#include "racing-cpp/racing/occupancy_grid_collisions.h"
-#include "racing-cpp/racing/base_vehicle_model.h"
+#include "math/primitives.h"
+#include "racing/track_analysis.h"
+#include "racing/occupancy_grid_collisions.h"
+#include "racing/base_vehicle_model.h"
 
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
