@@ -6,9 +6,9 @@
 #include "racer/TrajectoryMsg.h"
 #include "racer/WaypointsMsg.h"
 
-#include "racing-cpp/racing/dwa.h"
-#include "racing-cpp/racing/occupancy_grid_collisions.h"
-#include "racing-cpp/racing/kinematic_bicycle_model.h"
+#include "racing/dwa.h"
+#include "racing/occupancy_grid_collisions.h"
+#include "racing/kinematic_bicycle_model.h"
 
 class Follower {
   public:

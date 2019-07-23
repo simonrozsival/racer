@@ -8,11 +8,11 @@
 #include "racer/TrajectoryMsg.h"
 #include "racer/WaypointsMsg.h"
 
-#include "racing-cpp/racing/kinematic_bicycle_model.h"
-#include "racing-cpp/racing/base_vehicle_model.h"
-#include "racing-cpp/racing/occupancy_grid_collisions.h"
-#include "racing-cpp/racing/dwa.h"
-#include "racing-cpp/math/euler_method_integrator.h"
+#include "racing/kinematic_bicycle_model.h"
+#include "racing/base_vehicle_model.h"
+#include "racing/occupancy_grid_collisions.h"
+#include "racing/dwa.h"
+#include "math/euler_method_integrator.h"
 #include "Follower.h"
 
 int main(int argc, char* argv[]) {
