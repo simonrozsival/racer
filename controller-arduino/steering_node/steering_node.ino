@@ -14,18 +14,6 @@
 #include <geometry_msgs/Twist.h>
 #include <Servo.h>
 
-#define DUTY_CYCLE_MS 20
-
-#define STEERING_LEFT_PWM 1000
-#define STEERING_CENTER_PWM 1500
-#define STEERING_RIGHT_PWM 2000
-
-#define THROTTLE_REVERSE_PWM 1000
-#define THROTTLE_NONE_PWM 1500
-#define THROTTLE_FULL_PWM 2000
-
-#define PWM_OFF_CENTER_TOLERANCE 100
-
 #include "./utils.h"
 #include "./driving_logic.h"
 
@@ -63,18 +51,18 @@ void loop() {
 
   servo_steering.writeMicroseconds(steering_pwm);
 
-  if (!reverse && throttle_pwm < THROTTLE_NONE_PWM) {
+  if (!reverse && throttle_pwm < THROTTLE_NONE_PWM - PWM_OFF_CENTER_TOLERANCE) {
     // switching into reverse is a bit more complicated than just setting PWM between THROTTLE_REVERSE_PWM and THROTTLE_NONE_PWM
     // the PWM has to be set to THROTTLE_REVERSE_PWM for a while, then return back to THROTTLE_NONE_PWM and then go to the `autonomous_throttle` value
     // this will dealy the algorithm a bit and it will 
     servo_throttle.writeMicroseconds(THROTTLE_REVERSE_PWM);
-    delay(2 * DUTY_CYCLE_MS);
+    delay(1 * DUTY_CYCLE_MS);
     servo_throttle.writeMicroseconds(THROTTLE_NONE_PWM);
-    delay(2 * DUTY_CYCLE_MS);
+    delay(3 * DUTY_CYCLE_MS); // 3 was the minimum constant which worked for me
   }
 
   servo_throttle.writeMicroseconds(throttle_pwm);
-  reverse = autonomous_throttle < THROTTLE_FULL_PWM;
+  reverse = throttle_pwm < THROTTLE_NONE_PWM - PWM_OFF_CENTER_TOLERANCE;
 
   if (!autonomous_mode) {
     // translate the RC controller inputs into steering commands
