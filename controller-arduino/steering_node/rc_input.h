@@ -54,6 +54,9 @@ void attach_rc_input_interrupts() {
   rc_input_state[STEERING] = digitalRead(pins[STEERING]);
   rc_input_state[THROTTLE] = digitalRead(pins[THROTTLE]);
 
+  rc_input[STEERING] = STEERING_CENTER_PWM;
+  rc_input[THROTTLE] = THROTTLE_NONE_PWM;
+
   attachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_STEERING), rc_input_steering_changed, CHANGE);
   attachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_THROTTLE), rc_input_throttle_changed, CHANGE);
 }
