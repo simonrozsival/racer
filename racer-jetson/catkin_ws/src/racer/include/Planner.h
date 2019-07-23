@@ -12,7 +12,7 @@
 #include "astar/hybrid_astar.h"
 #include "racing/vehicle_model/vehicle.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "racing/occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 
 using namespace astar::hybrid_astar;
 

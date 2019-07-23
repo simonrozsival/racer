@@ -10,7 +10,7 @@
 #include "geometry_msgs/Twist.h"
 #include "racer_msgs/Trajectory.h"
 
-#include "racing/occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 std::unique_ptr<racing::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid& map) {  

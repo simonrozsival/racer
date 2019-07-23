@@ -5,7 +5,7 @@
 
 #include "math/primitives.h"
 #include "racing/track_analysis.h"
-#include "racing/occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
 
 #include "nav_msgs/Odometry.h"

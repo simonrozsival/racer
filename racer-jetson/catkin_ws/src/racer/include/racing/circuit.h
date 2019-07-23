@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "./occupancy_grid_collisions.h"
+#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 
 namespace racing {
 
