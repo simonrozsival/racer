@@ -34,7 +34,7 @@ class Planner {
     bool is_initialized() const;
     void initialize(const nav_msgs::OccupancyGrid& map);
 
-    racer_msgs::Trajectory plan(
+    std::unique_ptr<racer_msgs::Trajectory> plan(
       const nav_msgs::OccupancyGrid& map,
       const nav_msgs::Odometry& state,
       const racer_msgs::Waypoints& waypoints) const;

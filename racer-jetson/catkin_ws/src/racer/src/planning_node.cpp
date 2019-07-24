@@ -99,20 +99,25 @@ int main(int argc, char* argv[]) {
         map = last_known_map;
       }
 
-      racer_msgs::Trajectory trajectory = planner.plan(map, odom, waypoints);
+      const auto trajectory = planner.plan(map, odom, waypoints);
       
+      if (!trajectory) {
+        ROS_INFO("no plan found, sticking to old plan");
+        continue;
+      }
+
       nav_msgs::Path path;
-      path.header = trajectory.header;
-      for (const auto& step : trajectory.trajectory) {
+      path.header = trajectory->header;
+      for (const auto& step : trajectory->trajectory) {
         geometry_msgs::PoseStamped path_pose;
-        path_pose.header = trajectory.header;
+        path_pose.header = trajectory->header;
         path_pose.pose = step.pose;
 
         path.poses.push_back(path_pose);
       }
       
-      ROS_INFO("publishing plan");
-      trajectory_pub.publish(trajectory);
+      ROS_INFO("publishing new plan");
+      trajectory_pub.publish(*trajectory);
       path_pub.publish(path);
     }
 

@@ -20,7 +20,7 @@ void Planner::initialize(const nav_msgs::OccupancyGrid& map) {
   collision_detector_ = std::move(racing::collision_detector::precalculate(18, model_, map.info.resolution));
 }
 
-racer_msgs::Trajectory Planner::plan(
+std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
   const nav_msgs::OccupancyGrid& map,
   const nav_msgs::Odometry& odom,
   const racer_msgs::Waypoints& waypoints) const {
@@ -61,9 +61,13 @@ racer_msgs::Trajectory Planner::plan(
     maximum_number_of_expanded_nodes_
   );
 
-  racer_msgs::Trajectory trajectory;
-  trajectory.header.stamp = ros::Time::now();
-  trajectory.header.frame_id = map.header.frame_id;
+  if (solution.empty()) {
+    return nullptr;
+  }
+
+  auto trajectory = std::make_unique<racer_msgs::Trajectory>();
+  trajectory->header.stamp = ros::Time::now();
+  trajectory->header.frame_id = map.header.frame_id;
 
   double prev_heading_angle = initial_heading_angle;
   for (const auto& step : solution.steps) {
@@ -80,7 +84,7 @@ racer_msgs::Trajectory Planner::plan(
 
     state.velocity.angular.z = (prev_heading_angle - step.step.position.heading_angle) / time_step_s_;
     
-    trajectory.trajectory.push_back(state);
+    trajectory->trajectory.push_back(state);
 
     prev_heading_angle = step.step.position.heading_angle;
   }
