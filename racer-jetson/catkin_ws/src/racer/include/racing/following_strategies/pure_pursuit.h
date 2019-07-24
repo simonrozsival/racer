@@ -19,21 +19,20 @@ namespace racing {
     double select_steering_angle(const kinematic_model::state& current_state, int passed_waypoints, const kinematic_model::trajectory& trajectory) const {
       auto sub_trajectory = trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
 
-      if (sub_trajectory.steps.size() == 0) {
+      if (!sub_trajectory || sub_trajectory->steps.size() == 0) {
         return 0.0;
       }
 
       const double lookahead = std::min(min_lookahead_, current_state.speed * lookahead_coef_);
       const double lookahead_sq = lookahead * lookahead;
 
-      auto reference_step = sub_trajectory.steps.begin();
-      while (reference_step != sub_trajectory.steps.end() && (reference_step.step.position.location() - current_state.position.location()).length_sq() < lookahead_sq)
-      {
+      auto reference_step = sub_trajectory->steps.begin();
+      while (reference_step != sub_trajectory->steps.end() && (reference_step->step.position.location() - current_state.position.location()).length_sq() < lookahead_sq) {
         ++reference_step;
       }
 
-      auto reference = reference_step == sub_trajectory.steps.end()
-        ? sub_trajectory.steps.back().position
+      const auto reference = reference_step == sub_trajectory->steps.end()
+        ? sub_trajectory->steps.back().step.position
         : reference_step->step.position;
 
       auto diff = reference.location() - current_state.position.location();

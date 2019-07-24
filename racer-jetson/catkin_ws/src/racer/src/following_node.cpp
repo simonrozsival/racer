@@ -48,34 +48,63 @@ int main(int argc, char* argv[]) {
     acceleration // acceleration (ms^-2)
   );
 
-  const auto actions = racing::kinematic_model::action::create_actions(5, 15);
-  const auto detector = racing::collision_detector::precalculate(120, vehicle, cell_size);
-  
-  const racing::trajectory_error_calculator error_calculator(
-    30.0, // position weight
-    20.0, // heading weight
-    10.0, // velocity weight
-    1.0,
-    5.0, // distance to obstacle weight
-    vehicle.radius() * 5
-  );
+  std::string strategy;
+  node.param<std::string>("strategy", strategy, "dwa");
+  std::unique_ptr<following_strategy> following_strategy;
 
-  const double integration_step_s = 1.0 / 20.0;
-  const double prediction_horizon_s = 0.5;
+  if (strategy == "dwa") {
+    const auto actions = racing::kinematic_model::action::create_actions(5, 15);
+    const auto detector = racing::collision_detector::precalculate(120, vehicle, cell_size);
+    
+    double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
+    node.param<double>("position_weight", position_weight, 30.0);
+    node.param<double>("heading_weight", heading_weight, 20.0);
+    node.param<double>("velocity_weight", velocity_weight, 10.0);
+    node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  racing::kinematic_model::model model(std::make_unique<math::euler_method>(integration_step_s), vehicle);
+    const racing::trajectory_error_calculator error_calculator(
+      position_weight,
+      heading_weight,
+      velocity_weight,
+      1.0,
+      distance_to_obstacle_weight,
+      vehicle.radius() * 5
+    );
 
-  const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
+    double integration_step_s, prediction_horizon_s;
+    node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
+    node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  racing::dwa strategy(
-    lookahead,
-    actions,
-    model,
-    *detector,
-    error_calculator
-  );
+    racing::kinematic_model::model model(std::make_unique<math::euler_method>(integration_step_s), vehicle);
 
-  Follower follower(strategy);
+    const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
+
+    following_strategy = std::make_unique<racing::dwa>(
+      lookahead,
+      actions,
+      model,
+      *detector,
+      error_calculator
+    );
+  } else if (strategy == "geometric") {
+    double kp, ki, kd;
+    node.param<double>("pid_speed_kp", kp, 1.0);
+    node.param<double>("pid_speed_ki", ki, 0.0);
+    node.param<double>("pid_speed_kd", kd, 1.0);
+    node.param<double>("pid_speed_error_tolerance", error_tolerance, 0.5);
+    auto pid = std::make_unique<racing::pid>(kp, ki, kd);
+
+    double min_lookahead, lookahead_coef;
+    node.param<double>("min_lookahead", min_lookahead, vehicle.wheelbase * 5.0);
+    node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0)
+    auto pure_pursuit = std::make_unique<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
+
+    following_strategy = std::make_unique<racing::geometric_following_strategy>(std::move(pid), std::move(pure_pursuit));
+  } else {
+    throw std::invalid_argument("Unsupported following strategy.");
+  }
+
+  Follower follower(following_strategy);
   
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
@@ -85,14 +114,17 @@ int main(int argc, char* argv[]) {
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
 
-  ros::Rate rate(12); // Hz
+  int frequency; // Hz
+  node.param<int>("update_frequency_hz", frequency, 12);
+
+  ros::Rate rate(frequency);
 
   while (ros::ok()) {
     if (follower.is_initialized()) {
       auto action = follower.select_driving_command();
 
       if (!action) {
-        action = std::make_unique<racing::kinematic_model::action>(-1, 0); // stop!
+        action = follower.stop();
       }
 
       geometry_msgs::Twist msg;
