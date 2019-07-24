@@ -82,9 +82,13 @@ namespace racing {
                 return std::make_unique<trajectory>(sublist);
             }
 
+            bool empty() const {
+                return steps.empty();
+            }
+
         private:
             std::list<trajectory_step>::const_iterator find_reference_state(const state& state, const std::size_t passed_waypoints) const {
-                if (steps.size() == 0) {
+                if (steps.empty()) {
                     return steps.end();
                 }
 

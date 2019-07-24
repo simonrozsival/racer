@@ -1,4 +1,6 @@
 #include "Follower.h"
+
+#include <cstdlib>
 #include "utils.h"
 
 bool Follower::is_initialized() const {
@@ -42,9 +44,18 @@ void Follower::waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoin
 
 std::unique_ptr<racing::kinematic_model::action> Follower::select_driving_command() const {
   if (reference_trajectory_ && reference_trajectory_->steps.size() > 0) {
-    return strategy_.select_action(*last_known_state_, next_waypoint_, *reference_trajectory_, *grid_);
+    return strategy_->select_action(*last_known_state_, next_waypoint_, *reference_trajectory_, *grid_);
   } else {
     return std::make_unique<racing::kinematic_model::action>(stop_);
   }
 }
 
+std::unique_ptr<racing::kinematic_model::action> Follower::stop() const {
+  bool is_moving = std::abs(last_known_state_->speed) > 0.2;
+  if (is_moving) {
+    double braking_direction = last_known_state_->speed < 0 ? 1.0 : -1.0;
+    return std::make_unique<racing::kinematic_model::action>(braking_direction, 0.0);
+  } else {
+    return std::make_unique<racing::kinematic_model::action>(stop_);
+  }
+}

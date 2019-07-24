@@ -1,12 +1,14 @@
 #ifndef AGENT_H_
 #define AGENT_H_
 
+#include <iostream>
+
 #include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racing/following_strategies/dwa.h"
+#include "racing/following_strategies/following_strategy.h"
 #include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
@@ -14,8 +16,8 @@ class Follower {
   public:
     std::string frame_id;
 
-    Follower(const racing::dwa& strategy)
-      : strategy_(strategy), next_waypoint_(0), stop_(racing::kinematic_model::action(0, 0))
+    Follower(std::unique_ptr<racing::following_strategy> strategy)
+      : strategy_(std::move(strategy)), next_waypoint_(0), stop_(racing::kinematic_model::action(0, 0))
     {
     }
 
@@ -27,13 +29,14 @@ class Follower {
     void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
 
     std::unique_ptr<racing::kinematic_model::action> select_driving_command() const;
+    std::unique_ptr<racing::kinematic_model::action> stop() const;
 
     racing::kinematic_model::state last_known_state() const {
       return *last_known_state_;
     }
 
   private:
-    const racing::dwa& strategy_;
+    const std::unique_ptr<racing::following_strategy> strategy_;
     const racing::kinematic_model::action stop_;
     int next_waypoint_;
 

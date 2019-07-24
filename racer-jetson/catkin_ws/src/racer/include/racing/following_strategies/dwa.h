@@ -6,6 +6,8 @@
 #include "racing/circuit.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
+#include "./following_strategy.h"
+
 using namespace racing::kinematic_model;
 
 namespace racing {
@@ -82,7 +84,7 @@ namespace racing {
         }
     };
 
-    class dwa {
+    class dwa : public following_strategy {
     public:
         dwa(
             int steps,
@@ -102,7 +104,7 @@ namespace racing {
             const state& current_state,
             const std::size_t passed_waypoints,
             const trajectory& reference_trajectory,
-            const racing::occupancy_grid& grid) const {
+            const racing::occupancy_grid& grid) const override {
 
             const auto& reference_subtrajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
             if (reference_subtrajectory == nullptr) {
@@ -125,6 +127,8 @@ namespace racing {
 
             return std::move(best_so_far);
         }
+
+        void reset() override { }
 
     private:
         const int steps_;
