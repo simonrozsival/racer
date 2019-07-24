@@ -28,7 +28,7 @@ void Follower::state_observed(const nav_msgs::Odometry::ConstPtr& odom) {
 
   auto distance = (state->position.location() - last_known_state_->position.location()).length();
   auto time = last_update_ - ros::Time().now().toSec();
-  auto speed = time == 0 ? distance / time : 0;
+  auto speed = time != 0 ? distance / time : 0;
 
   last_known_state_ = std::make_unique<racing::kinematic_model::state>(
     state->position,
