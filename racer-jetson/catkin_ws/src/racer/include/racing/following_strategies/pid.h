@@ -27,6 +27,13 @@ namespace racing {
             return kp_ * error + ki_ * accumulated_error_ + kd_ * error_derivative;
         }
 
+        void reconfigure(double kp, double ki, double kd, double error_tolerance) {
+            kp_ = kp;
+            ki_ = ki;
+            kd_ = kd;
+            error_tolerance_ = error_tolerance;
+        }
+
         double reset() {
             last_error_ = 0;
             accumulated_error_ = 0;
