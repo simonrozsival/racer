@@ -5,6 +5,9 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+
+#include <racer/PIDConfig.h>
+
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
@@ -12,8 +15,16 @@
 #include "racing/vehicle_model/base_vehicle_model.h"
 #include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/following_strategies/dwa.h"
+#include "racing/following_strategies/geometric_following_strategy.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"
+
+std::shared_ptr<racing::pid> pid;
+
+void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
+  if (!pid) return;
+  pid->reconfigure(config.kp, config.ki, config.kd, config.error_tolerance);
+}
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "following_node");
@@ -50,7 +61,15 @@ int main(int argc, char* argv[]) {
 
   std::string strategy;
   node.param<std::string>("strategy", strategy, "dwa");
-  std::unique_ptr<following_strategy> following_strategy;
+  std::unique_ptr<racing::following_strategy> following_strategy;
+
+  double integration_step_s, prediction_horizon_s;
+  node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
+  node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
+
+  racing::kinematic_model::model model(std::make_unique<math::euler_method>(integration_step_s), vehicle);
+
+  const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
   if (strategy == "dwa") {
     const auto actions = racing::kinematic_model::action::create_actions(5, 15);
@@ -71,14 +90,6 @@ int main(int argc, char* argv[]) {
       vehicle.radius() * 5
     );
 
-    double integration_step_s, prediction_horizon_s;
-    node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
-    node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
-
-    racing::kinematic_model::model model(std::make_unique<math::euler_method>(integration_step_s), vehicle);
-
-    const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
-
     following_strategy = std::make_unique<racing::dwa>(
       lookahead,
       actions,
@@ -87,24 +98,24 @@ int main(int argc, char* argv[]) {
       error_calculator
     );
   } else if (strategy == "geometric") {
-    double kp, ki, kd;
+    double kp, ki, kd, error_tolerance;
     node.param<double>("pid_speed_kp", kp, 1.0);
     node.param<double>("pid_speed_ki", ki, 0.0);
     node.param<double>("pid_speed_kd", kd, 1.0);
     node.param<double>("pid_speed_error_tolerance", error_tolerance, 0.5);
-    auto pid = std::make_unique<racing::pid>(kp, ki, kd);
+    pid = std::make_shared<racing::pid>(kp, ki, kd, error_tolerance);
 
     double min_lookahead, lookahead_coef;
     node.param<double>("min_lookahead", min_lookahead, vehicle.wheelbase * 5.0);
-    node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0)
-    auto pure_pursuit = std::make_unique<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
+    node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
+    auto pure_pursuit = std::make_shared<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
 
-    following_strategy = std::make_unique<racing::geometric_following_strategy>(std::move(pid), std::move(pure_pursuit));
+    following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
   } else {
     throw std::invalid_argument("Unsupported following strategy.");
   }
 
-  Follower follower(following_strategy);
+  Follower follower(std::move(following_strategy));
   
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
