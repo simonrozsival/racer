@@ -7,5 +7,7 @@
 
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen" />
     <node pkg="racer" name="planning" type="planning_node" output="screen" />
-    <node pkg="racer" name="following" type="following_node" output="screen" />
+    <node pkg="racer" name="following" type="following_node" output="screen">
+        <param name="strategy" value="geometric" />
+    </node>
 </launch>

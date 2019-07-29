@@ -5,7 +5,7 @@
     <param name="baudrate" type="int" value="115200" />
     <param name="frame_id" type="string" value="laser_frame" />
     <param name="range_min" type="double" value="0.15" />
-    <param name="range_max" type="double" value="16" />
+    <param name="range_max" type="double" value="6" />
   </node>
   
 </launch>
