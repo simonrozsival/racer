@@ -13,7 +13,7 @@
   <include file="$(find racer)/launch/arduinos.launch" />
 
   <node pkg="tf" type="static_transform_publisher" name="odom_2_map" args="0 0 0 0 0 0 odom map 20" />
-  <node pkg="tf" type="static_transform_publisher" name="base_link_2_laser_frame" args="0.125 0 0.135 0 0 0 laser_frame base_link 20" />
+  <node pkg="tf" type="static_transform_publisher" name="base_link_2_laser_frame" args="0.125 0 0.135 0 0 0 base_link laser_frame 20" />
 
   <node pkg="odometry_node" type="node" name="odometry" />
 
@@ -21,7 +21,7 @@
     <param name="scan_topic" value="/scan" />
     <param name="odometry_topic" value="/racer/odometry" />
 
-    <param name="angle_step" value="10" />
+    <param name="angle_step" value="5" />
     <param name="max_particles" value="5000" />
     <param name="max_viz_particles" value="60" />
 
@@ -29,7 +29,7 @@
     <param name="squash_factor" value="2.2" />
     <param name="theta_discretization" value="90" />
 
-    <param name="max_range" value="12" />
+    <param name="max_range" value="6" />
     <param name="viz" value="1" />
     <param name="fine_timing" value="0" />
     <param name="publish_odom" value="1" />
