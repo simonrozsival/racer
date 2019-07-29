@@ -6,6 +6,7 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
 
+#include <dynamic_reconfigure/server.h>
 #include <racer/PIDConfig.h>
 
 #include "racer_msgs/Trajectory.h"
@@ -72,6 +73,7 @@ int main(int argc, char* argv[]) {
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
   if (strategy == "dwa") {
+    std::cout << "DWA strategy" << std::endl;
     const auto actions = racing::kinematic_model::action::create_actions(5, 15);
     const auto detector = racing::collision_detector::precalculate(120, vehicle, cell_size);
     
@@ -98,6 +100,7 @@ int main(int argc, char* argv[]) {
       error_calculator
     );
   } else if (strategy == "geometric") {
+    std::cout << "Geometric strategy" << std::endl;
     double kp, ki, kd, error_tolerance;
     node.param<double>("pid_speed_kp", kp, 1.0);
     node.param<double>("pid_speed_ki", ki, 0.0);
@@ -110,6 +113,11 @@ int main(int argc, char* argv[]) {
     node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
     auto pure_pursuit = std::make_shared<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
 
+    dynamic_reconfigure::Server<racer::PIDConfig> server;
+    dynamic_reconfigure::Server<racer::PIDConfig>::CallbackType f;  
+    f = boost::bind(&pid_config_callback, _1, _2);
+    server.setCallback(f);
+  
     following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
   } else {
     throw std::invalid_argument("Unsupported following strategy.");
