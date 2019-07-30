@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   racer_msgs
   visualization_msgs
   dynamic_reconfigure
+  costmap_2d
 )
 
 ## System dependencies are found with CMake's conventions

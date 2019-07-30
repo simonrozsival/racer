@@ -32,11 +32,11 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle node;
 
   double cell_size;
-  std::string odometry_topic, trajectory_topic, waypoints_topic, map_topic, driving_topic, visualization_topic;
+  std::string odometry_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
 
   node.param<double>("double", cell_size, 0.05);
 
-  node.param<std::string>("map_topic", map_topic, "/map");
+  node.param<std::string>("costmap_topic", costmap_topic, "/costmap");
   node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
 
   Follower follower(std::move(following_strategy));
   
-  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
+  ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
