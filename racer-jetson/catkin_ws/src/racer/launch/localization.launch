@@ -6,9 +6,9 @@
   <include file="$(find racer)/launch/ydlidar.launch" />
   <include file="$(find racer)/launch/arduinos.launch" />
 
-  <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.135 0 0 0 laser base_link 20" />
+  <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.135 0 0 0 base_link laser 20" />
 
-  <node pkg="odometry_node" type="node" name="odometry" />
+  <node pkg="odometry_node" type="node" name="odometry" output="screen"/>
 
   <node pkg="particle_filter" type="particle_filter.py" name="particle_filter_localization">
     <param name="scan_topic" value="/scan" />
@@ -37,6 +37,9 @@
     <param name="motion_dispersion_theta" value="0.25" /> 
 
 		<param name="rangelib_variant" value="2" /> 
- </node>
-
+  </node>
+  
+  <node pkg="particle_filter_tf_correction" type="fix_tf.py" name="fix_tf" output="screen">
+    <param name="pose_topic" value="/pf/pose/odom" />
+  </node>
 </launch>
