@@ -3,6 +3,8 @@
 
 #include <iostream>
 
+#include <costmap_2d/cost_values.h>
+
 #include "racing/circuit.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
@@ -104,7 +106,7 @@ namespace racing {
             const state& current_state,
             const std::size_t passed_waypoints,
             const trajectory& reference_trajectory,
-            const racing::occupancy_grid& grid) const override {
+            const racing::occupancy_grid& costmap) const override {
 
             const auto& reference_subtrajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
             if (reference_subtrajectory == nullptr) {
@@ -115,9 +117,9 @@ namespace racing {
             double best_score = 1000000000000000000.0;
 
             for (const auto& next_action : available_actions_) {
-                const auto trajectory = unfold(current_state, next_action, grid);
+                const auto trajectory = unfold(current_state, next_action, costmap);
                 if (trajectory) {
-                    const double trajectory_score = trajectory_error_calculator_.score(trajectory, reference_subtrajectory, grid);
+                    const double trajectory_score = trajectory_error_calculator_.score(trajectory, reference_subtrajectory, costmap);
                     if (trajectory_score < best_score) {
                         best_score = trajectory_score;
                         best_so_far = std::make_unique<action>(next_action);
@@ -150,7 +152,9 @@ namespace racing {
             for (int i = 0; i < steps_; ++i) {
                 current = std::move(model_.predict(*current, action));
 
-                if (collision_detector_.collides(current->position, grid)) {
+                // the costmap is inflated and there is a collision if the center of gravity
+                // is in the "deadly" zone
+                if (grid.value_at(current->position.x, current->position.y) == costmap_2d::LETHAL_OBSTACLE) {
                     return nullptr;
                 }
 

@@ -1,0 +1,5 @@
+<launch>
+  <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
+    <rosparam file="$(find racer)/launch/costmap.yaml" command="load" ns="" />
+  </node>
+</launch>
