@@ -1,0 +1,10 @@
+publish_frequency: 1.0
+always_send_full_costmap: true
+footprint:
+  - [-0.15, -0.25]
+  - [0.15, -0.25]
+  - [-0.15, 0.25]
+  - [0.15, 0.25]
+plugins:
+  - { name: static_map, type: "costmap_2d::StaticLayer" }
+

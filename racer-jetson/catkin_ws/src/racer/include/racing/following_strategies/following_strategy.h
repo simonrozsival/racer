@@ -16,7 +16,7 @@ namespace racing {
             const state& current_state,
             const std::size_t passed_waypoints,
             const trajectory& reference_trajectory,
-            const racing::occupancy_grid& grid) const = 0;
+            const racing::occupancy_grid& costmap) const = 0;
 
         virtual void reset() = 0;
     };

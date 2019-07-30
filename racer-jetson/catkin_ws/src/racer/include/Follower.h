@@ -23,7 +23,7 @@ class Follower {
 
     bool is_initialized() const;
 
-    void map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
+    void costmap_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
     void state_observed(const nav_msgs::Odometry::ConstPtr& odometry);
     void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
     void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
@@ -41,7 +41,7 @@ class Follower {
     int next_waypoint_;
 
     double last_update_;
-    std::unique_ptr<racing::occupancy_grid> grid_;
+    std::unique_ptr<racing::occupancy_grid> costmap_;
     std::unique_ptr<racing::kinematic_model::state> last_known_state_;
     std::unique_ptr<racing::kinematic_model::trajectory> reference_trajectory_;
 };

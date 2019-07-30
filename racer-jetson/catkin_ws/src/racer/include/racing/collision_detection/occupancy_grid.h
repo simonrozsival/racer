@@ -51,6 +51,15 @@ namespace racing {
             return index < 0 || index >= size_ || data_[index] > 0;
         }
 
+        signed char value_at(double x, double y) const {
+            int x_cell = int((x - origin_.x) / cell_size);
+            int y_cell = int((y - origin_.y) / cell_size);
+            const int index = index_of(x_cell, y_cell);
+            return index < 0 || index >= size_
+                ? 255 // no information
+                : data_[index];
+        }
+
         double distance_to_closest_obstacle(const math::point& center, double max_radius) const {
             int x = int((center.x - origin_.x) / cell_size);
             int y = int((center.y - origin_.y) / cell_size);
