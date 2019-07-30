@@ -2,18 +2,11 @@
 
   <arg name="map" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(find racer)/maps/$(arg map).yaml" />
-
-  <!--node pkg="bno055_usb_stick" type="bno055_usb_stick_node" name="imu_node" output="screen">
-    <param name="port" type="string" value="/dev/imu" />
-    <param name="publish_tf" type="bool" value="true" />
-    <param name="frame_id" type="string" value="imu_frame" />
-  </node-->
   
   <include file="$(find racer)/launch/ydlidar.launch" />
   <include file="$(find racer)/launch/arduinos.launch" />
 
-  <node pkg="tf" type="static_transform_publisher" name="odom_2_map" args="0 0 0 0 0 0 odom map 20" />
-  <node pkg="tf" type="static_transform_publisher" name="base_link_2_laser_frame" args="0.125 0 0.135 0 0 0 base_link laser_frame 20" />
+  <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.135 0 0 0 laser base_link 20" />
 
   <node pkg="odometry_node" type="node" name="odometry" />
 
@@ -22,14 +15,14 @@
     <param name="odometry_topic" value="/racer/odometry" />
 
     <param name="angle_step" value="5" />
-    <param name="max_particles" value="5000" />
-    <param name="max_viz_particles" value="60" />
+    <param name="max_particles" value="3000" />
+    <param name="max_viz_particles" value="20" />
 
     <param name="range_method" value="rmgpu" />
-    <param name="squash_factor" value="2.2" />
+    <param name="squash_factor" value="2.0" />
     <param name="theta_discretization" value="90" />
 
-    <param name="max_range" value="6" />
+    <param name="max_range" value="10" />
     <param name="viz" value="1" />
     <param name="fine_timing" value="0" />
     <param name="publish_odom" value="1" />
@@ -46,5 +39,4 @@
 		<param name="rangelib_variant" value="2" /> 
  </node>
 
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer)/rviz/localization.rviz" />
 </launch>
