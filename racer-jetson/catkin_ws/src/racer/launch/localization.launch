@@ -2,7 +2,30 @@
 
   <arg name="map" />
   <node name="map_server" pkg="map_server" type="map_server" args="$(find racer)/maps/$(arg map).yaml" />
-  
+
+  <!-- we assume that the origin of the map [0, 0], direction 0rad, is the starting position of the racecar -->
+  <node pkg="rostopic" type="rostopic" name="rostopic" args="pub initialpose geometry_msgs/PoseWithCovarianceStamped '
+  {
+    header: {
+      frame_id: map
+    }, 
+    pose: {
+      pose: {
+        position: {
+          x: 0.0, 
+          y: 0.0, 
+          z: 0.0
+        }, 
+        orientation: {
+          x: 0.0, 
+          y: 0.0,
+          z: 0.0,
+          w: 1.0
+        }
+      }
+    }
+  }'" />  
+
   <include file="$(find racer)/launch/ydlidar.launch" />
   <include file="$(find racer)/launch/arduinos.launch" />
 
