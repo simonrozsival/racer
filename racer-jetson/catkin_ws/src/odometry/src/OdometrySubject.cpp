@@ -18,7 +18,8 @@ OdometrySubject::OdometrySubject(
       odometry_topic_(odometry_topic),
       total_distance_(-1),
       total_distance_last_time_(-1),
-      steering_angle_(0)
+      steering_angle_(0),
+      direction_(1)
 {
     last_update_time_ = ros::Time::now().toSec();
 
@@ -33,7 +34,8 @@ OdometrySubject::OdometrySubject(
 
 void OdometrySubject::process_steering_command(const geometry_msgs::Twist::ConstPtr &msg)
 {
-    steering_angle_ = vehicle_model_.max_steering_angle * -msg->angular.z;    
+    steering_angle_ = vehicle_model_.max_steering_angle * -msg->angular.z;
+    direction_ = msg->linear.x >= 0.0 : 1.0 : -1.0;    
 }
 
 void OdometrySubject::process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg)
@@ -54,7 +56,7 @@ void OdometrySubject::publish_odometry()
     double current_time = ros::Time::now().toSec();
     double elapsed_time = current_time - last_update_time_;
 
-    double step = total_distance_ - total_distance_last_time_;
+    double step = direction_ * (total_distance_ - total_distance_last_time_);
 
     vehicle_model_.update_state(state_, step, steering_angle_, elapsed_time);
     publish_state_estimate(state_);

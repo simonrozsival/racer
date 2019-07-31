@@ -32,6 +32,7 @@ class OdometrySubject {
         double total_distance_;
         double steering_angle_;
         double last_update_time_;
+        double direction_;
 
         std::mutex lock_;
 
