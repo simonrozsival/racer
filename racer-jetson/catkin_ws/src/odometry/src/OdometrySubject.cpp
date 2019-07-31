@@ -35,7 +35,7 @@ OdometrySubject::OdometrySubject(
 void OdometrySubject::process_steering_command(const geometry_msgs::Twist::ConstPtr &msg)
 {
     steering_angle_ = vehicle_model_.max_steering_angle * -msg->angular.z;
-    direction_ = msg->linear.x >= 0.0 : 1.0 : -1.0;    
+    direction_ = msg->linear.x >= 0.0 ? 1.0 : -1.0;
 }
 
 void OdometrySubject::process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg)
