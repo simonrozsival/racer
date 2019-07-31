@@ -35,7 +35,7 @@ namespace racing {
         double score(
             const std::unique_ptr<std::list<state>>& attempt,
             const std::unique_ptr<trajectory>& reference,
-            const occupancy_grid& grid) const {
+            const occupancy_grid& costmap) const {
 
             double score = 0;
 
@@ -49,7 +49,7 @@ namespace racing {
                 double error = position_error_weight_ * position_error(*first_it, second_it->step)
                     + heading_error_weight_ * heading_error(*first_it, second_it->step)
                     + velocity_error_weight_ * velocity_error(*first_it, second_it->step)
-                    + distance_to_obstacles_weight_ * distance_to_obstacles(*first_it, grid);
+                    + distance_to_obstacles_weight_ * distance_to_obstacles(*first_it, costmap);
 
                 double weight = pow(double(steps - step++) / double(steps), 2);
 
@@ -82,7 +82,7 @@ namespace racing {
         }
 
         double distance_to_obstacles(const state& a, const occupancy_grid& grid) const {
-            return std::min(1.0, (max_position_error_ - grid.distance_to_closest_obstacle(a.position.location(), max_position_error_)) / max_position_error_);
+            return (255.0 - grid.value_at(a.position.location().x, a.position.location().x)) / 255.0;
         }
     };
 
