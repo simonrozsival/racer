@@ -126,22 +126,15 @@ namespace racing {
 
         public:
             std::unique_ptr<state> predict(const state& current, const action& input) const override {
-                std::cout << "action: [t:"<<input.throttle<<","<<input.target_steering_angle<<"]" << std::endl;
-                std::cout << "state: ["<<current.position.x<<","<<current.position.y<<","<<current.position.heading_angle<<","<<current.speed<<","<<current.steering_angle<<"]" << std::endl;
-                std::cout << "calculate_speed" << std::endl;
                 double speed = calculate_speed(current, input);
-                std::cout << "calculate_steering_angle" << std::endl;
                 double steering_angle = calculate_steering_angle(current, input);
-                std::cout << "slip angle" << std::endl;
                 math::angle slip_angle = atan((vehicle_.distance_of_center_of_gravity_to_rear_axle / vehicle_.wheelbase) * tan(math::angle(steering_angle)));
 
-                std::cout << "position_derivative" << std::endl;
                 vehicle_position position_derivative(
                     speed * cos(current.position.heading_angle + slip_angle),
                     speed * sin(current.position.heading_angle + slip_angle),
                     speed * cos(slip_angle) * tan(math::angle(steering_angle)) / vehicle_.wheelbase);
 
-                std::cout << "integrate" << std::endl;
                 return std::make_unique<state>(current.position + position_derivative.integrate(integrator_), speed, steering_angle);
             }
 
