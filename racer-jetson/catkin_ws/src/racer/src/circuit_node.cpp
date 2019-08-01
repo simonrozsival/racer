@@ -62,7 +62,7 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
     throw std::runtime_error("Map must be published before the circuit definition.");
   }
 
-  std::cout << "analyzing the circuit..." << std::endl;
+  std::cout << "Analyzing the circuit..." << std::endl;
 
   racing::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
@@ -79,7 +79,6 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   std::vector<math::circle> initial_definition;
   for (const auto c : check_points) {
     initial_definition.push_back(math::circle(c, 0.1));
-    std::cout << "initial definition: ([" << c.x << ", " << c.y << "], r=0.1m)" << std::endl;
   }
 
   std::cout << "start track analysis/space exploration" << std::endl;
@@ -92,8 +91,6 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
     return;
   }
 
-  std::cout << "found " << apexes.size() << " apexes" << std::endl;
-
   std::lock_guard<std::mutex> guard(analysis_lock);
   std::vector<math::circle> wps;
   for (const auto& apex : apexes) {
@@ -103,7 +100,8 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   waypoints = std::make_unique<std::vector<math::circle>>(wps);
   next_waypoint = 0;
 
-  std::cout << "analysis completed. number of waypoints: " << waypoints->size() << std::endl;
+  std::cout << "Track analysis is completed. Number of discovered waypoints: " << waypoints->size() << std::endl;
+  std::cout << "Next waypoint: " << next_waypoint << std::endl;
 }
 
 void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
@@ -118,7 +116,7 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
 
   if ((*waypoints)[next_waypoint].contains(position->location())) {
     std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint + 1 << std::endl;
-    next_waypoint += 1;
+    next_waypoint = (next_waypoint + 1) % waypoints->size();
   }
 }
 
@@ -148,7 +146,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1);
 
-  ros::Rate rate(1);
+  ros::Rate rate(5);
 
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);
@@ -176,7 +174,7 @@ int main(int argc, char* argv[]) {
         visualization_msgs::MarkerArray markers;
         for (std::size_t i = 0; i < waypoints->size(); ++i) {
           bool is_advertised = next_waypoint + lookahead > waypoints->size()
-            ? i > next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
+            ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
             : next_waypoint <= i && i < next_waypoint + lookahead;
           
           const auto wp = (*waypoints)[i];
@@ -201,7 +199,7 @@ int main(int argc, char* argv[]) {
           marker.color.r = is_advertised ? 1.0 : 0.0;
           marker.color.g = 0.0;
           marker.color.b = is_advertised ? 0.0 : 1.0;
-          marker.color.a = 0.5;
+          marker.color.a = 0.2;
 
           markers.markers.push_back(marker);
         }

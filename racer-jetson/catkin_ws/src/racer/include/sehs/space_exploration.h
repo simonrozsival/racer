@@ -90,7 +90,7 @@ namespace sehs {
             path.push_back(generate_circle(initial_position.location()));
             double initial_heading_angle = initial_position.heading_angle;
 
-            auto goal_it = ++waypoints.cbegin();
+            auto goal_it = waypoints.cbegin();
 
             while (goal_it != waypoints.cend()) {
                 auto to_next_waypoint = find_path(path.back(), initial_heading_angle, *goal_it);
@@ -98,8 +98,6 @@ namespace sehs {
                 if (to_next_waypoint.size() == 0) {
                     return std::list<math::circle>(); // there is no path
                 }
-
-                std::cout << "found path between a pair of waypoints: " << path.back().center.x << "," << path.back().center.y << "->" << goal_it->x << "," << goal_it->y << std::endl;
 
                 // append the path to the next waypoint
                 path.insert(path.end(), to_next_waypoint.begin(), to_next_waypoint.end());
