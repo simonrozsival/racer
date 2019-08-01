@@ -66,20 +66,23 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   racing::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
 
+  // the checkpoints are the input
   std::list<math::point> check_points;
   for (const auto& check_point : circuit->check_points) {
     check_points.push_back(math::point(check_point.x, check_point.y));
   }
   check_points.push_back(position->location()); // copy the first 
 
+  // the initial_definition is the list of checkpoint circles
+  // for space exploration 
   std::vector<math::circle> initial_definition;
   for (const auto c : check_points) {
     initial_definition.push_back(math::circle(c, 0.1));
   }
 
-  std::cout << "start" << std::endl;
-
+  std::cout << "start track analysis/space exploration" << std::endl;
   auto apexes = analysis.find_apexes(vehicle_radius, *position, check_points);
+  std::cout << "finished track analysis/space exploration" << std::endl;
 
   if (apexes.size() == 0) {
     std::cout << "cannot find apexes - there might not be enough room for the careful algorithm to fit ghe car through" << std::endl;
@@ -87,7 +90,7 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
     return;
   }
 
-  std::cout << "found apexes" << std::endl;
+  std::cout << "found " << apexes.size() << " apexes" << std::endl;
 
   std::lock_guard<std::mutex> guard(analysis_lock);
   std::vector<math::circle> wps;
@@ -150,7 +153,7 @@ int main(int argc, char* argv[]) {
 
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);
-    if (waypoints && next_waypoint >= 0) {
+    if (waypoints) {
       racer_msgs::Waypoints msg;
       msg.header.stamp = ros::Time::now();
       msg.header.frame_id = frame_id;
@@ -166,6 +169,7 @@ int main(int argc, char* argv[]) {
         msg.waypoints.push_back(wp);
       }
 
+      // publish the list of waypoints which the agent should pass next
       waypoints_pub.publish(msg);
 
       // visualization is published only if somebody is listening
