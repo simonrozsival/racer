@@ -68,7 +68,8 @@ namespace racing {
             }
 
 
-            return merge_close(apex_waypoints, 5 * vehicle_radius);
+            return apex_waypoints;
+            // return merge_close(apex_waypoints, 5 * vehicle_radius);
         }
 
     private:
@@ -88,10 +89,7 @@ namespace racing {
                 x += dx;
                 y += dy;
 
-                int cx = int(x / grid_.cell_size);
-                int cy = int(y / grid_.cell_size);
-
-                if (grid_.is_occupied(cx, cy)) {
+                if (grid_.collides(x, y)) {
                     return false;
                 }
             }
