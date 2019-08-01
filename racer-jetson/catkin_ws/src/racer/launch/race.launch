@@ -1,0 +1,11 @@
+<launch>
+  <arg name="map" />
+
+  <include file="$(find racer)/launch/map.launch">
+    <arg name="map" value="$(arg map)"/>
+  </include>
+
+  <include file="$(find racer)/launch/localization.launch" />
+
+  <include file="$(find racer)/launch/agent.launch" />
+</launch>
