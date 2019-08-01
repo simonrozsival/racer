@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include <ros/ros.h>
 #include <vector>
 #include <mutex>
@@ -36,7 +37,7 @@ int next_waypoint = -1;
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   if (grid) {
-    throw "There is already an existing map.";
+    throw std::runtime_error("There is already an existing map.");
   }
 
   grid = std::make_unique<racing::occupancy_grid>(
@@ -54,11 +55,11 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   std::cout << "got circuit definition" << std::endl;
 
   if (!position) {
-    throw "The position of the vehicle is not known yet.";
+    throw std::runtime_error("The position of the vehicle is not known yet.");
   }
 
   if (!grid) {
-    throw "Map must be published before the circuit definition.";
+    throw std::runtime_error("Map must be published before the circuit definition.");
   }
 
   std::cout << "analyzing the circuit..." << std::endl;
@@ -78,6 +79,7 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   std::vector<math::circle> initial_definition;
   for (const auto c : check_points) {
     initial_definition.push_back(math::circle(c, 0.1));
+    std::cout << "initial definition: ([" << c.x << ", " << c.y << "], r=0.1m)" << std::endl;
   }
 
   std::cout << "start track analysis/space exploration" << std::endl;
@@ -114,12 +116,9 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
 
   std::lock_guard<std::mutex> guard(odom_lock);
 
-  for (int i = 0; i < waypoints->size(); ++i) {
-    if ((*waypoints)[i].contains(position->location())) {
-      std::cout << "PASSED A WAYPOINT, next waypoint: " << i + 1 << std::endl;
-      next_waypoint = i + 1;
-      break;
-    }
+  if ((*waypoints)[next_waypoint].contains(position->location())) {
+    std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint + 1 << std::endl;
+    next_waypoint += 1;
   }
 }
 
