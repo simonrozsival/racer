@@ -122,7 +122,7 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "circuit_node");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
   std::string map_topic, circuit_topic, odometry_topic, waypoints_topic, waypoints_visualization_topic;
 
