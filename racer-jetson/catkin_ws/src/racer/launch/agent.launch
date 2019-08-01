@@ -1,12 +1,4 @@
 <launch>
-    <arg name="map" />
-
-    <include file="$(find racer)/launch/localization.launch">
-        <arg name="map" value="$(arg map)"/>
-    </include>
-
-    <include file="$(find racer)/launch/costmap.launch" />
-
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen" />
     <node pkg="racer" name="planning" type="planning_node" output="screen" />
     <node pkg="racer" name="following" type="following_node" output="screen">
