@@ -99,26 +99,31 @@ int main(int argc, char* argv[]) {
       *detector,
       error_calculator
     );
+    std::cout << "DWA following strategy was initialized" << std::endl;
   } else if (strategy == "geometric") {
-    std::cout << "Geometric strategy" << std::endl;
+    std::cout << "Geometric strategy (pure pursuit + PID)" << std::endl;
     double kp, ki, kd, error_tolerance;
     node.param<double>("pid_speed_kp", kp, 1.0);
     node.param<double>("pid_speed_ki", ki, 0.0);
     node.param<double>("pid_speed_kd", kd, 1.0);
     node.param<double>("pid_speed_error_tolerance", error_tolerance, 0.5);
     pid = std::make_shared<racing::pid>(kp, ki, kd, error_tolerance);
+    std::cout << "PID was initialized (kp=" << kp << ", ki=" << ki << ", kd=" << kd << ")" << std::endl;
 
     double min_lookahead, lookahead_coef;
     node.param<double>("min_lookahead", min_lookahead, vehicle.wheelbase * 5.0);
     node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
     auto pure_pursuit = std::make_shared<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
+    std::cout << "Pure pursuit was initialized (min lookahead=" << min_lookahead << "m, lookahead velocity coef=" << lookahead_coef << ")" << std::endl;
 
     dynamic_reconfigure::Server<racer::PIDConfig> server;
     dynamic_reconfigure::Server<racer::PIDConfig>::CallbackType f;  
     f = boost::bind(&pid_config_callback, _1, _2);
     server.setCallback(f);
+    std::cout << "dynamic reconfigure for PID was set up" << std::endl;
   
     following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
+    std::cout << "Geometric following strategy was initialized" << std::endl;
   } else {
     throw std::invalid_argument("Unsupported following strategy.");
   }
@@ -146,7 +151,7 @@ int main(int argc, char* argv[]) {
         action = follower.stop();
         std::cout << "following node: STOP!" << std::endl;
       } else {
-        std::cout << "following node: [throttle: " << action->throttle << ", steering angle: " << action->target_steering_angle << "]" << std::endl;
+        std::cout << "following node selected: [throttle: " << action->throttle << ", steering angle: " << action->target_steering_angle << "]" << std::endl;
       }
 
       geometry_msgs::Twist msg;
