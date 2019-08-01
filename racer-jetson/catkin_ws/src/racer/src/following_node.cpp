@@ -6,7 +6,6 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
 
-#include <dynamic_reconfigure/server.h>
 #include <racer/PIDConfig.h>
 
 #include "racer_msgs/Trajectory.h"
@@ -22,14 +21,9 @@
 
 std::shared_ptr<racing::pid> pid;
 
-void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
-  if (!pid) return;
-  pid->reconfigure(config.kp, config.ki, config.kd, config.error_tolerance);
-}
-
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "following_node");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
   double cell_size;
   std::string odometry_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
@@ -103,10 +97,10 @@ int main(int argc, char* argv[]) {
   } else if (strategy == "geometric") {
     std::cout << "Geometric strategy (pure pursuit + PID)" << std::endl;
     double kp, ki, kd, error_tolerance;
-    node.param<double>("pid_speed_kp", kp, 1.0);
-    node.param<double>("pid_speed_ki", ki, 0.0);
-    node.param<double>("pid_speed_kd", kd, 1.0);
-    node.param<double>("pid_speed_error_tolerance", error_tolerance, 0.5);
+    node.param<double>("pid/speed_kp", kp, 1.0);
+    node.param<double>("pid/speed_ki", ki, 0.0);
+    node.param<double>("pid/speed_kd", kd, 1.0);
+    node.param<double>("pid/speed_error_tolerance", error_tolerance, 0.5);
     pid = std::make_shared<racing::pid>(kp, ki, kd, error_tolerance);
     std::cout << "PID was initialized (kp=" << kp << ", ki=" << ki << ", kd=" << kd << ")" << std::endl;
 
@@ -116,12 +110,6 @@ int main(int argc, char* argv[]) {
     auto pure_pursuit = std::make_shared<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
     std::cout << "Pure pursuit was initialized (min lookahead=" << min_lookahead << "m, lookahead velocity coef=" << lookahead_coef << ")" << std::endl;
 
-    dynamic_reconfigure::Server<racer::PIDConfig> server;
-    dynamic_reconfigure::Server<racer::PIDConfig>::CallbackType f;  
-    f = boost::bind(&pid_config_callback, _1, _2);
-    server.setCallback(f);
-    std::cout << "dynamic reconfigure for PID was set up" << std::endl;
-  
     following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
     std::cout << "Geometric following strategy was initialized" << std::endl;
   } else {
@@ -129,7 +117,8 @@ int main(int argc, char* argv[]) {
   }
 
   Follower follower(std::move(following_strategy));
-  
+ 
+  std::cout << "subscribed to " << costmap_topic << std::endl;
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);

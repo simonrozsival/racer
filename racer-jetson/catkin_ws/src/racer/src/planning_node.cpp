@@ -43,7 +43,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "racing_trajectory_planning");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
   std::string map_topic, odometry_topic, trajectory_topic, path_topic, waypoints_topic;
 

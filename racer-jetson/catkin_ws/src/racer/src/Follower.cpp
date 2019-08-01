@@ -1,5 +1,6 @@
 #include "Follower.h"
 
+#include <iostream>
 #include <cstdlib>
 #include "utils.h"
 
@@ -8,6 +9,7 @@ bool Follower::is_initialized() const {
 }
 
 void Follower::costmap_observed(const nav_msgs::OccupancyGrid::ConstPtr& map) {
+  std::cout << "COSTMAAAAAP" << std::endl;
   costmap_ = std::move(msg_to_grid(*map));
   frame_id = map->header.frame_id;
 }
