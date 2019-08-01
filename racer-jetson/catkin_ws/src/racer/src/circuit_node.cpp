@@ -77,8 +77,6 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
     initial_definition.push_back(math::circle(c, 0.1));
   }
 
-  waypoints = std::make_unique<std::vector<math::circle>>(initial_definition);
-  return;
   std::cout << "start" << std::endl;
 
   auto apexes = analysis.find_apexes(vehicle_radius, *position, check_points);
@@ -115,6 +113,7 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
 
   for (int i = 0; i < waypoints->size(); ++i) {
     if ((*waypoints)[i].contains(position->location())) {
+      std::cout << "PASSED A WAYPOINT, next waypoint: " << i + 1 << std::endl;
       next_waypoint = i + 1;
       break;
     }
@@ -147,7 +146,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1);
 
-  ros::Rate rate(20);
+  ros::Rate rate(1);
 
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);

@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
 
   int frequency; // Hz
-  node.param<int>("update_frequency_hz", frequency, 12);
+  node.param<int>("update_frequency_hz", frequency, 20);
 
   ros::Rate rate(frequency);
 
@@ -144,6 +144,9 @@ int main(int argc, char* argv[]) {
 
       if (!action) {
         action = follower.stop();
+        std::cout << "following node: STOP!" << std::endl;
+      } else {
+        std::cout << "following node: [throttle: " << action->throttle << ", steering angle: " << action->target_steering_angle << "]" << std::endl;
       }
 
       geometry_msgs::Twist msg;
