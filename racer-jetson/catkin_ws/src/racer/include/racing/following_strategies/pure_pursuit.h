@@ -17,6 +17,15 @@ namespace racing {
     }
 
     double select_steering_angle(const kinematic_model::state& current_state, int passed_waypoints, const kinematic_model::trajectory& trajectory) const {
+      const auto reference = find_reference_position(current_state, passed_waypoints, trajectory);
+
+      auto diff = reference.location() - current_state.position.location();
+      double alpha = atan2(diff.y, diff.x) - current_state.position.heading_angle;
+
+      return atan(2 * vehicle_.wheelbase * sin(alpha) / lookahead);
+    }
+
+    vehicle_position find_reference_position(const kinematic_model::state& current_state, int passed_waypoints, const kinematic_model::trajectory& trajectory) const {
       auto sub_trajectory = trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
 
       if (!sub_trajectory || sub_trajectory->steps.size() == 0) {
@@ -31,14 +40,9 @@ namespace racing {
         ++reference_step;
       }
 
-      const auto reference = reference_step == sub_trajectory->steps.end()
+      return reference_step == sub_trajectory->steps.end()
         ? sub_trajectory->steps.back().step.position
         : reference_step->step.position;
-
-      auto diff = reference.location() - current_state.position.location();
-      double alpha = atan2(diff.y, diff.x) - current_state.position.heading_angle;
-
-      return atan(2 * vehicle_.wheelbase * sin(alpha) / lookahead);
     }
 
   private:
