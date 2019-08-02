@@ -150,7 +150,8 @@ namespace racing {
             next_states.push_back(origin);
 
             for (int i = 0; i < steps_; ++i) {
-                current = std::move(model_.predict(*current, action));
+                auto prediction = model_.predict(*current, action);
+                current = std::move(prediction);
 
                 // the costmap is inflated and there is a collision if the center of gravity
                 // is in the "deadly" zone
