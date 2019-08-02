@@ -73,13 +73,6 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   }
   check_points.push_back(position->location()); // copy the first 
 
-  // the initial_definition is the list of checkpoint circles
-  // for space exploration 
-  std::vector<math::circle> initial_definition;
-  for (const auto c : check_points) {
-    initial_definition.push_back(math::circle(c, 0.1));
-  }
-
   std::cout << "start track analysis/space exploration" << std::endl;
   auto apexes = analysis.find_apexes(vehicle_radius, *position, check_points);
   std::cout << "finished track analysis/space exploration" << std::endl;
@@ -114,12 +107,9 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
 
   std::lock_guard<std::mutex> guard(odom_lock);
 
-  for (int i = 0; i < waypoints->size(); ++i) {
-    if ((*waypoints)[i].contains(position->location())) {
-      std::cout << "PASSED A WAYPOINT, next waypoint: " << i + 1 << std::endl;
-      next_waypoint = i + 1;
-      break;
-    }
+  if ((*waypoints)[next_waypoint].contains(position->location())) {
+    std::cout << "PASSED THE WAYPOINT, next waypoint: " << next_waypoint + 1 << std::endl;
+    next_waypoint += 1;
   }
 }
 
