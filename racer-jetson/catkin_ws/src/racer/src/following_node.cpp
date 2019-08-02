@@ -62,14 +62,14 @@ int main(int argc, char* argv[]) {
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  racing::kinematic_model::model model(std::make_unique<math::euler_method>(integration_step_s), vehicle);
+  std::shared_ptr<racing::kinematic_model::model> model =
+    std::make_shared<racing::kinematic_model::model>(std::make_unique<math::euler_method>(integration_step_s), vehicle);
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
   if (strategy == "dwa") {
     std::cout << "DWA strategy" << std::endl;
-    const auto actions = racing::kinematic_model::action::create_actions(5, 15);
-    const auto detector = racing::collision_detector::precalculate(120, vehicle, cell_size);
+    auto actions = racing::kinematic_model::action::create_actions(5, 15);
     
     double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
     node.param<double>("position_weight", position_weight, 30.0);
@@ -77,21 +77,21 @@ int main(int argc, char* argv[]) {
     node.param<double>("velocity_weight", velocity_weight, 10.0);
     node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-    const racing::trajectory_error_calculator error_calculator(
-      position_weight,
-      heading_weight,
-      velocity_weight,
-      1.0,
-      distance_to_obstacle_weight,
-      vehicle.radius() * 5
-    );
+    std::unique_ptr<racing::trajectory_error_calculator> error_calculator =
+      std::make_unique<racing::trajectory_error_calculator>(
+        position_weight,
+        heading_weight,
+        velocity_weight,
+        1.0,
+        distance_to_obstacle_weight,
+        vehicle.radius() * 5
+      );
 
     following_strategy = std::make_unique<racing::dwa>(
       lookahead,
       actions,
       model,
-      *detector,
-      error_calculator
+      std::move(error_calculator)
     );
     std::cout << "DWA following strategy was initialized" << std::endl;
   } else if (strategy == "geometric") {
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
 
       geometry_msgs::Twist msg;
       msg.linear.x = action->throttle;
-      msg.angular.z = action->target_steering_angle;
+      msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
 
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < lookahead; ++i) {
           geometry_msgs::PoseStamped segment;
 
-          state = std::move(model.predict(*state, *action));
+          state = std::move(model->predict(*state, *action));
 
           segment.header.frame_id = follower.frame_id;
           segment.header.stamp = ros::Time::now();
