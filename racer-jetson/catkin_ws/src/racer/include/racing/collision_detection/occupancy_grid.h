@@ -46,9 +46,10 @@ namespace racing {
                 });
         }
 
-        bool is_occupied(int x, int y) const {
-            const int index = index_of(x, y);
-            return index < 0 || index >= size_ || data_[index] > 0;
+        bool collides(double x, double y) const {
+            int cx = int((x - origin_.x) / cell_size);
+            int cy = int((y - origin_.y) / cell_size);
+            return is_occupied(cx, cy);
         }
 
         signed char value_at(double x, double y) const {
@@ -106,6 +107,11 @@ namespace racing {
 
         int index_of(int x, int y) const {
             return y * width_ + x;
+        }
+
+        bool is_occupied(int x, int y) const {
+            const int index = index_of(x, y);
+            return index < 0 || index >= size_ || data_[index] > 0;
         }
 
         double find_distance(const math::point& point, const double angle, const double max_radius) const {
