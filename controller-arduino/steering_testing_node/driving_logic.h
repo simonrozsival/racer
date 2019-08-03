@@ -29,7 +29,7 @@ void select_inputs(int* steering_pwm, int* throttle_pwm) {
   *throttle_pwm = rc_input[THROTTLE];
 
   if (autonomous_mode) {
-    if (is_offcenter(*steering_pwm, STEERING_CENTER_PWM)) {
+    if (abs(*steering_pwm - STEERING_CENTER_PWM) > PWM_OFF_CENTER_TOLERANCE) {
       autonomous_mode = false;
     } else if (has_autonomous_steering_data) {
       *steering_pwm = autonomous_steering_angle;
