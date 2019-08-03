@@ -1,7 +1,18 @@
 <launch>
+    <arg name="use_dwa" default="true" />
+
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen" />
     <node pkg="racer" name="planning" type="planning_node" />
-    <node pkg="racer" name="following" type="dwa_following_node" output="screen">
-        <param name="costmap_topic" value="/obstacles/costmap/costmap" />
-    </node>
+
+    <group if="$(arg use_dwa)">
+        <node pkg="racer" name="following" type="dwa_following_node" output="screen">
+            <param name="costmap_topic" value="/obstacles/costmap/costmap" />
+        </node>
+    </group>
+
+    <group unless="$(arg use_dwa)">
+        <node pkg="racer" name="following" type="geometric_following_node" output="screen">
+            <param name="costmap_topic" value="/obstacles/costmap/costmap" />
+        </node>
+    </group>
 </launch>
