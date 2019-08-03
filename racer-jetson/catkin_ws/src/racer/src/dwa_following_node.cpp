@@ -6,8 +6,6 @@
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
 
-#include <racer/PIDConfig.h>
-
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
@@ -15,14 +13,11 @@
 #include "racing/vehicle_model/base_vehicle_model.h"
 #include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/following_strategies/dwa.h"
-#include "racing/following_strategies/geometric_following_strategy.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"
 
-std::shared_ptr<racing::pid> pid;
-
 int main(int argc, char* argv[]) {
-  ros::init(argc, argv, "following_node");
+  ros::init(argc, argv, "dwa_following_node");
   ros::NodeHandle node("~");
 
   double cell_size;
@@ -54,10 +49,6 @@ int main(int argc, char* argv[]) {
     acceleration // acceleration (ms^-2)
   );
 
-  std::string strategy;
-  node.param<std::string>("strategy", strategy, "dwa");
-  std::unique_ptr<racing::following_strategy> following_strategy;
-
   double integration_step_s, prediction_horizon_s;
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
@@ -67,54 +58,32 @@ int main(int argc, char* argv[]) {
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
-  if (strategy == "dwa") {
-    std::cout << "DWA strategy" << std::endl;
-    auto actions = racing::kinematic_model::action::create_actions(5, 15);
-    
-    double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
-    node.param<double>("position_weight", position_weight, 30.0);
-    node.param<double>("heading_weight", heading_weight, 20.0);
-    node.param<double>("velocity_weight", velocity_weight, 10.0);
-    node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
+  std::cout << "DWA strategy" << std::endl;
+  auto actions = racing::kinematic_model::action::create_actions(5, 15);
+  
+  double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
+  node.param<double>("position_weight", position_weight, 30.0);
+  node.param<double>("heading_weight", heading_weight, 20.0);
+  node.param<double>("velocity_weight", velocity_weight, 10.0);
+  node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-    std::unique_ptr<racing::trajectory_error_calculator> error_calculator =
-      std::make_unique<racing::trajectory_error_calculator>(
-        position_weight,
-        heading_weight,
-        velocity_weight,
-        1.0,
-        distance_to_obstacle_weight,
-        vehicle.radius() * 5
-      );
-
-    following_strategy = std::make_unique<racing::dwa>(
-      lookahead,
-      actions,
-      model,
-      std::move(error_calculator)
+  std::unique_ptr<racing::trajectory_error_calculator> error_calculator =
+    std::make_unique<racing::trajectory_error_calculator>(
+      position_weight,
+      heading_weight,
+      velocity_weight,
+      1.0,
+      distance_to_obstacle_weight,
+      vehicle.radius() * 5
     );
-    std::cout << "DWA following strategy was initialized" << std::endl;
-  } else if (strategy == "geometric") {
-    std::cout << "Geometric strategy (pure pursuit + PID)" << std::endl;
-    double kp, ki, kd, error_tolerance;
-    node.param<double>("pid/speed_kp", kp, 1.0);
-    node.param<double>("pid/speed_ki", ki, 0.0);
-    node.param<double>("pid/speed_kd", kd, 1.0);
-    node.param<double>("pid/speed_error_tolerance", error_tolerance, 0.5);
-    pid = std::make_shared<racing::pid>(kp, ki, kd, error_tolerance);
-    std::cout << "PID was initialized (kp=" << kp << ", ki=" << ki << ", kd=" << kd << ")" << std::endl;
 
-    double min_lookahead, lookahead_coef;
-    node.param<double>("min_lookahead", min_lookahead, vehicle.wheelbase * 5.0);
-    node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
-    auto pure_pursuit = std::make_shared<racing::pure_pursuit>(vehicle, min_lookahead, lookahead_coef);
-    std::cout << "Pure pursuit was initialized (min lookahead=" << min_lookahead << "m, lookahead velocity coef=" << lookahead_coef << ")" << std::endl;
-
-    following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
-    std::cout << "Geometric following strategy was initialized" << std::endl;
-  } else {
-    throw std::invalid_argument("Unsupported following strategy.");
-  }
+  auto following_strategy = std::make_unique<racing::dwa>(
+    lookahead,
+    actions,
+    model,
+    std::move(error_calculator)
+  );
+  std::cout << "DWA following strategy was initialized" << std::endl;
 
   Follower follower(std::move(following_strategy));
  

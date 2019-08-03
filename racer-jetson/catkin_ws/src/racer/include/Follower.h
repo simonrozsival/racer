@@ -31,8 +31,13 @@ class Follower {
     std::unique_ptr<racing::kinematic_model::action> select_driving_command() const;
     std::unique_ptr<racing::kinematic_model::action> stop() const;
 
-    racing::kinematic_model::state last_known_state() const {
+    const racing::kinematic_model::state last_known_state() const {
       return *last_known_state_;
+    }
+
+    const int next_waypoint() const {  return next_waypoint_; }
+    const racing::kinematic_model::trajectory reference_trajectory() const {
+      return *reference_trajectory_; // return a copy}
     }
 
   private:
