@@ -21,18 +21,20 @@
     <param name="max_range" value="10" />
     <param name="viz" value="1" />
     <param name="fine_timing" value="0" />
+
     <param name="publish_odom" value="1" />
+    <param name="publish_tf" value="0" />
 
     <param name="z_short" value="0.01" /> 
-		<param name="z_max" value="0.07" /> 
-		<param name="z_rand" value="0.12" /> 
-		<param name="z_hit" value="0.75" /> 
+    <param name="z_max" value="0.07" /> 
+    <param name="z_rand" value="0.12" /> 
+    <param name="z_hit" value="0.75" /> 
 
     <param name="motion_dispersion_x" value="0.05" /> 
     <param name="motion_dispersion_y" value="0.025" /> 
     <param name="motion_dispersion_theta" value="0.25" /> 
 
-		<param name="rangelib_variant" value="2" /> 
+    <param name="rangelib_variant" value="2" /> 
   </node>
   
   <node pkg="particle_filter_tf_correction" type="fix_tf.py" name="fix_tf" output="screen">
