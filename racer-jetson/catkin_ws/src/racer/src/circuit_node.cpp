@@ -1,4 +1,5 @@
 #include <iostream>
+#include <stdexcept>
 #include <ros/ros.h>
 #include <vector>
 #include <mutex>
@@ -36,7 +37,7 @@ int next_waypoint = -1;
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   if (grid) {
-    throw "There is already an existing map.";
+    throw std::runtime_error("There is already an existing map.");
   }
 
   grid = std::make_unique<racing::occupancy_grid>(
@@ -54,14 +55,14 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   std::cout << "got circuit definition" << std::endl;
 
   if (!position) {
-    throw "The position of the vehicle is not known yet.";
+    throw std::runtime_error("The position of the vehicle is not known yet.");
   }
 
   if (!grid) {
-    throw "Map must be published before the circuit definition.";
+    throw std::runtime_error("Map must be published before the circuit definition.");
   }
 
-  std::cout << "analyzing the circuit..." << std::endl;
+  std::cout << "Analyzing the circuit..." << std::endl;
 
   racing::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
@@ -83,8 +84,6 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
     return;
   }
 
-  std::cout << "found " << apexes.size() << " apexes" << std::endl;
-
   std::lock_guard<std::mutex> guard(analysis_lock);
   std::vector<math::circle> wps;
   for (const auto& apex : apexes) {
@@ -94,7 +93,8 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   waypoints = std::make_unique<std::vector<math::circle>>(wps);
   next_waypoint = 0;
 
-  std::cout << "analysis completed. number of waypoints: " << waypoints->size() << std::endl;
+  std::cout << "Track analysis is completed. Number of discovered waypoints: " << waypoints->size() << std::endl;
+  std::cout << "Next waypoint: " << next_waypoint << std::endl;
 }
 
 void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
@@ -108,14 +108,14 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
   std::lock_guard<std::mutex> guard(odom_lock);
 
   if ((*waypoints)[next_waypoint].contains(position->location())) {
-    std::cout << "PASSED THE WAYPOINT, next waypoint: " << next_waypoint + 1 << std::endl;
-    next_waypoint += 1;
+    next_waypoint = (next_waypoint + 1) % waypoints->size();
+    std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint << std::endl;
   }
 }
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "circuit_node");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
   std::string map_topic, circuit_topic, odometry_topic, waypoints_topic, waypoints_visualization_topic;
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1);
 
-  ros::Rate rate(1);
+  ros::Rate rate(5);
 
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);
@@ -167,7 +167,7 @@ int main(int argc, char* argv[]) {
         visualization_msgs::MarkerArray markers;
         for (std::size_t i = 0; i < waypoints->size(); ++i) {
           bool is_advertised = next_waypoint + lookahead > waypoints->size()
-            ? i > next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
+            ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
             : next_waypoint <= i && i < next_waypoint + lookahead;
           
           const auto wp = (*waypoints)[i];
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
           marker.color.r = is_advertised ? 1.0 : 0.0;
           marker.color.g = 0.0;
           marker.color.b = is_advertised ? 0.0 : 1.0;
-          marker.color.a = 0.5;
+          marker.color.a = 0.2;
 
           markers.markers.push_back(marker);
         }

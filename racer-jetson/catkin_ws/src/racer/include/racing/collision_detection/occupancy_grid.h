@@ -62,10 +62,7 @@ namespace racing {
         }
 
         double distance_to_closest_obstacle(const math::point& center, double max_radius) const {
-            int x = int((center.x - origin_.x) / cell_size);
-            int y = int((center.y - origin_.y) / cell_size);
-
-            if (is_occupied(x, y)) {
+            if (collides(center.x, center.y)) {
                 return 0;
             }
 
@@ -140,3 +137,4 @@ namespace racing {
 }
 
 #endif
+

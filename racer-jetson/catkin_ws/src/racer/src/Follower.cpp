@@ -1,5 +1,6 @@
 #include "Follower.h"
 
+#include <iostream>
 #include <cstdlib>
 #include "utils.h"
 
@@ -43,9 +44,12 @@ void Follower::waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoin
 }
 
 std::unique_ptr<racing::kinematic_model::action> Follower::select_driving_command() const {
+  std::cout << "select driving command" << std::endl;
   if (reference_trajectory_ && reference_trajectory_->steps.size() > 0) {
+    std::cout << "select action" << std::endl;
     return strategy_->select_action(*last_known_state_, next_waypoint_, *reference_trajectory_, *costmap_);
   } else {
+    std::cout << "stop" << std::endl;
     return std::make_unique<racing::kinematic_model::action>(stop_);
   }
 }

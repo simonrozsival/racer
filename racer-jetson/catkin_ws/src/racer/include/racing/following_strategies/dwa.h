@@ -90,15 +90,13 @@ namespace racing {
     public:
         dwa(
             int steps,
-            const std::list<action>& available_actions,
-            const model& model,
-            const collision_detector& detector,
-            const trajectory_error_calculator& trajectory_error_calculator)
+            const std::list<action> available_actions,
+            const std::shared_ptr<model> model,
+            std::unique_ptr<trajectory_error_calculator> trajectory_error_calculator)
             : steps_(steps),
             available_actions_(available_actions),
             model_(model),
-            trajectory_error_calculator_(trajectory_error_calculator),
-            collision_detector_(detector)
+            trajectory_error_calculator_(std::move(trajectory_error_calculator))
         {
         }
 
@@ -119,7 +117,7 @@ namespace racing {
             for (const auto& next_action : available_actions_) {
                 const auto trajectory = unfold(current_state, next_action, costmap);
                 if (trajectory) {
-                    const double trajectory_score = trajectory_error_calculator_.score(trajectory, reference_subtrajectory, costmap);
+                    const double trajectory_score = trajectory_error_calculator_->score(trajectory, reference_subtrajectory, costmap);
                     if (trajectory_score < best_score) {
                         best_score = trajectory_score;
                         best_so_far = std::make_unique<action>(next_action);
@@ -134,10 +132,9 @@ namespace racing {
 
     private:
         const int steps_;
-        const std::list<action>& available_actions_;
-        const model& model_;
-        const trajectory_error_calculator& trajectory_error_calculator_;
-        const collision_detector& collision_detector_;
+        const std::list<action> available_actions_;
+        const std::shared_ptr<model> model_;
+        const std::unique_ptr<trajectory_error_calculator> trajectory_error_calculator_;
 
         std::unique_ptr <std::list<state>> unfold(
             const state& origin,
@@ -146,11 +143,16 @@ namespace racing {
 
             std::list<state> next_states;
 
-            auto current = std::make_unique<state>(origin);
-            next_states.push_back(origin);
+            // make a copy of the current state and use it as an iterator
+            auto current = std::make_unique<state>(origin.position, origin.speed, origin.steering_angle);
+            next_states.push_back(*current);
 
             for (int i = 0; i < steps_; ++i) {
-                auto prediction = model_.predict(*current, action);
+                auto prediction = model_->predict(*current, action);
+                if (!prediction) {
+                    return nullptr;
+                }
+
                 current = std::move(prediction);
 
                 // the costmap is inflated and there is a collision if the center of gravity
