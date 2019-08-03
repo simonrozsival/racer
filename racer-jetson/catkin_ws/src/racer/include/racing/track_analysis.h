@@ -68,7 +68,8 @@ namespace racing {
             }
 
 
-            return merge_close(apex_waypoints, 5 * vehicle_radius);
+            return apex_waypoints;
+            // return merge_close(apex_waypoints, 5 * vehicle_radius);
         }
 
     private:
