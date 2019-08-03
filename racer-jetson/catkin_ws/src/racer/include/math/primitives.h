@@ -65,6 +65,10 @@ namespace math {
         inline double length() const {
             return sqrt(length_sq());
         }
+
+        inline double distance_sq(const vector& other) const {
+            return (*this - other).length_sq();
+        }
     };
 
     typedef vector point; // alias
