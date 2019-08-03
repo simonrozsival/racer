@@ -8,10 +8,12 @@
 #include "./rc_input.h"
 
 bool reverse;
+bool autonomous_mode;
 bool has_autonomous_steering_data;
 int autonomous_steering_angle;
 
 void init_driving_logic() {
+  autonomous_mode = true;
   has_autonomous_steering_data = false;
   reverse = false;
   autonomous_steering_angle = STEERING_CENTER_PWM;
@@ -26,8 +28,12 @@ void select_inputs(int* steering_pwm, int* throttle_pwm) {
   *steering_pwm = rc_input[STEERING];
   *throttle_pwm = rc_input[THROTTLE];
 
-  if (has_autonomous_steering_data) {
-    *steering_pwm = autonomous_steering_angle;
+  if (autonomous_mode) {
+    if (is_offcenter(*steering_pwm, STEERING_CENTER_PWM)) {
+      autonomous_mode = false;
+    } else if (has_autonomous_steering_data) {
+      *steering_pwm = autonomous_steering_angle;
+    }
   }
 }
 

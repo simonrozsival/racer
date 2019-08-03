@@ -1,11 +1,15 @@
 <launch>
     <arg name="use_dwa" default="true" />
+    <arg name="circuit" />
 
-    <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen" />
-    <node pkg="racer" name="planning" type="planning_node" />
+    <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
+      <rosparam command="load" file="$(find racer)/circuits/$(arg circuit).yaml" />
+    </node>
+
+    <node pkg="racer" name="planning" type="planning_node" output="screen" />
 
     <group if="$(arg use_dwa)">
-        <node pkg="racer" name="following" type="dwa_following_node" output="screen">
+        <node pkg="racer" name="following" type="dwa_following_node">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
         </node>
     </group>
