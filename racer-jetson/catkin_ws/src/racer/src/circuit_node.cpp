@@ -3,6 +3,7 @@
 #include <ros/ros.h>
 #include <vector>
 #include <mutex>
+#include <sstream>
 
 #include "math/primitives.h"
 #include "racing/track_analysis.h"
@@ -27,6 +28,7 @@ int branching_factor;
 double max_distance_between_waypoints;
 double waypoint_radius, vehicle_radius;
 int lookahead;
+std::list<math::point> check_points;
 
 // state variables
 std::unique_ptr<racing::vehicle_position> position;
@@ -34,6 +36,8 @@ std::unique_ptr<racing::occupancy_grid> grid;
 std::string frame_id;
 std::unique_ptr<std::vector<math::circle>> waypoints;
 int next_waypoint = -1;
+
+void load_circuit();
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   if (grid) {
@@ -47,19 +51,18 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
     map->info.resolution,
     math::point(map->info.origin.position.x, map->info.origin.position.y)
   );
-
   frame_id = map->header.frame_id;
+
+  load_circuit();
 }
 
-void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
-  std::cout << "got circuit definition" << std::endl;
-
+void load_circuit() {
   if (!position) {
-    throw std::runtime_error("The position of the vehicle is not known yet.");
+    return;
   }
 
   if (!grid) {
-    throw std::runtime_error("Map must be published before the circuit definition.");
+    return;
   }
 
   std::cout << "Analyzing the circuit..." << std::endl;
@@ -67,15 +70,14 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
   racing::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
 
-  // the checkpoints are the input
-  std::list<math::point> check_points;
-  for (const auto& check_point : circuit->check_points) {
-    check_points.push_back(math::point(check_point.x, check_point.y));
+  std::list<math::point> final_check_points;
+  for (const auto& check_point : check_points) {
+    final_check_points.push_back(math::point(check_point.x, check_point.y));
   }
-  check_points.push_back(position->location()); // copy the first 
+  final_check_points.push_back(position->location()); // back to the start 
 
   std::cout << "start track analysis/space exploration" << std::endl;
-  auto apexes = analysis.find_apexes(vehicle_radius, *position, check_points);
+  auto apexes = analysis.find_apexes(vehicle_radius, *position, final_check_points);
   std::cout << "finished track analysis/space exploration" << std::endl;
 
   if (apexes.size() == 0) {
@@ -98,8 +100,17 @@ void circuit_update(const racer_msgs::Circuit::ConstPtr& circuit) {
 }
 
 void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
+  bool try_init = false;
+  if (!position) {
+    try_init = true;
+  }
+
   auto state = std::move(msg_to_state(*odom));
   position = std::make_unique<racing::vehicle_position>(state->position);
+
+  if (try_init) {
+    load_circuit();
+  }
 
   if (!waypoints) {
     return;
@@ -120,7 +131,6 @@ int main(int argc, char* argv[]) {
   std::string map_topic, circuit_topic, odometry_topic, waypoints_topic, waypoints_visualization_topic;
 
   node.param<std::string>("map_topic", map_topic, "/map");
-  node.param<std::string>("circuit_topic", circuit_topic, "/racer/circuit");
   node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("waypoints_visualization_topic", waypoints_visualization_topic, "/racer/visualization/waypoints");
@@ -132,8 +142,18 @@ int main(int argc, char* argv[]) {
   node.param<int>("branching_factor", branching_factor, 13);
   node.param<int>("lookahead", lookahead, 3);
 
+  // array of checkpoints
+  std::vector<std::string> checkpoint_params;
+  node.param<std::vector<std::string>>("check_points", checkpoint_params, std::vector<std::string>());
+  for (auto param : checkpoint_params) {
+    std::stringstream ss(param);
+    double x, y;
+    ss >> x;
+    ss >> y;
+    check_points.emplace_back(x, y);
+  }
+
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber circuit_sub = node.subscribe<racer_msgs::Circuit>(circuit_topic, 1, circuit_update);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
 
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
@@ -169,7 +189,7 @@ int main(int argc, char* argv[]) {
           bool is_advertised = next_waypoint + lookahead > waypoints->size()
             ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
             : next_waypoint <= i && i < next_waypoint + lookahead;
-          
+
           const auto wp = (*waypoints)[i];
 
           visualization_msgs::Marker marker;
@@ -180,7 +200,7 @@ int main(int argc, char* argv[]) {
           marker.id = i;
           marker.type = visualization_msgs::Marker::SPHERE;
           marker.action = visualization_msgs::Marker::ADD;
-      
+
           marker.pose.position.x = wp.center.x;
           marker.pose.position.y = wp.center.y;
           marker.pose.position.z = 0;

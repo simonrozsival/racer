@@ -1,5 +1,6 @@
 <launch>
   <arg name="map" />
+  <arg name="circuit" />
   <arg name="use_dwa" default="true" />
 
   <include file="$(find racer)/launch/map.launch">
@@ -9,6 +10,7 @@
   <include file="$(find racer)/launch/localization.launch" />
 
   <include file="$(find racer)/launch/agent.launch">
-    <arg name="use_dwa" value="$(arg use_dwa)"/>
+    <arg name="use_dwa" value="$(arg use_dwa)" />
+    <arg name="circuit" value="$(arg circuit)" />
   </include>
 </launch>
