@@ -31,12 +31,10 @@ void VehicleModel::update_state(
 {
     double v = step / dt;
 
-    double slip_angle = fix_angle(atan(0.5 * tan(fix_angle(steering_angle))));
+    double slip_angle = atan(0.5 * tan(steering_angle));
     double dx = v * cos(state.heading_angle + slip_angle);
     double dy = v * sin(state.heading_angle + slip_angle);
-    double dtheta = v * cos(slip_angle) * tan(fix_angle(steering_angle)) / wheelbase;
-
-    // std::cout << " delta: " << steering_angle  << " dx: " << dx << " dy: " << dy << " beta: " << slip_angle << " dtheta: " << dtheta << " v: " << v  << std::endl;
+    double dtheta = v * cos(slip_angle) * tan(steering_angle) / wheelbase;
 
     state.x += integrate(dx, dt);
     state.y += integrate(dy, dt);
