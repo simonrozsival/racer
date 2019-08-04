@@ -22,14 +22,17 @@
 #define DRIVING_TOPIC "/racer/commands"
 
 ros::NodeHandle node_handle;
+geometry_msgs::Twist manual_driving_msg;
 
 ros::Subscriber<geometry_msgs::Twist> driving(DRIVING_TOPIC, &drive_callback);
+ros::Publisher manual_driving(DRIVING_TOPIC, &manual_driving_msg);
 
 Servo servo_steering;
 Servo servo_throttle;
 
 void setup() {
   node_handle.initNode();
+  node_handle.advertise(manual_driving);
   node_handle.subscribe(driving);
 
   attach_rc_input_interrupts();
@@ -59,6 +62,13 @@ void loop() {
 
   servo_throttle.writeMicroseconds(throttle_pwm);
   reverse = throttle_pwm < THROTTLE_NONE_PWM - PWM_OFF_CENTER_TOLERANCE;
+  
+  if (!autonomous_mode) {
+    // translate the RC controller inputs into steering commands
+    manual_driving_msg.linear.x = fmap(throttle_pwm, THROTTLE_REVERSE_PWM, THROTTLE_FULL_PWM, -1.0, 1.0);
+    manual_driving_msg.angular.z = -1 * fmap(steering_pwm, STEERING_LEFT_PWM, STEERING_RIGHT_PWM, -1.0, 1.0);
+    manual_driving.publish(&manual_driving_msg);
+  }
 
   delay(DUTY_CYCLE_MS);
 }
