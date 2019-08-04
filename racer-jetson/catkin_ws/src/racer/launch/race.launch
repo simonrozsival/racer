@@ -7,6 +7,8 @@
     <arg name="map" value="$(arg map)"/>
   </include>
 
+  <!--node pkg="rosbag" type="play" name="bag" output="screen" args="- -clock $(find racer)/bags/2019-08-03-15-59-46.bag" /-->
+  <include file="$(find racer)/launch/odometry.launch" />
   <include file="$(find racer)/launch/localization.launch" />
 
   <include file="$(find racer)/launch/agent.launch">

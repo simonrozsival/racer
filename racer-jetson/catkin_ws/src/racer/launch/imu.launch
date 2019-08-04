@@ -2,7 +2,8 @@
   <node pkg="bno055_usb_stick" type="bno055_usb_stick_node" name="imu_node" output="screen">
     <param name="port" type="string" value="/dev/imu" />
     <param name="publish_tf" type="bool" value="false" />
-    <param name="frame_id" type="string" value="imu_frame" />
+    <param name="frame_id" type="string" value="imu" />
+    <remap from="/imu" to="/imu_data" />
   </node>
-  <node pkg="tf" type="static_transform_publisher" name="base_link_to_imu_link" args="0 0 0 -1.57 0 0 /base_link /imu_frame 100"/>
+  <node pkg="tf" type="static_transform_publisher" name="base_link_to_imu" args="0 0 0 -1.57 0 0 /base_link /imu 100"/>
 </launch>

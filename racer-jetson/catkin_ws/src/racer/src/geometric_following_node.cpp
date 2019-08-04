@@ -30,7 +30,7 @@ void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "geometric_following_node");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
   double cell_size;
   std::string odometry_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
@@ -46,6 +46,7 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/pure_pursuit");
 
   const double wheelbase = 0.31; // m
+  const double max_steering_angle = 24.0 / 180.0 * M_PI;
 
   std::cout << "Geometric strategy (pure pursuit + PID)" << std::endl;
   double kp, ki, kd, error_tolerance;
@@ -57,7 +58,7 @@ int main(int argc, char* argv[]) {
   std::cout << "PID was initialized (kp=" << kp << ", ki=" << ki << ", kd=" << kd << ")" << std::endl;
 
   double min_lookahead, lookahead_coef;
-  node.param<double>("min_lookahead", min_lookahead, wheelbase * 5.0);
+  node.param<double>("min_lookahead", min_lookahead, 1.0);
   node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
   auto pure_pursuit = std::make_shared<racing::pure_pursuit>(wheelbase, min_lookahead, lookahead_coef);
   std::cout << "Pure pursuit was initialized (min lookahead=" << min_lookahead << "m, lookahead velocity coef=" << lookahead_coef << ")" << std::endl;
@@ -68,7 +69,7 @@ int main(int argc, char* argv[]) {
   server.setCallback(f);
   std::cout << "dynamic reconfigure for PID was set up" << std::endl;
 
-  auto following_strategy = std::make_unique<racing::geometric_following_strategy>(pid, pure_pursuit);
+  auto following_strategy = std::make_unique<racing::geometric_following_strategy>(max_steering_angle, pid, pure_pursuit);
   std::cout << "Geometric following strategy was initialized" << std::endl;
 
   Follower follower(std::move(following_strategy));
@@ -82,7 +83,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::Marker>(visualization_topic, 1, true);
 
   int frequency; // Hz
-  node.param<int>("update_frequency_hz", frequency, 5);
+  node.param<int>("update_frequency_hz", frequency, 10);
 
   ros::Rate rate(frequency);
 
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]) {
 
       geometry_msgs::Twist msg;
       msg.linear.x = action->throttle;
-      msg.angular.z = action->target_steering_angle;
+      msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
 
@@ -135,6 +136,8 @@ int main(int argc, char* argv[]) {
 
         visualization_pub.publish(marker);
       }
+    } else {
+      std::cout << "following node: not initialized yet" << std::endl;
     }
 
     ros::spinOnce();

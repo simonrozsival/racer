@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     0.35, // safe width
     0.55, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
-    1.0 / 6.0 * M_PI, // max steering angle (rad)
+    24.0 / 180.0 * M_PI, // max steering angle (rad)
     2.0, // speed (ms^-1)
     2.0 // acceleration (ms^-2)
   );
@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     actions,
     discretization);
 
-  ros::Rate rate(1);
+  ros::Rate rate(4);
 
   while (ros::ok()) {
     if (!planner.is_initialized() && has_map) {
@@ -103,22 +103,22 @@ int main(int argc, char* argv[]) {
       
       if (!trajectory) {
         ROS_INFO("no plan found, sticking to old plan");
-        continue;
-      }
+      } else {
+        nav_msgs::Path path;
+        path.header = trajectory->header;
 
-      nav_msgs::Path path;
-      path.header = trajectory->header;
-      for (const auto& step : trajectory->trajectory) {
-        geometry_msgs::PoseStamped path_pose;
-        path_pose.header = trajectory->header;
-        path_pose.pose = step.pose;
+        for (const auto& step : trajectory->trajectory) { 
+          geometry_msgs::PoseStamped path_pose;
+          path_pose.header = trajectory->header;
+          path_pose.pose = step.pose;
 
-        path.poses.push_back(path_pose);
+          path.poses.push_back(path_pose);
+        }
+
+        ROS_INFO("publishing new plan");
+        trajectory_pub.publish(*trajectory);
+        path_pub.publish(path);
       }
-      
-      ROS_INFO("publishing new plan");
-      trajectory_pub.publish(*trajectory);
-      path_pub.publish(path);
     }
 
     ros::spinOnce();

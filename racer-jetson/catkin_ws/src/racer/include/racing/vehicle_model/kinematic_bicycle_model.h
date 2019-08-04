@@ -98,7 +98,7 @@ namespace racing {
                 for (auto it = steps.begin(); it != steps.end(); ++it) {
                     if (it->passed_waypoints < passed_waypoints) {
                         continue;
-                    } else if (it->passed_waypoints > passed_waypoints + 1) { // we would be skipping some waypoints
+                    } else if (it->passed_waypoints > passed_waypoints + 2) { // we would be skipping some waypoints
                         break;
                     }
 

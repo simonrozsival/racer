@@ -1,0 +1,5 @@
+<launch>
+  <node pkg="amcl" type="amcl" name="amcl">
+    <param name="odom_model_type" value="diff-corrected" />
+  </node>
+</launch>

@@ -16,8 +16,8 @@ namespace racing {
 
     class geometric_following_strategy : public following_strategy {
     public:
-        geometric_following_strategy(std::shared_ptr<pid> pid, std::shared_ptr<pure_pursuit> pursuit)
-            : pid_(pid), pure_pursuit_(pursuit)
+        geometric_following_strategy(double max_steering_angle, std::shared_ptr<pid> pid, std::shared_ptr<pure_pursuit> pursuit)
+            : max_steering_angle_(max_steering_angle), pid_(pid), pure_pursuit_(pursuit)
         {
         }
         
@@ -33,8 +33,8 @@ namespace racing {
                 return nullptr;
             }
 
-            double velocity_command = clamp(pid_->predict_next(current_state.speed, sub_trajectory->steps.front().step.speed), -1.0, 1.0);
-            double steering_command = clamp(pure_pursuit_->select_steering_angle(current_state, passed_waypoints, reference_trajectory), -1.0, 1.0);
+            double velocity_command = clamp(pid_->predict_next(current_state.speed, sub_trajectory->steps.front().step.speed));
+            double steering_command = clamp(pure_pursuit_->select_steering_angle(current_state, passed_waypoints, reference_trajectory) / max_steering_angle_);
 
             return std::make_unique<action>(velocity_command, steering_command);
         }
@@ -46,9 +46,10 @@ namespace racing {
     private:
         std::shared_ptr<pid> pid_;
         std::shared_ptr<pure_pursuit> pure_pursuit_;
+        const double max_steering_angle_;
 
-        inline double clamp(double value, double lo, double hi) const {
-            return std::min(std::max(value, lo), hi);
+        inline double clamp(double value) const {
+            return std::min(std::max(value, -1.0), 1.0);
         }
     };
 
