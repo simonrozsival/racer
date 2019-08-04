@@ -1,6 +1,7 @@
 #ifndef PURE_PURSUIT_H_
 #define PURE_PURSUIT_H_
 
+#include <iostream>
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 #include "math/primitives.h"
@@ -57,7 +58,7 @@ namespace racing {
     const double lookahead_coef_;
 
     double calculate_lookahead(const kinematic_model::state& current_state) const {
-      return std::min(min_lookahead_, current_state.speed * lookahead_coef_);
+      return std::max(min_lookahead_, current_state.speed * lookahead_coef_);
     }
 
     math::point calculate_rear_axle_center(const kinematic_model::state& current_state) const {

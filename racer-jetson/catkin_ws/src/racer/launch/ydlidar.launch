@@ -7,5 +7,7 @@
     <param name="range_min" type="double" value="0.15" />
     <param name="range_max" type="double" value="6" />
   </node>
-  
+
+  <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.135 0 0 0 base_link laser 20" />
+
 </launch>
