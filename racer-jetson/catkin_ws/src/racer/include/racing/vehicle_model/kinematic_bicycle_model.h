@@ -34,6 +34,21 @@ namespace racing {
 
                 return actions;
             }
+
+            static const std::list<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels) {
+                std::list<action> actions;
+
+                const double steering_step = 2.0 / double(steering_levels - 1);
+                const double throttle_step = 2.0 / double(throttle_levels - 1);
+
+                for (double throttle = 1; throttle >= -1; throttle -= throttle_step) {
+                    for (double steering = -1; steering <= 1; steering += steering_step) {
+                        actions.emplace_back(throttle, steering);
+                    }
+                }
+
+                return actions;
+            }
         };
 
         struct state {

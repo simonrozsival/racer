@@ -6,46 +6,41 @@
 #include "math/primitives.h"
 #include "racing/circuit.h"
 #include "astar/astar.h"
-#include "astar/hybrid_astar.h"
 
 #include "utils.h"
 
 using namespace racing::kinematic_model;
+using namespace astar::sehs;
 
 bool Planner::is_initialized() const {
-  return collision_detector_ != nullptr;
+  return collision_detector_ && discretization_.is_ready();
 }
 
-void Planner::initialize(const nav_msgs::OccupancyGrid& map) {
-  collision_detector_ = std::move(racing::collision_detector::precalculate(18, model_, map.info.resolution));
+void Planner::initialize(double map_resolution, std::string map_frame) {
+  map_frame_ = map_frame;
+  collision_detector_ = std::move(racing::collision_detector::precalculate(18, model_, map_resolution));
 }
 
 std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
-  const nav_msgs::OccupancyGrid& map,
-  const nav_msgs::Odometry& odom,
-  const racer_msgs::Waypoints& waypoints) const {
+  const std::shared_ptr<racing::occupancy_grid> grid,
+  const std::shared_ptr<racing::kinematic_model::state> state,
+  const std::shared_ptr<std::vector<math::point>> waypoints,
+  const int next_waypoint,
+  const double waypoint_radius) const {
 
-  auto initial_state = std::move(msg_to_state(odom));
-  auto discrete_initial_state = discretization_.discretize(*initial_state);
-  auto grid = std::move(msg_to_grid(map));
-
-  const double initial_heading_angle = initial_state->position.heading_angle;
-
-  std::vector<math::point> waypoints_list;
-  double waypoint_radius = waypoints.waypoints[0].radius;
-  for (const auto& wp : waypoints.waypoints) {
-    waypoints_list.emplace_back(wp.position.x, wp.position.y);
-  }
+  auto discrete_initial_state = discretization_.discretize(*state);
+  const double initial_heading_angle = state->position.heading_angle;
 
   racing::circuit circuit(
-    map.info.resolution,
-    initial_state->position,
-    waypoints_list,
+    grid->cell_size,
+    state->position,
+    *waypoints,
     waypoint_radius,
     *grid,
     *collision_detector_
   );
 
+  auto initial_state = std::make_unique<racing::kinematic_model::state>(state->position, state->speed, state->steering_angle); // make a unique copy
   auto problem = std::make_unique<astar::discretized_search_problem<discrete_state>>(
     std::move(initial_state),
     std::move(discrete_initial_state),
@@ -56,7 +51,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     circuit
   );
 
-  const auto solution = astar::search<discrete_state, state, trajectory>(
+  const auto solution = astar::search<discrete_state, racing::kinematic_model::state, trajectory>(
     std::move(problem),
     maximum_number_of_expanded_nodes_
   );
@@ -67,7 +62,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
 
   auto trajectory = std::make_unique<racer_msgs::Trajectory>();
   trajectory->header.stamp = ros::Time::now();
-  trajectory->header.frame_id = map.header.frame_id;
+  trajectory->header.frame_id = map_frame_;
 
   double prev_heading_angle = initial_heading_angle;
   for (const auto& step : solution.steps) {
@@ -76,7 +71,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     // the plan only considers the list of waypoints passed to the planner
     // - the first waypoint will have index 0, so its index has to be offset
     // by the actual index of the first waypoint 
-    state.next_waypoint.data = waypoints.next_waypoint + step.passed_waypoints;
+    state.next_waypoint.data = next_waypoint + step.passed_waypoints;
     
     state.pose.position.x = step.step.position.x;
     state.pose.position.y = step.step.position.y;
