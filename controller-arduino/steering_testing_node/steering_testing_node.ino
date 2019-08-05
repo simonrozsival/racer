@@ -19,7 +19,11 @@
 #define PIN_OUTPUT_THROTTLE 10
 #define PIN_OUTPUT_STEERING 9
 
+#define PIN_LED 13
+
 #define DRIVING_TOPIC "/racer/commands"
+
+int blinking_counter = 0;
 
 ros::NodeHandle node_handle;
 geometry_msgs::Twist manual_driving_msg;
@@ -40,6 +44,9 @@ void setup() {
 
   servo_steering.attach(PIN_OUTPUT_STEERING);
   servo_throttle.attach(PIN_OUTPUT_THROTTLE);
+
+  pinMode(PIN_LED, OUTPUT);
+  digitalWrite(PIN_LED, LOW);
 }
 
 void loop() {
@@ -50,7 +57,7 @@ void loop() {
 
   servo_steering.writeMicroseconds(steering_pwm);
 
-  if (!reverse && throttle_pwm < THROTTLE_NONE_PWM - PWM_OFF_CENTER_TOLERANCE) {
+  if (!reverse && throttle_pwm < (int)THROTTLE_NONE_PWM - (int)PWM_OFF_CENTER_TOLERANCE) {
     // switching into reverse is a bit more complicated than just setting PWM between THROTTLE_REVERSE_PWM and THROTTLE_NONE_PWM
     // the PWM has to be set to THROTTLE_REVERSE_PWM for a while, then return back to THROTTLE_NONE_PWM and then go to the `autonomous_throttle` value
     // this will dealy the algorithm a bit and it will 
@@ -61,13 +68,19 @@ void loop() {
   }
 
   servo_throttle.writeMicroseconds(throttle_pwm);
-  reverse = throttle_pwm < THROTTLE_NONE_PWM - PWM_OFF_CENTER_TOLERANCE;
+  reverse = throttle_pwm < (int)THROTTLE_NONE_PWM - (int)PWM_OFF_CENTER_TOLERANCE;
   
   if (!autonomous_mode) {
     // translate the RC controller inputs into steering commands
     manual_driving_msg.linear.x = fmap(throttle_pwm, THROTTLE_REVERSE_PWM, THROTTLE_FULL_PWM, -1.0, 1.0);
     manual_driving_msg.angular.z = -1 * fmap(steering_pwm, STEERING_LEFT_PWM, STEERING_RIGHT_PWM, -1.0, 1.0);
     manual_driving.publish(&manual_driving_msg);
+  } else {
+    if (blinking_counter % 10 == 0) {
+      digitalWrite(PIN_LED, blinking_counter % 20 == 0 ? HIGH : LOW);
+    }
+
+    ++blinking_counter;
   }
 
   delay(DUTY_CYCLE_MS);

@@ -27,9 +27,9 @@ void drive_callback(const geometry_msgs::Twist& twist_msg) {
 void select_inputs(int* steering_pwm, int* throttle_pwm) {
   *steering_pwm = rc_input[STEERING];
   *throttle_pwm = rc_input[THROTTLE];
-
-  if (autonomous_mode) {
-    if (abs(*steering_pwm - STEERING_CENTER_PWM) > PWM_OFF_CENTER_TOLERANCE) {
+  
+  if (autonomous_mode) {    
+    if (abs((int)rc_input[STEERING] - (int)STEERING_CENTER_PWM) > (int)PWM_OFF_CENTER_TOLERANCE) {
       autonomous_mode = false;
     } else if (has_autonomous_steering_data) {
       *steering_pwm = autonomous_steering_angle;
