@@ -17,7 +17,7 @@
     <group unless="$(arg use_dwa)">
         <node pkg="racer" name="following" type="geometric_following_node" output="screen">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
-            <param name="min_lookahead" value="0.5" />
+            <param name="min_lookahead" value="1" />
         </node>
     </group>
 </launch>
