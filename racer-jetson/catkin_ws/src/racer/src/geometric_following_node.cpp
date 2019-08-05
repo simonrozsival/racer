@@ -49,7 +49,10 @@ int main(int argc, char* argv[]) {
   const double max_steering_angle = 24.0 / 180.0 * M_PI;
 
   std::cout << "Geometric strategy (pure pursuit + PID)" << std::endl;
+
+  double max_allowed_speed_percentage;
   double kp, ki, kd, error_tolerance;
+  node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
   node.param<double>("pid_speed_kp", kp, 1.0);
   node.param<double>("pid_speed_ki", ki, 0.0);
   node.param<double>("pid_speed_kd", kd, 1.0);
@@ -97,9 +100,12 @@ int main(int argc, char* argv[]) {
         std::cout << "following node: STOP!" << std::endl;
       }
 
+      double throttle = std::min(max_allowed_speed_percentage, std::max(-max_allowed_speed_percentage, action->throttle));
+      double steering_angle = -action->target_steering_angle;
+
       geometry_msgs::Twist msg;
-      msg.linear.x = action->throttle;
-      msg.angular.z = -action->target_steering_angle;
+      msg.linear.x = throttle;
+      msg.angular.z = steering_angle;
 
       command_pub.publish(msg);
 

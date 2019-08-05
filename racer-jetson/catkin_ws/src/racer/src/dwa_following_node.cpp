@@ -33,8 +33,10 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
+  double max_allowed_speed_percentage;
   double max_speed, acceleration;
 
+  node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
   node.param<double>("vehicle_max_speed", max_speed, 3.0);
   node.param<double>("vehicle_acceleration", acceleration, 2.0);
 
@@ -45,7 +47,7 @@ int main(int argc, char* argv[]) {
     0.55, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     1.0 / 6.0 * M_PI, // max steering angle (rad)
-    max_speed, // speed (ms^-1)
+    max_allowed_speed_percentage * max_speed, // speed (ms^-1)
     acceleration // acceleration (ms^-2)
   );
 
@@ -113,7 +115,7 @@ int main(int argc, char* argv[]) {
       }
 
       geometry_msgs::Twist msg;
-      msg.linear.x = action->throttle;
+      msg.linear.x = max_allowed_speed_percentage * action->throttle;
       msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
