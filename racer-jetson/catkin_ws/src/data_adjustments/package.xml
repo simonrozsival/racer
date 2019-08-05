@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>particle_filter_tf_correction</name>
+  <name>data_adjustments</name>
   <version>0.0.0</version>
-  <description>The particle_filter_tf_correction package</description>
+  <description>The data_adjustments package</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag -->
   <!-- Example:  -->

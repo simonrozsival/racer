@@ -29,7 +29,7 @@ def pose_update(msg, args):
   br.sendTransform(map_to_odom_trans, map_to_odom_rot, rospy.Time.now(), odom_frame, map_frame)
 
 if __name__ == '__main__':
-  rospy.init_node('fix_tf')
+  rospy.init_node('fix_particle_filter_tf')
   
   pose_topic = rospy.get_param('~pose_topic', '/odom')
   map_frame = rospy.get_param('~map_frame', '/map')
