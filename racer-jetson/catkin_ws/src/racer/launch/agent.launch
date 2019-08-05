@@ -6,7 +6,7 @@
       <rosparam command="load" file="$(find racer)/circuits/$(arg circuit).yaml" />
     </node>
 
-    <node pkg="racer" name="planning" type="planning_node" output="screen" />
+    <node pkg="racer" name="planning" type="planning_node" />
 
     <group if="$(arg use_dwa)">
         <node pkg="racer" name="following" type="dwa_following_node">
@@ -17,6 +17,7 @@
     <group unless="$(arg use_dwa)">
         <node pkg="racer" name="following" type="geometric_following_node" output="screen">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
+            <param name="min_lookahead" value="0.5" />
         </node>
     </group>
 </launch>
