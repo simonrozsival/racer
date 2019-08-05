@@ -40,6 +40,8 @@ namespace astar {
                     (int)floor(math::angle(state.position.heading_angle) / heading),
                     (int)floor(state.speed / speed));
             }
+
+            bool is_ready() const override { return true; }
         };
 
     }

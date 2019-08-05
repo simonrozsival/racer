@@ -11,34 +11,44 @@
 
 #include "math/primitives.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
+#include "sehs/space_exploration.h"
+
+#include "utils.h"
 #include "Planner.h"
 
 std::mutex lock;
 
-nav_msgs::Odometry last_known_position;
-nav_msgs::OccupancyGrid last_known_map;
-racer_msgs::Waypoints next_waypoints;
-
-bool has_map = false;
-bool has_odom = false;
-bool has_goal = false;
+std::shared_ptr<racing::kinematic_model::state> last_known_position;
+std::shared_ptr<racing::occupancy_grid> last_known_map;
+std::shared_ptr<std::vector<math::point>> next_waypoints;
+int next_waypoint;
+double waypoint_radius;
+std::string map_frame;
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   std::lock_guard<std::mutex> guard(lock);
-  last_known_map = *map;
-  has_map = true;
+
+  map_frame = map->header.frame_id;
+  last_known_map = std::move(msg_to_grid(*map));
 }
 
-void odometry_update(const nav_msgs::Odometry::ConstPtr& position) {
+void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
   std::lock_guard<std::mutex> guard(lock);
-  last_known_position = *position;
-  has_odom = true;
+
+  last_known_position = std::move(msg_to_state(*odom));
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   std::lock_guard<std::mutex> guard(lock);
-  next_waypoints = *waypoints;
-  has_goal = true;
+
+  next_waypoints = std::make_shared<std::vector<math::point>>();
+
+  waypoint_radius = waypoints->waypoints[0].radius;
+  next_waypoint = waypoints->next_waypoint;
+
+  for (const auto& wp : waypoints->waypoints) {
+    next_waypoints->emplace_back(wp.position.x, wp.position.y);
+  }
 }
 
 int main(int argc, char* argv[]) {
@@ -52,6 +62,9 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
+
+  bool allow_reverse;
+  node.param<bool>("allow_reverse", allow_reverse, false);
 
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
   ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
@@ -70,44 +83,47 @@ int main(int argc, char* argv[]) {
     2.0 // acceleration (ms^-2)
   );
 
-  auto actions = racing::kinematic_model::action::create_actions(3, 9);
-  astar::hybrid_astar::discretization discretization(
-    1.0, 1.0, M_PI / 12.0, 0.25);
+  auto actions = allow_reverse
+    ? racing::kinematic_model::action::create_actions(3, 9)
+    : racing::kinematic_model::action::create_actions_including_reverse(5, 9);
+
+  int number_of_expanded_points = 12;
+  astar::sehs::discretization discretization(
+    vehicle.radius(), number_of_expanded_points, M_PI / 12.0, 0.25);
   
   Planner planner(
     vehicle,
     actions,
     discretization);
 
-  ros::Rate rate(4);
+  ros::Rate rate(10);
 
   while (ros::ok()) {
-    if (!planner.is_initialized() && has_map) {
-      planner.initialize(last_known_map);
+    if (!planner.is_initialized() && last_known_map) {
+      std::lock_guard<std::mutex> guard(lock);
+
+      const std::list<math::point> points{ next_waypoints->begin(), next_waypoints->end() };
+      discretization.explore_grid(*last_known_map, last_known_position->position, points);
+      planner.initialize(last_known_map->cell_size, map_frame);
     }
 
-    if (has_map && has_odom && has_goal) {
+    if (last_known_map && last_known_position && next_waypoints) {
       ROS_INFO("planning...");
 
-      nav_msgs::Odometry odom;
-      racer_msgs::Waypoints waypoints;
-      nav_msgs::OccupancyGrid map;
-      {
-        std::lock_guard<std::mutex> guard(lock);
-        odom = last_known_position;
-        waypoints = next_waypoints;
-        map = last_known_map;
-      }
-
-      const auto trajectory = planner.plan(map, odom, waypoints);
+      const auto trajectory = planner.plan(
+        last_known_map,
+        last_known_position,
+        next_waypoints,
+        next_waypoint,
+        waypoint_radius);
       
       if (!trajectory) {
-        ROS_INFO("no plan found, sticking to old plan");
+        ROS_INFO("no plan found, stick to old plan");
       } else {
         nav_msgs::Path path;
         path.header = trajectory->header;
 
-        for (const auto& step : trajectory->trajectory) { 
+        for (const auto& step : trajectory->trajectory) {
           geometry_msgs::PoseStamped path_pose;
           path_pose.header = trajectory->header;
           path_pose.pose = step.pose;

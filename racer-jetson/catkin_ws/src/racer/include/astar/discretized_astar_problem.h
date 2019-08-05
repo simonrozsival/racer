@@ -17,6 +17,7 @@ namespace astar {
     class discretization {
     public:
         virtual std::unique_ptr<TDiscreteState> discretize(const state& state) const = 0;
+        virtual bool is_ready() const = 0;
     };
 
     template <typename TDiscreteState>
