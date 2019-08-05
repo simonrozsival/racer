@@ -93,15 +93,16 @@ namespace racing {
                 }
 
                 auto best_so_far = steps.begin();
-                double distance = state.distance_to(best_so_far->step);
+                double distance = 10000000000; // "infinity"
+                int i = 0;
 
                 for (auto it = steps.begin(); it != steps.end(); ++it) {
                     if (it->passed_waypoints < passed_waypoints) {
                         continue;
-                    } else if (it->passed_waypoints > passed_waypoints + 2) { // we would be skipping some waypoints
+                    } else if (it->passed_waypoints > passed_waypoints + 1) { // do not skip a waypoint
                         break;
                     }
-
+                    ++i;
                     double next_distance = state.distance_to(it->step);
                     if (next_distance < distance) {
                         best_so_far = it;

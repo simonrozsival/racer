@@ -72,6 +72,11 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
   double prev_heading_angle = initial_heading_angle;
   for (const auto& step : solution.steps) {
     racer_msgs::TrajectoryState state;
+
+    // the plan only considers the list of waypoints passed to the planner
+    // - the first waypoint will have index 0, so its index has to be offset
+    // by the actual index of the first waypoint 
+    state.next_waypoint.data = waypoints.next_waypoint + step.passed_waypoints;
     
     state.pose.position.x = step.step.position.x;
     state.pose.position.y = step.step.position.y;
