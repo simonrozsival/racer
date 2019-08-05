@@ -12,6 +12,7 @@
         <node pkg="racer" name="following" type="dwa_following_node">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="prediction_horizon_s" value="1.0" />
+            <param name="max_allowed_speed_percentage" value="0.25" />
         </node>
     </group>
 
@@ -19,6 +20,7 @@
         <node pkg="racer" name="following" type="geometric_following_node" output="screen">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="min_lookahead" value="1" />
+            <param name="max_allowed_speed_percentage" value="0.25" />
         </node>
     </group>
 </launch>
