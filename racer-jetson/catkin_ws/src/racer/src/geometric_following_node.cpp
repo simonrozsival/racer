@@ -86,6 +86,7 @@ int main(int argc, char* argv[]) {
   node.param<int>("update_frequency_hz", frequency, 10);
 
   ros::Rate rate(frequency);
+  ros::Rate init_rate(1);
 
   while (ros::ok()) {
     if (follower.is_initialized()) {
@@ -94,8 +95,6 @@ int main(int argc, char* argv[]) {
       if (!action) {
         action = follower.stop();
         std::cout << "following node: STOP!" << std::endl;
-      } else {
-        std::cout << "following node selected: [throttle: " << action->throttle << ", steering angle: " << action->target_steering_angle << "]" << std::endl;
       }
 
       geometry_msgs::Twist msg;
@@ -136,12 +135,15 @@ int main(int argc, char* argv[]) {
 
         visualization_pub.publish(marker);
       }
+
+      ros::spinOnce();
+      rate.sleep();
     } else {
       std::cout << "following node: not initialized yet" << std::endl;
-    }
 
-    ros::spinOnce();
-    rate.sleep();
+      ros::spinOnce();
+      init_rate.sleep();
+    }
   }
 
   return 0;
