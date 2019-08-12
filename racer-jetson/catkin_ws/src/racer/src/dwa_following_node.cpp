@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
   std::cout << "DWA strategy" << std::endl;
-  auto actions = racing::kinematic_model::action::create_actions(5, 15);
+  auto actions = racing::kinematic_model::action::create_actions_including_reverse(9, 15);
   
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
