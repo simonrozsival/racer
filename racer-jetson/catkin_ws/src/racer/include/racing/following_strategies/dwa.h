@@ -22,23 +22,23 @@ namespace racing {
             double heading_error_weight,
             double velocity_error_weight,
             double velocity_undershooting_overshooting_ratio,
-            double distance_to_obstacles_weight,
+            double obstacle_proximity_error_weight,
             double max_position_error)
             : position_error_weight_(position_error_weight),
             heading_error_weight_(heading_error_weight),
             velocity_error_weight_(velocity_error_weight),
             velocity_undershooting_overshooting_ratio_(velocity_undershooting_overshooting_ratio),
             max_position_error_(max_position_error),
-            distance_to_obstacles_weight_(distance_to_obstacles_weight)
+            obstacle_proximity_error_weight_(obstacle_proximity_error_weight)
         {
         }
 
-        double score(
+        double calculate_error(
             const std::unique_ptr<std::list<state>>& attempt,
             const std::unique_ptr<trajectory>& reference,
             const occupancy_grid& costmap) const {
 
-            double score = 0;
+            double error = 0;
 
             std::list<state>::const_iterator first_it = attempt->begin();
             std::list<trajectory_step>::const_iterator second_it = reference->steps.begin();
@@ -47,21 +47,21 @@ namespace racing {
             std::size_t steps = std::min(attempt->size(), reference->steps.size());
 
             for (; first_it != attempt->end() && second_it != reference->steps.end(); ++first_it, ++second_it) {
-                double error = position_error_weight_ * position_error(*first_it, second_it->step)
+                double step_error = position_error_weight_ * position_error(*first_it, second_it->step)
                     + heading_error_weight_ * heading_error(*first_it, second_it->step)
                     + velocity_error_weight_ * velocity_error(*first_it, second_it->step)
-                    + distance_to_obstacles_weight_ * distance_to_obstacles(*first_it, costmap);
+                    + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, costmap);
 
                 double weight = pow(double(steps - step++) / double(steps), 2);
 
-                score += weight * error;
+                error += weight * step_error;
             }
 
-            return score;
+            return error;
         }
     private:
         const double position_error_weight_, heading_error_weight_, velocity_error_weight_;
-        const double velocity_undershooting_overshooting_ratio_, max_position_error_, distance_to_obstacles_weight_;
+        const double velocity_undershooting_overshooting_ratio_, max_position_error_, obstacle_proximity_error_weight_;
 
         double position_error(const state& a, const state& reference) const {
             return (a.position.location() - reference.position.location()).length() / max_position_error_;
@@ -82,8 +82,8 @@ namespace racing {
                 : speed_ratio / velocity_undershooting_overshooting_ratio_;
         }
 
-        double distance_to_obstacles(const state& a, const occupancy_grid& grid) const {
-            return (255.0 - grid.value_at(a.position.location().x, a.position.location().x)) / 255.0;
+        double obstacle_proximity_error(const state& a, const occupancy_grid& grid) const {
+            return grid.value_at(a.position.location().x, a.position.location().x) / grid.max_value();
         }
     };
 
@@ -113,17 +113,21 @@ namespace racing {
             }
 
             std::unique_ptr<action> best_so_far = nullptr;
-            double best_score = HUGE_VAL;
+            double lowest_error = HUGE_VAL;
 
             for (const auto& next_action : available_actions_) {
                 const auto trajectory = unfold(current_state, next_action, costmap);
                 if (trajectory) {
-                    const double trajectory_score = trajectory_error_calculator_->score(trajectory, reference_subtrajectory, costmap);
-                    if (trajectory_score < best_score) {
-                        best_score = trajectory_score;
+                    const double error = trajectory_error_calculator_->calculate_error(trajectory, reference_subtrajectory, costmap);
+                    if (error < lowest_error) {
+                        lowest_error = error;
                         best_so_far = std::make_unique<action>(next_action);
                     }
                 }
+            }
+
+            if (!best_so_far) {
+                return nullptr;
             }
 
             return std::move(best_so_far);
@@ -158,7 +162,8 @@ namespace racing {
 
                 // the costmap is inflated and there is a collision if the center of gravity
                 // is in the "deadly" zone
-                if (grid.value_at(current->position.x, current->position.y) == costmap_2d::LETHAL_OBSTACLE) {
+                if (grid.is_dangerous(current->position.x, current->position.y)) {
+                    std::cout << "this would run into an obstacle" << std::endl;
                     return nullptr;
                 }
 
