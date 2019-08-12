@@ -7,8 +7,6 @@
 #include "racing/circuit.h"
 #include "astar/astar.h"
 
-#include "utils.h"
-
 using namespace racing::kinematic_model;
 using namespace astar::sehs;
 
