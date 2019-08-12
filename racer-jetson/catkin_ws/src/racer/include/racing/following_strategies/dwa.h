@@ -2,6 +2,7 @@
 #define DWA_H_
 
 #include <iostream>
+#include <cmath>
 
 #include <costmap_2d/cost_values.h>
 
@@ -112,7 +113,7 @@ namespace racing {
             }
 
             std::unique_ptr<action> best_so_far = nullptr;
-            double best_score = 1000000000000000000.0;
+            double best_score = HUGE_VAL;
 
             for (const auto& next_action : available_actions_) {
                 const auto trajectory = unfold(current_state, next_action, costmap);

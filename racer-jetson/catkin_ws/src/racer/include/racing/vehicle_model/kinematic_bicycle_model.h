@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <algorithm>
+#include <cmath>
 
 #include "vehicle_position.h"
 #include "vehicle.h"
@@ -108,7 +109,7 @@ namespace racing {
                 }
 
                 auto best_so_far = steps.begin();
-                double distance = 10000000000; // "infinity"
+                double distance = HUGE_VAL;
                 int i = 0;
 
                 for (auto it = steps.begin(); it != steps.end(); ++it) {
