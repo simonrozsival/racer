@@ -6,6 +6,7 @@
 #include <iostream>
 #include <algorithm>
 #include <vector>
+#include <limits>
 
 #include "math/primitives.h"
 #include "racing/vehicle_model/vehicle.h"
@@ -20,7 +21,7 @@ namespace racing {
         const double cell_size;
 
         occupancy_grid(
-            const std::vector<signed char> data,
+            const std::vector<int8_t> data,
             const uint32_t width,
             const uint32_t height,
             const double cell_size,
@@ -52,13 +53,17 @@ namespace racing {
             return is_occupied(cx, cy);
         }
 
-        signed char value_at(double x, double y) const {
+        int8_t value_at(double x, double y) const {
             int x_cell = int((x - origin_.x) / cell_size);
             int y_cell = int((y - origin_.y) / cell_size);
             const int index = index_of(x_cell, y_cell);
             return index < 0 || index >= size_
-                ? 255 // no information
+                ? max_value() // no information
                 : data_[index];
+        }
+
+        bool is_dangerous(double x, double y) const {
+            return value_at(x, y) >= 128;
         }
 
         double distance_to_closest_obstacle(const math::point& center, double max_radius) const {
@@ -83,20 +88,25 @@ namespace racing {
             uint16_t height = (uint16_t)lines.size();
             std::size_t size = width * height;
 
-            std::vector<signed char> data;
+            std::vector<int8_t> data;
             data.resize(size);
 
             for (std::size_t i = 0; i < height; ++i) {
                 for (std::size_t j = 0; j < width; ++j) {
                     const std::size_t index = i * width + j;
-                    data[index] = lines[i][j] == ' ' ? 0 : 100;
+                    data[index] = lines[i][j] == ' ' ? 0 : max_value();
                 }
             }
 
             return std::make_unique<occupancy_grid>(data, width, height, cell_size, math::point(0, 0));
         }
+
+        static constexpr int8_t max_value() {
+            return std::numeric_limits<int8_t>::max();
+        }
+
     private:
-        const std::vector<signed char> data_;
+        const std::vector<int8_t> data_;
         const uint32_t width_;
         const uint32_t height_;
         const std::size_t size_;
