@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
   ros::Rate rate(10);
 
   while (ros::ok()) {
-    if (!planner.is_initialized() && last_known_map) {
+    if (!planner.is_initialized() && last_known_map && next_waypoints) {
       std::lock_guard<std::mutex> guard(lock);
 
       const std::list<math::point> points{ next_waypoints->begin(), next_waypoints->end() };
