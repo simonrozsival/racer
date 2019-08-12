@@ -47,12 +47,12 @@ std::unique_ptr<racing::kinematic_model::action> Follower::select_driving_comman
   if (reference_trajectory_ && reference_trajectory_->steps.size() > 0) {
     return strategy_->select_action(*last_known_state_, next_waypoint_, *reference_trajectory_, *costmap_);
   } else {
-    return std::make_unique<racing::kinematic_model::action>(stop_);
+    return stop();
   }
 }
 
 std::unique_ptr<racing::kinematic_model::action> Follower::stop() const {
-  bool is_moving = std::abs(last_known_state_->speed) > 0.2;
+  bool is_moving = std::abs(last_known_state_->speed) > 0.1;
   if (is_moving) {
     double braking_direction = last_known_state_->speed < 0 ? 1.0 : -1.0;
     return std::make_unique<racing::kinematic_model::action>(braking_direction, 0.0);
