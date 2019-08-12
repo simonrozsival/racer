@@ -23,7 +23,7 @@ std::unique_ptr<racing::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGri
   );
 }
 
-std::unique_ptr<racing::kinematic_model::state> msg_to_state(
+std::unique_ptr<racing::kinematic_model::state> pose_and_twist_to_state(
     const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist
 ) {
     racing::vehicle_position initial_postition(
@@ -40,7 +40,7 @@ std::unique_ptr<racing::kinematic_model::state> msg_to_state(
 }
 
 std::unique_ptr<racing::kinematic_model::state> msg_to_state(const nav_msgs::Odometry& odom) {
-    return msg_to_state(odom.pose.pose, odom.twist.twist);
+    return pose_and_twist_to_state(odom.pose.pose, odom.twist.twist);
 }
 
 std::unique_ptr<racing::kinematic_model::trajectory> msg_to_trajectory(
@@ -48,7 +48,7 @@ std::unique_ptr<racing::kinematic_model::trajectory> msg_to_trajectory(
     std::list<racing::kinematic_model::trajectory_step> steps;
     for (const auto& step : msg.trajectory) {
         steps.emplace_back(
-            *msg_to_state(step.pose, step.velocity),
+            *pose_and_twist_to_state(step.pose, step.velocity),
             step.next_waypoint.data);
     }
 
