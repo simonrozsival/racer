@@ -73,6 +73,7 @@ add_executable(dwa_following_node src/Follower.cpp src/dwa_following_node.cpp)
 add_executable(geometric_following_node src/Follower.cpp src/geometric_following_node.cpp)
 add_executable(planning_node src/Planner.cpp src/planning_node.cpp)
 add_executable(circuit_node src/circuit_node.cpp)
+add_executable(current_state_node src/current_state_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -80,6 +81,7 @@ add_dependencies(dwa_following_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 add_dependencies(geometric_following_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROMECT_NAME}_gencfg)
 add_dependencies(planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(circuit_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(current_state_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(dwa_following_node
@@ -95,5 +97,9 @@ target_link_libraries(planning_node
 )
 
 target_link_libraries(circuit_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(current_state_node
   ${catkin_LIBRARIES}
 )
