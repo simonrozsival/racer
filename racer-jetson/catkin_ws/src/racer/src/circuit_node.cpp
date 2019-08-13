@@ -35,7 +35,7 @@ std::string frame_id;
 std::unique_ptr<std::vector<math::circle>> waypoints;
 
 int next_waypoint = -1;
-int last_published_next_waypoint = -1;
+int last_published_next_waypoint = -2;
 
 void load_circuit();
 

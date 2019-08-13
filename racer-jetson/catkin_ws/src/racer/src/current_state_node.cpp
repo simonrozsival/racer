@@ -38,7 +38,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& imu) {
 }
 
 void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
-  const double target_steering_angle_percent = command->twist.angular.z;
+  const double target_steering_angle_percent = command->angular.z;
 
   current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
 }
