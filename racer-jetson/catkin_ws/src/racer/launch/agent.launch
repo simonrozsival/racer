@@ -4,9 +4,10 @@
 
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
       <rosparam command="load" file="$(find racer)/circuits/$(arg circuit).yaml" />
+      <param name="lookahead" value="3" />
     </node>
 
-    <node pkg="racer" name="planning" type="planning_node" output="screen">
+    <node pkg="racer" name="planning" type="planning_node">
       <param name="allow_reverse" value="true" />
     </node>
 
@@ -15,7 +16,11 @@
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="prediction_horizon_s" value="1.0" />
             <param name="max_allowed_speed_percentage" value="0.25" />
-            <param name="obstacle_proximity_error_weight" value="100" />
+
+            <param name="distance_to_obstacle_weight" value="80" />
+            <param name="position_weight" value="50" />
+            <param name="heading_weight" value="40" />
+            <param name="velocity_weight" value="5" />
         </node>
     </group>
 
