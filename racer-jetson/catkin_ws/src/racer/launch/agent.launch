@@ -7,8 +7,13 @@
       <param name="lookahead" value="3" />
     </node>
 
+    <node pkg="racer" name="state" type="current_state_node">
+      <param name="frequency" value="30" />
+    </node>
+
     <node pkg="racer" name="planning" type="planning_node">
       <param name="allow_reverse" value="true" />
+      <param name="frequency" value="5" />
     </node>
 
     <group if="$(arg use_dwa)">
@@ -21,6 +26,8 @@
             <param name="position_weight" value="50" />
             <param name="heading_weight" value="40" />
             <param name="velocity_weight" value="5" />
+
+            <param name="frequency" value="30" />
         </node>
     </group>
 
@@ -29,6 +36,8 @@
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="min_lookahead" value="1" />
             <param name="max_allowed_speed_percentage" value="0.25" />
+
+            <param name="frequency" value="30" />
         </node>
     </group>
 </launch>

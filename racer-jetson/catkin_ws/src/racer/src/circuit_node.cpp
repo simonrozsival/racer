@@ -10,17 +10,15 @@
 #include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
 
-#include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "visualization_msgs/MarkerArray.h"
 #include "visualization_msgs/Marker.h"
+#include "racer_msgs/State.h"
 #include "racer_msgs/Circuit.h"
 #include "racer_msgs/Waypoint.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "utils.h"
-
-std::mutex odom_lock;
+std::mutex state_lock;
 std::mutex analysis_lock;
 
 // settings
@@ -35,7 +33,9 @@ std::unique_ptr<racing::vehicle_position> position;
 std::unique_ptr<racing::occupancy_grid> grid;
 std::string frame_id;
 std::unique_ptr<std::vector<math::circle>> waypoints;
+
 int next_waypoint = -1;
+int last_published_next_waypoint = -1;
 
 void load_circuit();
 
@@ -65,7 +65,7 @@ void load_circuit() {
     return;
   }
 
-  std::cout << "Analyzing the circuit..." << std::endl;
+  ROS_DEBUG("Analyzing the circuit...");
 
   racing::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
@@ -76,13 +76,13 @@ void load_circuit() {
   }
   final_check_points.push_back(position->location()); // back to the start 
 
-  std::cout << "start track analysis/space exploration" << std::endl;
+  ROS_DEBUG("start track analysis/space exploration");
   auto apexes = analysis.find_apexes(vehicle_radius, *position, final_check_points);
-  std::cout << "finished track analysis/space exploration" << std::endl;
+  ROS_DEBUG("finished track analysis/space exploration");
 
   if (apexes.size() == 0) {
-    std::cout << "cannot find apexes - there might not be enough room for the careful algorithm to fit ghe car through" << std::endl;
-    std::cout << "select different checkpoints, decrease the radius of the car, or create a new map" << std::endl;
+    ROS_DEBUG("cannot find apexes - there might not be enough room for the careful algorithm to fit ghe car through");
+    ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
     return;
   }
 
@@ -95,18 +95,17 @@ void load_circuit() {
   waypoints = std::make_unique<std::vector<math::circle>>(wps);
   next_waypoint = 0;
 
-  std::cout << "Track analysis is completed. Number of discovered waypoints: " << waypoints->size() << std::endl;
-  std::cout << "Next waypoint: " << next_waypoint << std::endl;
+  ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints->size());
+  ROS_DEBUG("Next waypoint: %d", next_waypoint);
 }
 
-void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
+void state_update(const racer_msgs::State::ConstPtr& state) {
   bool try_init = false;
   if (!position) {
     try_init = true;
   }
 
-  auto state = std::move(msg_to_state(*odom));
-  position = std::make_unique<racing::vehicle_position>(state->position);
+  position = std::make_unique<racing::vehicle_position>(state->x, state->y, state->heading_angle);
 
   if (try_init) {
     load_circuit();
@@ -116,9 +115,10 @@ void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
     return;
   }
 
-  std::lock_guard<std::mutex> guard(odom_lock);
+  std::lock_guard<std::mutex> guard(state_lock);
 
-  if ((*waypoints)[next_waypoint].contains(position->location())) {
+  const auto wp = (*waypoints)[next_waypoint];
+  if (wp.contains(position->location())) {
     next_waypoint = (next_waypoint + 1) % waypoints->size();
     std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint << std::endl;
   }
@@ -128,10 +128,10 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "circuit_node");
   ros::NodeHandle node("~");
 
-  std::string map_topic, circuit_topic, odometry_topic, waypoints_topic, waypoints_visualization_topic;
+  std::string map_topic, circuit_topic, state_topic, waypoints_topic, waypoints_visualization_topic;
 
   node.param<std::string>("map_topic", map_topic, "/map");
-  node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
+  node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("waypoints_visualization_topic", waypoints_visualization_topic, "/racer/visualization/waypoints");
 
@@ -154,16 +154,16 @@ int main(int argc, char* argv[]) {
   }
 
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
 
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(waypoints_topic, 1, true);
-  ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1);
+  ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(waypoints_visualization_topic, 1, true);
 
-  ros::Rate rate(5);
+  ros::Rate rate(30);
 
   while (ros::ok()) {
     std::unique_lock<std::mutex> guard(analysis_lock);
-    if (waypoints) {
+    if (waypoints && last_published_next_waypoint != next_waypoint) {
       racer_msgs::Waypoints msg;
       msg.header.stamp = ros::Time::now();
       msg.header.frame_id = frame_id;
@@ -219,6 +219,8 @@ int main(int argc, char* argv[]) {
 
         visualization_pub.publish(markers);
       }
+
+      last_published_next_waypoint = next_waypoint;
     }
     guard.unlock();
 
