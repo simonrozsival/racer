@@ -3,11 +3,11 @@
 
 #include <ros/ros.h>
 #include <tf/tf.h>
-#include <tf/TransformListener.h>
+#include <tf/transform_listener.h>
 
 #include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
-#include <racing_msgs/State.h>
+#include <racer_msgs/State.h>
 
 #include "racing/vehicle_model/vehicle_position.h"
 
@@ -38,15 +38,15 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& imu) {
 }
 
 void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
-  const double target_steering_angle_percent = command->twist.twist.angular.z;
+  const double target_steering_angle_percent = command->twist.angular.z;
 
   current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
 }
 
 racing::vehicle_position get_current_position(const tf::TransformListener& tf_listener) {  
   tf::StampedTransform transform;
-  tf_listener_.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
-  tf_listener_.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+  tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
+  tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
 
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
@@ -57,7 +57,7 @@ racing::vehicle_position get_current_position(const tf::TransformListener& tf_li
 }
 
 void publish_state(const ros::Publisher& state_pub, const racing::vehicle_position& position) {
-    racing_msgs::State state;
+    racer_msgs::State state;
     state.header.seq = msg_seq++;
     state.header.frame_id = map_frame_id;
     state.header.stamp = ros::Time::now();
