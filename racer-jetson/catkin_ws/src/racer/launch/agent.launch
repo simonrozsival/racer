@@ -7,7 +7,7 @@
       <param name="lookahead" value="3" />
     </node>
 
-    <node pkg="racer" name="state" type="current_state_node">
+    <node pkg="racer" name="state" type="current_state_node" output="screen">
       <param name="frequency" value="30" />
     </node>
 
