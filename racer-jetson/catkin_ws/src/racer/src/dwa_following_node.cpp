@@ -5,6 +5,7 @@
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/Imu.h>
 
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
@@ -21,14 +22,14 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle node("~");
 
   double cell_size;
-  std::string odometry_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
+  std::string imu_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
 
   node.param<double>("double", cell_size, 0.05);
 
   node.param<std::string>("costmap_topic", costmap_topic, "/costmap");
-  node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
+  node.param<std::string>("imu_topic", imu_topic, "/imu_data");
 
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
@@ -39,6 +40,9 @@ int main(int argc, char* argv[]) {
   node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
   node.param<double>("vehicle_max_speed", max_speed, 3.0);
   node.param<double>("vehicle_acceleration", acceleration, 2.0);
+
+  std::string base_link_frame_id;
+  node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
   racing::vehicle vehicle(
     0.155, // cog_offset
@@ -87,13 +91,13 @@ int main(int argc, char* argv[]) {
   );
   std::cout << "DWA following strategy was initialized" << std::endl;
 
-  Follower follower(std::move(following_strategy));
+  Follower follower(std::move(following_strategy), base_link_frame_id);
  
   std::cout << "subscribed to " << costmap_topic << std::endl;
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
-  ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
+  ros::Subscriber imu_sub = node.subscribe<sensor_msgs::Imu>(imu_topic, 1, &Follower::imu_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
@@ -122,7 +126,7 @@ int main(int argc, char* argv[]) {
 
       if (visualization_pub.getNumSubscribers() > 0) {
         nav_msgs::Path vis_msg;
-        vis_msg.header.frame_id = follower.frame_id;
+        vis_msg.header.frame_id = follower.map_frame_id;
         vis_msg.header.stamp = ros::Time::now();
 
         auto state = std::make_unique<racing::kinematic_model::state>(follower.last_known_state());
@@ -131,7 +135,7 @@ int main(int argc, char* argv[]) {
 
           state = std::move(model->predict(*state, *action));
 
-          segment.header.frame_id = follower.frame_id;
+          segment.header.frame_id = follower.map_frame_id;
           segment.header.stamp = ros::Time::now();
           segment.pose.position.x = state->position.x;
           segment.pose.position.y = state->position.y;

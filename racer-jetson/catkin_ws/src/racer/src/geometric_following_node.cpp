@@ -45,6 +45,9 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/pure_pursuit");
 
+  std::string base_link_frame_id;
+  node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
+
   const double wheelbase = 0.31; // m
   const double max_steering_angle = 24.0 / 180.0 * M_PI;
 
@@ -75,10 +78,9 @@ int main(int argc, char* argv[]) {
   auto following_strategy = std::make_unique<racing::geometric_following_strategy>(max_steering_angle, pid, pure_pursuit);
   std::cout << "Geometric following strategy was initialized" << std::endl;
 
-  Follower follower(std::move(following_strategy));
+  Follower follower(std::move(following_strategy), base_link_frame_id);
   
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
-  ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, &Follower::state_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
 
@@ -86,7 +88,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::Marker>(visualization_topic, 1, true);
 
   int frequency; // Hz
-  node.param<int>("update_frequency_hz", frequency, 10);
+  node.param<int>("update_frequency_hz", frequency, 20);
 
   ros::Rate rate(frequency);
   ros::Rate init_rate(1);
@@ -117,7 +119,7 @@ int main(int argc, char* argv[]) {
         ).location();
 
         visualization_msgs::Marker marker;
-        marker.header.frame_id = follower.frame_id;
+        marker.header.frame_id = follower.map_frame_id;
         marker.header.stamp = ros::Time::now();
 
         marker.ns = "pure_pursuit";
