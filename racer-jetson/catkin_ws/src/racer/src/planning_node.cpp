@@ -2,12 +2,12 @@
 #include <ros/ros.h>
 #include <mutex>
 
-#include "nav_msgs/OccupancyGrid.h"
-#include "nav_msgs/Odometry.h"
-#include "nav_msgs/Path.h"
+#include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
 
-#include "racer_msgs/Waypoints.h"
-#include "racer_msgs/Trajectory.h"
+#include <racer_msgs/State.h>
+#include <racer_msgs/Waypoints.h>
+#include <racer_msgs/Trajectory.h>
 
 #include "math/primitives.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
@@ -32,10 +32,11 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   last_known_map = std::move(msg_to_grid(*map));
 }
 
-void odometry_update(const nav_msgs::Odometry::ConstPtr& odom) {
+void state_update(const racer_msgs::State::ConstPtr& state) {
   std::lock_guard<std::mutex> guard(lock);
 
-  last_known_position = std::move(msg_to_state(*odom));
+  racing::vehicle_position position(state->x, state->y, state->heading_angle);
+  last_known_position = std::make_unique<racing::kinematic_model::state>(position, state->speed, state->steering_angle);
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
@@ -55,10 +56,10 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "racing_trajectory_planning");
   ros::NodeHandle node("~");
 
-  std::string map_topic, odometry_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
 
   node.param<std::string>("map_topic", map_topic, "/map");
-  node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
+  node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
@@ -66,8 +67,11 @@ int main(int argc, char* argv[]) {
   bool allow_reverse;
   node.param<bool>("allow_reverse", allow_reverse, false);
 
+  int frequency;
+  node.param<int>("frequency", frequency, 1);
+
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
@@ -96,7 +100,7 @@ int main(int argc, char* argv[]) {
     actions,
     discretization);
 
-  ros::Rate rate(10);
+  ros::Rate rate(frequency);
 
   while (ros::ok()) {
     if (!planner.is_initialized() && last_known_map && next_waypoints) {

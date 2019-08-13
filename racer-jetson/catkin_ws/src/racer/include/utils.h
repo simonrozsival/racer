@@ -5,6 +5,7 @@
 
 #include <tf/transform_datatypes.h>
 
+#include "nav_msgs/Odometry.h"
 #include "nav_msgs/OccupancyGrid.h"
 #include "geometry_msgs/Pose.h"
 #include "geometry_msgs/Twist.h"
@@ -37,10 +38,6 @@ std::unique_ptr<racing::kinematic_model::state> pose_and_twist_to_state(
         sqrt(pow(twist.linear.x, 2) + pow(twist.linear.y, 2)),
         0 // we assume the steering angle is always zero in the beginning
     );
-}
-
-std::unique_ptr<racing::kinematic_model::state> msg_to_state(const nav_msgs::Odometry& odom) {
-    return pose_and_twist_to_state(odom.pose.pose, odom.twist.twist);
 }
 
 std::unique_ptr<racing::kinematic_model::trajectory> msg_to_trajectory(

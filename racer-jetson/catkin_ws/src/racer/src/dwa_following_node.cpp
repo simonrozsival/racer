@@ -1,14 +1,14 @@
-#include "ros/ros.h"
+#include <ros/ros.h>
 #include <cmath>
 #include <tf/transform_datatypes.h>
 
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>
-#include <sensor_msgs/Imu.h>
 
-#include "racer_msgs/Trajectory.h"
-#include "racer_msgs/Waypoints.h"
+#include <racer_msgs/State.h>
+#include <racer_msgs/Trajectory.h>
+#include <racer_msgs/Waypoints.h>
 
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
@@ -22,14 +22,14 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle node("~");
 
   double cell_size;
-  std::string imu_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
+  std::string state_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
 
   node.param<double>("double", cell_size, 0.05);
 
   node.param<std::string>("costmap_topic", costmap_topic, "/costmap");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
-  node.param<std::string>("imu_topic", imu_topic, "/imu_data");
+  node.param<std::string>("state_topic", state_topic, "/racer/state");
 
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
@@ -40,9 +40,6 @@ int main(int argc, char* argv[]) {
   node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
   node.param<double>("vehicle_max_speed", max_speed, 3.0);
   node.param<double>("vehicle_acceleration", acceleration, 2.0);
-
-  std::string base_link_frame_id;
-  node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
   racing::vehicle vehicle(
     0.155, // cog_offset
@@ -64,7 +61,7 @@ int main(int argc, char* argv[]) {
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
-  std::cout << "DWA strategy" << std::endl;
+  ROS_DEBUG("DWA strategy");
   auto actions = racing::kinematic_model::action::create_actions_including_reverse(9, 15);
   
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
@@ -89,21 +86,21 @@ int main(int argc, char* argv[]) {
     model,
     std::move(error_calculator)
   );
-  std::cout << "DWA following strategy was initialized" << std::endl;
 
-  Follower follower(std::move(following_strategy), base_link_frame_id);
+  ROS_DEBUG("DWA following strategy was initialized");
+
+  Follower follower(std::move(following_strategy));
  
-  std::cout << "subscribed to " << costmap_topic << std::endl;
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
-  ros::Subscriber imu_sub = node.subscribe<sensor_msgs::Imu>(imu_topic, 1, &Follower::imu_observed, &follower);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &Follower::state_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
 
   int frequency; // Hz
-  node.param<int>("update_frequency_hz", frequency, 20);
+  node.param<int>("update_frequency_hz", frequency, 30);
 
   ros::Rate rate(frequency);
 
@@ -113,9 +110,9 @@ int main(int argc, char* argv[]) {
 
       if (!action) {
         action = follower.stop();
-        std::cout << "following node: STOP!" << std::endl;
+        ROS_DEBUG("following node: STOP!");
       } else {
-        std::cout << "following node selected: [throttle: " << action->throttle << ", steering angle: " << action->target_steering_angle << "]" << std::endl;
+        ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action->throttle, action->target_steering_angle);
       }
 
       geometry_msgs::Twist msg;
