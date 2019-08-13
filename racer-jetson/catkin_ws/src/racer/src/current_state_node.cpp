@@ -12,7 +12,7 @@
 #include "racing/vehicle_model/vehicle_position.h"
 
 // params
-std::string imu_topic, command_topic, map_frame_id, base_link_frame_id;
+std::string map_frame_id, base_link_frame_id;
 double max_steering_angle;
 
 // current state
@@ -81,9 +81,9 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
       publish_state(state_pub, position);
     } catch (tf::TransformException ex) {
       if (is_initialized) {
-        ROS_ERROR("'current_state' node: TF transformation [%s -> %s] is not available.", map_frame_id, base_link_frame_id);
+        ROS_ERROR("'current_state' node: TF transformation [%s -> %s] is not available.", map_frame_id.c_str(), base_link_frame_id.c_str());
       } else {
-        ROS_DEBUG("'current_state' node: TF transformation [%s -> %s] is not available yet.", map_frame_id, base_link_frame_id);
+        ROS_DEBUG("'current_state' node: TF transformation [%s -> %s] is not available yet.", map_frame_id.c_str(), base_link_frame_id.c_str());
         ros::Duration(0.5).sleep();
       }
     }
@@ -98,6 +98,8 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle node("~");
 
   // load parameters
+  std::string imu_topic, command_topic, state_topic;
+
   node.param<std::string>("imu_topic", imu_topic, "/imu_data");
   node.param<std::string>("command_topic", command_topic, "/racer/commands");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
