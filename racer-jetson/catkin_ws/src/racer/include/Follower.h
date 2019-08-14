@@ -19,8 +19,8 @@ class Follower {
   public:
     std::string map_frame_id;
 
-    Follower(std::unique_ptr<racing::following_strategy> strategy)
-      : strategy_(std::move(strategy)),
+    Follower(std::shared_ptr<racing::following_strategy> strategy)
+      : strategy_(strategy),
       next_waypoint_(0),
       stop_(racing::kinematic_model::action(0, 0)),
       state_(nullptr)
@@ -34,17 +34,26 @@ class Follower {
     void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
     void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
 
-    const racing::kinematic_model::state last_known_state() const;
+
     std::unique_ptr<racing::kinematic_model::action> select_driving_command() const;
     std::unique_ptr<racing::kinematic_model::action> stop() const;
 
     const int next_waypoint() const {  return next_waypoint_; }
+
+    const racing::kinematic_model::state last_known_state() const {
+      return *state_; // copy
+    }
+
     const racing::kinematic_model::trajectory reference_trajectory() const {
-      return *reference_trajectory_; // return a copy}
+      return *reference_trajectory_; // copy
+    }
+
+    const racing::occupancy_grid costmap() const {
+      return *costmap_; // copy
     }
 
   private:
-    const std::unique_ptr<racing::following_strategy> strategy_;
+    const std::shared_ptr<racing::following_strategy> strategy_;
     const racing::kinematic_model::action stop_;
     int next_waypoint_;
 

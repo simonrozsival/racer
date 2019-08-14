@@ -18,6 +18,10 @@ std::string map_frame_id, odom_frame_id, base_link_frame_id;
 double max_steering_angle;
 
 // current state
+std::unique_ptr<racing::vehicle_position> prev_position;
+double prev_position_time;
+ros::Time prev_transform_stamp;
+
 double current_target_steering_angle;
 uint32_t msg_seq;
 
@@ -29,27 +33,44 @@ void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
   current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
 }
 
-double get_current_speed(const tf::TransformListener& tf_listener, const ros::Duration& averaging_interval) {
-  geometry_msgs::Twist twist;
-
-  tf_listener.lookupTwist(
-    base_link_frame_id,
-    odom_frame_id,
-    base_link_frame_id,
-    tf::Point(0, 0, 0),
-    odom_frame_id,
-    ros::Time(0),
-    averaging_interval,
-    twist);
-
-  return twist.linear.x;
+double fix_angle(double angle) {
+  while (angle < 0) angle += 2 * M_PI;
+  while (angle > 2 * M_PI) angle -= 2 * M_PI;
+  return angle;
 }
 
-racing::vehicle_position get_current_position(const tf::TransformListener& tf_listener) {  
-  tf::StampedTransform transform;
-  tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
-  tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+double angle_difference(double alpha, double beta) {
+  alpha = fix_angle(alpha);
+  beta = fix_angle(beta);
 
+  return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
+}
+
+double get_current_speed(const racing::vehicle_position current_position) {
+  double now = ros::Time().now().toSec();
+  double current_speed = 0;
+
+  if (prev_position) {
+    math::vector delta = current_position.location() - prev_position->location();
+    double distance = delta.length();
+    double travel_angle = atan2(delta.y, delta.x);
+    double direction = angle_difference(travel_angle, prev_position->heading_angle) < (M_PI / 2) ? 1.0 : -1.0;
+    double elapsed_time = now - prev_position_time;
+
+    current_speed = direction * distance / elapsed_time;
+
+    if (std::abs(current_speed) < 0.001) {
+      current_speed = 0;
+    }
+  }
+
+  prev_position_time = now;
+  prev_position = std::make_unique<racing::vehicle_position>(current_position);
+
+  return current_speed;
+}
+
+racing::vehicle_position get_current_position(const tf::StampedTransform& transform) {  
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
@@ -79,21 +100,32 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
   ros::Rate rate(frequency);
   tf::TransformListener tf_listener;
   ros::Duration speed_averaging_interval(1.0 / double(frequency));
-  std::string str;
+  std::string err;
 
   while (ros::ok()) {
     if (is_initialized) {
       try {
-        const auto position = get_current_position(tf_listener);
-        const auto current_speed = get_current_speed(tf_listener, speed_averaging_interval);
-        publish_state(state_pub, position, current_speed);
+        tf::StampedTransform transform;
+
+        tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
+        tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+
+        if (transform.stamp_ != prev_transform_stamp) {
+          const auto position = get_current_position(transform);
+          const auto current_speed = get_current_speed(position);
+          publish_state(state_pub, position, current_speed);
+          prev_transform_stamp = transform.stamp_;
+        }
+
       } catch (tf::TransformException ex) {
-        ROS_ERROR("'current_state' node: TF transformation [%s -> %s] is not available (%s).", map_frame_id.c_str(), base_link_frame_id.c_str(), ex.what());
+        ROS_ERROR("'current_state' node: %s.", ex.what());
       }
-    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time().now() - speed_averaging_interval, &str)) {
+    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time().now() - speed_averaging_interval, &err)) {
       is_initialized = true;
+      ROS_INFO("'current_state' node: INITIALIZED.");
     } else {
-      ROS_INFO("'current_state' node: TF transformation [%s -> %s] is not available yet, still waiting to be initialized (%s).", map_frame_id.c_str(), base_link_frame_id.c_str(), str.c_str());
+      ROS_INFO("'current_state' node: Still not initialized (%s).", err.c_str());
+      err = "";
       ros::Duration(0.5).sleep();
     }
 

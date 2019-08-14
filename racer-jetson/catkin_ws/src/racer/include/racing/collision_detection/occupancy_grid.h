@@ -57,13 +57,14 @@ namespace racing {
             int x_cell = int((x - origin_.x) / cell_size);
             int y_cell = int((y - origin_.y) / cell_size);
             const int index = index_of(x_cell, y_cell);
+
             return index < 0 || index >= size_
                 ? max_value() // no information
                 : data_[index];
         }
 
         bool is_dangerous(double x, double y) const {
-            return value_at(x, y) >= 128;
+            return value_at(x, y) >= 100;
         }
 
         double distance_to_closest_obstacle(const math::point& center, double max_radius) const {
