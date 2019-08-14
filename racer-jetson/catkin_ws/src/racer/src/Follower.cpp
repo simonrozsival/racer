@@ -24,10 +24,6 @@ void Follower::state_observed(const racer_msgs::State::ConstPtr& state) {
   state_ = std::make_unique<racing::kinematic_model::state>(position, state->speed, state->steering_angle);
 }
 
-const racing::kinematic_model::state Follower::last_known_state() const {
-  return *state_;
-}
-
 std::unique_ptr<racing::kinematic_model::action> Follower::select_driving_command() const {
   if (reference_trajectory_ && reference_trajectory_->steps.size() > 0) {
     return strategy_->select_action(*state_, next_waypoint_, *reference_trajectory_, *costmap_);
