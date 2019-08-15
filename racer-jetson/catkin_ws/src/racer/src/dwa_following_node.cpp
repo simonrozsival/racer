@@ -1,3 +1,5 @@
+#include <stdexcept>
+
 #include <ros/ros.h>
 #include <cmath>
 #include <tf/transform_datatypes.h>
@@ -10,12 +12,90 @@
 #include <racer_msgs/Trajectory.h>
 #include <racer_msgs/Waypoints.h>
 
+#include <dynamic_reconfigure/server.h>
+#include <racer/DWAConfig.h>
+
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
 #include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/following_strategies/dwa.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"
+
+std::shared_ptr<racing::dwa> dwa;
+std::shared_ptr<racing::trajectory_error_calculator> error_calculator;
+
+visualization_msgs::MarkerArray prepare_visualization(
+  const Follower& follower,
+  const racing::kinematic_model::action& selected_action,
+  const std::list<racing::kinematic_model::action>& all_actions);
+
+void spin(
+  const int frequency,
+  const Follower& follower,
+  const std::list<racing::kinematic_model::action> actions,
+  const double max_allowed_speed_percentage,
+  const ros::Publisher command_pub,
+  const ros::Publisher visualization_pub) {
+
+  ros::Rate rate(frequency);
+
+  while (ros::ok()) {
+    if (follower.is_initialized()) {
+      auto action = follower.select_driving_command();
+
+      if (!action) {
+        action = follower.stop();
+        ROS_DEBUG("following node: STOP!");
+      } else {
+        ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action->throttle, action->target_steering_angle);
+      }
+
+      geometry_msgs::Twist msg;
+      msg.linear.x = max_allowed_speed_percentage * action->throttle;
+      msg.angular.z = -action->target_steering_angle;
+
+      command_pub.publish(msg);
+
+      if (visualization_pub.getNumSubscribers() > 0) {
+        const auto msg = prepare_visualization(
+          follower,
+          *action,
+          actions);
+        visualization_pub.publish(msg);
+      }
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+  }
+}
+
+void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level) {
+  if (!dwa) {
+    ROS_ERROR("Cannot handle dynamic reconfiguration because the initialization of this node hasn't finished yet.");
+    return;
+  }
+
+  error_calculator = std::make_shared<racing::trajectory_error_calculator>(
+    config.position_weight,
+    config.heading_weight,
+    config.velocity_weight,
+    config.velocity_undershoot_overshoot_ratio,
+    config.distance_to_obstacle_weight,
+    config.max_position_error);
+
+  dwa->reconfigure(error_calculator);
+  ROS_INFO("DWA was reconfigured");
+}
+
+void setup_dynamic_reconfigure() {
+  dynamic_reconfigure::Server<racer::DWAConfig> server;
+  dynamic_reconfigure::Server<racer::DWAConfig>::CallbackType f;  
+  f = boost::bind(&dynamic_reconfigure_callback, _1, _2);
+  server.setCallback(f);
+  ROS_INFO("dynamic reconfiguration for DWA was set up");
+}
 
 void create_visualization_line(
   int id,
@@ -48,8 +128,6 @@ void create_visualization_line(
 }
 
 visualization_msgs::MarkerArray prepare_visualization(
-  const std::shared_ptr<racing::dwa>& dwa,
-  const std::shared_ptr<racing::trajectory_error_calculator>& error_calculator,
   const Follower& follower,
   const racing::kinematic_model::action& selected_action,
   const std::list<racing::kinematic_model::action>& all_actions) {
@@ -115,11 +193,12 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
   double max_allowed_speed_percentage;
-  double max_speed, acceleration;
+  double max_speed, max_reversing_speed, acceleration;
 
   node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
-  node.param<double>("vehicle_max_speed", max_speed, 6.0);
-  node.param<double>("vehicle_acceleration", acceleration, 3.0);
+  node.param<double>("max_speed", max_speed, 6.0);
+  node.param<double>("max_reversing_speed", max_reversing_speed, -3.0);
+  node.param<double>("acceleration", acceleration, 3.0);
 
   racing::vehicle vehicle(
     0.155, // cog_offset
@@ -129,6 +208,7 @@ int main(int argc, char* argv[]) {
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     1.0 / 6.0 * M_PI, // max steering angle (rad)
     max_allowed_speed_percentage * max_speed, // speed (ms^-1)
+    max_allowed_speed_percentage * max_reversing_speed, // speed (ms^-1)
     acceleration // acceleration (ms^-2)
   );
 
@@ -143,14 +223,14 @@ int main(int argc, char* argv[]) {
 
   ROS_DEBUG("DWA strategy");
   auto actions = racing::kinematic_model::action::create_actions_including_reverse(9, 15);
-  
+
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
   node.param<double>("heading_weight", heading_weight, 20.0);
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  const auto error_calculator = 
+  error_calculator = 
     std::make_shared<racing::trajectory_error_calculator>(
       position_weight,
       heading_weight,
@@ -160,7 +240,7 @@ int main(int argc, char* argv[]) {
       vehicle.radius() * 5
     );
 
-  const auto dwa =
+  dwa =
     std::make_shared<racing::dwa>(
       lookahead,
       actions,
@@ -169,8 +249,9 @@ int main(int argc, char* argv[]) {
     );
 
   ROS_DEBUG("DWA following strategy was initialized");
-
   Follower follower(dwa);
+
+  setup_dynamic_reconfigure();
  
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
@@ -183,39 +264,7 @@ int main(int argc, char* argv[]) {
   int frequency; // Hz
   node.param<int>("update_frequency_hz", frequency, 30);
 
-  ros::Rate rate(frequency);
-
-  while (ros::ok()) {
-    if (follower.is_initialized()) {
-      auto action = follower.select_driving_command();
-
-      if (!action) {
-        action = follower.stop();
-        ROS_DEBUG("following node: STOP!");
-      } else {
-        ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action->throttle, action->target_steering_angle);
-      }
-
-      geometry_msgs::Twist msg;
-      msg.linear.x = max_allowed_speed_percentage * action->throttle;
-      msg.angular.z = -action->target_steering_angle;
-
-      command_pub.publish(msg);
-
-      if (visualization_pub.getNumSubscribers() > 0) {
-        const auto msg = prepare_visualization(
-          dwa,
-          error_calculator,
-          follower,
-          *action,
-          actions);
-        visualization_pub.publish(msg);
-      }
-    }
-
-    ros::spinOnce();
-    rate.sleep();
-  }
+  spin(frequency, follower, actions, max_allowed_speed_percentage, command_pub, visualization_pub);
 
   return 0;
 }
