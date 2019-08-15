@@ -139,6 +139,10 @@ namespace racing {
 
         void reset() override { }
 
+        void reconfigure(const std::shared_ptr<trajectory_error_calculator> error_calculator) {
+            trajectory_error_calculator_ = error_calculator;
+        }
+
         std::unique_ptr<std::list<state>> unfold(
             const state& origin,
             const action& action,
@@ -173,7 +177,8 @@ namespace racing {
         const int steps_;
         const std::list<action> available_actions_;
         const std::shared_ptr<model> model_;
-        const std::shared_ptr<trajectory_error_calculator> trajectory_error_calculator_;
+        
+        std::shared_ptr<trajectory_error_calculator> trajectory_error_calculator_;
     };
 
 }
