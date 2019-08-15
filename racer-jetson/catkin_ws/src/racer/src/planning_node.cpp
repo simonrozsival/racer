@@ -84,6 +84,7 @@ int main(int argc, char* argv[]) {
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     24.0 / 180.0 * M_PI, // max steering angle (rad)
     6.0, // speed (ms^-1)
+    -3.0, // reversing speed (ms^-1)
     3.0 // acceleration (ms^-2)
   );
 
