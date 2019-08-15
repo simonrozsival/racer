@@ -123,6 +123,25 @@ ROS_MASTER_URI=http://$ROS_IP:11311
 
 alias code="~/vscode/scripts/code.sh"
 
+function race {
+  MAP=$1
+  CIRCUIT=$2
+
+  if [ -z $MAP ]; then
+    MAP="crates"
+  fi
+
+  if [ -z $CIRCUIT ]; then
+    CIRCUIT=$MAP
+  fi
+
+  echo "Starting a race.\n"
+  echo "- map: $MAP\n"
+  echo "- circuit: $CIRCUIT\n"
+
+  roslaunch racer race.launch map:=$MAP circuit:=$CIRCUIT
+}
+
 # Select correct ports for Arduinos and YDLIDAR
 
 echo -e "0\n1\n2" > /tmp/a # possible port numbers
