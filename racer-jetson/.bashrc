@@ -135,9 +135,10 @@ function race {
     CIRCUIT=$MAP
   fi
 
-  echo "Starting a race.\n"
-  echo "- map: $MAP\n"
-  echo "- circuit: $CIRCUIT\n"
+  echo "Starting a race."
+  echo "- map: $MAP"
+  echo "- circuit: $CIRCUIT"
+  echo "====================="
 
   roslaunch racer race.launch map:=$MAP circuit:=$CIRCUIT
 }
