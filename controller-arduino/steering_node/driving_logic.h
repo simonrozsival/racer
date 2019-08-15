@@ -25,8 +25,8 @@ void drive_callback(const geometry_msgs::Twist& twist_msg) {
   autonomous_throttle = fmap(twist_msg.linear.x, 0.0, 1.0, THROTTLE_NONE_PWM, THROTTLE_FULL_PWM);
 }
 
-bool is_offcenter(const unsigned int value, int center_pwm) {
-  return abs(value - center_pwm) < PWM_OFF_CENTER_TOLERANCE;
+bool is_offcenter(const int value, int center_pwm) {
+  return abs(value - center_pwm) > (int)PWM_OFF_CENTER_TOLERANCE;
 }
 
 void select_inputs(int* steering_pwm, int* throttle_pwm) {
@@ -34,7 +34,7 @@ void select_inputs(int* steering_pwm, int* throttle_pwm) {
   *throttle_pwm = rc_input[THROTTLE];
 
   if (autonomous_mode) {
-    if (is_offcenter(*steering_pwm, STEERING_CENTER_PWM) || is_offcenter(*throttle_pwm, THROTTLE_NONE_PWM)) {
+    if (is_offcenter(*steering_pwm, (int)STEERING_CENTER_PWM) || is_offcenter(*throttle_pwm, (int)THROTTLE_NONE_PWM)) {
       // user took control over the vehicle
       autonomous_mode = false;
     } else if (has_autonomous_steering_data) {
