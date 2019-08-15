@@ -24,6 +24,7 @@
 
 std::shared_ptr<racing::dwa> dwa;
 std::shared_ptr<racing::trajectory_error_calculator> error_calculator;
+double max_allowed_speed_percentage;
 
 visualization_msgs::MarkerArray prepare_visualization(
   const Follower& follower,
@@ -34,7 +35,6 @@ void spin(
   const int frequency,
   const Follower& follower,
   const std::list<racing::kinematic_model::action> actions,
-  const double max_allowed_speed_percentage,
   const ros::Publisher command_pub,
   const ros::Publisher visualization_pub) {
 
@@ -86,6 +86,9 @@ void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level
     config.max_position_error);
 
   dwa->reconfigure(error_calculator);
+
+  max_allowed_speed_percentage = config.max_allowed_speed_percentage;
+
   ROS_INFO("DWA was reconfigured");
 }
 
@@ -191,7 +194,6 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
-  double max_allowed_speed_percentage;
   double max_speed, max_reversing_speed, acceleration;
 
   node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
@@ -263,7 +265,7 @@ int main(int argc, char* argv[]) {
   int frequency; // Hz
   node.param<int>("update_frequency_hz", frequency, 30);
 
-  spin(frequency, follower, actions, max_allowed_speed_percentage, command_pub, visualization_pub);
+  spin(frequency, follower, actions, command_pub, visualization_pub);
 
   return 0;
 }
