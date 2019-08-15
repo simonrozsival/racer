@@ -1,4 +1,3 @@
-
 /*
    Raceing car steering
    - receives commands from the '/racer/commands' topic from ROS through serial port
