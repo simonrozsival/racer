@@ -1,12 +1,12 @@
-update_frequency: 11.0
-publish_frequency: 11.0
+update_frequency: 10.0
+publish_frequency: 10.0
 always_send_full_costmap: true
 
 static_map: true
 global_frame: map
 robot_base_frame: base_link
-transform_tolerance: 0.2
-robot_radius: 0.4
+transform_tolerance: 0.1
+footprint: [[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]] 
 
 plugins:
   - { name: static, type: "costmap_2d::StaticLayer" }
@@ -15,11 +15,21 @@ plugins:
 
 static:
   map_topic: /map
+  trinary_costmap: false
 
 inflation:
-  inflation_radius: 0.3
-  cost_scaling_factor: 0.3
+  inflation_radius: 1.0
+  cost_scaling_factor: 10.0
 
 obstacles:
   observation_sources: base_scan
-  base_scan: { data_type: LaserScan, sensor_frame: laser, clearing: true, marking: true, topic: /scan }
+  base_scan:
+    topic: /scan
+    data_type: LaserScan
+    sensor_frame: laser
+    observation_persistence: 0.1
+    expected_update_rate: 0.2
+    obstacle_range: 5 # default is 2.5
+    raytrace_range: 5 # default is 3.0
+    clearing: true
+    marking: true
