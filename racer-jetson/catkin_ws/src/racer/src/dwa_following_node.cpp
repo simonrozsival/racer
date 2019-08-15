@@ -52,7 +52,15 @@ void spin(
       }
 
       geometry_msgs::Twist msg;
-      msg.linear.x = max_allowed_speed_percentage * action->throttle;
+
+      if (abs(action->throttle) < 0.1) {
+        msg.linear.x = 0;
+      } else if (action->throttle > 0) {
+        msg.linear.x = std::max(0.15, max_allowed_speed_percentage * action->throttle);
+      } else {
+        msg.linear.x = std::min(-0.15, max_allowed_speed_percentage * action->throttle);
+      }
+
       msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
@@ -73,7 +81,6 @@ void spin(
 
 void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level) {
   if (!dwa) {
-    ROS_ERROR("Cannot handle dynamic reconfiguration because the initialization of this node hasn't finished yet.");
     return;
   }
 
@@ -181,6 +188,8 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "dwa_following_node");
   ros::NodeHandle node("~");
 
+  setup_dynamic_reconfigure();
+
   double cell_size;
   std::string state_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
 
@@ -252,8 +261,6 @@ int main(int argc, char* argv[]) {
   ROS_DEBUG("DWA following strategy was initialized");
   Follower follower(dwa);
 
-  setup_dynamic_reconfigure();
- 
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
