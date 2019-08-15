@@ -5,8 +5,8 @@ always_send_full_costmap: true
 static_map: true
 global_frame: map
 robot_base_frame: base_link
-transform_tolerance: 0.1
-footprint: [[-0.3, -0.2], [-0.3, 0.2], [0.3, 0.2], [0.3, -0.2]] 
+transform_tolerance: 0.1 # seconds
+footprint: [[-0.35, -0.225], [-0.35, 0.225], [0.35, 0.225], [0.35, -0.225]] # slightly largert than the actual footprint of the robot
 
 plugins:
   - { name: static, type: "costmap_2d::StaticLayer" }
