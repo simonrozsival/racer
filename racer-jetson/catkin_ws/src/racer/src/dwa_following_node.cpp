@@ -53,14 +53,7 @@ void spin(
 
       geometry_msgs::Twist msg;
 
-      if (abs(action->throttle) < 0.1) {
-        msg.linear.x = 0;
-      } else if (action->throttle > 0) {
-        msg.linear.x = std::max(0.15, max_allowed_speed_percentage * action->throttle);
-      } else {
-        msg.linear.x = std::min(-0.15, max_allowed_speed_percentage * action->throttle);
-      }
-
+      msg.linear.x = max_allowed_speed_percentage * action->throttle;
       msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
