@@ -1,5 +1,5 @@
 <launch>
-  <node pkg="amcl_cuda" type="amcl" name="amcl">
+  <node pkg="amcl" type="amcl" name="amcl">
     <param name="odom_model_type" value="diff-corrected" />
   </node>
 </launch>
