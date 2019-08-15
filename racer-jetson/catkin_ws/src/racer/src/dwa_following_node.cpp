@@ -4,7 +4,7 @@
 
 #include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
-#include <nav_msgs/Path.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <racer_msgs/State.h>
 #include <racer_msgs/Trajectory.h>
@@ -16,6 +16,86 @@
 #include "racing/following_strategies/dwa.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"
+
+void create_visualization_line(
+  int id,
+  const std::list<racing::kinematic_model::state>& trajectory,
+  double score,
+  visualization_msgs::Marker& line) {
+
+  line.type = visualization_msgs::Marker::LINE_STRIP;
+  line.scale.x = 0.01;
+  line.action = visualization_msgs::Marker::ADD;
+  line.pose.orientation.w = 1.0;
+  line.ns = "dwa";
+  line.id = id;
+  line.lifetime = ros::Duration(0.05);
+
+  line.color.r = score;
+  line.color.g = 1.0 - score; // the lower, the better
+
+  line.color.a = 0.5;
+
+  for (const auto state : trajectory) {
+    geometry_msgs::Point point;
+
+    point.x = state.position.x;
+    point.y = state.position.y;
+    point.z = 0;
+
+    line.points.push_back(point);
+  }
+}
+
+visualization_msgs::MarkerArray prepare_visualization(
+  const std::shared_ptr<racing::dwa>& dwa,
+  const std::shared_ptr<racing::trajectory_error_calculator>& error_calculator,
+  const Follower& follower,
+  const racing::kinematic_model::action& selected_action,
+  const std::list<racing::kinematic_model::action>& all_actions) {
+
+  visualization_msgs::MarkerArray msg;
+
+  const auto from = follower.last_known_state();
+  const auto costmap = follower.costmap();
+
+  const auto reference_subtrajectory = follower.reference_trajectory().find_reference_subtrajectory(from, follower.next_waypoint());
+  if (reference_subtrajectory == nullptr) {
+    return msg;
+  }
+
+  int id = 0;
+  for (const auto action : all_actions) {
+    const auto trajectory = dwa->unfold(from, action, costmap);
+    if (trajectory) {
+      visualization_msgs::Marker line;
+      line.header.frame_id = follower.map_frame_id;
+      line.header.stamp = ros::Time::now();
+
+      const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+      create_visualization_line(id++, *trajectory, score, line);
+
+      msg.markers.push_back(line);
+    }
+  }
+
+  const auto trajectory = dwa->unfold(from, selected_action, costmap);
+  if (trajectory) {
+    visualization_msgs::Marker selected_line;
+    selected_line.header.frame_id = follower.map_frame_id;
+    selected_line.header.stamp = ros::Time::now();
+
+    const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+    create_visualization_line(id++, *trajectory, score, selected_line);
+ 
+    selected_line.scale.x = 0.05;
+    selected_line.color.a = 1.0;
+    
+    msg.markers.push_back(selected_line);
+  }
+
+  return msg;
+}
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "dwa_following_node");
@@ -38,8 +118,8 @@ int main(int argc, char* argv[]) {
   double max_speed, acceleration;
 
   node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
-  node.param<double>("vehicle_max_speed", max_speed, 3.0);
-  node.param<double>("vehicle_acceleration", acceleration, 2.0);
+  node.param<double>("vehicle_max_speed", max_speed, 6.0);
+  node.param<double>("vehicle_acceleration", acceleration, 3.0);
 
   racing::vehicle vehicle(
     0.155, // cog_offset
@@ -70,8 +150,8 @@ int main(int argc, char* argv[]) {
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  std::unique_ptr<racing::trajectory_error_calculator> error_calculator =
-    std::make_unique<racing::trajectory_error_calculator>(
+  const auto error_calculator = 
+    std::make_shared<racing::trajectory_error_calculator>(
       position_weight,
       heading_weight,
       velocity_weight,
@@ -80,16 +160,17 @@ int main(int argc, char* argv[]) {
       vehicle.radius() * 5
     );
 
-  auto following_strategy = std::make_unique<racing::dwa>(
-    lookahead,
-    actions,
-    model,
-    std::move(error_calculator)
-  );
+  const auto dwa =
+    std::make_shared<racing::dwa>(
+      lookahead,
+      actions,
+      model,
+      error_calculator
+    );
 
   ROS_DEBUG("DWA following strategy was initialized");
 
-  Follower follower(std::move(following_strategy));
+  Follower follower(dwa);
  
   ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
@@ -97,7 +178,7 @@ int main(int argc, char* argv[]) {
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &Follower::state_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
-  ros::Publisher visualization_pub = node.advertise<nav_msgs::Path>(visualization_topic, 1, true);
+  ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(visualization_topic, 1, true);
 
   int frequency; // Hz
   node.param<int>("update_frequency_hz", frequency, 30);
@@ -122,27 +203,13 @@ int main(int argc, char* argv[]) {
       command_pub.publish(msg);
 
       if (visualization_pub.getNumSubscribers() > 0) {
-        nav_msgs::Path vis_msg;
-        vis_msg.header.frame_id = follower.map_frame_id;
-        vis_msg.header.stamp = ros::Time::now();
-
-        auto state = std::make_unique<racing::kinematic_model::state>(follower.last_known_state());
-        for (int i = 0; i < lookahead; ++i) {
-          geometry_msgs::PoseStamped segment;
-
-          state = std::move(model->predict(*state, *action));
-
-          segment.header.frame_id = follower.map_frame_id;
-          segment.header.stamp = ros::Time::now();
-          segment.pose.position.x = state->position.x;
-          segment.pose.position.y = state->position.y;
-          segment.pose.position.z = 0;
-          segment.pose.orientation = tf::createQuaternionMsgFromYaw(state->position.heading_angle);
-
-          vis_msg.poses.push_back(segment);
-        }
-
-        visualization_pub.publish(vis_msg);
+        const auto msg = prepare_visualization(
+          dwa,
+          error_calculator,
+          follower,
+          *action,
+          actions);
+        visualization_pub.publish(msg);
       }
     }
 

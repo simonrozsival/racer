@@ -4,38 +4,28 @@
 #include <ros/ros.h>
 #include <tf/tf.h>
 #include <tf/transform_listener.h>
+#include <tf/transform_datatypes.h>
 
-#include <sensor_msgs/Imu.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <racer_msgs/State.h>
 
+#include "math/primitives.h"
 #include "racing/vehicle_model/vehicle_position.h"
 
 // params
-std::string map_frame_id, base_link_frame_id;
+std::string map_frame_id, odom_frame_id, base_link_frame_id;
 double max_steering_angle;
 
 // current state
-double last_imu_message_time_sec;
-double current_speed;
+std::unique_ptr<racing::vehicle_position> prev_position;
+double prev_position_time;
+ros::Time prev_transform_stamp;
+
 double current_target_steering_angle;
 uint32_t msg_seq;
 
 bool is_initialized;
-
-// the logic
-void imu_callback(const sensor_msgs::Imu::ConstPtr& imu) {
-  const double time_sec = imu->header.stamp.sec;
-
-  if (last_imu_message_time_sec > 0) {
-    const double dt = time_sec - last_imu_message_time_sec;
-    const double a = imu->linear_acceleration.x;
-
-    current_speed += a * dt; // euler integration
-  }
-
-  last_imu_message_time_sec = time_sec;
-}
 
 void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
   const double target_steering_angle_percent = command->angular.z;
@@ -43,49 +33,100 @@ void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
   current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
 }
 
-racing::vehicle_position get_current_position(const tf::TransformListener& tf_listener) {  
-  tf::StampedTransform transform;
-  tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
-  tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+double fix_angle(double angle) {
+  while (angle < 0) angle += 2 * M_PI;
+  while (angle > 2 * M_PI) angle -= 2 * M_PI;
+  return angle;
+}
 
+double angle_difference(double alpha, double beta) {
+  alpha = fix_angle(alpha);
+  beta = fix_angle(beta);
+
+  return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
+}
+
+double get_current_speed(const racing::vehicle_position current_position) {
+  double now = ros::Time().now().toSec();
+  double current_speed = 0;
+
+  if (prev_position) {
+    math::vector delta = current_position.location() - prev_position->location();
+    double distance = delta.length();
+    double travel_angle = atan2(delta.y, delta.x);
+    double direction = angle_difference(travel_angle, prev_position->heading_angle) < (M_PI / 2) ? 1.0 : -1.0;
+    double elapsed_time = now - prev_position_time;
+
+    current_speed = direction * distance / elapsed_time;
+
+    if (std::abs(current_speed) < 0.001) {
+      current_speed = 0;
+    }
+  }
+
+  prev_position_time = now;
+  prev_position = std::make_unique<racing::vehicle_position>(current_position);
+
+  return current_speed;
+}
+
+racing::vehicle_position get_current_position(const tf::StampedTransform& transform) {  
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
-
-  is_initialized = true;
 
   return racing::vehicle_position(origin.x(), origin.y(), rotation);
 }
 
-void publish_state(const ros::Publisher& state_pub, const racing::vehicle_position& position) {
-    racer_msgs::State state;
-    state.header.seq = msg_seq++;
-    state.header.frame_id = map_frame_id;
-    state.header.stamp = ros::Time::now();
+void publish_state(
+  const ros::Publisher& state_pub,
+  const racing::vehicle_position& position,
+  const double current_speed)
+{
+  racer_msgs::State state;
+  state.header.seq = msg_seq++;
+  state.header.frame_id = map_frame_id;
+  state.header.stamp = ros::Time::now();
 
-    state.x = position.x;
-    state.y = position.y;
-    state.heading_angle = position.heading_angle;
-    state.speed = current_speed;
-    state.steering_angle = current_target_steering_angle;
+  state.x = position.x;
+  state.y = position.y;
+  state.heading_angle = position.heading_angle;
+  state.speed = current_speed;
+  state.steering_angle = current_target_steering_angle;
 
-    state_pub.publish(state);
+  state_pub.publish(state);
 }
 
 void spin(const int frequency, const ros::Publisher& state_pub) {
-  tf::TransformListener tf_listener;  
   ros::Rate rate(frequency);
+  tf::TransformListener tf_listener;
+  ros::Duration speed_averaging_interval(1.0 / double(frequency));
+  std::string err;
 
   while (ros::ok()) {
-    try {
-      const auto position = get_current_position(tf_listener);
-      publish_state(state_pub, position);
-    } catch (tf::TransformException ex) {
-      if (is_initialized) {
-        ROS_ERROR("'current_state' node: TF transformation [%s -> %s] is not available.", map_frame_id.c_str(), base_link_frame_id.c_str());
-      } else {
-        ROS_DEBUG("'current_state' node: TF transformation [%s -> %s] is not available yet.", map_frame_id.c_str(), base_link_frame_id.c_str());
-        ros::Duration(0.5).sleep();
+    if (is_initialized) {
+      try {
+        tf::StampedTransform transform;
+
+        tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
+        tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+
+        if (transform.stamp_ != prev_transform_stamp) {
+          const auto position = get_current_position(transform);
+          const auto current_speed = get_current_speed(position);
+          publish_state(state_pub, position, current_speed);
+          prev_transform_stamp = transform.stamp_;
+        }
+
+      } catch (tf::TransformException ex) {
+        ROS_ERROR("'current_state' node: %s.", ex.what());
       }
+    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time().now() - speed_averaging_interval, &err)) {
+      is_initialized = true;
+      ROS_INFO("'current_state' node: INITIALIZED.");
+    } else {
+      ROS_INFO("'current_state' node: Still not initialized (%s).", err.c_str());
+      err = "";
+      ros::Duration(0.5).sleep();
     }
 
     ros::spinOnce();
@@ -98,13 +139,13 @@ int main(int argc, char* argv[]) {
   ros::NodeHandle node("~");
 
   // load parameters
-  std::string imu_topic, command_topic, state_topic;
+  std::string odom_topic, command_topic, state_topic;
 
-  node.param<std::string>("imu_topic", imu_topic, "/imu_data");
   node.param<std::string>("command_topic", command_topic, "/racer/commands");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
+  node.param<std::string>("odom_frame_id", odom_frame_id, "odom");
   node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
   node.param<double>("max_steering_angle", max_steering_angle, 24.0 / 180.0 * M_PI);
@@ -114,12 +155,9 @@ int main(int argc, char* argv[]) {
 
   // reset current state
   msg_seq = 0;
-  current_speed = 0;
-  last_imu_message_time_sec = -1;
   is_initialized = false;
 
   // set up pubsub
-  ros::Subscriber imu_sub = node.subscribe<sensor_msgs::Imu>(imu_topic, 1, imu_callback);
   ros::Subscriber command_sub = node.subscribe<geometry_msgs::Twist>(command_topic, 1, command_callback);
   ros::Publisher state_pub = node.advertise<racer_msgs::State>(state_topic, 1, false);
 

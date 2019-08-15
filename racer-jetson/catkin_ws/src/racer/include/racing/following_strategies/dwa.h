@@ -34,30 +34,32 @@ namespace racing {
         }
 
         double calculate_error(
-            const std::unique_ptr<std::list<state>>& attempt,
-            const std::unique_ptr<trajectory>& reference,
+            const std::list<state>& attempt,
+            const trajectory& reference,
             const occupancy_grid& costmap) const {
 
             double error = 0;
 
-            std::list<state>::const_iterator first_it = attempt->begin();
-            std::list<trajectory_step>::const_iterator second_it = reference->steps.begin();
+            std::list<state>::const_iterator first_it = attempt.begin();
+            std::list<trajectory_step>::const_iterator second_it = reference.steps.begin();
 
             std::size_t step = 0;
-            std::size_t steps = std::min(attempt->size(), reference->steps.size());
+            std::size_t steps = std::min(attempt.size(), reference.steps.size());
 
-            for (; first_it != attempt->end() && second_it != reference->steps.end(); ++first_it, ++second_it) {
+            const double total_weight = position_error_weight_ + heading_error_weight_ + velocity_error_weight_ + obstacle_proximity_error_weight_;
+
+            for (; first_it != attempt.end() && second_it != reference.steps.end(); ++first_it, ++second_it) {
                 double step_error = position_error_weight_ * position_error(*first_it, second_it->step)
                     + heading_error_weight_ * heading_error(*first_it, second_it->step)
                     + velocity_error_weight_ * velocity_error(*first_it, second_it->step)
                     + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, costmap);
 
-                double weight = pow(double(steps - step++) / double(steps), 2);
-
-                error += weight * step_error;
+                // double weight = pow(double(steps - step++) / double(steps), 2);
+                // error += weight * step_error;
+                error += step_error;
             }
 
-            return error;
+            return error / (double(steps) * total_weight);
         }
     private:
         const double position_error_weight_, heading_error_weight_, velocity_error_weight_;
@@ -83,7 +85,9 @@ namespace racing {
         }
 
         double obstacle_proximity_error(const state& a, const occupancy_grid& grid) const {
-            return grid.value_at(a.position.location().x, a.position.location().x) / grid.max_value();
+            const auto value_at = grid.value_at(a.position.x, a.position.y);
+            const double val = double(value_at) / double(grid.max_value());
+            return val;
         }
     };
 
@@ -93,7 +97,7 @@ namespace racing {
             int steps,
             const std::list<action> available_actions,
             const std::shared_ptr<model> model,
-            std::unique_ptr<trajectory_error_calculator> trajectory_error_calculator)
+            const std::shared_ptr<trajectory_error_calculator>& trajectory_error_calculator)
             : steps_(steps),
             available_actions_(available_actions),
             model_(model),
@@ -118,11 +122,11 @@ namespace racing {
             for (const auto& next_action : available_actions_) {
                 const auto trajectory = unfold(current_state, next_action, costmap);
                 if (trajectory) {
-                    const double error = trajectory_error_calculator_->calculate_error(trajectory, reference_subtrajectory, costmap);
-                    if (error < lowest_error) {
-                        lowest_error = error;
-                        best_so_far = std::make_unique<action>(next_action);
-                    }
+                  const double error = trajectory_error_calculator_->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+                  if (error < lowest_error) {
+                      lowest_error = error;
+                      best_so_far = std::make_unique<action>(next_action);
+                  }
                 }
             }
 
@@ -135,27 +139,21 @@ namespace racing {
 
         void reset() override { }
 
-    private:
-        const int steps_;
-        const std::list<action> available_actions_;
-        const std::shared_ptr<model> model_;
-        const std::unique_ptr<trajectory_error_calculator> trajectory_error_calculator_;
-
-        std::unique_ptr <std::list<state>> unfold(
+        std::unique_ptr<std::list<state>> unfold(
             const state& origin,
             const action& action,
             const racing::occupancy_grid& grid) const {
 
-            std::list<state> next_states;
+            auto next_states = std::make_unique<std::list<state>>();
 
             // make a copy of the current state and use it as an iterator
             auto current = std::make_unique<state>(origin.position, origin.speed, origin.steering_angle);
-            next_states.push_back(*current);
+            next_states->push_back(*current);
 
             for (int i = 0; i < steps_; ++i) {
                 auto prediction = model_->predict(*current, action);
                 if (!prediction) {
-                    return nullptr;
+                    break;
                 }
 
                 current = std::move(prediction);
@@ -163,15 +161,19 @@ namespace racing {
                 // the costmap is inflated and there is a collision if the center of gravity
                 // is in the "deadly" zone
                 if (grid.is_dangerous(current->position.x, current->position.y)) {
-                    std::cout << "this would run into an obstacle" << std::endl;
-                    return nullptr;
+                   return nullptr;
                 }
 
-                next_states.push_back(*current);
+                next_states->push_back(*current);
             }
 
-            return std::make_unique<std::list<state>>(next_states);
+            return std::move(next_states);
         }
+    private:
+        const int steps_;
+        const std::list<action> available_actions_;
+        const std::shared_ptr<model> model_;
+        const std::shared_ptr<trajectory_error_calculator> trajectory_error_calculator_;
     };
 
 }

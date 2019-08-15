@@ -79,12 +79,12 @@ int main(int argc, char* argv[]) {
   racing::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
-    0.35, // safe width
-    0.55, // safe length
+    0.55, // safe width
+    0.75, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     24.0 / 180.0 * M_PI, // max steering angle (rad)
-    2.0, // speed (ms^-1)
-    2.0 // acceleration (ms^-2)
+    6.0, // speed (ms^-1)
+    3.0 // acceleration (ms^-2)
   );
 
   auto actions = allow_reverse
