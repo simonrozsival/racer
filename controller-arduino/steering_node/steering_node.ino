@@ -72,7 +72,7 @@ void loop() {
 
   if (!autonomous_mode) {
     // translate the RC controller inputs into steering commands
-    manual_driving_msg.linear.x = fmap(throttle_pwm, THROTTLE_REVERSE_PWM, THROTTLE_FULL_PWM, -1.0, 1.0);
+    manual_driving_msg.linear.x = fmap(throttle_pwm, THROTTLE_REVERSE_PWM, THROTTLE_FORWARD_PWM, -1.0, 1.0);
     manual_driving_msg.angular.z = -1 * fmap(steering_pwm, STEERING_LEFT_PWM, STEERING_RIGHT_PWM, -1.0, 1.0);
     manual_driving.publish(&manual_driving_msg);
   } else {
