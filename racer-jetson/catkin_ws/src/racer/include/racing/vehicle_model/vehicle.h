@@ -4,7 +4,7 @@
 namespace racing {
 
     struct vehicle {
-        const double distance_of_center_of_gravity_to_rear_axle, wheelbase, max_speed, max_acceleration;
+        const double distance_of_center_of_gravity_to_rear_axle, wheelbase, max_speed, max_reversing_speed, max_acceleration;
         const double width, length;
         const double max_steering_speed, max_steering_angle;
 
@@ -16,6 +16,7 @@ namespace racing {
             double max_steering_speed,
             double max_steering_angle,
             double max_speed,
+            double max_reversing_speed,
             double max_acceleration)
             : distance_of_center_of_gravity_to_rear_axle(cog_offset),
             wheelbase(wheelbase),
@@ -24,6 +25,7 @@ namespace racing {
             max_steering_speed(max_steering_speed),
             max_steering_angle(max_steering_angle),
             max_speed(max_speed),
+            max_reversing_speed(max_reversing_speed),
             max_acceleration(max_acceleration)
         {
         }

@@ -163,7 +163,7 @@ namespace racing {
 
                 return abs(current.speed - target_speed) < abs(speed_delta)
                     ? target_speed // don't overshoot
-                    : std::min(vehicle_.max_speed, std::max(0.0, current.speed + speed_delta));
+                    : std::min(vehicle_.max_speed, std::max(vehicle_.max_reversing_speed, current.speed + speed_delta));
             }
 
             double calculate_steering_angle(const state& current, const action& input) const {
