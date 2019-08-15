@@ -109,7 +109,6 @@ void create_visualization_line(
   line.pose.orientation.w = 1.0;
   line.ns = "dwa";
   line.id = id;
-  line.lifetime = ros::Duration(0.05);
 
   line.color.r = score;
   line.color.g = 1.0 - score; // the lower, the better
