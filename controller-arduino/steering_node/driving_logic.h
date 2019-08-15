@@ -22,7 +22,7 @@ void init_driving_logic() {
 void drive_callback(const geometry_msgs::Twist& twist_msg) {
   has_autonomous_steering_data = true;
   autonomous_steering_angle = fmap(twist_msg.angular.z, -1.0, 1.0, STEERING_RIGHT_PWM, STEERING_LEFT_PWM);
-  autonomous_throttle = fmap(twist_msg.linear.x, 0.0, 1.0, THROTTLE_NONE_PWM, THROTTLE_FULL_PWM);
+  autonomous_throttle = fmap(twist_msg.linear.x, -1.0, 1.0, THROTTLE_REVERSE_PWM, THROTTLE_FULL_PWM);
 }
 
 bool is_offcenter(const int value, int center_pwm) {
