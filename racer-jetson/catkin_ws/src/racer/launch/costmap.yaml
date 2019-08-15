@@ -18,7 +18,7 @@ static:
   trinary_costmap: false
 
 inflation:
-  inflation_radius: 1.0
+  inflation_radius: 0.5
   cost_scaling_factor: 10.0
 
 obstacles:
