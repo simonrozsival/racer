@@ -24,8 +24,13 @@
 std::shared_ptr<racing::pid> pid;
 
 void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
-  if (!pid) return;
+  if (!pid) {
+    ROS_ERROR("Cannot handle dynamic reconfiguration because the initialization of this node hasn't finished yet.");
+    return;
+  }
+
   pid->reconfigure(config.kp, config.ki, config.kd, config.error_tolerance);
+  ROS_INFO("PID was reconfigured.");
 }
 
 int main(int argc, char* argv[]) {

@@ -191,8 +191,8 @@ trajectory follow(
 
 int main(int argc, char* argv[]) {
 
-    racing::vehicle vehicleA(.155, .31, .45, .65, pi / 6.0, pi / 6.0, 8.0, 5.0);
-    racing::vehicle vehicleB(.155, .31, .35, .55, pi / 5.8, pi / 8.0, 10.0, 5.0);
+    racing::vehicle vehicleA(.155, .31, .45, .65, pi / 6.0, pi / 6.0, 8.0, 3.0, 5.0);
+    racing::vehicle vehicleB(.155, .31, .35, .55, pi / 5.8, pi / 8.0, 10.0, 3.0, 5.0);
     double time_step_s = 1.0 / 100.0;
 
     auto grid = racing::occupancy_grid::load(map, cell_size);
