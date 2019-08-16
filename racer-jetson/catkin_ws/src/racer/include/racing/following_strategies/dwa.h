@@ -164,7 +164,7 @@ namespace racing {
 
                 // the costmap is inflated and there is a collision if the center of gravity
                 // is in the "deadly" zone
-                if (grid.is_dangerous(current->position.x, current->position.y)) {
+                if (grid.collides(current->position.x, current->position.y)) {
                    return nullptr;
                 }
 
