@@ -89,8 +89,8 @@ int main(int argc, char* argv[]) {
   );
 
   auto actions = allow_reverse
-    ? racing::kinematic_model::action::create_actions(3, 9)
-    : racing::kinematic_model::action::create_actions_including_reverse(5, 9);
+    ? racing::kinematic_model::action::create_actions_including_reverse(5, 9)
+    : racing::kinematic_model::action::create_actions(3, 9);
 
   int number_of_expanded_points = 12;
   astar::sehs::discretization discretization(
