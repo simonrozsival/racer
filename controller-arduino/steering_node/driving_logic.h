@@ -24,7 +24,7 @@ void drive_callback(const geometry_msgs::Twist& twist_msg) {
   autonomous_steering_angle = fmap(twist_msg.angular.z, -1.0, 1.0, STEERING_RIGHT_PWM, STEERING_LEFT_PWM);
 
   double throttle = twist_msg.linear.x;
-  if (abs(throttle) < 0.05) {
+  if (abs(throttle) < 0.025) {
     autonomous_throttle = THROTTLE_NONE_PWM;
   } else if (throttle > 0) {
     autonomous_throttle = fmap(throttle, 0.0, 1.0, THROTTLE_MIN_FORWARD_PWM, THROTTLE_FORWARD_PWM);
