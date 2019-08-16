@@ -12,6 +12,7 @@
 
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
+#include <std_msgs/Int32.h>
 #include <Servo.h>
 
 #include "./utils.h"
@@ -27,8 +28,10 @@ int blinking_counter = 0;
 
 ros::NodeHandle node_handle;
 geometry_msgs::Twist manual_driving_msg;
+std_msgs::Int32 pwm_msg;
 
 ros::Publisher manual_driving(DRIVING_TOPIC, &manual_driving_msg);
+ros::Publisher pwm_pub("/racer/pwm", &pwm_msg);
 ros::Subscriber<geometry_msgs::Twist> driving(DRIVING_TOPIC, &drive_callback);
 
 Servo servo_steering;
@@ -37,6 +40,7 @@ Servo servo_throttle;
 void setup() {
   node_handle.initNode();
   node_handle.advertise(manual_driving);
+  node_handle.advertise(pwm_pub);
   node_handle.subscribe(driving);
 
   attach_rc_input_interrupts();
@@ -67,6 +71,9 @@ void loop() {
     delay(3 * DUTY_CYCLE_MS); // 3 was the minimum constant which worked for me
   }
 
+  pwm_msg.data = throttle_pwm;
+  pwm_pub.publish(&pwm_msg);
+  
   servo_throttle.writeMicroseconds(throttle_pwm);
   reverse = throttle_pwm < (int)THROTTLE_NONE_PWM - (int)PWM_OFF_CENTER_TOLERANCE;
 
