@@ -84,7 +84,7 @@ void publish_state(
 {
   racer_msgs::State state;
   state.header.seq = msg_seq++;
-  state.header.frame_id = map_frame_id;
+  state.header.frame_id = odom_frame_id;
   state.header.stamp = ros::Time::now();
 
   state.x = position.x;
@@ -106,9 +106,7 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
     if (is_initialized) {
       try {
         tf::StampedTransform transform;
-
-        tf_listener.waitForTransform(map_frame_id, base_link_frame_id, ros::Time(0), ros::Duration(0.1));
-        tf_listener.lookupTransform(map_frame_id, base_link_frame_id, ros::Time(0), transform);
+        tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), transform);
 
         if (transform.stamp_ != prev_transform_stamp) {
           const auto position = get_current_position(transform);
@@ -120,7 +118,7 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
       } catch (tf::TransformException ex) {
         ROS_ERROR("'current_state' node: %s.", ex.what());
       }
-    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time().now() - speed_averaging_interval, &err)) {
+    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time(0), &err)) {
       is_initialized = true;
       ROS_INFO("'current_state' node: INITIALIZED.");
     } else {
