@@ -27,9 +27,9 @@ void drive_callback(const geometry_msgs::Twist& twist_msg) {
   if (abs(throttle) < 0.05) {
     autonomous_throttle = THROTTLE_NONE_PWM;
   } else if (throttle > 0) {
-    autonomous_throttle = fmap(throttle, 0.05, 1.0, THROTTLE_MIN_FORWARD_PWM, THROTTLE_FORWARD_PWM);
+    autonomous_throttle = fmap(throttle, 0.0, 1.0, THROTTLE_MIN_FORWARD_PWM, THROTTLE_FORWARD_PWM);
   } else {
-    autonomous_throttle = fmap(throttle, -0.05, -1.0, THROTTLE_MIN_REVERSE_PWM, THROTTLE_REVERSE_PWM);
+    autonomous_throttle = fmap(throttle, 0.0, -1.0, THROTTLE_MIN_REVERSE_PWM, THROTTLE_REVERSE_PWM);
   }
 }
 
@@ -39,7 +39,7 @@ bool is_offcenter(const int value, int center_pwm) {
 
 void select_inputs(int* steering_pwm, int* throttle_pwm) {
   *steering_pwm = rc_input[STEERING];
-  *throttle_pwm = rc_input[THROTTLE];
+  *throttle_pwm = min(THROTTLE_FORWARD_PWM, max(THROTTLE_REVERSE_PWM, rc_input[THROTTLE])); // simulate the capabilities of the autonomous mode
 
   if (autonomous_mode) {
     if (is_offcenter(*steering_pwm, (int)STEERING_CENTER_PWM) || is_offcenter(*throttle_pwm, (int)THROTTLE_NONE_PWM)) {
