@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "dwa_following_node");
   ros::NodeHandle node("~");
 
-  setup_dynamic_reconfigure();
+  // setup_dynamic_reconfigure();
 
   double cell_size;
   std::string state_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
