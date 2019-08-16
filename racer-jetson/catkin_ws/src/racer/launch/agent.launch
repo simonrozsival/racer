@@ -1,5 +1,4 @@
 <launch>
-    <arg name="use_dwa" default="true" />
     <arg name="circuit" />
 
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
@@ -8,7 +7,7 @@
     </node>
 
     <node pkg="racer" name="state" type="current_state_node" output="screen">
-      <param name="frequency" value="25" />
+      <param name="frequency" value="20" />
     </node>
 
     <node pkg="racer" name="planning" type="planning_node">
@@ -16,28 +15,28 @@
       <param name="frequency" value="5" />
     </node>
 
-    <group if="$(arg use_dwa)">
+    <group>
         <node pkg="racer" name="following" type="dwa_following_node" output="screen">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="prediction_horizon_s" value="0.7" />
-            <param name="max_allowed_speed_percentage" value="0.25" />
+            <param name="max_allowed_speed_percentage" value="0.2" />
 
-            <param name="distance_to_obstacle_weight" value="150" />
-            <param name="position_weight" value="50" />
-            <param name="heading_weight" value="40" />
-            <param name="velocity_weight" value="5" />
+            <param name="distance_to_obstacle_weight" value="20" />
+            <param name="position_weight" value="5" />
+            <param name="heading_weight" value="5" />
+            <param name="velocity_weight" value="1" />
 
-            <param name="frequency" value="15" />
+            <param name="frequency" value="20" />
         </node>
     </group>
 
-    <group unless="$(arg use_dwa)">
+    <!--group>
         <node pkg="racer" name="following" type="geometric_following_node" output="screen">
             <param name="costmap_topic" value="/obstacles/costmap/costmap" />
             <param name="min_lookahead" value="1" />
-            <param name="max_allowed_speed_percentage" value="0.25" />
+            <param name="max_allowed_speed_percentage" value="0.1" />
 
             <param name="frequency" value="15" />
         </node>
-    </group>
+    </group-->
 </launch>
