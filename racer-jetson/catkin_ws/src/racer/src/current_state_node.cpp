@@ -70,7 +70,7 @@ double get_current_speed(const racing::vehicle_position current_position) {
   return current_speed;
 }
 
-racing::vehicle_position get_current_position(const tf::StampedTransform& transform) {  
+racing::vehicle_position get_current_position(const tf::Transform& transform) {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
@@ -105,14 +105,15 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
   while (ros::ok()) {
     if (is_initialized) {
       try {
-        tf::StampedTransform transform;
-        tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), transform);
+        tf::StampedTransform odom_to_base_link, map_to_odom;
+        tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), odom_to_base_link);
+        tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
-        if (transform.stamp_ != prev_transform_stamp) {
-          const auto position = get_current_position(transform);
+        if (odom_to_base_link.stamp_ != prev_transform_stamp) {
+          const auto position = get_current_position(map_to_odom * odom_to_base_link);
           const auto current_speed = get_current_speed(position);
           publish_state(state_pub, position, current_speed);
-          prev_transform_stamp = transform.stamp_;
+          prev_transform_stamp = odom_to_base_link.stamp_;
         }
 
       } catch (tf::TransformException ex) {
@@ -124,7 +125,7 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
     } else {
       ROS_INFO("'current_state' node: Still not initialized (%s).", err.c_str());
       err = "";
-      ros::Duration(0.5).sleep();
+      ros::Duration(1.0).sleep();
     }
 
     ros::spinOnce();
