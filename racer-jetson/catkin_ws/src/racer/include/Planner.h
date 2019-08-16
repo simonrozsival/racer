@@ -23,10 +23,8 @@ class Planner {
   public:
     Planner(
       const racing::vehicle& model,
-      const std::list<racing::kinematic_model::action>& available_actions,
       const astar::discretization<discrete_state>& discretization)
       : model_(model),
-      available_actions_(available_actions),
       discretization_(discretization),
       time_step_s_(1.0 / 25.0),
       maximum_number_of_expanded_nodes_(10000),
@@ -40,6 +38,7 @@ class Planner {
     std::unique_ptr<racer_msgs::Trajectory> plan(
       const std::shared_ptr<racing::occupancy_grid> grid,
       const std::shared_ptr<racing::kinematic_model::state> initial_state,
+      const std::list<racing::kinematic_model::action>& available_actions,
       const std::shared_ptr<std::vector<math::point>> waypoints,
       const int next_waypoint,
       const double waypoint_radius) const;
@@ -48,7 +47,6 @@ class Planner {
     const racing::vehicle model_;
     const double time_step_s_;
     const int maximum_number_of_expanded_nodes_;
-    const std::list<racing::kinematic_model::action> available_actions_;
     const astar::discretization<discrete_state>& discretization_;
 
     std::string map_frame_;

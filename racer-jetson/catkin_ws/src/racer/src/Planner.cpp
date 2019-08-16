@@ -22,6 +22,7 @@ void Planner::initialize(double map_resolution, std::string map_frame) {
 std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
   const std::shared_ptr<racing::occupancy_grid> grid,
   const std::shared_ptr<racing::kinematic_model::state> state,
+  const std::list<racing::kinematic_model::action>& available_actions,
   const std::shared_ptr<std::vector<math::point>> waypoints,
   const int next_waypoint,
   const double waypoint_radius) const {
@@ -44,7 +45,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     std::move(discrete_initial_state),
     time_step_s_,
     model_,
-    available_actions_,
+    available_actions,
     discretization_,
     circuit
   );

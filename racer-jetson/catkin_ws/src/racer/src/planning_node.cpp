@@ -64,9 +64,6 @@ int main(int argc, char* argv[]) {
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
 
-  bool allow_reverse;
-  node.param<bool>("allow_reverse", allow_reverse, false);
-
   int frequency;
   node.param<int>("frequency", frequency, 1);
 
@@ -88,9 +85,8 @@ int main(int argc, char* argv[]) {
     3.0 // acceleration (ms^-2)
   );
 
-  auto actions = allow_reverse
-    ? racing::kinematic_model::action::create_actions_including_reverse(5, 9)
-    : racing::kinematic_model::action::create_actions(3, 9);
+  const auto actions_with_reverse = racing::kinematic_model::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
+  const auto actions_just_forward = racing::kinematic_model::action::create_actions(5, 9); // fewer throttle options, more steering options
 
   int number_of_expanded_points = 12;
   astar::sehs::discretization discretization(
@@ -98,10 +94,10 @@ int main(int argc, char* argv[]) {
   
   Planner planner(
     vehicle,
-    actions,
     discretization);
 
   ros::Rate rate(frequency);
+  bool found_trajectory_last_time = true;
 
   while (ros::ok()) {
     if (!planner.is_initialized() && last_known_map && next_waypoints) {
@@ -118,11 +114,14 @@ int main(int argc, char* argv[]) {
       const auto trajectory = planner.plan(
         last_known_map,
         last_known_position,
+        found_trajectory_last_time ? actions_just_forward : actions_with_reverse,
         next_waypoints,
         next_waypoint,
         waypoint_radius);
       
-      if (!trajectory) {
+      found_trajectory_last_time = bool(trajectory);
+
+      if (!found_trajectory_last_time) {
         ROS_INFO("no plan found, stick to old plan");
       } else {
         nav_msgs::Path path;

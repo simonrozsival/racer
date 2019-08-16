@@ -36,21 +36,14 @@ namespace racing {
         }
 
         bool collides(double x, double y, const footprint& fp) const {
-            int x_cell = int((x - origin_.x) / cell_size);
-            int y_cell = int((y - origin_.y) / cell_size);
-
             return std::any_of(
                 fp.occupied_cells.cbegin(),
                 fp.occupied_cells.cend(),
-                [this, x_cell, y_cell](const auto & cell) {
-                    return is_occupied(x_cell + cell.x, y_cell + cell.y);
+                [this, x, y](const auto & cell) {
+                    const double cx = x + cell.x * cell_size;
+                    const double cy = y + cell.y * cell_size;
+                    return collides(cx, cy);
                 });
-        }
-
-        bool collides(double x, double y) const {
-            int cx = int((x - origin_.x) / cell_size);
-            int cy = int((y - origin_.y) / cell_size);
-            return is_occupied(cx, cy);
         }
 
         int8_t value_at(double x, double y) const {
@@ -63,7 +56,7 @@ namespace racing {
                 : data_[index];
         }
 
-        bool is_dangerous(double x, double y) const {
+        bool collides(double x, double y) const {
             return value_at(x, y) >= 100;
         }
 
