@@ -5,10 +5,10 @@
 #include <mutex>
 #include <sstream>
 
-#include "math/primitives.h"
-#include "racing/track_analysis.h"
-#include "racing/collision_detection/occupancy_grid.h"
-#include "racing/vehicle_model/base_vehicle_model.h"
+#include "racer/math/primitives.h"
+#include "racer/track_analysis.h"
+#include "racer/occupancy_grid.h"
+#include "racer/vehicle_model/base_vehicle_model.h"
 
 #include "nav_msgs/OccupancyGrid.h"
 #include "visualization_msgs/MarkerArray.h"
@@ -26,13 +26,13 @@ int branching_factor;
 double max_distance_between_waypoints;
 double waypoint_radius, vehicle_radius;
 int lookahead;
-std::list<math::point> check_points;
+std::list<racer::math::point> check_points;
 
 // state variables
-std::unique_ptr<racing::vehicle_position> position;
-std::unique_ptr<racing::occupancy_grid> grid;
+std::unique_ptr<racer::vehicle_position> position;
+std::unique_ptr<racer::occupancy_grid> grid;
 std::string frame_id;
-std::unique_ptr<std::vector<math::circle>> waypoints;
+std::unique_ptr<std::vector<racer::math::circle>> waypoints;
 
 int next_waypoint = -1;
 int last_published_next_waypoint = -2;
@@ -44,12 +44,12 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
     throw std::runtime_error("There is already an existing map.");
   }
 
-  grid = std::make_unique<racing::occupancy_grid>(
+  grid = std::make_unique<racer::occupancy_grid>(
     map->data,
     map->info.width,
     map->info.height,
     map->info.resolution,
-    math::point(map->info.origin.position.x, map->info.origin.position.y)
+    racer::math::point(map->info.origin.position.x, map->info.origin.position.y)
   );
   frame_id = map->header.frame_id;
 
@@ -67,12 +67,12 @@ void load_circuit() {
 
   ROS_DEBUG("Analyzing the circuit...");
 
-  racing::track_analysis analysis(
+  racer::track_analysis analysis(
     *grid, max_distance_between_waypoints, branching_factor);
 
-  std::list<math::point> final_check_points;
+  std::list<racer::math::point> final_check_points;
   for (const auto& check_point : check_points) {
-    final_check_points.push_back(math::point(check_point.x, check_point.y));
+    final_check_points.push_back(racer::math::point(check_point.x, check_point.y));
   }
   final_check_points.push_back(position->location()); // back to the start 
 
@@ -87,12 +87,12 @@ void load_circuit() {
   }
 
   std::lock_guard<std::mutex> guard(analysis_lock);
-  std::vector<math::circle> wps;
+  std::vector<racer::math::circle> wps;
   for (const auto& apex : apexes) {
     wps.emplace_back(apex, waypoint_radius);
   }
 
-  waypoints = std::make_unique<std::vector<math::circle>>(wps);
+  waypoints = std::make_unique<std::vector<racer::math::circle>>(wps);
   next_waypoint = 0;
 
   ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints->size());
@@ -105,7 +105,7 @@ void state_update(const racer_msgs::State::ConstPtr& state) {
     try_init = true;
   }
 
-  position = std::make_unique<racing::vehicle_position>(state->x, state->y, state->heading_angle);
+  position = std::make_unique<racer::vehicle_position>(state->x, state->y, state->heading_angle);
 
   if (try_init) {
     load_circuit();

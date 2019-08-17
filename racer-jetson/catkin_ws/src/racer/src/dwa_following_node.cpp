@@ -15,25 +15,25 @@
 #include <dynamic_reconfigure/server.h>
 #include <racer/DWAConfig.h>
 
-#include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "racing/vehicle_model/base_vehicle_model.h"
-#include "racing/following_strategies/dwa.h"
-#include "math/euler_method_integrator.h"
-#include "Follower.h"
+#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/vehicle_model/base_vehicle_model.h"
+#include "racer/following_strategies/dwa.h"
+#include "racer/math/euler_method_integrator.h"
+#include "racer_ros/Follower.h"
 
-std::shared_ptr<racing::dwa> dwa;
-std::shared_ptr<racing::trajectory_error_calculator> error_calculator;
+std::shared_ptr<racer::following_strategies::dwa> dwa;
+std::shared_ptr<racer::following_strategies::trajectory_error_calculator> error_calculator;
 double max_allowed_speed_percentage;
 
 visualization_msgs::MarkerArray prepare_visualization(
-  const Follower& follower,
-  const racing::kinematic_model::action& selected_action,
-  const std::list<racing::kinematic_model::action>& all_actions);
+  const racer_ros::Follower& follower,
+  const racer::vehicle_model::kinematic_bicycle_model::action& selected_action,
+  const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& all_actions);
 
 void spin(
   const int frequency,
-  const Follower& follower,
-  const std::list<racing::kinematic_model::action> actions,
+  const racer_ros::Follower& follower,
+  const std::list<racer::vehicle_model::kinematic_bicycle_model::action> actions,
   const ros::Publisher command_pub,
   const ros::Publisher visualization_pub) {
 
@@ -76,7 +76,7 @@ void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level
     return;
   }
 
-  error_calculator = std::make_shared<racing::trajectory_error_calculator>(
+  error_calculator = std::make_shared<racer::following_strategies::trajectory_error_calculator>(
     config.position_weight,
     config.heading_weight,
     config.velocity_weight,
@@ -101,7 +101,7 @@ void setup_dynamic_reconfigure() {
 
 void create_visualization_line(
   int id,
-  const std::list<racing::kinematic_model::state>& trajectory,
+  const std::list<racer::vehicle_model::kinematic_bicycle_model::state>& trajectory,
   double score,
   visualization_msgs::Marker& line) {
 
@@ -129,9 +129,9 @@ void create_visualization_line(
 }
 
 visualization_msgs::MarkerArray prepare_visualization(
-  const Follower& follower,
-  const racing::kinematic_model::action& selected_action,
-  const std::list<racing::kinematic_model::action>& all_actions) {
+  const racer_ros::Follower& follower,
+  const racer::vehicle_model::kinematic_bicycle_model::action& selected_action,
+  const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& all_actions) {
 
   visualization_msgs::MarkerArray msg;
 
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
   node.param<double>("max_reversing_speed", max_reversing_speed, -3.0);
   node.param<double>("acceleration", acceleration, 3.0);
 
-  racing::vehicle vehicle(
+  racer::vehicle_model::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
     0.35, // safe width
@@ -218,13 +218,13 @@ int main(int argc, char* argv[]) {
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  std::shared_ptr<racing::kinematic_model::model> model =
-    std::make_shared<racing::kinematic_model::model>(std::make_unique<math::euler_method>(integration_step_s), vehicle);
+  std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::model> model =
+    std::make_shared<racer::vehicle_model::kinematic_bicycle_model::model>(std::make_unique<racer::math::euler_method>(integration_step_s), vehicle);
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
-  auto actions = racing::kinematic_model::action::create_actions_including_reverse(9, 15);
+  auto actions = racer::vehicle_model::kinematic_bicycle_model::action::create_actions_including_reverse(9, 15);
 
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
   error_calculator = 
-    std::make_shared<racing::trajectory_error_calculator>(
+    std::make_shared<racer::following_strategies::trajectory_error_calculator>(
       position_weight,
       heading_weight,
       velocity_weight,
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     );
 
   dwa =
-    std::make_shared<racing::dwa>(
+    std::make_shared<racer::following_strategies::dwa>(
       lookahead,
       actions,
       model,
@@ -251,12 +251,12 @@ int main(int argc, char* argv[]) {
     );
 
   ROS_DEBUG("DWA following strategy was initialized");
-  Follower follower(dwa);
+  racer_ros::Follower follower(dwa);
 
-  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
-  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
-  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &Follower::state_observed, &follower);
+  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &racer_ros::Follower::map_observed, &follower);
+  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower::trajectory_observed, &follower);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower::waypoints_observed, &follower);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &racer_ros::Follower::state_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(visualization_topic, 1, true);

@@ -14,14 +14,14 @@
 #include <racer_msgs/Trajectory.h>
 #include <racer_msgs/Waypoints.h>
 
-#include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "racing/vehicle_model/base_vehicle_model.h"
-#include "racing/collision_detection/occupancy_grid.h"
-#include "racing/following_strategies/geometric_following_strategy.h"
-#include "math/euler_method_integrator.h"
-#include "Follower.h"
+#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/vehicle_model/base_vehicle_model.h"
+#include "racer/occupancy_grid.h"
+#include "racer/following_strategies/geometric_following_strategy.h"
+#include "racer/math/euler_method_integrator.h"
+#include "racer_ros/Follower.h"
 
-std::shared_ptr<racing::pid> pid;
+std::shared_ptr<racer::following_strategies::pid> pid;
 
 void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
   if (!pid) {
@@ -61,13 +61,13 @@ int main(int argc, char* argv[]) {
   node.param<double>("pid_speed_ki", ki, 0.0);
   node.param<double>("pid_speed_kd", kd, 1.0);
   node.param<double>("pid_speed_error_tolerance", error_tolerance, 0.5);
-  pid = std::make_shared<racing::pid>(kp, ki, kd, error_tolerance);
+  pid = std::make_shared<racer::following_strategies::pid>(kp, ki, kd, error_tolerance);
   ROS_DEBUG("PID was initialized (kp=%f, ki=%f, kd=%f)", kp, ki, kd);
 
   double min_lookahead, lookahead_coef;
   node.param<double>("min_lookahead", min_lookahead, 1.0);
   node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
-  auto pure_pursuit = std::make_shared<racing::pure_pursuit>(wheelbase, min_lookahead, lookahead_coef);
+  auto pure_pursuit = std::make_shared<racer::following_strategies::pure_pursuit>(wheelbase, min_lookahead, lookahead_coef);
   ROS_DEBUG("Pure pursuit was initialized (min lookahead=%fm, lookahead velocity coef=%f)", min_lookahead, lookahead_coef);
 
   dynamic_reconfigure::Server<racer::PIDConfig> server;
@@ -76,13 +76,13 @@ int main(int argc, char* argv[]) {
   server.setCallback(f);
   ROS_DEBUG("dynamic reconfigure for PID was set up");
 
-  auto following_strategy = std::make_unique<racing::geometric_following_strategy>(max_steering_angle, pid, pure_pursuit);
+  auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy>(max_steering_angle, pid, pure_pursuit);
   ROS_DEBUG("Geometric following strategy was initialized");
 
-  Follower follower(std::move(following_strategy));
+  racer_ros::Follower follower(std::move(following_strategy));
   
-  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
+  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower::trajectory_observed, &follower);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower::waypoints_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::Marker>(visualization_topic, 1, true);
