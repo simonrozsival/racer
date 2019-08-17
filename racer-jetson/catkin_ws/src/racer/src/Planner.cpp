@@ -11,12 +11,7 @@ using namespace racing::kinematic_model;
 using namespace astar::sehs;
 
 bool Planner::is_initialized() const {
-  return collision_detector_ && discretization_.is_ready();
-}
-
-void Planner::initialize(double map_resolution, std::string map_frame) {
-  map_frame_ = map_frame;
-  collision_detector_ = std::move(racing::collision_detector::precalculate(18, model_, map_resolution));
+  return discretization_.is_ready();
 }
 
 std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
@@ -35,8 +30,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     state->position,
     *waypoints,
     waypoint_radius,
-    *grid,
-    *collision_detector_
+    *grid
   );
 
   auto initial_state = std::make_unique<racing::kinematic_model::state>(state->position, state->speed, state->steering_angle); // make a unique copy

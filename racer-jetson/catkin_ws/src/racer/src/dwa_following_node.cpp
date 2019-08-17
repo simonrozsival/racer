@@ -17,7 +17,6 @@
 
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
 #include "racing/following_strategies/dwa.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"
@@ -137,7 +136,7 @@ visualization_msgs::MarkerArray prepare_visualization(
   visualization_msgs::MarkerArray msg;
 
   const auto from = follower.last_known_state();
-  const auto costmap = follower.costmap();
+  const auto map = follower.map();
 
   const auto reference_subtrajectory = follower.reference_trajectory().find_reference_subtrajectory(from, follower.next_waypoint());
   if (reference_subtrajectory == nullptr) {
@@ -146,26 +145,26 @@ visualization_msgs::MarkerArray prepare_visualization(
 
   int id = 0;
   for (const auto action : all_actions) {
-    const auto trajectory = dwa->unfold(from, action, costmap);
+    const auto trajectory = dwa->unfold(from, action, map);
     if (trajectory) {
       visualization_msgs::Marker line;
       line.header.frame_id = follower.map_frame_id;
       line.header.stamp = ros::Time::now();
 
-      const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+      const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, map);
       create_visualization_line(id++, *trajectory, score, line);
 
       msg.markers.push_back(line);
     }
   }
 
-  const auto trajectory = dwa->unfold(from, selected_action, costmap);
+  const auto trajectory = dwa->unfold(from, selected_action, map);
   if (trajectory) {
     visualization_msgs::Marker selected_line;
     selected_line.header.frame_id = follower.map_frame_id;
     selected_line.header.stamp = ros::Time::now();
 
-    const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+    const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, map);
     create_visualization_line(id++, *trajectory, score, selected_line);
  
     selected_line.scale.x = 0.05;
@@ -184,11 +183,11 @@ int main(int argc, char* argv[]) {
   // setup_dynamic_reconfigure();
 
   double cell_size;
-  std::string state_topic, trajectory_topic, waypoints_topic, costmap_topic, driving_topic, visualization_topic;
+  std::string state_topic, trajectory_topic, waypoints_topic, map_topic, driving_topic, visualization_topic;
 
   node.param<double>("double", cell_size, 0.05);
 
-  node.param<std::string>("costmap_topic", costmap_topic, "/costmap");
+  node.param<std::string>("map_topic", map_topic, "/map");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
@@ -254,7 +253,7 @@ int main(int argc, char* argv[]) {
   ROS_DEBUG("DWA following strategy was initialized");
   Follower follower(dwa);
 
-  ros::Subscriber costmap_sub = node.subscribe<nav_msgs::OccupancyGrid>(costmap_topic, 1, &Follower::costmap_observed, &follower);
+  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &Follower::state_observed, &follower);

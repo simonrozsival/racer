@@ -36,7 +36,7 @@ namespace racing {
         double calculate_error(
             const std::list<state>& attempt,
             const trajectory& reference,
-            const occupancy_grid& costmap) const {
+            const occupancy_grid& map) const {
 
             double error = 0;
 
@@ -52,7 +52,7 @@ namespace racing {
                 double step_error = position_error_weight_ * position_error(*first_it, second_it->step)
                     + heading_error_weight_ * heading_error(*first_it, second_it->step)
                     + velocity_error_weight_ * velocity_error(*first_it, second_it->step)
-                    + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, costmap);
+                    + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, map);
 
                 // double weight = pow(double(steps - step++) / double(steps), 2);
                 // error += weight * step_error;
@@ -109,7 +109,7 @@ namespace racing {
             const state& current_state,
             const std::size_t passed_waypoints,
             const trajectory& reference_trajectory,
-            const racing::occupancy_grid& costmap) const override {
+            const racing::occupancy_grid& map) const override {
 
             const auto& reference_subtrajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
             if (reference_subtrajectory == nullptr) {
@@ -120,9 +120,9 @@ namespace racing {
             double lowest_error = HUGE_VAL;
 
             for (const auto& next_action : available_actions_) {
-                const auto trajectory = unfold(current_state, next_action, costmap);
+                const auto trajectory = unfold(current_state, next_action, map);
                 if (trajectory) {
-                  const double error = trajectory_error_calculator_->calculate_error(*trajectory, *reference_subtrajectory, costmap);
+                  const double error = trajectory_error_calculator_->calculate_error(*trajectory, *reference_subtrajectory, map);
                   if (error < lowest_error) {
                       lowest_error = error;
                       best_so_far = std::make_unique<action>(next_action);
@@ -162,8 +162,8 @@ namespace racing {
 
                 current = std::move(prediction);
 
-                // the costmap is inflated and there is a collision if the center of gravity
-                // is in the "deadly" zone
+                // the obstacles in the map are inflated so it is sufficient to check
+                // just the grid cell which the center of the vehicle lies in
                 if (grid.collides(current->position.x, current->position.y)) {
                    return nullptr;
                 }

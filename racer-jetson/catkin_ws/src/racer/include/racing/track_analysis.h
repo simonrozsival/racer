@@ -7,7 +7,7 @@
 #include "../math/primitives.h"
 #include "../sehs/space_exploration.h"
 
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 
 using namespace math;
 
