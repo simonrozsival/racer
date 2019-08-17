@@ -10,15 +10,15 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <racer_msgs/State.h>
 
-#include "math/primitives.h"
-#include "racing/vehicle_model/vehicle_position.h"
+#include "racer/math/primitives.h"
+#include "racer/vehicle_position.h"
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
 double max_steering_angle;
 
 // current state
-std::unique_ptr<racing::vehicle_position> prev_position;
+std::unique_ptr<racer::vehicle_position> prev_position;
 double prev_position_time;
 ros::Time prev_transform_stamp;
 
@@ -46,12 +46,12 @@ double angle_difference(double alpha, double beta) {
   return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
 }
 
-double get_current_speed(const racing::vehicle_position current_position) {
+double get_current_speed(const racer::vehicle_position current_position) {
   double now = ros::Time().now().toSec();
   double current_speed = 0;
 
   if (prev_position) {
-    math::vector delta = current_position.location() - prev_position->location();
+    racer::math::vector delta = current_position.location() - prev_position->location();
     double distance = delta.length();
     double travel_angle = atan2(delta.y, delta.x);
     double direction = angle_difference(travel_angle, prev_position->heading_angle) < (M_PI / 2) ? 1.0 : -1.0;
@@ -65,21 +65,21 @@ double get_current_speed(const racing::vehicle_position current_position) {
   }
 
   prev_position_time = now;
-  prev_position = std::make_unique<racing::vehicle_position>(current_position);
+  prev_position = std::make_unique<racer::vehicle_position>(current_position);
 
   return current_speed;
 }
 
-racing::vehicle_position get_current_position(const tf::Transform& transform) {
+racer::vehicle_position get_current_position(const tf::Transform& transform) {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
-  return racing::vehicle_position(origin.x(), origin.y(), rotation);
+  return racer::vehicle_position(origin.x(), origin.y(), rotation);
 }
 
 void publish_state(
   const ros::Publisher& state_pub,
-  const racing::vehicle_position& position,
+  const racer::vehicle_position& position,
   const double current_speed)
 {
   racer_msgs::State state;

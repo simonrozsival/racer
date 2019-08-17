@@ -9,18 +9,18 @@
 #include <racer_msgs/Waypoints.h>
 #include <racer_msgs/Trajectory.h>
 
-#include "math/primitives.h"
-#include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "sehs/space_exploration.h"
+#include "racer/math/primitives.h"
+#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/sehs/space_exploration.h"
 
-#include "utils.h"
-#include "Planner.h"
+#include "racer_ros/utils.h"
+#include "racer_ros/Planner.h"
 
 std::mutex lock;
 
-std::shared_ptr<racing::kinematic_model::state> last_known_position;
-std::shared_ptr<racing::occupancy_grid> last_known_map;
-std::shared_ptr<std::vector<math::point>> next_waypoints;
+std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::state> last_known_position;
+std::shared_ptr<racer::occupancy_grid> last_known_map;
+std::shared_ptr<std::vector<racer::math::point>> next_waypoints;
 int next_waypoint;
 double waypoint_radius;
 std::string map_frame;
@@ -29,20 +29,20 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   std::lock_guard<std::mutex> guard(lock);
 
   map_frame = map->header.frame_id;
-  last_known_map = std::move(msg_to_grid(*map));
+  last_known_map = std::move(racer_ros::msg_to_grid(*map));
 }
 
 void state_update(const racer_msgs::State::ConstPtr& state) {
   std::lock_guard<std::mutex> guard(lock);
 
-  racing::vehicle_position position(state->x, state->y, state->heading_angle);
-  last_known_position = std::make_unique<racing::kinematic_model::state>(position, state->speed, state->steering_angle);
+  racer::vehicle_position position(state->x, state->y, state->heading_angle);
+  last_known_position = std::make_unique<racer::vehicle_model::kinematic_bicycle_model::state>(position, state->speed, state->steering_angle);
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   std::lock_guard<std::mutex> guard(lock);
 
-  next_waypoints = std::make_shared<std::vector<math::point>>();
+  next_waypoints = std::make_shared<std::vector<racer::math::point>>();
 
   waypoint_radius = waypoints->waypoints[0].radius;
   next_waypoint = waypoints->next_waypoint;
@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
   
-  racing::vehicle vehicle(
+  racer::vehicle_model::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
     0.55, // safe width
@@ -87,16 +87,16 @@ int main(int argc, char* argv[]) {
     3.0 // acceleration (ms^-2)
   );
 
-  const auto actions_with_reverse = racing::kinematic_model::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
-  const auto actions_just_forward = racing::kinematic_model::action::create_actions(5, 9); // fewer throttle options, more steering options
+  const auto actions_with_reverse = racer::vehicle_model::kinematic_bicycle_model::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
+  const auto actions_just_forward = racer::vehicle_model::kinematic_bicycle_model::action::create_actions(5, 9); // fewer throttle options, more steering options
 
   int number_of_expanded_points = 12;
-  astar::sehs::discretization discretization(
+  racer::astar::sehs::discretization discretization(
     vehicle.radius(), number_of_expanded_points, M_PI / 12.0, 0.25);
   
   double time_step_s = 0.1;
 
-  Planner planner(
+  racer_ros::Planner planner(
     vehicle,
     discretization,
     time_step_s,
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
     if (!planner.is_initialized() && last_known_map && next_waypoints) {
       std::lock_guard<std::mutex> guard(lock);
 
-      const std::list<math::point> points{ next_waypoints->begin(), next_waypoints->end() };
+      const std::list<racer::math::point> points{ next_waypoints->begin(), next_waypoints->end() };
       discretization.explore_grid(*last_known_map, last_known_position->position, points);
     }
 
