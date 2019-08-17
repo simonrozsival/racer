@@ -12,8 +12,6 @@
 #include "racing/vehicle_model/vehicle.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
-#include "./footprint.h"
-
 namespace racing {
 
     class occupancy_grid {
@@ -33,17 +31,6 @@ namespace racing {
             size_(data.size()),
             origin_(origin)
         {
-        }
-
-        bool collides(double x, double y, const footprint& fp) const {
-            return std::any_of(
-                fp.occupied_cells.cbegin(),
-                fp.occupied_cells.cend(),
-                [this, x, y](const auto & cell) {
-                    const double cx = x + cell.x * cell_size;
-                    const double cy = y + cell.y * cell_size;
-                    return collides(cx, cy);
-                });
         }
 
         int8_t value_at(double x, double y) const {

@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 
 namespace racing {
 
@@ -20,14 +20,12 @@ namespace racing {
             vehicle_position start,
             std::vector<math::point> list_of_waypoints,
             double waypoint_radius,
-            const occupancy_grid& grid,
-            const collision_detector& collision_detector)
+            const occupancy_grid& grid)
             : cell_size(cell_size),
             start_position(start),
             waypoints(std::vector<math::point> { list_of_waypoints.begin(), list_of_waypoints.end() }),
             waypoint_radius_sq_(waypoint_radius * waypoint_radius),
             grid(grid),
-            collision_detector_(collision_detector),
             number_of_waypoints(list_of_waypoints.size())
         {
             double remaining_distance = 0;
@@ -45,7 +43,7 @@ namespace racing {
         }
 
         bool collides(const vehicle_position& position) const {
-            return collision_detector_.collides(position, grid);
+            return grid.collides(position.x, position.y);
         }
 
         bool passes_waypoint(const vehicle_position& position, size_t waypoint_index) const {
@@ -69,7 +67,6 @@ namespace racing {
             return remaining_distances_[n];
         }
     private:
-        const collision_detector& collision_detector_;
         const double waypoint_radius_sq_;
         
         std::vector<double> remaining_distances_;

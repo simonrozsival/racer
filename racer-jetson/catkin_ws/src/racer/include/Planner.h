@@ -15,7 +15,7 @@
 
 #include "racing/vehicle_model/vehicle.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 
 using namespace astar::sehs;
 
@@ -23,17 +23,18 @@ class Planner {
   public:
     Planner(
       const racing::vehicle& model,
-      const astar::discretization<discrete_state>& discretization)
+      const astar::discretization<discrete_state>& discretization,
+      const double time_step_s,
+      const std::string map_frame_id)
       : model_(model),
       discretization_(discretization),
-      time_step_s_(1.0 / 25.0),
+      time_step_s_(time_step_s),
       maximum_number_of_expanded_nodes_(10000),
-      collision_detector_(nullptr)
+      map_frame_(map_frame_id)
     {
     }
 
     bool is_initialized() const;
-    void initialize(double map_resolution, std::string map_frame);
 
     std::unique_ptr<racer_msgs::Trajectory> plan(
       const std::shared_ptr<racing::occupancy_grid> grid,
@@ -50,7 +51,6 @@ class Planner {
     const astar::discretization<discrete_state>& discretization_;
 
     std::string map_frame_;
-    std::shared_ptr<racing::collision_detector> collision_detector_;
 };
 
 #endif

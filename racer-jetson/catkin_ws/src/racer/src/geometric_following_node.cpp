@@ -16,7 +16,7 @@
 
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 #include "racing/following_strategies/geometric_following_strategy.h"
 #include "math/euler_method_integrator.h"
 #include "Follower.h"

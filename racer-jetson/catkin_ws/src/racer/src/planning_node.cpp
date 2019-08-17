@@ -56,9 +56,11 @@ int main(int argc, char* argv[]) {
   ros::init(argc, argv, "racing_trajectory_planning");
   ros::NodeHandle node("~");
 
-  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string map_frame_id, map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
 
-  node.param<std::string>("map_topic", map_topic, "/map");
+  node.param<std::string>("map_frame_id", map_frame_id, "map");
+
+  node.param<std::string>("map_topic", map_topic, "/obstacles/costmap/costmap");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
@@ -92,9 +94,13 @@ int main(int argc, char* argv[]) {
   astar::sehs::discretization discretization(
     vehicle.radius(), number_of_expanded_points, M_PI / 12.0, 0.25);
   
+  double time_step_s = 0.1;
+
   Planner planner(
     vehicle,
-    discretization);
+    discretization,
+    time_step_s,
+    map_frame_id);
 
   ros::Rate rate(frequency);
   bool found_trajectory_last_time = true;
@@ -105,11 +111,14 @@ int main(int argc, char* argv[]) {
 
       const std::list<math::point> points{ next_waypoints->begin(), next_waypoints->end() };
       discretization.explore_grid(*last_known_map, last_known_position->position, points);
-      planner.initialize(last_known_map->cell_size, map_frame);
     }
 
     if (last_known_map && last_known_position && next_waypoints) {
-      ROS_INFO("planning...");
+      if (found_trajectory_last_time) {
+        ROS_INFO("planning trajecotry just by going forward...");
+      } else {
+        ROS_INFO("planning trajectory with the possibility of going in reverse...");
+      }
 
       const auto trajectory = planner.plan(
         last_known_map,

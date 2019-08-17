@@ -12,7 +12,7 @@
 #include <racer_msgs/State.h>
 
 #include "racing/following_strategies/following_strategy.h"
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 #include "racing/vehicle_model/kinematic_bicycle_model.h"
 
 class Follower {
@@ -30,7 +30,7 @@ class Follower {
     bool is_initialized() const;
 
     void state_observed(const racer_msgs::State::ConstPtr& state);
-    void costmap_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
+    void map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
     void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
     void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
 
@@ -48,8 +48,8 @@ class Follower {
       return *reference_trajectory_; // copy
     }
 
-    const racing::occupancy_grid costmap() const {
-      return *costmap_; // copy
+    const racing::occupancy_grid map() const {
+      return *map_; // copy
     }
 
   private:
@@ -57,7 +57,7 @@ class Follower {
     const racing::kinematic_model::action stop_;
     int next_waypoint_;
 
-    std::unique_ptr<racing::occupancy_grid> costmap_;
+    std::unique_ptr<racing::occupancy_grid> map_;
     std::unique_ptr<racing::kinematic_model::trajectory> reference_trajectory_;
     std::unique_ptr<racing::kinematic_model::state> state_;
 };

@@ -3,11 +3,11 @@
 #include "utils.h"
 
 bool Follower::is_initialized() const {
-  return costmap_ && reference_trajectory_ && state_;
+  return map_ && reference_trajectory_ && state_;
 }
 
-void Follower::costmap_observed(const nav_msgs::OccupancyGrid::ConstPtr& map) {
-  costmap_ = std::move(msg_to_grid(*map));
+void Follower::map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map) {
+  map_ = std::move(msg_to_grid(*map));
   map_frame_id = map->header.frame_id;
 }
 
@@ -26,7 +26,7 @@ void Follower::state_observed(const racer_msgs::State::ConstPtr& state) {
 
 std::unique_ptr<racing::kinematic_model::action> Follower::select_driving_command() const {
   if (reference_trajectory_ && reference_trajectory_->steps.size() > 0) {
-    return strategy_->select_action(*state_, next_waypoint_, *reference_trajectory_, *costmap_);
+    return strategy_->select_action(*state_, next_waypoint_, *reference_trajectory_, *map_);
   } else {
     return stop();
   }

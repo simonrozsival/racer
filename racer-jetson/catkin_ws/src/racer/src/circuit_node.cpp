@@ -7,7 +7,7 @@
 
 #include "math/primitives.h"
 #include "racing/track_analysis.h"
-#include "racing/collision_detection/occupancy_grid_collision_detector.h"
+#include "racing/collision_detection/occupancy_grid.h"
 #include "racing/vehicle_model/base_vehicle_model.h"
 
 #include "nav_msgs/OccupancyGrid.h"
