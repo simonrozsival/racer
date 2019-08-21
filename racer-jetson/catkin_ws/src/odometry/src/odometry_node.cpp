@@ -12,20 +12,23 @@
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "odometry_node");
-  ros::NodeHandle nh;
+  ros::NodeHandle nh("~");
 
-  double wheelbase, rear_wheel_radius, max_steering_angle_degrees;
-  
+  double gear_ratio, wheelbase, rear_wheel_radius, max_steering_angle_degrees;
+
+  nh.param<double>("gear_ratio", gear_ratio, 0.296);
   nh.param<double>("wheelbase", wheelbase, 0.31);
   nh.param<double>("rear_wheel_radius", rear_wheel_radius, 0.05);
-  nh.param<double>("max_steering_angle", max_steering_angle_degrees, 30);
-  
-  double max_steering_angle = max_steering_angle_degrees / 180 * M_PI;
+  nh.param<double>("max_steering_angle", max_steering_angle_degrees, 24);
+
+  double max_steering_angle = max_steering_angle_degrees / 180.0 * M_PI;
 
   VehicleModel model(rear_wheel_radius, wheelbase, max_steering_angle);
 
   std::string base_link, odometry_frame;
-  
+  bool publish_tf;
+
+  nh.param<bool>("publish_tf", publish_tf, true);
   nh.param<std::string>("base_link", base_link, "base_link");
   nh.param<std::string>("odometry_frame", odometry_frame, "odom");
 
@@ -39,7 +42,7 @@ int main(int argc, char **argv)
   tf::TransformBroadcaster odom_broadcaster;
 
   OdometrySubject odometry_subject(
-    model, odometry_frame, base_link, odom_broadcaster, odometry_pub);  
+    gear_ratio, model, odometry_frame, base_link, odom_broadcaster, odometry_pub);  
 
   ros::Subscriber steering_sub = nh.subscribe<geometry_msgs::Twist>(
     driving_topic, 1, &OdometrySubject::process_steering_command, &odometry_subject);
@@ -51,6 +54,10 @@ int main(int argc, char **argv)
 
   while (ros::ok()) {
     odometry_subject.publish_odometry();
+    if(publish_tf) {
+      odometry_subject.publish_tf();
+    }
+
     ros::spinOnce();
     loop_rate.sleep();
   }

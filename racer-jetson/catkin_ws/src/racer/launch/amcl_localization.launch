@@ -1,0 +1,25 @@
+<launch>
+  <include file="$(dirname)/ydlidar.launch" />
+
+  <node pkg="amcl" type="amcl" name="amcl">
+    <param name="update_min_d" value="0.02" />
+    <param name="update_min_a" value="0.261" />
+    <param name="transform_tolerance" value="0.05" />
+    <param name="recovery_alpha_slow" value="0.001" />
+    <param name="recovery_alpha_fast" value="0.1" />
+    <param name="laser_max_beams" value="30" />
+    	
+    <param name="odom_model_type" value="diff-corrected" />
+    <param name="odom_alpha1" value="0.4"/>
+    <param name="odom_alpha2" value="0.6"/>
+    <param name="odom_alpha3" value="0.6"/>
+    <param name="odom_alpha4" value="0.4"/>
+  </node>
+
+  <node pkg="hector_trajectory_server" type="hector_trajectory_server" name="hector_trajectory_server" output="screen">
+    <param name="target_frame_name" type="string" value="/map" />
+    <param name="source_frame_name" type="string" value="/base_link" />
+    <param name="trajectory_update_rate" type="double" value="4" />
+    <param name="trajectory_publish_rate" type="double" value="1" />
+  </node>
+</launch>

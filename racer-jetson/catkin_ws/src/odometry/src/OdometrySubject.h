@@ -15,6 +15,7 @@
 class OdometrySubject {
     public:
         OdometrySubject(
+            const double gear_ratio,
             const VehicleModel& vehicle_model,
             const std::string& odometry_frame,
             const std::string& base_link,
@@ -23,6 +24,7 @@ class OdometrySubject {
         void process_steering_command(const geometry_msgs::Twist::ConstPtr &msg);
         void process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg);
         void publish_odometry();
+        void publish_tf();
 
     private:
         void publish_state_estimate(const VehicleState &state) const;
@@ -32,9 +34,11 @@ class OdometrySubject {
         double total_distance_;
         double steering_angle_;
         double last_update_time_;
+        double direction_;
 
         std::mutex lock_;
 
+        const double gear_ratio_;
         const VehicleModel& vehicle_model_;
         const std::string& base_link_;
         const std::string& odometry_frame_;

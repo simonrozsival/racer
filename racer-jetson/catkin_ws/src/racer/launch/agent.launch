@@ -1,11 +1,41 @@
 <launch>
-    <arg name="map" />
+    <arg name="circuit" />
 
-    <include file="$(find racer)/launch/localization.launch">
-        <arg name="map" value="$(arg map)"/>
-    </include>
+    <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
+      <rosparam command="load" file="$(find racer)/circuits/$(arg circuit).yaml" />
+      <param name="lookahead" value="3" />
+    </node>
 
-    <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen" />
-    <node pkg="racer" name="planning" type="planning_node" output="screen" />
-    <node pkg="racer" name="following" type="following_node" output="screen" />
+    <node pkg="racer" name="state" type="current_state_node" output="screen">
+      <param name="frequency" value="25" />
+    </node>
+
+    <node pkg="racer" name="planning" type="planning_node" output="screen">
+      <param name="map_topic" value="/obstacles/costmap/costmap" />
+      <param name="frequency" value="5" />
+    </node>
+
+    <group>
+        <node pkg="racer" name="following" type="dwa_following_node" output="screen">
+            <param name="map_topic" value="/obstacles/costmap/costmap" />
+            <param name="prediction_horizon_s" value="0.7" />
+
+            <param name="distance_to_obstacle_weight" value="10" />
+            <param name="position_weight" value="10" />
+            <param name="heading_weight" value="10" />
+            <param name="velocity_weight" value="1" />
+
+            <param name="frequency" value="20" />
+        </node>
+    </group>
+
+    <!--group>
+        <node pkg="racer" name="following" type="geometric_following_node" output="screen">
+            <param name="map_topic" value="/obstacles/costmap/costmap" />
+            <param name="min_lookahead" value="1" />
+            <param name="max_allowed_speed_percentage" value="0.1" />
+
+            <param name="frequency" value="15" />
+        </node>
+    </group-->
 </launch>
