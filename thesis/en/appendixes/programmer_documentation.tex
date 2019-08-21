@@ -18,10 +18,11 @@ Further information about ROS and tutorials which describe how to work with it a
 
 The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a ROS master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
 
-\begin{figure}[]\centering
-\includegraphics[width=125mm]{../img/ros_diagram.pdf}
-\caption{This figure shows how the compters and sensors which make up the experimental vehicle are connected with each other and the direction of data flow between the devices.}
-\label{fig:ros_diagram}
+\begin{figure}
+	\centering
+	\includegraphics[width=125mm]{../img/ros_diagram}
+	\caption{This figure shows how the computers and sensors which make up the experimental vehicle are connected with each other and the direction of data flow between the devices.}
+	\label{fig:rosdiagram}
 \end{figure}
 
 The vehicle can performs two tasks: mapping and racing. In the mapping phase the vehicle creates a map of the track using the LIDAR and in the racing phase it drives autonomously around the track with the knowledge of to the map and the topology of the circuit. In the following sections we will describe how we approach these two tasks.
@@ -30,17 +31,17 @@ The vehicle can performs two tasks: mapping and racing. In the mapping phase the
 
 When the vehicle is creating the map of the track, it is being controlled manually using the remote controller of the vehicle. The only sensor which is needed for this task is the LIDAR. The data from the LIDAR is being collected by a SLAM algorithm (Simultaneous Localization And Mapping) implemeted by the Hector SLAM library by a tema from the Technical University of Darmstadt.
 
-This library performs scan matching of the LIDAR scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a LIDAR scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\xi =\( p_x, p_y, \phi\)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
+This library performs scan matching of the LIDAR scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a LIDAR scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\xi =\left( p_x, p_y, \phi\right)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
 
 $$
-\xi^* = \underset{\xi}{\arg\min}\sum_{i=1}^n\[ 1 - M\( S_i\( \xi\)\)\]^2,
+\xi^* = \underset{\xi}{\arg\min} \sum_{i=1}^n\left[ 1 - M\left( S_i\left( \xi\right)\right)\right]^2,
 $$
 
-where $S_i\( \xi\)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
+where $S_i\left(\xi\right)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
 
 The producer of the YDLIDAR X4 we use provides a ROS node as part of the SDK for the device. 
 
-Hector SLAM provides a ROS node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server#map\_saver}.
+Hector SLAM provides a ROS node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server\#map\_saver}.
 
 \subsection{Racing}
 
