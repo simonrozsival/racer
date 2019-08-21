@@ -44,7 +44,7 @@ namespace racer {
         }
 
         bool collides(double x, double y) const {
-            return value_at(x, y) >= 100;
+            return value_at(x, y) >= 50;
         }
 
         double distance_to_closest_obstacle(const racer::math::point& center, double max_radius) const {
