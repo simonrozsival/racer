@@ -2,123 +2,170 @@
 #include <ros/ros.h>
 #include <mutex>
 
-#include "nav_msgs/OccupancyGrid.h"
-#include "nav_msgs/Odometry.h"
-#include "nav_msgs/Path.h"
+#include <nav_msgs/GetMap.h>
+#include <nav_msgs/OccupancyGrid.h>
+#include <nav_msgs/Path.h>
 
-#include "racer_msgs/Waypoints.h"
-#include "racer_msgs/Trajectory.h"
+#include <racer_msgs/State.h>
+#include <racer_msgs/Waypoints.h>
+#include <racer_msgs/Trajectory.h>
 
-#include "math/primitives.h"
-#include "racing/vehicle_model/kinematic_bicycle_model.h"
-#include "Planner.h"
+#include "racer/math/primitives.h"
+#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/sehs/space_exploration.h"
+
+#include "racer_ros/utils.h"
+#include "racer_ros/Planner.h"
 
 std::mutex lock;
 
-nav_msgs::Odometry last_known_position;
-nav_msgs::OccupancyGrid last_known_map;
-racer_msgs::Waypoints next_waypoints;
-
-bool has_map = false;
-bool has_odom = false;
-bool has_goal = false;
+std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::state> last_known_position;
+std::shared_ptr<racer::occupancy_grid> last_known_map;
+std::shared_ptr<std::vector<racer::math::point>> next_waypoints;
+int next_waypoint;
+double waypoint_radius;
+std::string map_frame;
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   std::lock_guard<std::mutex> guard(lock);
-  last_known_map = *map;
-  has_map = true;
+
+  map_frame = map->header.frame_id;
+  last_known_map = std::move(racer_ros::msg_to_grid(*map));
 }
 
-void odometry_update(const nav_msgs::Odometry::ConstPtr& position) {
+void state_update(const racer_msgs::State::ConstPtr& state) {
   std::lock_guard<std::mutex> guard(lock);
-  last_known_position = *position;
-  has_odom = true;
+
+  racer::vehicle_position position(state->x, state->y, state->heading_angle);
+  last_known_position = std::make_unique<racer::vehicle_model::kinematic_bicycle_model::state>(position, state->speed, state->steering_angle);
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   std::lock_guard<std::mutex> guard(lock);
-  next_waypoints = *waypoints;
-  has_goal = true;
+
+  next_waypoints = std::make_shared<std::vector<racer::math::point>>();
+
+  waypoint_radius = waypoints->waypoints[0].radius;
+  next_waypoint = waypoints->next_waypoint;
+
+  for (const auto& wp : waypoints->waypoints) {
+    next_waypoints->emplace_back(wp.position.x, wp.position.y);
+  }
 }
 
 int main(int argc, char* argv[]) {
   ros::init(argc, argv, "racing_trajectory_planning");
-  ros::NodeHandle node;
+  ros::NodeHandle node("~");
 
-  std::string map_topic, odometry_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string map_frame_id, map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
 
-  node.param<std::string>("map_topic", map_topic, "/map");
-  node.param<std::string>("odometry_topic", odometry_topic, "/pf/pose/odom");
+  node.param<std::string>("map_frame_id", map_frame_id, "map");
+
+  node.param<std::string>("map_topic", map_topic, "/obstacles/costmap/costmap");
+  node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
 
+  int frequency;
+  node.param<int>("frequency", frequency, 1);
+
   ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber odometry_sub = node.subscribe<nav_msgs::Odometry>(odometry_topic, 1, odometry_update);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
   
-  racing::vehicle vehicle(
+  racer::vehicle_model::vehicle vehicle(
     0.155, // cog_offset
     0.31, // wheelbase
-    0.35, // safe width
-    0.55, // safe length
+    0.55, // safe width
+    0.75, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
-    1.0 / 6.0 * M_PI, // max steering angle (rad)
-    2.0, // speed (ms^-1)
-    2.0 // acceleration (ms^-2)
+    24.0 / 180.0 * M_PI, // max steering angle (rad)
+    6.0, // speed (ms^-1)
+    -3.0, // reversing speed (ms^-1)
+    3.0 // acceleration (ms^-2)
   );
 
-  auto actions = racing::kinematic_model::action::create_actions(3, 9);
-  astar::hybrid_astar::discretization discretization(
-    1.0, 1.0, M_PI / 12.0, 0.25);
-  
-  Planner planner(
-    vehicle,
-    actions,
-    discretization);
+  const auto actions_with_reverse = racer::vehicle_model::kinematic_bicycle_model::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
+  const auto actions_just_forward = racer::vehicle_model::kinematic_bicycle_model::action::create_actions(5, 9); // fewer throttle options, more steering options
 
-  ros::Rate rate(1);
+  int number_of_expanded_points = 12;
+  racer::astar::sehs::discretization discretization(
+    vehicle.radius(), number_of_expanded_points, M_PI / 12.0, 0.25);
+  
+  double time_step_s = 1.0 / 25.0;
+
+  racer_ros::Planner planner(
+    vehicle,
+    discretization,
+    time_step_s,
+    map_frame_id);
+
+  ros::Rate rate(frequency);
+  bool found_trajectory_last_time = true;
 
   while (ros::ok()) {
-    if (!planner.is_initialized() && has_map) {
-      planner.initialize(last_known_map);
-    }
+    if (!planner.is_initialized() && last_known_map && next_waypoints) {
+      std::lock_guard<std::mutex> guard(lock);
 
-    if (has_map && has_odom && has_goal) {
-      ROS_INFO("planning...");
-
-      nav_msgs::Odometry odom;
-      racer_msgs::Waypoints waypoints;
-      nav_msgs::OccupancyGrid map;
-      {
-        std::lock_guard<std::mutex> guard(lock);
-        odom = last_known_position;
-        waypoints = next_waypoints;
-        map = last_known_map;
-      }
-
-      const auto trajectory = planner.plan(map, odom, waypoints);
-      
-      if (!trajectory) {
-        ROS_INFO("no plan found, sticking to old plan");
+      // get the base map for space exploration
+      while (!ros::service::waitForService("static_map", ros::Duration(3.0))) {
+        ROS_INFO("'planning_node': Map service isn't available yet.");
         continue;
       }
 
-      nav_msgs::Path path;
-      path.header = trajectory->header;
-      for (const auto& step : trajectory->trajectory) {
-        geometry_msgs::PoseStamped path_pose;
-        path_pose.header = trajectory->header;
-        path_pose.pose = step.pose;
+      auto map_service_client = node.serviceClient<nav_msgs::GetMap>("/static_map");
 
-        path.poses.push_back(path_pose);
+      nav_msgs::GetMap::Request map_req;
+      nav_msgs::GetMap::Response map_res;
+      if (!map_service_client.call(map_req, map_res)) {
+        ROS_ERROR("Cannot obtain the base map from the map service. Another attempt will be made.");
+        ros::Duration(1.0).sleep();
+        continue;
       }
+
+      const auto base_occupancy_grid = racer_ros::msg_to_grid(map_res.map);
+      const std::list<racer::math::point> points{ next_waypoints->begin(), next_waypoints->end() };
+      discretization.explore_grid(*base_occupancy_grid, last_known_position->position, points);
+    }
+
+    if (last_known_map && last_known_position && next_waypoints) {
+      if (found_trajectory_last_time) {
+        ROS_INFO("planning trajecotry just by going forward...");
+      } else {
+        ROS_INFO("planning trajectory with the possibility of going in reverse...");
+      }
+
+      const auto trajectory = planner.plan(
+        last_known_map,
+        last_known_position,
+        found_trajectory_last_time ? actions_just_forward : actions_with_reverse,
+        next_waypoints,
+        next_waypoint,
+        waypoint_radius);
       
-      ROS_INFO("publishing new plan");
-      trajectory_pub.publish(*trajectory);
-      path_pub.publish(path);
+      found_trajectory_last_time = bool(trajectory);
+
+      if (!found_trajectory_last_time) {
+        ROS_INFO("no plan found, stick to old plan");
+      } else {
+        nav_msgs::Path path;
+        path.header = trajectory->header;
+
+        for (const auto& step : trajectory->trajectory) {
+          geometry_msgs::PoseStamped path_pose;
+          path_pose.header = trajectory->header;
+          path_pose.pose = step.pose;
+
+          path.poses.push_back(path_pose);
+        }
+
+        ROS_INFO("publishing new plan");
+        trajectory_pub.publish(*trajectory);
+        path_pub.publish(path);
+      }
     }
 
     ros::spinOnce();

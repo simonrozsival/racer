@@ -3,9 +3,11 @@
   <node name="ydliar" pkg="ydlidar" type="ydlidar_node" output="screen">
     <param name="port" type="string" value="/dev/ydlidar" />
     <param name="baudrate" type="int" value="115200" />
-    <param name="frame_id" type="string" value="laser_frame" />
+    <param name="frame_id" type="string" value="laser" />
     <param name="range_min" type="double" value="0.15" />
-    <param name="range_max" type="double" value="16" />
+    <param name="range_max" type="double" value="6" />
   </node>
-  
+
+  <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.135 0 0 0 base_link laser 20" />
+
 </launch>
