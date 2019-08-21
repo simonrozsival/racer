@@ -16,7 +16,7 @@ The vehicle uses on-board sensors to track its location on the racing track. We 
 
 \paragraph{Hall Effect Encoder} consists of an 8-pole magnetic disc which we attach to the drive shaft of the vehicle, and a Hall effect sensor. The sensor sends a pulse every time it detects a change from a north pole to a south pole or vice-versa. This way we can detect that the motor has made one eigth of a revolution. By counting the number of revolutions and by assuming that the wheels of the vehicle roll perfectly against the road surface, we can estimate the distance that the vehicle traveled. By combining this information with the current steering angle of the front wheels, we can estimate the movement of the vehicle and use it as a source of odometry.
 
-\paragraph{Bosch BNO055 USB Stick} is an IMU (inertial measurement unit) which contains a triaxial accelerometer, a triaxial gyroscope, a triaxial magnetometer and a thermometer\footnote{https:\/\/www.bosch-sensortec.com\/bst\/products\/all_products\/bno055} . We use the measurements of the gyroscope and the accelerometer to determine the acceleration of the vehicle to improve our odometry from the motor encoder, which cannot detect wheel skidding.
+\paragraph{Bosch BNO055 USB Stick} is an IMU (inertial measurement unit) which contains a triaxial accelerometer, a triaxial gyroscope, a triaxial magnetometer and a thermometer\footnote{https://www.bosch-sensortec.com/bst/products/all\_products/bno055} . We use the measurements of the gyroscope and the accelerometer to determine the acceleration of the vehicle to improve our odometry from the motor encoder, which cannot detect wheel skidding.
 
 \paragraph{YDLIDAR X4} is a low-cost \ang{360} laser scanner. We use it to determine the distance to the surrounding obstacles. This sensor has a range of up to \si{10}{m} and it takes \num{5000} samples every second while spinning at the frequency of almost \si{12}{Hz}. This sensor is connected to a computer via a micro-USB port and it is connected to a \si{5}{V} power supply through a second micro-USB port.
 
@@ -28,7 +28,7 @@ The brains of our autonomous vehicle is the NVIDIA Jetson Nano\footnote{https://
 
 We use two Arduino Nano boards\footnote{https://www.arduino.cc/en/Guide/ArduinoNano} as an interface between the actuators, the RC receiver, and the motor encoder, and the Jetson Nano board.
 
-\paragraph{Hall Effect Encoder} is connected to an interrupt pin of one Arduino and this arduino counts the number of revolutions of the motor. This board also provides power to the Hall sensor.
+\paragraph{Hall Effect Encoder} is connected to an interrupt pin of one Arduino and this Arduino counts the number of revolutions of the motor. This board also provides power to the Hall sensor.
 
 \paragraph{ESC and Servo} are connected to PWM output pins of the other Arduino board and the RC receiver is connected to two interrupt pins. This board contains logic which converts high-level commands for the actuators into corresponding PWM signals. It also contains a safety mechanism which disables autonomous mode of the vehicle and allows the supervisor to take over control of the vehicle when he or she uses the remote controller.
 

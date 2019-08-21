@@ -13,7 +13,7 @@ Each topic has an assigned message type which defines the structure of the data.
 ROS comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is Rviz. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit.
 
 Further information about ROS and tutorials which describe how to work with it are available on the official website of the ROS project\footnote{https://ros.org}.
-
+%
 \section{Architecture Of The Distributed System}
 
 The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a ROS master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
@@ -30,17 +30,17 @@ The vehicle can performs two tasks: mapping and racing. In the mapping phase the
 
 When the vehicle is creating the map of the track, it is being controlled manually using the remote controller of the vehicle. The only sensor which is needed for this task is the LIDAR. The data from the LIDAR is being collected by a SLAM algorithm (Simultaneous Localization And Mapping) implemeted by the Hector SLAM library by a tema from the Technical University of Darmstadt.
 
-This library performs scan matching of the LIDAR scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a LIDAR scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\ksi=\(p_x, p_y, \phi\)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
+This library performs scan matching of the LIDAR scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a LIDAR scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\xi =\( p_x, p_y, \phi\)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
 
-$$$
-\ksi^* = \underset{\ksi}{\arg\min}\sum_{i=1}^n\[1 - M\(S_i\(\ksi\)\)\]^2,
-$$$
+$$
+\xi^* = \underset{\xi}{\arg\min}\sum_{i=1}^n\[ 1 - M\( S_i\( \xi\)\)\]^2,
+$$
 
-where $S_i\(\ksi\)$ are the world coordinates of scan point $s_i$ after applying the transform $\ksi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
+where $S_i\( \xi\)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
 
 The producer of the YDLIDAR X4 we use provides a ROS node as part of the SDK for the device. 
 
-Hector SLAM provides a ROS node \verbatim{hector_mapping} which subscribes to a topic providing \verbatim{sensor_msgs/LaserScan}\footnote{http://docs.ros.org/melodic/api/sensor_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verbatim{nav_msgs/OccupancyGrid}\footnote{http://docs.ros.org/melodic/api/nav_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verbatim{map_saver} node from the \verbatim{map_server} package\footnote{http://wiki.ros.org/map_server#map_saver}.
+Hector SLAM provides a ROS node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server#map\_saver}.
 
 \subsection{Racing}
 
