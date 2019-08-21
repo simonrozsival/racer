@@ -61,6 +61,8 @@ void OdometrySubject::publish_odometry()
     double elapsed_time = current_time - last_update_time_;
     double distance = total_distance_;
 
+    direction_ = 1.0; // HACK: force always going forward for odometry
+
     double step = direction_ * (distance - total_distance_last_time_);
 
     vehicle_model_.update_state(state_, step, steering_angle_, elapsed_time);
