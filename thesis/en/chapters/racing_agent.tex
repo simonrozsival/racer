@@ -43,7 +43,7 @@ In order to avoid describing the logic of the racing agent in a single complicat
 There is one more reason to decompose the task into independent subproblems. The rate at which the nodes produce outputs is different and they work asynchronously. While the trajectory following node should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning node will have much lower output frequency.
 
 \begin{figure}[]\centering
-\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
+%\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
 \caption{A diagram of the decision process of the racing agent.}
 \label{fig:racing_agent_diagram}
 \end{figure}
