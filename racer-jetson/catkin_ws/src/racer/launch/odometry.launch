@@ -1,7 +1,7 @@
 <launch>
   <include file="$(find racer)/launch/arduinos.launch" />
   <include file="$(find racer)/launch/imu.launch" />
-  <node pkg="odometry_node" type="node" name="odometry" output="screen">
+  <node pkg="odometry" type="odometry_node" name="odometry" output="screen">
     <param name="max_steering_angle" value="30" />
     <param name="publish_tf" value="false" />
     <param name="odometry_topic" value="/odom" />
