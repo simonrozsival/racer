@@ -13,7 +13,7 @@ Each topic has an assigned message type which defines the structure of the data.
 ROS comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is Rviz. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit.
 
 We use the ROS release named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. Further information about ROS and tutorials which describe how to work with it are available on the official website of the ROS project\footnote{https://www.ros.org}.
-%
+
 \section{Architecture Of The Distributed System}
 
 The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a ROS master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
@@ -25,7 +25,11 @@ The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted
 	\label{fig:rosdiagram}
 \end{figure}
 
-The vehicle can performs two tasks: mapping and racing. In the mapping phase the vehicle creates a map of the track using the LIDAR and in the racing phase it drives autonomously around the track with the knowledge of to the map and the topology of the circuit. In the following sections we will describe how we approach these two tasks.
+The communication between Arduino boards and the Jetson computer over USB is possible thanks to the \verb|rosserial| protocol\footnote{http://wiki.ros.org/rosserial}. Arduino microcontrollers use a \verb|ros_lib| library which allows us to subscribe to topics and to publish messages form the Arduino. On Jetson, the communication on each serial port is handled by an instance of a \verb|rosserial_python| node.
+
+Each of the sensors connected through USB uses their own drivers for communication over the serial link. Luckily, open-source ROS packages for both the LIDAR and the IMU are available and both of them publish the data in the form of standard \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} and \verb|sensor_msgs/Imu|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/Imu.html} messages. The data from the motor shaft encoder is published in the form of \verb|std_msgs/Float64| message and it contains the number of revolutions since the Arduino was last powered or reset.
+
+The vehicle performs two tasks: mapping and racing. In the mapping phase the vehicle creates a map of the track using the LIDAR and in the racing phase it drives autonomously around the track with the knowledge of to the map and the topology of the circuit. In the following sections we will describe how we approach these two tasks.
 
 \subsection{Mapping}
 
@@ -39,10 +43,18 @@ $$
 
 where $S_i\left(\xi\right)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
 
-The producer of the YDLIDAR X4 we use provides a ROS node as part of the SDK for the device. 
-
 Hector SLAM provides a ROS node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server\#map\_saver}.
 
 \subsection{Racing}
 
-The racing task is significantly more complicated than the mapping task. 
+The inputs for the racing task are the map of the track in the form of an occupancy grid, and a list of coordinates in the map representing the checkpoints defining the topology of the racing circuit. This is significantly more complicated than the mapping task and the implementation is split into three groups of ROS nodes: odometry and localization, agent behavior, and a hardware interface.
+
+\subsubsection{Odometry and Localization}
+
+Odometry is an estimate of how position of the robot changes over time based on data from sensors which measure the movement of the robot. Odometry is supposed to be continuous and there should not be any sudden changes in the position of the vehicle. The data from the sensors is inherently noisy and inaccurate and the estimated position of the robot will become more and more inaccurate over time. This phenomenon is referred to as drift.
+
+To counteract the drift, we perform a correction using the AMCL (Adaptive Monte Carlo Localization) algorithm. This algorithm uses the data from the LIDAR to determine the position of the vehicle in the map based on the distances to the obstacles around it. Unlike odometry, the sequence of position updates is not expected to be continuous and the resulting location can in theory be a point anywhere on the map.
+
+Our vehicle has two sources of odometry: the number of revolutions of the motor shaft and the accelerations measured by the IMU. We implemented a simple ROS node which subscribes to the motor shaft encoder and the steering commands supplied to the vehicle. From the number of revolutions and an assumption that the wheels are not skidding we can estimate the distance the vehicle travelled since the last update. From the steering command, we can estimate the steering angle of the front wheels of the vehicle. From these two inputs, we can estimate how the vehicle body translated and rotated using a simple kinematic vehicle model. This approach was inspired by the MIT RACECAR VESC odometry ROS node\footnote{https://github.com/mit-racecar/vesc}. These sources are then fused into a pose estimate using the \verb|robot_pose_ekf| node\footnote{https://wiki.ros.org/robot\_pose\_ekf}. This node uses EKF (Extended Kalman Filter) to estimate the most likely location from the input sources and their covariances. We also tried to use a newer ROS package \verb|robot_localization| which also implements an EKF, but the results were less accurate.
+
+
