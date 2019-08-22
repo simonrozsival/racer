@@ -10,6 +10,6 @@ thesis.pdf: thesis.tex $(wildcard *.tex) bibliography.bib thesis.xmpdata
 	pdflatex $<
 
 clean:
-	rm -f *.log *.dvi *.aux *.toc *.lof *.lot *.out *.bbl *.blg *.xmpi
+	rm -f *.log *.dvi *.aux *.toc *.lof *.lot *.out *.bbl *.blg *.xmpi *.gls *.acn *.acr *.alg *.glg *.glo *.ist
 	rm -f **/*.log **/*.dvi **/*.aux **/*.toc **/*.lof **/*.lot **/*.out **/*.bbl **/*.blg **/*.xmpi
 	rm -f thesis.pdf
