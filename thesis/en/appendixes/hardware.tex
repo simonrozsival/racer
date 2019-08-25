@@ -1,10 +1,10 @@
 \chapter{Experimental Vehicle}
 
-In order to verify the approach we discuss in this theses, we needed a car-like robot which we could use for real-world testing. We took inspiration from the F1/10 competition, the MIT RACECAR, and other similar projects and we built a robot based on a chassis from an 1:10 scale \gls{RC} car with an on-board computer and a set of sensors. In this chapter, we will describe the components which we used to build our experimental vehicle.
+In order to verify the approach we discuss in this theses, we needed a car-like robot which we could use for real-world testing. We took inspiration from the F1/10 competition \cite{F1/10}, the MIT RACECAR\footnote{https://mit-racecar.github.io/}, AutoRally\footnote{https://autorally.github.io/}, and other similar projects and we built a robot based on a chassis from an 1:10 scale \gls{RC} car with an on-board computer and a set of sensors. In this chapter, we will describe the hardware components we used to build our custom experimental vehicle.
 
 \section{Chassis}
 
-As the basis of our vehicle, we used chassis, steering servo, \gls{DC} motor, \gls{ESC}, and a ratio transmitter and receiver from an off-the-shelf \gls*{RC} car. We removed the plastic cover and the rear wing and instead we attached a plywood board on top of the chassis to which we later mounted the electronics. The suspension is stiff enough to carry the weight of the additional hardware we mount on the vehicle.
+We used chassis, steering servo, \gls{DC} motor, \gls{ESC}, and a ratio transmitter and receiver from an off-the-shelf \gls*{RC} car. We removed the plastic cover and some unnecessary parts attached to the chassis and we attached a think plywood board on top of the chassis. We later mounted all of the electronics to the plywood board. Even though the weight of the battery and of the electronics is not negligible, the suspension of the vehicle is stiff enough to carry the weight without any significant roll and pitch changes during acceleration and cornering.
 
 The chassis has the same geometry as a common passenger car with two fixed rear wheels and two front wheels with Ackermann steering geometry. All of the wheels are driven by the \gls*{DC} motor through a fixed gearbox. The wheels on both front and rear axes can move independently thanks to two differentials, one on each axis. The differentials are necessary for smooth travel during turns, when the outer wheel spins faster than the inner wheel.
 
