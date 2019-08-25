@@ -113,7 +113,7 @@ Visualization Manager:
   Global Options:
     Background Color: 48; 48; 48
     Default Light: true
-    Fixed Frame: laser_frame
+    Fixed Frame: map
     Frame Rate: 30
   Name: root
   Tools:
@@ -132,16 +132,16 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 7.924053192138672
+      Distance: 6.119785785675049
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.7505114078521729
-        Y: 1.2494597434997559
-        Z: 0.08738446235656738
+        X: -0.40059053897857666
+        Y: 1.1520441770553589
+        Z: 0.08809259533882141
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
