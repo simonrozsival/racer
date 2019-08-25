@@ -1,9 +1,10 @@
 #include <ros/ros.h>
 
-#include "OdometrySubject.h"
 #include <math.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
+
+#include "racer_sensors/OdometrySubject.h"
 
 OdometrySubject::OdometrySubject(
     const double gear_ratio,
