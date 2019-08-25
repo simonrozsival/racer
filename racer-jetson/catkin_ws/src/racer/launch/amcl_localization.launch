@@ -2,6 +2,8 @@
   <include file="$(dirname)/ydlidar.launch" />
 
   <node pkg="amcl" type="amcl" name="amcl">
+    <param name="base_frame_id" value="base_footprint">
+
     <param name="update_min_d" value="0.02" />
     <param name="update_min_a" value="0.261" />
     <param name="transform_tolerance" value="0.05" />

@@ -6,8 +6,8 @@
 
 #include <math.h>
 
-#include "VehicleModel.h"
-#include "OdometrySubject.h"
+#include "racer_sensors/VehicleModel.h"
+#include "racer_sensors/OdometrySubject.h"
 
 int main(int argc, char **argv)
 {
