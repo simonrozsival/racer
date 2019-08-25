@@ -1,4 +1,5 @@
 \chapter{Artificial Racing Agent}
+\label{chapter:agent}
 
 In this chapter we will first analyze how human racing drivers approach the task of car racing. We will then use this information to design a behavior of an autonomous agent and decompose the problem into several smaller tasks. We will discuss how we can analyze the racing track and prepare it for trajectory planning.
 
@@ -43,18 +44,14 @@ In order to avoid describing the logic of the racing agent in a single complicat
 There is one more reason to decompose the task into independent subproblems. The rate at which the nodes produce outputs is different and they work asynchronously. While the trajectory following node should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning node will have much lower output frequency.
 
 \begin{figure}[]\centering
-%\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
-\caption{A diagram of the decision process of the racing agent.}
-\label{fig:racing_agent_diagram}
+	\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
+	\caption{A diagram of the decision process of the racing agent.}
+	\label{fig:racing_agent_diagram}
 \end{figure}
 
-\paragraph{Track analysis} Before the race begins, the agent analyses the track and finds the corners and bends on the track and marks a coordinate of a point near the apex of the corner. This analysis will give us the opportunity to focus the planning effort only to driving through the next few corners directly ahead of of the agent.
+\paragraph{Current state} As the vehicle moves on the track, the agent needs to know its current state: its position on the map, orientation, and speed. A localization algorithm collects the data from different sensors and estimates the current state of the vehicle. The accuracy and the frequency of state updates depend greatly on the capabilities of the sensors and the processing power of the on-board computer. The agent takes the raw data from a localization process and produces a convenient representation of the current state for track monitoring, trajectory planning, and trajectory following.
 
-\paragraph{Vehicle model} Vehicle modeling is also a separate problem. The description of the behavior of the vehicle with a set of differential equations is key to a successful planning of feasible trajectories and for accurate trajectory following.
-
-\paragraph{Localization} As the vehicle moves on the track, the agent needs to know its current position, orientation, and speed. A localization algorithm collects the data from different sensors and estimates the current state of the vehicle. The accuracy and the frequency of state updates depend greatly on the capabilities of the sensors and the processing power of the on-board computer. The responsibility of the localization algorithm is to publishes the vehicle state updates as frequently as possible and without a long delay between the time at which the data came from the sensors and at which it will be used as an input for trajectory planning and trajectory following.
-
-\paragraph{Waypoint selection} During the race, the agent will keep track of which of the waypoints discovered during track analysis it drove past the last. The waypoint selection node will publish the following $n$ waypoints as the next goal for trajectory planning. The parameter $n\in\mathbb{N}$ is the lookahead of the agent. The selection of this parameter is a trade off between the quality of the trajectory and the size of the configuration space that will be search. This directly affects the update rate of the trajectory planning node.
+\paragraph{Track analysis \& monitoring} Before the race begins, the agent analyses the track and finds the corners and bends on the track and marks a coordinate of a point near the apex of the corner and forms a list of waypoints along the track. During the race, the agent will keep track of which of the waypoints discovered during track analysis it drove past the last. The waypoint selection node will publish the following $n$ waypoints as the next goal for trajectory planning. The parameter $n\in\mathbb{N}$ is the lookahead of the agent. The selection of this parameter is a trade off between the quality of the trajectory and the size of the configuration space that will be search. This directly affects the update rate of the trajectory planning node.
 
 \paragraph{Trajectory planning} The trajectory planning algorithm finds a feasible trajectory from the last state of the vehicle estimated by the localization node through the selected waypoints. The trajectory planning node will start planning a new trajectory as soon as it finishes planning the previous one. As the agent drives along the circuit and drives past a waypoint, the trajectory planning algorithm receives a new sequence of waypoints and the next trajectory it plans will account also for the next corner of the circuit within the lookahead instance. Planning can be a slow process even when we try to reduce the size of the search space as much as possible. For the practical application, the planning algorithm must update the trajectories faster than the vehicle moves through the circuit. If the agent comes to the end of an old reference trajectory and it has no update, it has to stop and wait for an update. This would obviously affect the lap time which is undesirable.
 
