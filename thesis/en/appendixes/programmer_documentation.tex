@@ -1,22 +1,22 @@
-\chapter{Programmer Documentation}
+\chapter{Technical Documentation}
 
-The implementation of our autonomous racing agent relies on a complex set of libraries and tools. In this chapter, we will describe the libraries and tools we used and we will briefly explain how some of them work. We will also explain how we implemented the behavior of the autonomous racing agent in the context of this setup. The installation instructions and instructions on how to deploy and use the software used and developed in this thesis are covered in the following chapter \ref{chapter:user_documentation}.
+The implementation of our autonomous racing agent relies on a complex set of libraries and tools. In this chapter, we will describe the libraries and tools we used and we will briefly explain how some of them work. We will also discuss our implementation the behavior of the autonomous racing agent. The installation instructions and instructions on how to deploy and use the software used and developed in this thesis are covered in the following chapter \ref{chapter:user_documentation}.
 
 \section{Robot Operating System}
 
-Robot Operating System (ROS) is an open-source set of libraries and tools built on top of Linux. Processes running under this operating system are referred to as nodes and they can be distributed across multiple computers connected over a wired or wireless network or through a serial port. Nodes can be programmed in many different programming languages but the most common and officially supported languages are Python and C++.
+\gls{ROS} is an open-source set of libraries and tools built on top of Linux. Processes running under this operating system are referred to as nodes and they can be distributed across multiple computers connected over a wired or wireless network or through a serial port. Nodes can be programmed in many different programming languages but the most common and officially supported languages are Python and C++.
 
 Nodes communicate between each other using a publisher/subscriber pattern. A node can advertise any number of topics through which it publishes its outputs in a form of messages. It can also subscribe to topics advertised by other nodes and it can work with the received messages as its outputs. This way it is possible to create a complex system by combining many small and simple specialized nodes.
 
-Each topic has an assigned message type which defines the structure of the data. There is a large number of standard messages which are used by authors of public libraries. This way it is often possible to replace one library with a different one without additional changes to other nodes. This can be useful for example when one sensor is replaced by a device of the same type but from a different vendor whose ROS node publishes the same standard message type. Programmers can also define their custom message types which are better suited for their application.
+Each topic has an assigned message type which defines the structure of the data. There is a large number of standard messages which are used by authors of public libraries. This way it is often possible to replace one library with a different one without additional changes to other nodes. This can be useful for example when one sensor is replaced by a device of the same type but from a different vendor whose \gls*{ROS} node publishes the same standard message type. Programmers can also define their custom message types which are better suited for their application.
 
-ROS comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is Rviz. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit.
+\gls*{ROS} comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is \verb|Rviz|. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit. The configuration we used during our experiments is included in the attached files as \verb|/ubuntu/mapping.rviz| and \verb|/ubuntu/race.rviz|.
 
-We use the ROS release named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. Further information about ROS and tutorials which describe how to work with it are available on the official website of the ROS project\footnote{https://www.ros.org}.
+We use the latest stable release of \gls*{ROS} at the time of writing this thesis named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. Further information about \gls*{ROS} and tutorials which describe how to work with it are available on the official website of the \gls*{ROS} project\footnote{https://www.ros.org}.
 
 \section{Architecture Of The Distributed System}
 
-The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a ROS master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
+The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a \gls*{ROS} master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
 
 \begin{figure}
 	\centering
@@ -27,15 +27,15 @@ The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted
 
 The communication between Arduino boards and the Jetson computer over USB is possible thanks to the \verb|rosserial| protocol\footnote{http://wiki.ros.org/rosserial}. Arduino microcontrollers use a \verb|ros_lib| library which allows us to subscribe to topics and to publish messages form the Arduino. On Jetson, the communication on each serial port is handled by an instance of a \verb|rosserial_python| node.
 
-Each of the sensors connected through USB uses their own drivers for communication over the serial link. Luckily, open-source ROS packages for both the LIDAR and the IMU are available and both of them publish the data in the form of standard \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} and \verb|sensor_msgs/Imu|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/Imu.html} messages. The data from the motor shaft encoder is published in the form of \verb|std_msgs/Float64| message and it contains the number of revolutions since the Arduino was last powered or reset.
+Each of the sensors connected through USB uses their own drivers for communication over the serial link. Luckily, open-source \gls*{ROS} packages for both the \gls*{LIDAR} and the \gls*{IMU} are available and both of them publish the data in the form of standard \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} and \verb|sensor_msgs/Imu|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/Imu.html} messages. The data from the motor shaft encoder is published in the form of \verb|std_msgs/Float64| message and it contains the number of revolutions since the Arduino was last powered or reset. The source code for the Arduino is available in the attached source files in \verb|/controller-arduino/wheel_encoders/wheel_encoders.ino|.
 
-The vehicle performs two tasks: mapping and racing. In the mapping phase the vehicle creates a map of the track using the LIDAR and in the racing phase it drives autonomously around the track with the knowledge of to the map and the topology of the circuit. In the following sections we will describe how we approach these two tasks.
+The vehicle performs two tasks: mapping and racing. In the mapping phase the vehicle creates a map of the track using the \gls*{LIDAR} and in the racing phase it drives autonomously around the track with the knowledge of to the map and the topology of the circuit. In the following sections we will describe how we approach these two tasks.
 
 \subsection{Mapping}
 
-When the vehicle is creating the map of the track, it is being controlled manually using the remote controller of the vehicle. The only sensor which is needed for this task is the LIDAR. The data from the LIDAR is being collected by a SLAM algorithm (Simultaneous Localization And Mapping) implemeted by the Hector SLAM library by a tema from the Technical University of Darmstadt.
+When the vehicle is creating the map of the track, it is being controlled manually using the remote controller of the vehicle. The only sensor which is needed for this task is the \gls*{LIDAR}. The data from the \gls*{LIDAR} is being collected by a \gls{SLAM} algorithm (Simultaneous Localization And Mapping) implemented by the Hector \gls*{SLAM} library by a team from the Technical University of Darmstadt.
 
-This library performs scan matching of the LIDAR scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a LIDAR scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\xi =\left( p_x, p_y, \phi\right)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
+This library performs scan matching of the \gls*{LIDAR} scans and it builds a 2D occupancy grid of the environment over time. For an already built part of the map and a \gls*{LIDAR} scan consisting of $n$ points, the task of the scan matching algorithm is to find a rigid transformation $\xi =\left( p_x, p_y, \phi\right)$, which gives best alignment with the already built map. The authors formulate this problem as an optimization problem for solving in \cite{HectorSlam}:
 
 $$
 \xi^* = \underset{\xi}{\arg\min} \sum_{i=1}^n\left[ 1 - M\left( S_i\left( \xi\right)\right)\right]^2,
@@ -43,18 +43,131 @@ $$
 
 where $S_i\left(\xi\right)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates.
 
-Hector SLAM provides a ROS node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan|\footnote{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html} messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server\#map\_saver}.
+Hector SLAM provides a \gls*{ROS} node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan| messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}. An important parameter is the resolution of the occupancy grid which we chose to be \SI{2}{\centi\meter}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{http://wiki.ros.org/map\_server\#map\_saver}.
+
+We prepared a \gls*{ROS} launch file with the configuration of all nodes necessary for this task. This configuration is included in the attached files in \newline\verb|/racer-jetson/catkin_ws/src/racer/launch/create_map.launch|. The proper usage of this launch file is described in Chapter~\ref{chapter:user_documentation}.
 
 \subsection{Racing}
 
-The inputs for the racing task are the map of the track in the form of an occupancy grid, and a list of coordinates in the map representing the checkpoints defining the topology of the racing circuit. This is significantly more complicated than the mapping task and the implementation is split into three groups of ROS nodes: odometry and localization, agent behavior, and a hardware interface.
+This is significantly more complicated than the mapping task and the implementation is split into three groups of \gls*{ROS} nodes: odometry and localization, agent behavior, and a hardware interface.
+
+We prepared a \gls*{ROS} launch file with the configuration of all nodes necessary for the racing task in the attached files in \newline\verb|/racer-jetson/catkin_ws/src/racer/launch/race.launch|. This launch file requires two arguments: a map definition file and a circuit definition file. The proper usage of this launch file is described in Chapter~\ref{chapter:user_documentation}.
+
+\subsubsection{Track Map}
+
+We use \verb|map_server| node of the \verb|map_server| package to serve the previously recorded occupancy grid to the other nodes. The map is stored in two files: a \verb|.yaml| file with map metadata and a \verb|.pgm| file with the occupancy grid stored as a bitmap. It is necessary that the \verb|.yaml| configuration file contains a correct relative path to the bitmap file. The map server publishes a topic called \verb|map| of type \verb|nav_msgs/OccupancyGrid|. This node also provides a service for one-time retrieving the map without subscribing to the topic.
+
+\paragraph{Costmap} In order to prevent collisions, we use a \gls*{ROS} package \verb|costmap_2d|\footnote{http://wiki.ros.org/costmap\_2d} to inflate the areas around obstacles according to a bounding rectangle around the vehicle. The result of this node is another \verb|nav_msgs/OccupancyGrid| topic with cell values marking the ``cost'' of each cell instead of the regular ternary status (free/obstacle/unknown). The higher the cell cost is, the closer the cell is to an obstacle. Values above certain threshold value are considered ``lethal'' and if the center of the vehicle were in this position it would be colliding with an obstacle. Collision detection is then just a matter of a single query into the occupancy grid to check if the cell which contains the center point of the vehicle.
+
+This \verb|costmap_2d| can also work directly with the laser scan from the LIDAR and overlay it with the map using the latest \verb|tf| transformation between the \verb|map| and \verb|lidar| coordinate frames and mark obstacles which were not present during mapping into the resulting occupancy grid. Unfortunately, this feature was flaky and we had to disable it in the final version of our configuration. The laser frame would often be misaligned with the original map for a brief moment and it would mark certain areas of free space as obstacles. The ``clearing'' feature, which is supposed to remove obstacles from the costmap based on new laser scans, did not work properly and the map soon became filled with ghost obstacles.
 
 \subsubsection{Odometry and Localization}
 
-Odometry is an estimate of how position of the robot changes over time based on data from sensors which measure the movement of the robot. Odometry is supposed to be continuous and there should not be any sudden changes in the position of the vehicle. The data from the sensors is inherently noisy and inaccurate and the estimated position of the robot will become more and more inaccurate over time. This phenomenon is referred to as drift.
+Odometry is an estimate of how position of the robot changes over time based on data from sensors which measure the movement of the robot. Odometry is supposed to be continuous and there should not be any sudden changes in the position of the vehicle.
 
-To counteract the drift, we perform a correction using the AMCL (Adaptive Monte Carlo Localization) algorithm. This algorithm uses the data from the LIDAR to determine the position of the vehicle in the map based on the distances to the obstacles around it. Unlike odometry, the sequence of position updates is not expected to be continuous and the resulting location can in theory be a point anywhere on the map.
+Our vehicle has two sources of odometry: the number of revolutions of the motor shaft and the accelerations measured by the IMU. We implemented a simple \gls*{ROS} node called \verb|odometry_node| in C++ which subscribes to the motor shaft encoder and the steering commands supplied to the vehicle. From the number of revolutions and an assumption that the wheels are not skidding we can estimate the distance the vehicle travelled since the last update. From the steering command, we can estimate the steering angle of the front wheels of the vehicle. From these two inputs, we can estimate how the vehicle body translated and rotated using a simple kinematic vehicle model. This approach was inspired by the MIT RACECAR VESC odometry \gls*{ROS} node\footnote{https://github.com/mit-racecar/vesc}. Source code of the odometry node is located in the attachments in \verb|/racer-jetson/catkin\_ws/src/odometry|.
 
-Our vehicle has two sources of odometry: the number of revolutions of the motor shaft and the accelerations measured by the IMU. We implemented a simple ROS node which subscribes to the motor shaft encoder and the steering commands supplied to the vehicle. From the number of revolutions and an assumption that the wheels are not skidding we can estimate the distance the vehicle travelled since the last update. From the steering command, we can estimate the steering angle of the front wheels of the vehicle. From these two inputs, we can estimate how the vehicle body translated and rotated using a simple kinematic vehicle model. This approach was inspired by the MIT RACECAR VESC odometry ROS node\footnote{https://github.com/mit-racecar/vesc}. These sources are then fused into a pose estimate using the \verb|robot_pose_ekf| node\footnote{https://wiki.ros.org/robot\_pose\_ekf}. This node uses EKF (Extended Kalman Filter) to estimate the most likely location from the input sources and their covariances. We also tried to use a newer ROS package \verb|robot_localization| which also implements an EKF, but the results were less accurate.
+The data from the odometry node and the \gls*{IMU} are then fused into a single estimate using the \verb|robot_pose_ekf| node\footnote{https://wiki.ros.org/robot\_pose\_ekf}. This node uses \gls*{EKF} to estimate the most likely location from the input sources and their covariances. We also tried to use a newer \gls*{ROS} package \verb|robot_localization| which also implements an \gls*{EKF}, but the results were less accurate.
 
+The data from the odometry sensors is inherently noisy and inaccurate and the estimated position of the robot will become more and more inaccurate over time. This phenomenon is referred to as drift. To counteract the drift, we perform a correction using the \gls*{AMCL} algorithm. This algorithm uses the data from the \gls*{LIDAR} to determine the position of the vehicle in the map based on the distances to the obstacles around it. Unlike odometry, the sequence of position updates is not expected to be continuous and the resulting location can in theory be a point anywhere on the map.
 
+\Gls{ROS} includes a very useful way of keeping track of relative position of the robot in multiple coordinate frames in the form of a package called \verb|tf|\footnote{http://wiki.ros.org/tf}. \verb|tf| maintains a tree structure of coordinate frames and it keeps track of transformations between these coordinate frames as they change over time. The updates to the transformations are shared through a regular \gls*{ROS} topic called \verb|tf|. The \verb|tf| package provides libraries for both Python and C++ which make keeping track of the current state and manipulating with the linear transformations easy for the programmer.
+ 
+Our implementation adheres to the standard naming convention of coordinate frames as it is defined in \gls{REP} 105\footnote{https://www.ros.org/reps/rep-0105.html}. The root (``fixed'') frame is called \verb|map| and it is aligned with the origin of the map. The \verb|map| frame has a child frame \verb|odom|. The transformation between these two coordinate frames represents the correction of odometry drift and it is published by the \verb|amcl| \gls*{ROS} node. The child frame of \verb|odom| is called \verb|base_link| and it represents the local coordinate frame of the vehicle with the $x$ axis aligned in the heading direction of the vehicle. The transformation between \verb|odom| and \verb|base_link| is published by the \verb|robot_pose_ekf| node which fuses odometry sources into one position estimate.
+
+The sensors, which are attached to the body of the vehicle, have their own coordinate frames which are not perfectly aligned with \verb|base_link|. We use the \verb|static_transform_publisher| node from the \verb|tf| package to ensure correct transformation between the sensors and the center of gravity of the vehicle. Namely, the \gls*{IMU} required a rotation of \ang{90} around the $z$ axis and the \gls*{LIDAR} was moved several centimeters in the positive direction along the $x$ axis of \verb|base_link|. We assume that our vehicle always moves only on a flat surface and so we do not require any transformations along the $z$ axis which is perpendicular to the road surface. The \verb|tf| tree for the racing setup is shown in Figure~\ref{fig:tf_tree_racing}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=125mm]{../img/racing_tf_tree}
+	\cprotect\caption{The tree shows which nodes publish transformations between the coordinate frames and at what average rate the transformations are updated.  This diagram is the output of the \verb|tf| \verb|view_frames| diagnostics tool.}
+	\label{fig:tf_tree_racing}
+\end{figure}
+
+Tuning odometry and localization ROS libraries to obtain reliable data at high rates proved to be difficult. In some scenarios, the robot would ``get lost'' when the localization algorithm would match the scan incorrectly and it would report incorrect location of the robot on the map. This can easily lead into a crash of the robot with a wall or an obstacle. The \gls*{AMCL} algorithm will sometimes manage to find the correct location after a few seconds, but in these cases it was necessary to take over control over the vehicle manually with a remote control and stop the vehicle until the robot corrects its location. The \gls*{AMCL} \gls*{ROS} node has many parameters which we spend many hours tuning them in order to get the best possible results. The final configuration is available in \newline\verb|/racer-jetson/catkin_ws/src/racer/launch/amcl_localization.launch|.
+
+\subsubsection{Agent Behavior}
+\label{sec:agent_impl}
+
+We implemented the individual components of the behavior of the agent, as it was described in Chapter~\ref{chapter:agent} and visualized in Figure~\ref{fig:racing_agent_diagram}, with four \gls*{ROS} nodes as part of the \verb|racer| package we implemented:
+
+\begin{enumerate}
+	\item \verb|current_state_node|,	
+	\item \verb|circuit_node|,
+	\item \verb|planning_node|,	
+	\item \verb|dwa_planning_node|.
+\end{enumerate}
+
+The C++17 implementation of the \verb|racer| package is located in \texttt{/racer-jetson/\allowbreak catkin\_ws/\allowbreak src/racer/} and it contains the source code of the individual \gls*{ROS} nodes as well as the source code of the algorithms which were described in this thesis. The definitions of the messages are located in a separate package \texttt{/racer-jetson/\allowbreak catkin\_ws/\allowbreak src/racer\_msgs/}. All of the coordinates used by \verb|racer| package nodes are in the global \verb|map| coordinate frame unless stated otherwise.
+
+\paragraph{Current State Node}
+
+This node listens to the \verb|tf| transformations and converts them into a custom message format \verb|racer_msgs/State|. This message contains the 2D position of the vehicle, its orientation, and its immediate speed in the heading direction in the \verb|map| \verb|tf| coordinate frame.
+
+To achieve the highest possible update rate, we had to manually combine the latest odometry estimate \verb|odom -> base_link| and the latest odometry drift correction \verb|map -> odom| by multiplying their transformation matrices. When we tried obtaining the transformation \verb|map -> base_link| from the \verb|tf| library directly, the update rate was the same as the transform published by \gls*{AMCL}. By manually combining the transformations, we would be able to publish the current state estimate in sync with odometry updates.
+
+If we assume that the fused odometry gives us reasonable movement estimates over short time periods and that we use a very recent drift correction, this workaround is reasonable. The maximum rate at which we can control the actuators is \SI{50}{\hertz} and we are able to achieve vehicle state updates at the rate of \SI{25}{\hertz} (see Figure~\ref{fig:tf_tree_racing}).
+
+\paragraph{Circuit Node}
+
+The circuit node analyzes the occupancy grid of the current track based on a circuit definition for the track at the start of the race using Algorithm~\ref{alg:find_apexes}. The circuit definition is a list of checkpoints on the map. The vehicle is supposed to drive along the track in a way such that it passes these checkpoints in the given order. The starting position is considered to be an implicit checkpoint. This list is loaded from a \verb|.yaml| configuration file which contains an array of 2D~point coordinates under the key \verb|check_points|. The coordinates are strings with the $x$ and $y$ coordinate separated by a whitespace. An example of such configuration file with two would look like this:
+
+\begin{verbatim}
+check_points:
+  - "6.385 -0.521"
+  - "-0.639 -4.226"
+\end{verbatim} 
+
+Later during the race, this node monitors the state of the vehicle and it produces a list of the next waypoitns in a custom message format
+\texttt{racer\_msgs/\allowbreak Waypoints}. The number of waypoints which are published can be configured using the \texttt{lookahead} parameter of the node.
+
+\paragraph{Planning Node}
+
+The planning node plans a trajectory based on the last known state of the vehicle through the list of next waypoints and publishes it in the form of a custom message type \verb|racer_msgs/Trajectory|. The planning node uses the SEHS algorithm we described in this thesis because it is more efficient than Hybrid~A*. The source code of the node can be easily modify to switch to Hybrid~A* if necessary.
+
+This node will try to re-plan the trajectory as often as possible, but it is limited by a maximum updated frequency which is configurable. This is necessary because sometimes the vehicle passes close to an obstacle while following the last published trajectory and the localization algorithm briefly fails and determines the location of the vehicle in a way that the planning node detects an collision right in the initial state. The localization algorithm will recover with a new measurement of the sensors, but in the meantime, the planning algorithm could report tens or hundreds of failures because of the incorrect location. By limiting the maximum update frequency for example to \SI{2}{\hertz} we will still get frequent updates of the trajectory and the node will be more stable.
+
+Most of the time during a race, the vehicle drives forward. and it does not come to a full stop or even require driving in reverse. Therefore, we prefer planning just with actions for driving forward only. If it is not possible to find a trajectory like this, we will try again now also with actions which allow driving in reverse. This way we can generate trajectories faster than if we always allowed going in reverse most of the time by limiting the number of actions and therefore we decrease the size of the nodes we open.
+
+\paragraph{DWA Following Node}
+
+This node finds the best control input for the actuators in order to follow the planned trajectory based on the current state of the vehicle using the \gls{DWA} algorithm.
+
+The node publishes a standard message type \verb|geometry_msgs/Twist|. By using the \verb|geometry_msgs/Twist|\footnote{http://docs.ros.org/melodic/api/geometry\_msgs/html/msg/Twist.html} message we mimic the output of the open source \verb|move_base| \gls*{ROS} package\footnote{http://wiki.ros.org/move\_base}. The throttle level is stored in the \verb|linear.x| component ant the steering level is stored in \verb|angular.z|. This message is later translated into a \gls*{PWM} signal for the actuators by the hardware interface component.
+
+- FORWARD + BACKWARD
+
+There is an alternative following node which implements the Pure Pursuit algorithm for steering and \gls*{PID} controller for regulating the speed. This node is called \verb|geometric_following_node| and it listens to and publishes the same topics as the \verb|dwa_following_node|. We included this node even though it is not used by default because it does not have the ability to avoid previously unknown obstacles and it does not support going in reverse. Both of the algorithms simple yet interesting and the node can be useful in certain scenarios.
+
+\subsubsection{Hardware Interface}
+
+The \verb|Arduino 2| from Figure~\ref{fig:rosdiagram} has two responsibilities:
+
+\begin{enumerate}[label=(\roman*)]
+	\item subscribe to the commands produced by the agent and transform them into electrical signals for the servo and the \gls*{DC} motor,
+	\item monitor the input from the radio controller and in case that there is a strong signal, disable the autonomous mode and forward the signal to the actuators to allow the human supervisor to control the vehicle directly.
+\end{enumerate}
+
+The implementation of the behavior for \verb|Arduino 2| is included in the attached \verb|*.ino| files in \verb|/controller-arduino/steering_node/|.
+
+\paragraph{Conversion of Commands to PWM}
+
+The agent behavior produces actions in the form of two real numbers between $-1$ and $1$ for the steering angle and for the throttle level. These numbers are mapped to \gls*{PWM} duty cycles which are then passed to the actuators through PWM-capable digital pins of the Arduino.
+
+The mapping for the steering servo is straightforward. The $\interval{-1}{1}$ interval is directly mapped to the interval of $\interval{\SI{1200}{\micro\second}}{\SI{1800}{\micro\second}}$ which are the bounds of the servo of our vehicle. The wheels steer to the leftmost position when the duty cycle is set to \SI{1200}{\micro\second}, at \SI{1500}{\micro\second} the wheels are aligned with the body of the vehicle, and at \SI{1800}{\micro\second} the wheels are in the rightmost position.
+
+The mapping of the signal for the \gls*{DC} motor is a bit more complicated. The range of duty cycles $\interval{\SI{1400}{\micro\second}}{\SI{1600}{\micro\second}}$ does not produce enough torque to set the vehicle into motion. The range of $\interval{\SI{1000}{\micro\second}}{\SI{1400}{\micro\second}}$ corresponds to reversing, where at \SI{1000}{\micro\second} the motor spins the fastest in the reversing direction. The range of $\interval{\SI{1600}{\micro\second}} {\SI{2000}{\micro\second}}$ corresponds to going forward, where at \SI{2000}{\micro\second} duty cycle the motor spins the fastest in the forward direction. The boundary values of \SI{1400}{\micro\second} and \SI{1600}{\micro\second} are not fixed and they vary based on how much is the battery charged. We therefore use the following mapping:
+
+\[
+	\begin{dcases}
+		\interval{-1}{-0.05} & \rightarrow \interval{\SI{1000}{\micro\second}}{\SI{1400}{\micro\second}} \\
+		\interval{-0.05}{0.05} & \rightarrow \SI{1500}{\micro\second} \\
+		\interval{0.05}{1} & \rightarrow \interval{\SI{1600}{\micro\second}}{ \SI{2000}{\micro\second}}
+	\end{dcases}
+\]
+
+The limits can be adjusted for different needs, e.g. the maximum speed can be limited by lowering the maximum duty cycle.
+
+\paragraph{Manual Override}
+
+The two signals from the radio receiver are connected to two interrupt pins of the Arduino. By measuring the time difference between the detection of a raising edge and a falling edge of the signal we can determine the width of the duty input cycle. If one of the two signals falls out of the range of $\interval{\SI{1400}{\micro\second}}{\SI{1600}{\micro\second}}$, we consider it to be the supervisors intervention and we will start forwarding the \gls*{PWM} signal directly to the actuators and we will stop processing the commands from the agent. The autonomous mode can be restored by physically pressing the reset button on the board.

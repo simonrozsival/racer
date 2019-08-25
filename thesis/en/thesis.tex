@@ -54,6 +54,12 @@
 %% Additional packages
 \usepackage[allow-number-unit-breaks]{siunitx}
 \usepackage{textcomp}
+\usepackage[acronym]{glossaries}
+\usepackage{fancyvrb}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{interval}
+\usepackage{cprotect}
 
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
 \usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
@@ -62,6 +68,24 @@
 
 %% Custom settings
 \renewcommand\vec{\bm}
+\VerbatimFootnotes
+
+%% Glossaries
+\makeglossaries
+
+\newacronym{AMCL}{AMCL}{Adaptive Monte Carlo Localization}
+\newacronym{ROS}{ROS}{Robot Operating System}
+\newacronym{EKF}{EKF}{Extended Kalmann Filter}
+\newglossaryentry{LIDAR}{name={LIDAR},description={Light Detection And Ranging}}
+\newglossaryentry{PID}{name={PID},description={Proportional-integral-derivative controller}}
+\newacronym{IMU}{IMU}{Inertial Meassurement Unit}
+\newacronym{PWM}{PWM}{Pulse Width Modulation}
+\newacronym{ESC}{ESC}{Electronic Speed Controller}
+\newacronym{RC}{RC}{Radio-controlled}
+\newacronym{DC}{DC}{Direct Current}
+\newacronym{SLAM}{SLAM}{Simultaneous Localization And Mapping}
+\newacronym{REP}{REP}{ROS Enhancement Proposal}
+\newacronym{DWA}{DWA}{Dynamic Window Approach}
 
 %%% Basic information on the thesis
 
@@ -143,6 +167,8 @@ Abstract.
 %%% Tables used in the thesis (consider if this is needed)
 %%% In mathematical theses, it could be better to move the list of tables to the beginning of the thesis.
 % \listoftables
+
+\printglossaries
 
 %%% Abbreviations used in the thesis, if any, including their explanation
 %%% In mathematical theses, it could be better to move the list of abbreviations to the beginning of the thesis.
