@@ -1,12 +1,40 @@
 \chapter{Experimental Vehicle}
 
-In order to verify the approach we discuss in this theses, we needed a car-like robot which we could use for real-world testing. We took inspiration from the F1/10 competition \cite{F1/10}, the MIT RACECAR\footnote{https://mit-racecar.github.io/}, AutoRally\footnote{https://autorally.github.io/}, and other similar projects and we built a robot based on a chassis from an 1:10 scale \gls{RC} car with an on-board computer and a set of sensors. In this chapter, we will describe the hardware components we used to build our custom experimental vehicle.
+In order to verify the approach we discuss in this theses, we needed a car-like robot which we could use for real-world testing. We took inspiration from the F1/10 competition \cite{F1/10}, the MIT RACECAR\footnote{https://mit-racecar.github.io/}, AutoRally\footnote{https://autorally.github.io/}, and other similar projects and we built a robot based on a chassis from an 1:10 scale \gls{RC} car with an on-board computer and a set of sensors. In this chapter, we will describe the hardware components we used to build a custom experimental fast moving car.
 
 \section{Chassis}
 
-We used chassis, steering servo, \gls{DC} motor, \gls{ESC}, and a ratio transmitter and receiver from an off-the-shelf \gls*{RC} car. We removed the plastic cover and some unnecessary parts attached to the chassis and we attached a think plywood board on top of the chassis. We later mounted all of the electronics to the plywood board. Even though the weight of the battery and of the electronics is not negligible, the suspension of the vehicle is stiff enough to carry the weight without any significant roll and pitch changes during acceleration and cornering.
+We used chassis, steering servo, \gls{DC} motor, \gls{ESC}, and a ratio transmitter and receiver from an off-the-shelf \gls*{RC} car. We removed the plastic cover and some unnecessary parts attached to the chassis and we attached a thin plywood board on top of the chassis. We later mounted all of the electronics to the plywood board. Even though the weight of the battery and of the electronics is not negligible, the suspension of the vehicle is stiff enough to carry the weight without any significant roll and pitch changes during acceleration and cornering.
 
-The chassis has the same geometry as a common passenger car with two fixed rear wheels and two front wheels with Ackermann steering geometry. All of the wheels are driven by the \gls*{DC} motor through a fixed gearbox. The wheels on both front and rear axes can move independently thanks to two differentials, one on each axis. The differentials are necessary for smooth travel during turns, when the outer wheel spins faster than the inner wheel.
+\begin{figure}[!tbp]%
+	\centering
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\textwidth]{../img/car_top_no_electronics}
+		\label{fig:chassis_no_electronics}
+		\caption{A photo of the chassis of the vehicle without any additional electronics mounted to it.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\textwidth}
+		\includegraphics[width=\textwidth]{../img/car_top}
+		\label{fig:chassis_with_electronics}
+		\caption{A photo of the chassis with the plywood board with all of the electronics attached to it. Some of the components are not visible  because they are attached to the bottom side of the board.}
+	\end{subfigure}
+
+	\vspace{1cm}
+
+	\begin{subfigure}[b]{0.7\textwidth}		
+		\includegraphics[width=\textwidth]{../img/car_front}
+		\label{fig:chassis_front_view}
+		\caption{Front view.}
+	\end{subfigure}
+	
+	\label{fig:chassis}
+	\caption{Photos of the experimental vehicle.}
+\end{figure}
+
+The chassis has the same geometry as a common passenger car with two fixed rear wheels and two front wheels with Ackermann steering geometry. All of the wheels are driven by the \gls*{DC} motor through a fixed gearbox. The wheels on both front and rear axes can move independently thanks to two differentials, one on each axis. The differentials are necessary for smooth travel during turns, when the outer wheel spins faster than the inner wheel. Photos of the vehicle are shown in Figure~\ref{fig:chassis}.
+
+\section{Sensors}
 
 The steering servo and the \gls*{ESC}, which controls the speed of the \gls*{DC} motor, both have a 3-pin connector which was originally connected to a radio receiver. Two of the pins connect to a \gls*{DC} power supply and the third connects to a signal wire. The signal is originally created by an radio transmitter which generates a \gls{PWM} signal. The \gls*{PWM} signal consists of pattern resembling a square wave, where the voltage measured on the signal wire is high (\SI{5}{\volt}) for some period of time and then the voltage drops to low (\SI{0}{\volt}) for the rest of the period. The pulse of high voltage lasts between \SI{1}{\milli\second} and \SI{2}{\milli\second} and the period of the signal is \SI{20}{\milli\second} as it is shown in Figure~\ref{fig:pwm}. We can therefore connect these connectors to a computer which generates appropriate signals to steer the vehicle. The \SI{20}{\milli\second} period of one \gls*{PWM} cycle gives us an upper limit of \SI{50}{\hertz} at which we can change the commands for the vehicle.
 
