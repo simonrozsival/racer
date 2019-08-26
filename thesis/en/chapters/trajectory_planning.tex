@@ -1,1 +1,135 @@
 \chapter{Trajectory Planning}
+
+In this chapter we will...
+
+\section{Trajectory Planning Under Differential Constraints}
+
+\todo[inline]{Summarize Planning Algorithms - LaValle}
+
+\section{Trajectory Planning For Fast Moving Cars}
+
+Now that we defined what planning under differential constraints is, we must discuss what it means to plan a trajectory for a fast moving car. What is the difference between trajectory planning for a slow moving car and for a fast moving car? What do we even consider to be a ``fast moving car'' and what is just a slow moving car?
+
+A fast moving car is not a widely used term and it does not have a formal definition. Intuitively, ``moving fast'' means that the car drives at a speed at which it becomes hard to change the direction because the tires might lose grip and the car might start moving sideways. This applies mostly when the car is turning and the speed varies based on the radius of the turn. Also, fast reaction times are crucial, because a late direction change or a late adjustment of the speed might result in a crash or a sub-optimal trajectory.
+
+For the purposes of this thesis, we will formulate the term in the following definitions:
+
+\begin{defn}[Handling limits of a vehicle]
+	We say, that a car is moving at its handling limits during a turn of a radius of $r\in(r_{min}, \infty]$ meters, if it is driving close to a speed $v_{max,r}$ at which the total force vector acting on the body of the vehicle would exceed the forces of the tires which keep the vehicle traveling at the constant radius $r$.
+\end{defn}
+
+The minimum turning radius $r_{min}\in\mathbb{R}$ is a constant specific for a given vehicle. It refers to the minimum turning radius which the vehicle can achieve at a very low speed and with the maximum steering angle possible. We can consider driving straight as driving along a circle with the radius of $\infty$ meters.
+
+\begin{defn}[Fast moving car]\label{def:fast_moving_car}
+	A car is moving fast when it is approaching its handling limits during a turn.
+\end{defn}
+
+\begin{defn}[Trajectory planning problem for a fast moving car]
+	We say that a trajectory planning problem for a fast moving car is a trajectory planning problem under differential constraints, whose solution trajectory is time-optimal and the vehicle does not at any point exceed its handling limits.
+\end{defn}
+
+To achieve time optimality, we will search for a trade off between the length of the length of the path the vehicle will take and the speed at which it will be moving. To keep within the handling limits of the vehicle, our differential constraints must closely model the behavior of the vehicle.
+
+Even if our model of the vehicle describes its behavior well, it is more than likely that the robot will deviate from the planned trajectory at some point. The noise in sensor readings, imperfections in the actuators, or imprecise map of the track, all of these factors will contribute to errors in trajectory tracking. At some point, the difference between the planned path and velocity profile of the vehicle will be so large, that it will be advantageous to create a new plan from the current pose and speed of the vehicle. To make this possible, we need to be able to re-plan the trajectory in a short period of time.
+
+Given our assumption that we will most likely have to re-plan the trajectory at some point in the future anyway, it does not make too much sense to plan the trajectory for the whole circuit at once. The longer the trajectory we are planning, the longer it will take to find a suitable plan. Instead, we could split the track into multiple shorter segments and plan a trajectory only for a few of the segments directly in front of the current pose of the vehicle. A natural way of splitting the track into smaller segments is to find the corners. We can then plan the trajectory for the very next turn in front of the vehicle and for one or two  consecutive ones, and imitate the behavior of a human racing driver, as we described it in Section~\ref{sec:racing_line}. To prevent long segments for long straight stretches, we can set a limit for the length of a segment and split long segments into multiple shorter ones.
+
+Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.\todo{Actually test this.}
+
+\subsection{Track Analysis}
+
+In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid, initial pose of the vehicle with respect to the occupancy grid, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit. An occupancy grid can be formalized with the following definition:
+
+\begin{defn}\label{def:occupancy_grid}
+	Occupancy grid $G\in\{0, 1\}^{m\times n}$ of resolution $r\in\mathbb{R}$ is a two dimensional table of $m$ rows and $n$ columns which corresponds to a rectangular area of the environment of the width of $m * r$ meters and the length of $n * r$ meters. The cells of the table fill the area as square tiles of the side length of $r$ meters. The value of a cell $G_{ij}$ reflects on the state of its corresponding area:
+	
+	\[
+	G_{ij} =
+	\begin{cases}
+	-1\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
+	0\text{,} &\quad\text{or if the corresponding tile contains an obstacle} \\
+	1\text{,} &\quad\text{otherwise.}
+	\end{cases}
+	\]
+\end{defn}
+
+The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. In order to achieve this, we can make a simple observation and derive an algorithm which will produce good approximate solutions.
+
+We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in Figure~\ref{fig:thought_process} on different track layouts.
+
+\begin{figure}
+	\label{fig:thought_process}
+	\missingfigure{The thought process of finding the corners of a circuit.}
+	\caption{The thought process of finding the corners of a circuit.}
+\end{figure}
+
+We will implement this process with a three step algorithm which will identify the corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).3
+
+The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance traveled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
+
+\vspace{1cm}
+\begin{algorithm}[H]
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{Top}{Top}
+	\SetKwFunction{MaxRadius}{MaxRadius}
+	\SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
+	\SetKwFunction{ReconstructPath}{ReconstructPath}
+	
+	\KwIn{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
+	\KwOut{Sequence of circles}
+	\Parameter{Number of expanded children $k$, minimum radius $r_{min}$}
+	
+	$r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
+	$O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
+	$C\gets\emptyset$ \Comment*[r]{Closed set}
+	$P\gets\emptyset$ \Comment*[r]{Set of transitions}
+	
+	\While{$O \neq \emptyset$}{
+		$(\vec{x}, r)\gets $\Top{$O$}\;
+		$O\gets O\setminus\{(\vec{x}, r)\}$\;
+		
+		\If{$\|\vec{x} - \vec{g}\| \leq r$}{
+			\KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
+		}
+		
+		\For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
+			$r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
+			
+			\If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
+				$O\gets O\cup \{(\vec{p'}, r')\}$\;
+				$P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
+			}
+		}
+		
+		$C\gets C\cup\{(\vec{x}, r)\}$\;
+	}
+	
+	\caption{Space Exploration}
+	\label{alg:space_exploration}
+\end{algorithm}
+\vspace{1cm}
+
+To find the path from the initial position through the check points and to the finish line position, we will simply find the path from the initial point to the first checkpoint and then starting from the last circle of the previous path to the next check point. We repeat this until we close the circuit by reaching the initial position again. The path of circles we find might not be optimal. We can further improve it by iterating over the path it and smoothing it as shown in algorithm~\ref{alg:sehs_smoothing}.
+
+With the path of circles around the circuit, we can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}
+
+\vspace{1cm}
+\begin{algorithm}[H]
+	\caption{Waypoint Selection}
+	\label{alg:find_apexes}
+	
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{AreDirectlyVisible}{AreDirectlyVisible}
+	
+	\KwIn{Occupancy grid $G$, sequence of $n$ points $(\vec{x_i})_{i=0}^{n}$}
+	\KwOut{Sequence of points}
+\end{algorithm}
+\vspace{1cm}
+
+% todo algorithm smoothing out
+
+% do I need to prove 

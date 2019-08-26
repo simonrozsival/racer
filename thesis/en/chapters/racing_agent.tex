@@ -4,20 +4,29 @@
 In this chapter we will first analyze how human racing drivers approach the task of car racing. We will then use this information to design a behavior of an autonomous agent and decompose the problem into several smaller tasks. We will discuss how we can analyze the racing track and prepare it for trajectory planning.
 
 \section{Racing Line}
+\label{sec:racing_line}
 
 When a human driver drives on a racing circuit, his or her task is to complete several laps around the circuit in a time period as short as possible. In order to minimize the lap times, the driver trades off the total distance the car travels for the average speed at which it moves. The trajectory of the vehicle through the racing track is sometimes referred to as the racing line and it depends on the shape of the track and on the vehicle. The driver will follow different racing lines for different vehicles on the same circuit based on many their different properties such as maximum speeds, acceleration, braking power, or the grip of the tires.
 
 For a turn with a steady curvature there is a maximum speed at which a specific car can go and stay on the track. Exceeding this speed will cause a loss of friction between the tires and the road surface and the tires will not be able to exert enough lateral force to keep the car on the curve and the car will start to travel along a curve with a greater radius than the one commanded by the driver. This situation is called understeer or oversteer, depending on whether it was the front or rear wheels which lost the friction and which wheels are powered by the engine.
 
-% todo: image of oversteer and understeer
+\begin{figure}
+	\label{fig:oversteer_understeer}
+	\missingfigure{Understeer vs. oversteer}
+	\caption{This figure shows the difference between oversteer and understeer.}
+\end{figure}
 
 On the other hand, for a constant vehicle speed, the vehicle can safely travel along any curve with a radius greater than the minimum safe radius. The driver will therefore try to follow curves with higher radii when going through corners but only to the point where the maximum safe speed reaches the maximum speed of the vehicle. Increasing the curvature when it is not possible to increase the speed adds to the distance the car travels but it does not increase the average speed and therefore leads to a higher lap time.
 
 The trajectory of the vehicle as it goes through a corner can be split into several stages. First, the vehicle aligns itself to the outer edge of the track. Second, the vehicle must adjust its speed so it can safely stay on the curve. It is common to use the brakes mostly while the vehicle is moving straight to avoid locking the wheels in mid-turn. Third, the car starts turning at a turn-in point to go through the apex of the curve at the desired moment. Fourth, the vehicle goes through an apex, which is the point, where it is the closest to the inner edge of the track. Next, the vehicle starts exiting the corner and enters another part of the track.
 
-There are two common ways of going through a corner, a classical one and one called late apex. The classical way of leaving the corner is to keep the constant curvature of the turn and to align the vehicle with the outer edge of the track. The late apex is achieved by starting to turn into the corner later and exiting the corner much closer to the inner edge of the track than the classical way. During the late apex turn, the vehicle slows down more before entering the corner and it straightens the line before hitting the apex allowing for greater exit speed. The comparison between these two lines can be seen in **todo figure**.
+There are two common ways of going through a corner, a classical one and one called late apex. The classical way of leaving the corner is to keep the constant curvature of the turn and to align the vehicle with the outer edge of the track. The late apex is achieved by starting to turn into the corner later and exiting the corner much closer to the inner edge of the track than the classical way. During the late apex turn, the vehicle slows down more before entering the corner and it straightens the line before hitting the apex allowing for greater exit speed. The comparison between these two lines can be seen in Figure~\ref{fig:apex}.
 
-% figures to use: https://drivingfast.net/racing-line/#chapter-1
+\begin{figure}
+	\label{fig:apex}
+	\missingfigure{Classical line and Late apex: https://drivingfast.net/racing-line}
+	\caption{Classical line vs. Late apex}
+\end{figure}
 
 Another factor which affects the speed at which the driver can go through a corner is the shape of the track around the corner. When there is a straight stretch following the corner, the driver can maximize the speed at which the vehicle leaves the corner to increase the average speed. If there is another corner immediately after the first one, the driver must plan ahead and adjust the speed before entering the first corner to a level at which the exit speed of the first corner will be appropriate to go through the following corner.
 
@@ -31,7 +40,7 @@ From the description of the racing behavior of human expert drivers, it is appar
 
 A racing driver can be thought of as a rational agent as defined in definition~\ref{def:rational_agent}. The driver observes the position of the vehicle on the racing track and the state of the vehicle as it moves along the track. He also observes the distance to the boundaries of the track and to any obstacles which can be present on the track. The driver reacts to these perceptions by giving control inputs to the vehicle through the steering wheel, brake and accelerator pedals, and shifting into different gears. The performance measure is the lack of collisions with the boundaries of the track or any obstacles on the track and minimizing of the lap time.
 
-An artificial racing agent would use electronic sensors such a LIDAR, wheel encoders, an IMU, or a camera to observe the state of the environment. Based on this observation, the agent can estimate its state in the world and the state of other entities in the world, such as obstacles or opponents. Based on this information, the agent has to select a control input for the actuators of the vehicle.
+An artificial racing agent would use electronic sensors such a LIDAR, wheel encoders, an \gls{IMU}, or a camera to observe the state of the environment. Based on this observation, the agent can estimate its state in the world and the state of other entities in the world, such as obstacles or opponents. Based on this information, the agent has to select a control input for the actuators of the vehicle.
 
 The agent can use the information about its initial state and calculate a time-optimal racing line from this initial state through the whole circuit up to the finish line using a trajectory planning algorithm. Depending on the size of the circuit, this could be a computationally expensive operation. If later on there is a need to re-plan the trajectory during the race, because the vehicle could not follow the trajectory accurately and it is necessary to come up with a contingency plan, the vehicle might have to repeat the expensive calculation. Instead, the agent can analyze the shape of the circuit and identify the corners and focus its effort only on the next two or three corners ahead of him.
 
@@ -41,7 +50,7 @@ An agent is sometimes described in the form of an agent function. This function 
 
 In order to avoid describing the logic of the racing agent in a single complicated function, we can divide the decision process of the agent into several smaller independent sub-problems: localization, track analysis and waypoint selection, trajectory planning, and trajectory following. Some of these sub-problems output information which is necessary as an input for another of these sub-problems they form nodes of a dependency graph of the decision process which is visualized in Figure~\ref{fig:racing_agent_diagram}.
 
-There is one more reason to decompose the task into independent subproblems. The rate at which the nodes produce outputs is different and they work asynchronously. While the trajectory following node should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning node will have much lower output frequency.
+There is one more reason to decompose the task into several sub-problems. The rate at which the nodes produce outputs is different and they work asynchronously. While the trajectory following node should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning node will have much lower output frequency.
 
 \begin{figure}[]\centering
 	\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
@@ -56,98 +65,4 @@ There is one more reason to decompose the task into independent subproblems. The
 \paragraph{Trajectory planning} The trajectory planning algorithm finds a feasible trajectory from the last state of the vehicle estimated by the localization node through the selected waypoints. The trajectory planning node will start planning a new trajectory as soon as it finishes planning the previous one. As the agent drives along the circuit and drives past a waypoint, the trajectory planning algorithm receives a new sequence of waypoints and the next trajectory it plans will account also for the next corner of the circuit within the lookahead instance. Planning can be a slow process even when we try to reduce the size of the search space as much as possible. For the practical application, the planning algorithm must update the trajectories faster than the vehicle moves through the circuit. If the agent comes to the end of an old reference trajectory and it has no update, it has to stop and wait for an update. This would obviously affect the lap time which is undesirable.
 
 \paragraph{Trajectory following} The latest reference trajectory and the current estimate of the state of the vehicle is used to calculate the next command for the actuators of the vehicle. In the ideal case, this trajectory following node will send the commands to the hardware at the maximum possible rate which the hardware is capable of. In practice we are limited by the rate at which we receive the state estimates from the localization node. The trajectory following node is also responsible for collision avoidance either by actively guiding the vehicle around the obstacles it might hit, or by slowing down the vehicle while waiting for a new reference trajectory.
-
-\subsection{Track Analysis}
-
-The definition of a racing circuit is given by an occupancy grid, initial coordinates of the vehicle in the grid and its heading direction, and at least two more checkpoints which define the direction in which the agent must drive along the circuit. An occupancy grid can be formalized with the following definition:
-
-\begin{defn}\label{def:occupancy_grid}
-    Occupancy grid $G\in\{0, 1\}^{m\times n}$ of resolution $r\in\mathbb{R}$ is a two dimensional table of $m$ rows and $n$ columns which corresponds to a rectangular area of the environment of the width of $m * r$ meters and the length of $n * r$ meters. The cells of the table fill the area as square tiles of the side length of $r$ meters. The value of a cell $G_{ij}$ reflects on the state of its corresponding area:
-    
-\[
-G_{ij} =
-     \begin{cases}
-       -1\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
-       0\text{,} &\quad\text{or if the corresponding tile contains an obstacle} \\
-       1\text{,} &\quad\text{otherwise.}
-     \end{cases}
-\]
-\end{defn}
-
-The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. In order to achieve this, we can make a simple observation and derive an algorithm which will produce good approximate solutions.
-
-We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in figure~\ref{fig:thought_process} on different track layouts.
-
-% figure with the analysis of the track
-
-We will implement this process with a three step algorithm which will identify the corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).3
-
-The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance traveled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
-
-\vspace{1cm}
-\begin{algorithm}[H]
-    \SetAlgoLined
-    \DontPrintSemicolon
-    
-    \SetKwFunction{Top}{Top}
-    \SetKwFunction{MaxRadius}{MaxRadius}
-    \SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
-    \SetKwFunction{ReconstructPath}{ReconstructPath}
-
-    \KwIn{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
-    \KwOut{Sequence of circles}
-    \Parameter{Number of expanded children $k$, minimum radius $r_{min}$}
-    
-    $r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
-    $O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
-    $C\gets\emptyset$ \Comment*[r]{Closed set}
-    $P\gets\emptyset$ \Comment*[r]{Set of transitions}
-    
-    \While{$O \neq \emptyset$}{
-        $(\vec{x}, r)\gets $\Top{$O$}\;
-        $O\gets O\setminus\{(\vec{x}, r)\}$\;
-
-        \If{$\|\vec{x} - \vec{g}\| \leq r$}{
-            \KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
-        }
-
-        \For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
-            $r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
-
-            \If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
-                $O\gets O\cup \{(\vec{p'}, r')\}$\;
-                $P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
-            }
-        }
-
-        $C\gets C\cup\{(\vec{x}, r)\}$\;
-    }
-
-    \caption{Space Exploration}
-    \label{alg:space_exploration}
-\end{algorithm}
-\vspace{1cm}
-
-To find the path from the initial position through the check points and to the finish line position, we will simply find the path from the initial point to the first checkpoint and then starting from the last circle of the previous path to the next check point. We repeat this until we close the circuit by reaching the initial position again. The path of circles we find might not be optimal. We can further improve it by iterating over the path it and smoothing it as shown in algorithm~\ref{alg:sehs_smoothing}.
-
-With the path of circles around the circuit, we can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}
-
-\vspace{1cm}
-\begin{algorithm}[H]
-    \caption{Waypoint Selection}
-    \label{alg:find_apexes}
-
-    \SetAlgoLined
-    \DontPrintSemicolon
-    
-    \SetKwFunction{AreDirectlyVisible}{AreDirectlyVisible}
-
-    \KwIn{Occupancy grid $G$, sequence of $n$ points $(\vec{x_i})_{i=0}^{n}$}
-    \KwOut{Sequence of points}
-\end{algorithm}
-\vspace{1cm}
-
-% todo algorithm smoothing out
-
-% do I need to prove 
 
