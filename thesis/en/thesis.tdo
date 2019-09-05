@@ -1,6 +1,9 @@
-\contentsline {todo}{Figure: Understeer vs. oversteer}{8}{figure.caption.4}% 
-\contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{9}{figure.caption.5}% 
-\contentsline {todo}{Summarize Planning Algorithms - LaValle}{13}{section*.11}% 
-\contentsline {todo}{Actually test this.}{14}{section*.12}% 
-\contentsline {todo}{Figure: The thought process of finding the corners of a circuit.}{15}{figure.caption.13}% 
-\contentsline {todo}{Write this chapter once the source code is stable.}{39}{section*.36}% 
+\contentsline {todo}{Figure: Understeer vs. oversteer}{9}{figure.caption.4}
+\contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{10}{figure.caption.5}
+\contentsline {todo}{Describe delta T and refer to LaValle 14.2.2}{19}{section*.15}
+\contentsline {todo}{Here I want to explain why we want waypoints}{20}{section*.21}
+\contentsline {todo}{rewrite this}{20}{section*.22}
+\contentsline {todo}{finish this}{21}{section*.23}
+\contentsline {todo}{Actually test this.}{23}{section*.27}
+\contentsline {todo}{Figure: The thought process of finding the corners of a circuit.}{24}{figure.caption.28}
+\contentsline {todo}{Write this chapter once the source code is stable.}{47}{section*.47}
