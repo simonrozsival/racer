@@ -72,7 +72,79 @@ As an example of these constraints, we can look at a model of a \textit{simple c
 \begin{figure}
 	\centering
 	\label{fig:simple_car}
-	\includegraphics[width=12cm]{../img/simple_car.pdf}
+	
+	\begin{tikzpicture}[
+		axis/.style={thin, densely dashed, gray}
+	]
+	
+	% the axes
+	\path[name path=AX] (-1,0)--(8,0);
+	\draw[thick, ->] (-1,0)--(8,0) node[right]{$x$};
+	\draw[thick, ->] (0,-1)--(0,6.5) node[above]{$y$};
+	
+	\def\stateTheta{45} % heading angle of the vehicle
+	\def\statePhi{-24} % steering angle of the front wheels
+	\def\L{2.5} % wheelbase of the vehicle
+	\def\W{1.45} % axle width
+	\def\w{2} % width of the vehicle
+	\def\l{4.5} % length of the vehicle
+	\def\wW{0.2} % wheel width
+	\def\wL{0.5} % wheel length
+	\def\xoffset{3cm}
+	\def\yoffset{0.8cm}
+	
+	% the rotated vehicle
+	\begin{scope}[xshift=\xoffset, yshift=\yoffset]
+	\begin{scope}[rotate=\stateTheta]
+    
+   		% longitudinal axis
+   		\path[name path=AL] (-2.5, \w/2) -- (\l+2, \w/2);
+   		\draw[axis] (-2.5, \w/2) -- (\l+2, \w/2);
+
+		% visualize theta
+		\path [name intersections={of=AL and AX, by={X}}];
+		\draw[rotate=-\stateTheta] (X)++(0.7,0) arc (0:\stateTheta:0.7) node[right, yshift=-1mm, xshift=1mm] {$\theta$}; % theta
+    
+    	% shape of the vehicle
+		\draw (0, 0) rectangle (\l, \w);		
+		
+		% axle coordinates
+		\def\rearX{\l/2 - \L/2}
+		\def\frontX{\l/2 + \L/2}
+		\def\rightY{\w/2 - \W/2}
+		\def\leftY{\w/2 + \W/2}
+		
+		\coordinate (front) at (\frontX, \w/2);
+		\coordinate (rearLeft) at (\rearX, \w/2 + \W/2);
+		\coordinate (frontLeft) at (\frontX, \w/2 + \W/2);
+		
+		% visualize the wheelbase length		
+		\draw[axis] (rearLeft) -- ++(0, 1);
+		\draw[axis] (frontLeft) -- ++(0, 1);		
+		\draw[<->, >=latex] ($ (rearLeft) + (0, 0.8) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$L$} ($ (frontLeft) + (0, 0.8) $);
+		
+		\draw[thick] (\rearX - \wL/2, \rightY - \wW/2) rectangle (\rearX + \wL/2, \rightY + \wW/2); % rear right wheel/tire
+		\draw[thick] (\rearX - \wL/2, \leftY - \wW/2) rectangle (\rearX + \wL/2, \leftY + \wW/2); % rear left wheel/tire
+		\filldraw[thick] (\rearX, \rightY + \wW/2) -- (\rearX, \w/2) circle (2pt) node[right, xshift=1mm] {$(x, y)$} -- (\rearX, \leftY - \wW/2); % the axle 
+		
+		% front axle
+		\draw[thick, rotate around={\statePhi:(\frontX, \rightY)}] (\frontX - \wL/2, \rightY - \wW/2) rectangle (\frontX + \wL/2, \rightY + \wW/2); % rear right wheel/tire
+		\draw[thick, rotate around={\statePhi:(\frontX, \leftY)}] (\frontX - \wL/2, \leftY - \wW/2) rectangle (\frontX + \wL/2, \leftY + \wW/2); % rear left wheel/tire
+		\filldraw[thick] (\frontX, \rightY + \wW/2) -- (\frontX, \leftY - \wW/2); % the axle 
+		
+		% connect the axles
+		\draw[thick] (front) -- (\rearX, \w/2);
+		
+		% visualize phi
+		\draw[axis, rotate around={\statePhi:(front)}] (front) -- (\frontX + 2, \w/2);
+		\draw (front)++(0.7,0) arc (0:\statePhi:0.7) node[right, yshift=-2mm] {$\varphi$}; % theta
+		
+	
+    \end{scope}
+	\end{scope}
+	
+	\end{tikzpicture}
+		
 	\caption{The simple car from the example has three state variables. The speed and the steering angle are action variables and they can change at any moment, so the vehicle can stop on a spot and change the steering angle instantaneously, which is of course not possible in a real world car.}
 \end{figure}
 
