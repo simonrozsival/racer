@@ -150,25 +150,19 @@ As an example of these constraints, we can look at a model of a \textit{simple c
 
 In order to be able formulate the planning problem for a system with differential constraints, we must change the meaning of the \textit{state transition function} $f$ from how we defined it in Definition~\ref{def:basic_planning_problem}.
 
-This function used to output the next state $x'$ after an action $u$ is applied to a state $x$, i.e. $x'=f(x, u)$. When the state space is continuous, the outcome of an execution of an action depends on for how long it is being applied. The state transition should now rather return the velocity in the configuration space:
+This function used to output the next state $x'$ after an action $u$ is applied to a state $x$, i.e. $x'=f(x, u)$. When the state space is continuous, the outcome of an execution of an action depends on for how long it is being applied. Instead of a state transition, the differential constraints now express the velocity in the configuration space:
 
 \[
 	\dot{x}=f(x, u).
 \]
 
-To predict the change of the sate after some time period $t\in(0,\infty)$, we must integrate the velocity. In order to be able to do that, we need to know which action is applied at any given moment of the time interval $T=[0, t]$ in a form of an \textit{action trajectory} $u: T \rightarrow U$, where $U=\bigcup\limits_{x\in X} U(x)$ and the action applied at time $t'$ is $u(t')$. We define the \textit{state trajectory} as $x: T \rightarrow X$, where $x(0)$ is the state at the end of the interval and $\forall t' \in T \setminus \left\{0\right\}$:
+To predict, how the state at some given point in time $x(t)\in X$ changes after a period $\Delta t$ seconds during which a constant action $u$, such that $\forall \tau \in \left[0, \Delta t\right]: u\in U(x(t + \tau))$, was being executed, we must integrate the velocity over time:
 
 \[
-	x(t')=x(0)+\int_{0}^{t'} f(x(\tau), u(\tau)) d\tau.
+x(t+\Delta t)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau),u \right) d\tau.
 \]
 
-\todo{Talk about sampling methods}
-
-In the case when we are interested in how the state changes from the previous state $x(t)$ after a period $\Delta t$ of an execution of a constant action $u$ such that $\forall \tau \in \left[0, \Delta t\right]: u\in U(x(t + \tau))$, we can now define an discrete variant of the state transition function $f_{\Delta t}$ which behaves similarly to the original state transition function:
-
-\[
-f_{\Delta t}\left(x(t),u\right)=x(t+\Delta t)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau),u \right) d\tau.
-\]
+\todo{I must say something about sampling methods here.}
 
 \section{Trajectory Planning For Fast Moving Cars}
 
@@ -216,16 +210,9 @@ Our vehicle will move on a flat racing track. We can assume that there will not 
 
 We will use the common two-dimensional Cartesian coordinate system to represent the position of the global position of the vehicle on the track. The area of the track which is reachable by the vehicle is limited by the bounds of the racing track and so the set of all reachable positions of the track is $X\subseteq\mathbb{R}^2$.
 
-\subsubsection{The Discrete-Time Model}
-
-\todo{Describe delta T and refer to LaValle 14.2.2}
-
-To obtain the next state of the vehicle, we need to integrate this derivative over some time interval $\Delta t > 0$ numerically. This time period must be chosen carefully to be as short as possible to minimize errors caused by numerical integration but at the same time long enough to decrease the computational load caused by frequent usage of the state transition function by the planning algorithm when exploring the state space. We must also consider the hardware limitations and the frequency with which we can change the input signal for the actuators.
-
-
 \subsubsection{State Space}
 
-Our state space $S$ will consists of all the possible configurations of the vehicle. The state space will be slightly different based on the vehicle model which is used in order to capture all the variables required by the model including the configuration of the chassis and the state of the actuators.
+Our state space $X$ will consist of all the possible configurations of the vehicle. The state space will be slightly different based on the vehicle model which is used in order to capture all the variables required by the model including the configuration of the chassis and the state of the actuators.
 
 Independently of the choice of the vehicle model, the state will always contain the pose of the vehicle in the 2D coordinate space. By the pose of the vehicle we understand a tuple $\left( x, y, \theta\right)\in X\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  The space of all vehicle poses is continuous and so the state space itself will always be continuous no matter what vehicle model we use. We will sometimes refer to the state space as the configuration space.
 
@@ -235,6 +222,8 @@ At the start of the race, the vehicle is expected to be situated at a predefined
 During the race, the speed and the steering angle have to be measured using sensors. We must take in mind that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
 
 \subsubsection{Collision Detection}
+
+\todo{Write collision detection section}
 
 \subsubsection{Action Space}
 
@@ -251,17 +240,35 @@ The electric signal we send to the actuators is interpreted as a target value an
 U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t,\tau_t\in\left[-1, 1\right] \right\}
 \]
 
-$U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any.
-
-Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed. On the other hand, executing some actions for a given time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the state transition function $f_{\Delta t}$ to allow only safe actions:
+$U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed. On the other hand, executing some actions for a given time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the state transition function $f_{\Delta t}$ to allow only safe actions:
 
 \[
-	U(x)=\left\{u\in U \mid c(f_{\Delta t}(x, u)) = F\right\}.
+U(x)=\left\{u\in U \mid c(f_{\Delta t}(x, u)) = F\right\}.
 \]
 
 It is worth noting that if the vehicle is in state when its action set is empty, the vehicle is in a state when a collision within $\Delta t$ is inevitable.
 
-The set $U$ as we defined it is infinite. In practice, our actuators can be set only to a fixed number of values. The \gls*{PWM} signal which controls the servo motors can only encode a finite number of levels. For a specific vehicle hardware, we can use only a finite subset $U_f\subset U$, $\abs{U_f}\in\mathbb{N}$ of valid actions.
+The action space $U$ as we defined it is infinite. In practice, our actuators can be set only to a fixed number of values. The \gls*{PWM} signal which controls the servo motors can only encode a finite number of levels. For a specific vehicle hardware, we can use only a finite subset $U_f\subset U$, $\abs{U_f}\in\mathbb{N}$ of valid actions.
+
+\subsubsection{Discrete-Time Model}
+
+Earlier in Section~\ref{sec:planning_under_differential_constraints}, we described an action trajectory as a continuous function of time which specifies the action at any given moment. This concept is unrealistic for our use case because we want to apply it to real hardware. The speed of an electric motor controlled by a \gls{PWM} signal can be adjusted only once per a duty cycle period. This information alone gives us a good reason to treat time not as a continuous function, but as a sequence of evenly spaced samples of time points, in which the planning algorithm can choose the next action. The choice of the sampling period will be a trade off between maximum possible control over the hardware and the number of decisions the planning algorithm will make.
+
+We will redefine the state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$:
+
+\[
+x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
+\]
+
+where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U(x(\tau))$. The state trajectory function $x(t)$ can be reduced into a sequence $\langle x_0, x_1, x_2, \ldots, x_k\rangle$ and the action trajectory to a sequence of $\langle u_0, u_1, u_2, \ldots, u_{k-1}\rangle$, where the $i$-th step of the sequence $x_i$ corresponds to $x(i\Delta t)$, therefore we can write
+
+\[
+	x_{i+1}=f_{\Delta t}(x_i, u_i).
+\]
+
+We can now build a new directed state transition graph. We will start in the initial state $x_0$ and we will iterate over all actions in $U_f$ and predict the states reachable through the state transfer function $f_{\Delta t}$. For every state we visit we add a node to the graph and add connect it with a directed edge to the state from which we came.
+
+The length of the shortest path between the initial state node and any other node of the graph is directly proportional to the shortest time it takes to reach the corresponding state with the limited action set and the selected time discretization period. This graph will be at most countably infinite and we will be able to use graph search algorithms to search for desirable paths in this graph.
 
 \subsubsection{Goal Condition}
 
