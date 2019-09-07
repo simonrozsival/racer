@@ -16,24 +16,26 @@ With the intuition of what a planning problem is, we can formulate it formally. 
 
 \begin{defn}[Planning Problem]
 	\label{def:basic_planning_problem}
-	A planning problem is a tuple $\left(X, U, f, x_0, X_g\right)$ consisting of:
+	A planning problem is a tuple $\left(X, U, f, x_0, g\right)$ consisting of:
 	
 	\begin{enumerate}
 		\item A \textit{nonempty set} $X$ of world states, called the \textit{state space}.
 		\item For each state $x\in X$, a set of actions $U(x)$, called the \textit{action space}.
 		\item A \textit{state transition function} $f$ defined for every $x\in X$ and $u\in U(x)$, which produces the state of the world after applying the action $u$ to the state $x$.
 		\item An \textit{initial state} of the world $x_0\in X$.
-		\item A \textit{nonempty set} of goal states $X_g\subset X$.
+		\item A goal condition function $g: X^* \rightarrow {T,F}$.
 	\end{enumerate}
 \end{defn}
 
 \begin{defn}[Feasible Plan]
-	A solution to a planning problem $\left(X, U, f, x_0, X_g\right)$ is feasible plan, which a finite sequence of actions $\langle u_0, u_1, \ldots, u_k\rangle$ such that:
+	A solution to a planning problem $\left(X, U, f, x_0, g\right)$ is feasible plan, which a finite sequence of actions $\langle u_0, u_1, \ldots, u_k\rangle$ such that:
 	
 	\[
-		\forall i \in \left\{0,1,\ldots,k\right\}: u_i\in U(x_i) \wedge x_{i+1}=f(x_i, u_i)\text{, } x_{k+1}\in X_g.
+		\forall i \in \left\{0,1,\ldots,k\right\}: u_i\in U(x_i) \wedge x_{i+1}=f(x_i, u_i)\text{, } g(\langle x_0, x_1, \ldots x_{k+1} \rangle)=T.
 	\]
 \end{defn}
+
+The verification of the resulting plan is often represented by a set of goal states $X_g\subset X$ in literature. The goal condition function which we used is a straightforward generalization which we will need later to determine if the sequence of states goes passes a sequence of waypoints.
 
 \subsubsection{State Space Graph}
 
@@ -57,15 +59,15 @@ Even though we transformed planning into a well-known problem of graph search, w
 \subsection{Planning Under Differential Constraints}
 \label{sec:planning_under_differential_constraints}
 
-When describing the motion of a car-like robot on a two-dimensional plane, the configuration of the body of the vehicle is described by at least the pose of the vehicle, which consists of three variables: the $x$ and $y$ Cartesian coordinates of some reference point of the body of the vehicle, and the angle $\theta$ in which the heading angle of the robot  (an angle between the longitudinal axis of the vehicle and the $x$ axis). The $(x, y)$ location is usually in some area $P\subseteq\mathbb{R}^2$ and the heading angle is an arbitrary angle $\theta\in\left[0,2\pi\right)$. This simple configuration space has three continuous dimensions and it is infinite. The robot does not jump from one pose to another, but its configuration can be described as a continuous path through the configuration space over time. The kinematics and dynamics of a robots are usually described by differential equations. These equations give us the velocities at which the state of the robot moves through the configuration space.
+When describing the motion of a car-like robot on a two-dimensional plane, we assume that we can treat it as a rigid body, usually of a rectangular shape. The configuration of the rigid body is then described by the pose of the vehicle, which consists of three variables: the $\left(x,y\right)$ Cartesian coordinates of some reference point of the body in the world reference frame, and the heading angle $\theta$ which is an angle between the longitudinal axis of the vehicle and the $x$ axis of the world reference frame. The $(x, y)$ location is in some bounded area $P\subset\mathbb{R}^2$ and the heading angle is an arbitrary angle $\theta\in\left[0,2\pi\right)$. This simple configuration space already has three continuous dimensions and it is uncountably infinite.
 
-As an example of these constraints, we can look at a model of a \textit{simple car} shown in the book \textit{Planning Algorithms} by Steven M. LaValle \cite[Section~13.1.2.1]{lavalle_2006}. The state space consists of the poses in a 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}. For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
+The kinematics and dynamics of a robots are described by differential equations. These equations give us the velocities at which the state of the robot changes. As an example of these constraints, we can look at a model of a \textit{simple car} shown in the book \textit{Planning Algorithms} by Steven M. LaValle \cite[Section~13.1.2.1]{lavalle_2006}. The state space consists of the poses in a 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}. For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
 
 \begin{equation}
 \begin{aligned}
-\dot{x}&=u_s \cos \theta \\
-\dot{y}&=u_s \sin \theta \\
-\dot{\theta}&=\dfrac{u_s}{L} \tan u_\varphi.
+	\dot{x}&=u_s \cos \theta \\
+	\dot{y}&=u_s \sin \theta \\
+	\dot{\theta}&=\dfrac{u_s}{L} \tan u_\varphi.
 \end{aligned}
 \end{equation}
 
@@ -148,21 +150,26 @@ As an example of these constraints, we can look at a model of a \textit{simple c
 	\caption{The simple car from the example has three state variables. The speed and the steering angle are action variables and they can change at any moment, so the vehicle can stop on a spot and change the steering angle instantaneously, which is of course not possible in a real world car.}
 \end{figure}
 
-In order to be able formulate the planning problem for a system with differential constraints, we must change the meaning of the \textit{state transition function} $f$ from how we defined it in Definition~\ref{def:basic_planning_problem}.
+The configuration space of all possible transformations of the robot and possibly additional variables required to keep the state of the kinematics and dynamics of the robot together form a continuous \textit{state space} $X$. In the example of the simple car, the state space would be just the configuration space itself, therefore $X=\mathbb{R}^2\times\left[0,2\pi\right)$, but different models could have more dimensions as we will see in Section~\ref{sec:vehicle_model}.
 
-This function used to output the next state $x'$ after an action $u$ is applied to a state $x$, i.e. $x'=f(x, u)$. When the state space is continuous, the outcome of an execution of an action depends on for how long it is being applied. Instead of a state transition, the differential constraints now express the velocity in the configuration space:
+Additionally, we must be able split the state space $X$ into two complementary subsets: the obstacle region $X_{obs}\subseteq X$ and the free region $X_{free}=X\setminus X_{obs}$. Only the states in $X_{free}$ can be entered safely while the states in $X_{obs}$ must be avoided to prevent collisions of the robot with obstacles.
+
+In order to be able formulate the planning problem for a system with differential constraints, we must change the meaning of the \textit{state transition function} $f$ from the previous Definition~\ref{def:basic_planning_problem}. This function used to produce the next state $x'$ after an action $u$ is applied to a state $x$, i.e. $x'=f(x, u)$. When the state space is continuous, the outcome of an execution of an action depends on for how long it is being applied. Instead of a direct transition to the next state, the function $f$ will now express the velocity in the state space as defined by the differential constraints:
 
 \[
 	\dot{x}=f(x, u).
 \]
 
-To predict, how the state at some given point in time $x(t)\in X$ changes after a period $\Delta t$ seconds during which a constant action $u$, such that $\forall \tau \in \left[0, \Delta t\right]: u\in U(x(t + \tau))$, was being executed, we must integrate the velocity over time:
+The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} and satisfies a goal condition. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U$ which maps a time interval $T=\left[0, t_{end}\right]$ to an action, which should be executed at the given point in time. To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
 
-\[
-x(t+\Delta t)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau),u \right) d\tau.
-\]
+\begin{equation}
+	\label{eq:integrate_state_trajectory}
+	\tilde{x}(t) = \tilde{x}(0) + \int_0^t f(\tilde{x}(\tau), \tilde{u}(\tau)) d\tau,
+\end{equation}
 
-\todo{I must say something about sampling methods here.}
+such that $\forall \tau\in\left[0, t_{end}\right]: \tilde{u}(\tau)\in U(\tilde{x}(\tau))$. A collision-free trajectory adds a requirement to go only through the free region ($\tilde{x}(\tau)\in X_{free}$).
+
+\todo[inline]{I must say something about sampling methods here.}
 
 \section{Trajectory Planning For Fast Moving Cars}
 
@@ -204,17 +211,13 @@ We can now summarize the discussion in this section into a set of requirements f
 
 \subsection{Problem Formulation}
 
-\subsubsection{Coordinate System}
+\subsubsection{The Configuration Space and the State Space}
 
-Our vehicle will move on a flat racing track. We can assume that there will not be any changes in the slope of the track and that we will not encounter any bridges or underpasses and that the wheels of our vehicle will always be in contact with the road surface.
+We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all of the parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
 
-We will use the common two-dimensional Cartesian coordinate system to represent the position of the global position of the vehicle on the track. The area of the track which is reachable by the vehicle is limited by the bounds of the racing track and so the set of all reachable positions of the track is $X\subseteq\mathbb{R}^2$.
+Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ will consist of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.\todo{Should I mention anything about manifolds?}
 
-\subsubsection{State Space}
-
-Our state space $X$ will consist of all the possible configurations of the vehicle. The state space will be slightly different based on the vehicle model which is used in order to capture all the variables required by the model including the configuration of the chassis and the state of the actuators.
-
-Independently of the choice of the vehicle model, the state will always contain the pose of the vehicle in the 2D coordinate space. By the pose of the vehicle we understand a tuple $\left( x, y, \theta\right)\in X\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  The space of all vehicle poses is continuous and so the state space itself will always be continuous no matter what vehicle model we use. We will sometimes refer to the state space as the configuration space.
+The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
 
 \paragraph{Initial State}
 At the start of the race, the vehicle is expected to be situated at a predefined starting location of the racing circuit with its heading angle identical to the direction of the race. The vehicle starts from a standstill with the wheels not spinning and the front wheels pointing the heading direction of the car.
@@ -223,7 +226,20 @@ During the race, the speed and the steering angle have to be measured using sens
 
 \subsubsection{Collision Detection}
 
-\todo{Write collision detection section}
+A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divides the configuration space into two parts $C_{free}$ and $C_{obs}$:
+
+\begin{equation*}
+\begin{aligned}
+	C_{obs} &= \left\{x\in C \mid c_{R}(x)=T\right\} \\
+	C_{free} &= C \setminus C_{obs}.
+\end{aligned}
+\end{equation*}
+
+The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine, if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not.
+
+In this thesis, we will not consider moving obstacles. If it was necessary, we would have to extend the definition of the collision detection function to include a time parameter and it would have to extrapolate and predict a state of the world at the given time and check the collision against this prediction. The rest of the planning algorithm would not be affected by this extension.
+
+It is very important the the implementation of the collision detection function is very fast, because it is necessary to evaluate it every time the planning algorithm considers the use of an action from some state. If the action would lead to a state which would collide with an obstacle, this action should not even be allowed. \todo[inline]{Finish the description of the inflated obstacles.}
 
 \subsubsection{Action Space}
 
@@ -237,10 +253,12 @@ As we discussed earlier, our vehicle has two actuators which we can control:
 The electric signal we send to the actuators is interpreted as a target value and the actuator adjusts its output to match the target value over a time period at a rate which we cannot control. We define the action space for these actuators like this:
 
 \[
-U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t,\tau_t\in\left[-1, 1\right] \right\}
+	U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t,\tau_t\in\left[-1, 1\right] \right\}
 \]
 
 $U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed. On the other hand, executing some actions for a given time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the state transition function $f_{\Delta t}$ to allow only safe actions:
+
+\todo[inline]{This has to be somehow moved somewhere else, probably to the section with the discrete time model.}
 
 \[
 U(x)=\left\{u\in U \mid c(f_{\Delta t}(x, u)) = F\right\}.
@@ -254,11 +272,11 @@ The action space $U$ as we defined it is infinite. In practice, our actuators ca
 
 Earlier in Section~\ref{sec:planning_under_differential_constraints}, we described an action trajectory as a continuous function of time which specifies the action at any given moment. This concept is unrealistic for our use case because we want to apply it to real hardware. The speed of an electric motor controlled by a \gls{PWM} signal can be adjusted only once per a duty cycle period. This information alone gives us a good reason to treat time not as a continuous function, but as a sequence of evenly spaced samples of time points, in which the planning algorithm can choose the next action. The choice of the sampling period will be a trade off between maximum possible control over the hardware and the number of decisions the planning algorithm will make.
 
-We will redefine the state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$:
+We will redefine the state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$ based on (\ref{eq:integrate_state_trajectory}):
 
-\[
-x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
-\]
+\begin{equation}
+	x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
+\end{equation}
 
 where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U(x(\tau))$. The state trajectory function $x(t)$ can be reduced into a sequence $\langle x_0, x_1, x_2, \ldots, x_k\rangle$ and the action trajectory to a sequence of $\langle u_0, u_1, u_2, \ldots, u_{k-1}\rangle$, where the $i$-th step of the sequence $x_i$ corresponds to $x(i\Delta t)$, therefore we can write
 
