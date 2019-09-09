@@ -1,18 +1,26 @@
 \chapter{Trajectory Planning}
 
-The main task of this thesis is to solve the problem of trajectory planning for a fast moving car. In this chapter, we will analyze this problem in depth. We will first look into the planning problem in general and then we will discuss what the term ``fast moving cars'' means and how trajectory planning for a fast car is different from the general problem.
+The main focus of this thesis is the problem of trajectory planning for a fast moving car. In this chapter, we will analyze this problem in depth. We will first look into the planning problem in general and then we will discuss what the term ``fast moving cars'' means and how trajectory planning for a fast car is different from the general planing problem.
 
 With the knowledge of the theory, we will formulate our trajectory planning problem. We will consider several well-known search algorithms used to solve planning problems and adapt them to our problem.
 
-The solution of the planning problem will be a reference state trajectory. The vehicle will try to follow this trajectory as closely as possible using a different algorithm as it was shown in Figure~\ref{fig:racing_agent_diagram}. The state trajectory will include both a path the vehicle should follow and a speed profile. Using this information, our vehicle will be able to go through corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line.
+The solution of the planning problem will be a trajectory. A trajectory is the description of both a path the vehicle should follow and also a speed profile. If a robot is able to follow this trajectory, it will have an advantage over reactive steering algorithms, such as end-to-end driving, as it will be able to go through a series of corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line. We will discuss a way of following the trajectory later in Chapter~\ref{chapter:following}.
 
 \section{Introduction to Planning}
 
+In this section, we will give a brief overview of the basic concepts of automatic planning and planning under differential constraints. The main source of the information for this chapter is a book by Steven M. LaValle called \textit{Planning Algorithms} \cite{lavalle_2006}. This book describes all of the topics in this section in much more detail and it is a good source of further information on this topic.
+
 \subsection{Automatic Planning}
 
-The world of a planning problem is defined in terms of states and actions. A single state is a full description of the important aspects of the environment and it is usually encoded as a vector of (real) numbers. All of the possible states of the world form a state space. An action is a way of changing the current state of the world into a different state. The planning task is to find a sequence of actions, which changes the state of the world from a given initial state to some desired state, called a goal state. This sequence of actions is referred to as a feasible plan.
+Planning is the task of solving some problem by finding a sequence of actions, which transforms the world to some desired state. The world of a planning problem is defined in terms of states and actions.
 
-With the intuition of what a planning problem is, we can formulate it formally. We will state a generalized definition based on the definitions given in the book \textit{Planning Algorithms} \cite{lavalle_2006}:
+A single state is a full description of all of the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or a vector of an $n$-dimensional vector of real numbers. All of the possible states of the world form a state space.
+
+An action is a way of changing a state of the world into a different state. Not all actions can be applied in all states and so the set of possible actions can differ from state to state. All of the actions together then form an action space.
+
+The planning task is to find a sequence of actions, which changes the state of the world from a given initial state to some desired state. Such sequence of actions is referred to as a feasible plan.
+
+With the intuition of what a planning problem is, we can formulate it formally:
 
 \begin{defn}[Planning Problem]
 	\label{def:basic_planning_problem}
@@ -20,24 +28,32 @@ With the intuition of what a planning problem is, we can formulate it formally. 
 	
 	\begin{enumerate}
 		\item A \textit{nonempty set} $X$ of world states, called the \textit{state space}.
-		\item For each state $x\in X$, a set of actions $U(x)$, called the \textit{action space}.
+		\item For each state $x\in X$, a set of actions $U(x)$.  A set of all actions $U=\bigcup\limits_{x\in X} U(x)$ is called an \textit{action space}.
 		\item A \textit{state transition function} $f$ defined for every $x\in X$ and $u\in U(x)$, which produces the state of the world after applying the action $u$ to the state $x$.
 		\item An \textit{initial state} of the world $x_0\in X$.
-		\item A goal condition function $g: X^* \rightarrow {T,F}$.
+		\item A goal condition function $g: X^* \rightarrow \left\{T,F\right\}$.
 	\end{enumerate}
 \end{defn}
 
 \begin{defn}[Feasible Plan]
-	A solution to a planning problem $\left(X, U, f, x_0, g\right)$ is feasible plan, which a finite sequence of actions $\langle u_0, u_1, \ldots, u_k\rangle$ such that:
+	A solution to a planning problem $\left(X, U, f, x_0, g\right)$ is a \textit{feasible plan}, which a finite sequence of actions $\langle u_0, u_1, \ldots, u_k\rangle\in U^*$ such that:	
+	\begin{gather*}
+		\forall i \in \left\{0,1,\ldots,k\right\}: u_i\in U(x_i) \wedge x_{i+1}=f(x_i, u_i) \\
+		g(\langle x_0, x_1, \ldots x_{k+1} \rangle)=T.
+	\end{gather*}
+\end{defn}
+
+Determining if a plan meets the goal condition is often performed by checking if the final state $x_{k+1}$ of the plan is in some subset of goal states $X_g\subset X$. Often there are many feasible plans for some task, but it is not sufficient to find just any of these plans. We might be tasked to find an optimal plan, which minimizes some cost function.
+
+\begin{defn}[Optimal Plan]
+	Let $\left(X, U, f, x_0, g\right)$ be a planning problem and $\Pi=\left\{\pi\in U^* \mid \pi \text{ is a feasible plan}\right\}$ a set of all feasible plans. We say that a plan $\pi^*\in \Pi$ is an optimal plan with respect to a cost function $\gamma: \Pi \rightarrow \mathbb{R}$ if
 	
 	\[
-		\forall i \in \left\{0,1,\ldots,k\right\}: u_i\in U(x_i) \wedge x_{i+1}=f(x_i, u_i)\text{, } g(\langle x_0, x_1, \ldots x_{k+1} \rangle)=T.
+		\pi^*=\argmin_{\pi\in\Pi} \gamma(\pi).
 	\]
 \end{defn}
 
-The verification of the resulting plan is often represented by a set of goal states $X_g\subset X$ in literature. The goal condition function which we used is a straightforward generalization which we will need later to determine if the sequence of states goes passes a sequence of waypoints.
-
-\subsubsection{State Space Graph}
+\subsubsection{Reachability Graph}
 
 We can imagine that the states form vertices of a graph $G=(V, E)$ and the applications of actions through the state transition function form directed edges between the vertices:
 
@@ -48,20 +64,25 @@ We can imagine that the states form vertices of a graph $G=(V, E)$ and the appli
 \end{aligned}
 \end{equation*}
 
-A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal states vertices. Finding a path in a graph is well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
+This graph can in general have several subgraphs. We are only interested in the component, which contains the initial $x_0$ and all the vertices which are reachable from $x_0$ via a directed path. A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal states vertices. Finding a path in a graph is well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
 
-The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the the number of vertices is countably infinite and the branching factor is finite, we can still find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists, the algorithm will be trying different plans infinitely, unless there is a limiting criterion, such as maximum length of a plan.
+The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
 
-When the number of vertices becomes uncountably infinite or the branching factor is infinite, the problem becomes harder and we cannot rely on a simple graph search anymore. We will soon see, that the state space of all of the vehicle configurations in our problem is uncountably infinite. We will have to overcome this problem in order to find a practical representation which can be used in practice on a robot.
+When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see, that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
-Even though we transformed planning into a well-known problem of graph search, we must keep in mind that the number of states of the system can be very high even if it is finite. Because the state space represents all of the combinations of the state variables of the world. 
+We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all of the combinations of the state variables of the world.
 
 \subsection{Planning Under Differential Constraints}
 \label{sec:planning_under_differential_constraints}
 
-When describing the motion of a car-like robot on a two-dimensional plane, we assume that we can treat it as a rigid body, usually of a rectangular shape. The configuration of the rigid body is then described by the pose of the vehicle, which consists of three variables: the $\left(x,y\right)$ Cartesian coordinates of some reference point of the body in the world reference frame, and the heading angle $\theta$ which is an angle between the longitudinal axis of the vehicle and the $x$ axis of the world reference frame. The $(x, y)$ location is in some bounded area $P\subset\mathbb{R}^2$ and the heading angle is an arbitrary angle $\theta\in\left[0,2\pi\right)$. This simple configuration space already has three continuous dimensions and it is uncountably infinite.
+When describing the motion of a car-like robot on a two-dimensional plane, we assume that we can treat it as a rigid body, usually represented as a bounding rectangle. The configuration of the rigid body is then described by the pose of the vehicle: the $\left(x,y\right)$ Cartesian coordinates of a fixed reference point of the body in the world reference frame, and the heading angle $\theta$ between the longitudinal axis of the vehicle and the $x$ axis of the world reference frame. The $(x, y)$ location is in some bounded area $P\subset\mathbb{R}^2$ and the heading angle is an arbitrary angle $\theta\in\left[0,2\pi\right)$. This simple configuration space already has three continuous dimensions and it is uncountably infinite.
 
-The kinematics and dynamics of a robots are described by differential equations. These equations give us the velocities at which the state of the robot changes. As an example of these constraints, we can look at a model of a \textit{simple car} shown in the book \textit{Planning Algorithms} by Steven M. LaValle \cite[Section~13.1.2.1]{lavalle_2006}. The state space consists of the poses in a 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}. For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
+The kinematics and dynamics of a robots are typically described by differential equations. These equations give us the velocities at which the state of the robot changes when an action is applied. As an example of these constraints, we can look at a model of a \textit{simple car} \cite[Section~13.1.2.1]{lavalle_2006}.
+
+\paragraph{Example}
+The state space of a simple car will consist of the poses in an infinite 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}.
+
+For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
 
 \begin{equation}
 \begin{aligned}
@@ -152,7 +173,11 @@ The kinematics and dynamics of a robots are described by differential equations.
 
 The configuration space of all possible transformations of the robot and possibly additional variables required to keep the state of the kinematics and dynamics of the robot together form a continuous \textit{state space} $X$. In the example of the simple car, the state space would be just the configuration space itself, therefore $X=\mathbb{R}^2\times\left[0,2\pi\right)$, but different models could have more dimensions as we will see in Section~\ref{sec:vehicle_model}.
 
+\paragraph{Obstacles}
+
 Additionally, we must be able split the state space $X$ into two complementary subsets: the obstacle region $X_{obs}\subseteq X$ and the free region $X_{free}=X\setminus X_{obs}$. Only the states in $X_{free}$ can be entered safely while the states in $X_{obs}$ must be avoided to prevent collisions of the robot with obstacles.
+
+\paragraph{State Transition Function}
 
 In order to be able formulate the planning problem for a system with differential constraints, we must change the meaning of the \textit{state transition function} $f$ from the previous Definition~\ref{def:basic_planning_problem}. This function used to produce the next state $x'$ after an action $u$ is applied to a state $x$, i.e. $x'=f(x, u)$. When the state space is continuous, the outcome of an execution of an action depends on for how long it is being applied. Instead of a direct transition to the next state, the function $f$ will now express the velocity in the state space as defined by the differential constraints:
 
@@ -160,7 +185,7 @@ In order to be able formulate the planning problem for a system with differentia
 	\dot{x}=f(x, u).
 \]
 
-The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} and satisfies a goal condition. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U$ which maps a time interval $T=\left[0, t_{end}\right]$ to an action, which should be executed at the given point in time. To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
+The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} and satisfies a goal condition. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U\cup\left\{u_t\right\}$ which maps an infinite interval $T=\left[0, \infty\right)$ to an action, which should be executed at the given point in time. From some point in time $t_{end}\in\left[0, \infty\right)$, a termination action $u_t$ can be applied to mark the end of the action trajectory ($\forall t>t_{end}: \tilde{u}(t)=u_t$). To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
 
 \begin{equation}
 	\label{eq:integrate_state_trajectory}
@@ -169,7 +194,36 @@ The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of
 
 such that $\forall \tau\in\left[0, t_{end}\right]: \tilde{u}(\tau)\in U(\tilde{x}(\tau))$. A collision-free trajectory adds a requirement to go only through the free region ($\tilde{x}(\tau)\in X_{free}$).
 
-\todo[inline]{I must say something about sampling methods here.}
+\begin{defn}[Planning Problem Under Differential Constraints]
+	\label{def:planning_problem_under_differential_constraints}
+	A planning problem under differential constraints $\left(X, U, f, x_0, g\right)$ is an extension planning problem given in Definition~\ref{def:basic_planning_problem}, such that:
+	
+	\begin{enumerate}
+		\item The state space $X$ is continuous.
+		\item A \textit{state transition function} $f$ defined for every $x\in X$ and $u\in U(x)$, which produces the velocity in the state space after applying the action $u$ to the state $x$: $\dot{x}=f(x, u)$.
+		\item A goal condition function $g: \tilde{X} \rightarrow \left\{T, F\right\}$, where $\tilde{X}$ is the set of all state trajectories obtained by integrating all possible action trajectories over $U$.
+	\end{enumerate}
+\end{defn}
+
+\begin{defn}[Feasible Plan]
+	A solution to a planning problem under differential constraints $\left(X, U, f, x_0, g\right)$ is a \textit{feasible action trajectory} $\tilde{u}$ such that:
+	\begin{gather*}
+	\exists t_{end} \in \left(0, \infty\right) \forall t \leq t_{end}: \tilde{u}(t)\in U(\tilde{x}(t)) \wedge \tilde{x}(t) = \\ \tilde{x}(0) + \int_0^t f(\tilde{x}(\tau), \tilde{u}(\tau)) d\tau \\
+	g(\tilde{x})=T.
+	\end{gather*}
+\end{defn}
+
+\subsubsection{Sampling-Based Planning Methods}
+
+In order to be able to plan in a world with a continuous state space and continuous time, sampling-based methods can be used. The main idea is to discretize the action trajectory by using the same action for some non-trivial time period. This effectively discretizes time into time intervals, which usually have a fixed length $\Delta t$ or the duration depends depend on the action which is used (``a motion primitive'' \cite[Section~14.2.3]{lavalle_2006}). The action trajectory can then be expressed as a simple sequence of actions and for every action in the sequence it is possible to determine the time at which it is supposed to be applied and for how long it is supposed to be applied. We can still obtain a continuous trajectory through the state space by integrating the action sequence.
+
+Ideally, every segment of a state trajectory obtained by integrating some action from some state over some time period should be checked for collision. In practice, this could be very resource intensive, and so only a few samples (sometimes only the end state of the segment) are tested using a ``black box'' collision detection function to see if the segment is in $X_{obs}$ or $X_{free}$.
+
+If the action space is infinite, it should be sampled as well and only a finite number of actions should be considered. This makes it possible to construct a graph where samples of $X$ are the vertices and the edges between them are actions. Starting from $x_0$, we compute all of the possible state trajectories starting in this state with all the actions in the finite set of actions over a time period (either a fixed $\Delta t$ or a time associated with the action) and add the final states as vertices to the graph and connect them with directed edges to the origin state. We repeat this for all added states over and over again.
+
+The size of the graph is affected also by the discretization of time. The shorter the time interval is, the larger the graph will be. Nevertheless, we can perform graph search over and find solutions to planning problems with differential constraints.
+
+The discretization of time might make some states of the state space unreachable and this could make finding a feasible plan impossible. In order to achieve resolution-completeness of the sampling based algorithm, every time a plan is not found, the discretization should be made finer (e.g., by decreasing the length of the time intervals by half) \cite[Chapter~14.2]{lavalle_2006}.
 
 \section{Trajectory Planning For Fast Moving Cars}
 
@@ -192,8 +246,9 @@ The minimum turning radius $r_{min}\in\mathbb{R}$ is a constant specific for a g
 \end{defn}
 
 \begin{defn}[Trajectory planning problem for a fast moving car]
-	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints, whose solution is a time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits.
+	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints, whose solution is a time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} is expected to describe both the poses of the vehicle, as well as a speed profile.
 \end{defn}
+
 
 To achieve a time-optimal trajectory, we will search for a trade off between the length of the path and the speed at any given moment. To keep within the handling limits of the vehicle, our differential constraints must closely model the behavior of the vehicle. Even if our model of the vehicle describes its behavior well, it is more than likely that the robot will deviate from the planned trajectory at some point. The noise in sensor readings, imperfections in the actuators, or imprecise map of the track, all of these factors will contribute to errors in trajectory tracking. At some point, the difference between the planned path and velocity profile of the vehicle will be so large, that it will be advantageous to create a new plan from the current pose and speed of the vehicle. To make this possible, we need to be able to re-plan the trajectory in a short period of time.
 
@@ -215,7 +270,7 @@ We can now summarize the discussion in this section into a set of requirements f
 
 We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all of the parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
 
-Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ will consist of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.\todo{Should I mention anything about manifolds?}
+Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ will consist of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
 
 The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
 
@@ -237,8 +292,12 @@ A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divide
 
 The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine, if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not.
 
+The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $x\in X_{obs} \iff c_x\in C_{obs} \wedge x\in X_{free} \iff c_x\in C_{free}$.
+
+\paragraph{Moving Obstacles}
 In this thesis, we will not consider moving obstacles. If it was necessary, we would have to extend the definition of the collision detection function to include a time parameter and it would have to extrapolate and predict a state of the world at the given time and check the collision against this prediction. The rest of the planning algorithm would not be affected by this extension.
 
+\paragraph{Implementation}
 It is very important the the implementation of the collision detection function is very fast, because it is necessary to evaluate it every time the planning algorithm considers the use of an action from some state. If the action would lead to a state which would collide with an obstacle, this action should not even be allowed. \todo[inline]{Finish the description of the inflated obstacles.}
 
 \subsubsection{Action Space}
