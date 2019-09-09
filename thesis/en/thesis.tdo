@@ -1,12 +1,11 @@
 \contentsline {todo}{Figure: Understeer vs. oversteer}{9}{figure.caption.4}
 \contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{10}{figure.caption.5}
-\contentsline {todo}{I must say something about sampling methods here.}{17}{section*.13}
-\contentsline {todo}{Should I mention anything about manifolds?}{19}{section*.15}
-\contentsline {todo}{Finish the description of the inflated obstacles.}{20}{section*.18}
-\contentsline {todo}{This has to be somehow moved somewhere else, probably to the section with the discrete time model.}{20}{section*.20}
-\contentsline {todo}{Here I want to explain why we want waypoints}{21}{section*.23}
-\contentsline {todo}{rewrite this}{21}{section*.24}
-\contentsline {todo}{finish this}{22}{section*.25}
-\contentsline {todo}{Actually test this.}{24}{section*.29}
-\contentsline {todo}{Figure: The thought process of finding the corners of a circuit.}{25}{figure.caption.30}
-\contentsline {todo}{Write this chapter once the source code is stable.}{48}{section*.49}
+\contentsline {todo}{Should I mention anything about manifolds?}{21}{section*.18}
+\contentsline {todo}{Finish the description of the inflated obstacles.}{22}{section*.23}
+\contentsline {todo}{This has to be somehow moved somewhere else, probably to the section with the discrete time model.}{22}{section*.25}
+\contentsline {todo}{Here I want to explain why we want waypoints}{23}{section*.28}
+\contentsline {todo}{rewrite this}{23}{section*.29}
+\contentsline {todo}{finish this}{24}{section*.30}
+\contentsline {todo}{Actually test this.}{26}{section*.34}
+\contentsline {todo}{Figure: The thought process of finding the corners of a circuit.}{27}{figure.caption.35}
+\contentsline {todo}{Write this chapter once the source code is stable.}{50}{section*.54}
