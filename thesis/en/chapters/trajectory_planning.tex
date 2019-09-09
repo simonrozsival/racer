@@ -290,15 +290,51 @@ A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divide
 \end{aligned}
 \end{equation*}
 
-The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine, if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not.
+The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine, if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
 
 The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $x\in X_{obs} \iff c_x\in C_{obs} \wedge x\in X_{free} \iff c_x\in C_{free}$.
+
+\paragraph{Representation of Obstacles}
+We represent the obstacles in the world as an occupancy grid. An occupancy grid is a matrix $O_r\in \left\{O, X\right\}^{m\times n}$, where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $O$ (free space) and $X$ (an obstacle) in our definition.
+
+For a single point of the world $\left(x,y\right)\in \mathbb{R}^2$, we can determine if it is in the region covered by the occupancy grid and in which cell it lays. From this information, we can determine, if the point collides with an obstacle or not. If the point lies outside of the area covered by the occupancy grid, we can treat it as an obstacle.
+
+We chose the occupancy grid because it is a standard way of representing 2D maps in \gls{ROS}, especially when a robot is equipped with a \gls{LIDAR}. We used these technologies to build our custom experimental vehicle and therefore we also used this map representation.
 
 \paragraph{Moving Obstacles}
 In this thesis, we will not consider moving obstacles. If it was necessary, we would have to extend the definition of the collision detection function to include a time parameter and it would have to extrapolate and predict a state of the world at the given time and check the collision against this prediction. The rest of the planning algorithm would not be affected by this extension.
 
-\paragraph{Implementation}
-It is very important the the implementation of the collision detection function is very fast, because it is necessary to evaluate it every time the planning algorithm considers the use of an action from some state. If the action would lead to a state which would collide with an obstacle, this action should not even be allowed. \todo[inline]{Finish the description of the inflated obstacles.}
+\paragraph{Collision Detection Implementation}
+The collision detection function must be evaluated every time the planning algorithm considers a use of an action from some state. If the action would lead to a state which would collide with an obstacle, this action should not even be allowed. The complexity of the collision detection function will therefore have a great impact on the performance of the algorithm on real hardware.
+
+The footprint of the body of the vehicle is a rotated rectangle and we have to check if any of the parts of this rectangle does not hit an obstacle cell. We considered two versions of the collision detection algorithm:
+\begin{enumerate}
+	\item Pre-calculating small occupancy grids for several configurations of the vehicle and overlaying them with the occupancy grid representing the world.
+	\item Inflating the obstacles in the occupancy grid and performing a single point check.
+\end{enumerate}
+
+The idea of \textit{the first method} is to calculate a list of tiles relative to the tile in which the center of the rectangle lies which the vehicle could collide with. We would split the heading angle dimension of the configuration into several regular intervals. For each of these intervals we would take the value in the middle and use it as a heading angle $\theta$. We would then rotate the bounding rectangle by the angle $\theta$ and mark which cells of a grid with the resolution $r$ it would overlay. We must take into consideration that the center of the rectangle can be at any point of the tile and different cells would be overlaid for example when the center coincides with the top left corner of the cell or the bottom right corner. Figure~\ref{fig:collision_detection_overlap} depicts this idea. To check collisions, we would first determine the cell corresponding to the center of the bounding rectangle of the vehicle and determine the discretization f the heading angle $\theta$. For the discretized heading angle, we would then remember a list of integer coordinates of the cells which would be occupied relative to the center of the rectangle. We would then check the state of the occupancy grid for the tiles occupied by the footprint of the vehicle and if any of them was marked as $X$ or if the coordinate would be outside of the bounds of the $m\times n$ grid, we would report a collision.
+
+\begin{figure}[!tbp]%
+	\centering
+	\begin{subfigure}[t]{0.45\textwidth}
+		\missingfigure{FOOTPRINT}
+		\label{fig:collision_detection_overlap}
+		\caption{The relative coordinates to tiles occupied by the footprint of the vehicle when the heading angle is close to $\theta$.}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\textwidth}
+		\missingfigure{INFLATED OBSTACLES}
+		\label{fig:collision_detection_inflation}
+		\caption{The obstacles are ``inflated'' by the radius of the vehicle.}
+	\end{subfigure}
+	
+	\caption{Photos of the experimental vehicle.}
+\end{figure}
+
+\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions, we then need to look only for a single value of the cell, which contains the center of the rectangle. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
+
+The obvious advantage of the first method is higher accuracy. The second method could be insufficient for tasks such as perpendicular parking between two cars, where the whole space between the two cars could be filled with the inflated obstacles. In principle, we could fix this by ``inflating'' the occupancy grid for different heading angles and mark the footprints of rotated rectangles directly into the occupancy grid. The problem we had with this approach is an increased cost of pre-processing before the planning algorithm can start. The footprints of the vehicle can be pre-calculated ahead of time and they do not take any extra computation at runtime. The occupancy grid can in principle change between two executions of the planning algorithm (e.g., a new obstacle is discovered) and therefore we might have to calculate the inflation before any invocation of the planning algorithm for all of the heading angles. In the end, the second approach was sufficient for the racing task and we used the simple implementation.
 
 \subsubsection{Action Space}
 
