@@ -295,9 +295,28 @@ The subscript $R$ represents a specific instance of the collision detection func
 The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $x\in X_{obs} \iff c_x\in C_{obs} \wedge x\in X_{free} \iff c_x\in C_{free}$.
 
 \paragraph{Representation of Obstacles}
-We represent the obstacles in the world as an occupancy grid. An occupancy grid is a matrix $O_r\in \left\{O, X\right\}^{m\times n}$, where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $O$ (free space) and $X$ (an obstacle) in our definition.
+We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$, where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
 
-For a single point of the world $\left(x,y\right)\in \mathbb{R}^2$, we can determine if it is in the region covered by the occupancy grid and in which cell it lays. From this information, we can determine, if the point collides with an obstacle or not. If the point lies outside of the area covered by the occupancy grid, we can treat it as an obstacle.
+To check if a single point of the world $\left(x,y\right)\in \mathbb{R}^2$ collides with an obstacle or not, we must first determine the coordinates of the tile in which it belongs:
+
+\begin{equation*}
+\begin{aligned}
+	x_r &= \left\lceil \frac{x}{r} \right\rceil \\
+	y_r &= \left\lceil \frac{y}{r} \right\rceil
+\end{aligned}
+\end{equation*}
+
+If the point lies outside of the area covered by the occupancy grid, we can treat it as an obstacle. Otherwise we look into the appropriate cell of the matrix. The collision detection function $c_1$ for a single point can be:
+
+\begin{equation*}
+	c_1(O_{r}^{m\times n}, x, y) =
+	\begin{cases}
+		1 & x_r < 1 \lor y_r < 1 \lor y_r > m \lor x_r > n \\
+		\left(O_{r}^{m\times n}\right)_{y_r, x_r} & \text{otherwise}.
+	\end{cases}
+\end{equation*}
+
+We assume that the occupancy grid is aligned with the origin of the world reference frame and that the column indexes grow parallel to the $x$ axis and the indexes of rows parallel to the $y$ axis. If there is a transformation between the origin of the world reference frame and the occupancy grid, the point $(x, y)$ has to be rotated and translated appropriately before the coordinates of the corresponding tile can be determined. Please note that matrix rows and columns are indexed from 1, unlike for example arrays in the C and many other programming languages, which start indexing at 0.
 
 We chose the occupancy grid because it is a standard way of representing 2D maps in \gls{ROS}, especially when a robot is equipped with a \gls{LIDAR}. We used these technologies to build our custom experimental vehicle and therefore we also used this map representation.
 
@@ -332,34 +351,28 @@ The idea of \textit{the first method} is to calculate a list of tiles relative t
 	\caption{Photos of the experimental vehicle.}
 \end{figure}
 
-\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions, we then need to look only for a single value of the cell, which contains the center of the rectangle. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
+\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required, which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
 
-The obvious advantage of the first method is higher accuracy. The second method could be insufficient for tasks such as perpendicular parking between two cars, where the whole space between the two cars could be filled with the inflated obstacles. In principle, we could fix this by ``inflating'' the occupancy grid for different heading angles and mark the footprints of rotated rectangles directly into the occupancy grid. The problem we had with this approach is an increased cost of pre-processing before the planning algorithm can start. The footprints of the vehicle can be pre-calculated ahead of time and they do not take any extra computation at runtime. The occupancy grid can in principle change between two executions of the planning algorithm (e.g., a new obstacle is discovered) and therefore we might have to calculate the inflation before any invocation of the planning algorithm for all of the heading angles. In the end, the second approach was sufficient for the racing task and we used the simple implementation.
+The obvious advantage of the first method is its higher accuracy. The second method could be insufficient for tasks such as perpendicular parking between two cars, where the whole space between the two cars could be filled with the inflated obstacles. In principle, we could fix this by ``inflating'' the occupancy grid for different heading angles and mark the footprints of rotated rectangles directly into the occupancy grid. The problem we had with this approach is an increased cost of pre-processing before the planning algorithm can start. The footprints of the vehicle can be pre-calculated ahead of time and they do not take any extra computation at runtime.
+
+The occupancy grid can in principle change between two executions of the planning algorithm (e.g., a new obstacle is discovered) and therefore we might have to calculate the inflation before any invocation of the planning algorithm for all of the heading angles. In the end, the second approach was sufficient for the racing task and we used the simple implementation. The resulting function is sometimes ``to cautious`` and it reports collisions even if there is still some gap between the actual vehicle and the obstacle, but that can be considered as an advantage for high speed maneuvers and it might make sense to increase the radius even more to force the trajectory to be further from the obstacles in practice.
 
 \subsubsection{Action Space}
 
-As we discussed earlier, our vehicle has two actuators which we can control:
+Our vehicle has two actuators which can be controlled:
 \begin{itemize}
 	\item Steering servo which we can move to a desired position achieving a specific steering angle between the maximum left position, center position, and maximum rotation to the right.
 	
 	\item Motor which can be set to a specific \gls{RPM} and a direction of rotation when there is no load. The \gls*{RPM} will differ based on the load of the vehicle and the motor will require more voltage to achieve some RPM when the load is increased.
 \end{itemize}
 
-The electric signal we send to the actuators is interpreted as a target value and the actuator adjusts its output to match the target value over a time period at a rate which we cannot control. We define the action space for these actuators like this:
+The electric signal we send to the actuators is interpreted as a target value and the actuator adjusts its output to match the target value over a time period at a rate which we cannot control. We define the \textit{action space} for these actuators like this:
 
 \[
 	U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t,\tau_t\in\left[-1, 1\right] \right\}
 \]
 
-$U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed. On the other hand, executing some actions for a given time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the state transition function $f_{\Delta t}$ to allow only safe actions:
-
-\todo[inline]{This has to be somehow moved somewhere else, probably to the section with the discrete time model.}
-
-\[
-U(x)=\left\{u\in U \mid c(f_{\Delta t}(x, u)) = F\right\}.
-\]
-
-It is worth noting that if the vehicle is in state when its action set is empty, the vehicle is in a state when a collision within $\Delta t$ is inevitable.
+$U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed.
 
 The action space $U$ as we defined it is infinite. In practice, our actuators can be set only to a fixed number of values. The \gls*{PWM} signal which controls the servo motors can only encode a finite number of levels. For a specific vehicle hardware, we can use only a finite subset $U_f\subset U$, $\abs{U_f}\in\mathbb{N}$ of valid actions.
 
@@ -367,7 +380,7 @@ The action space $U$ as we defined it is infinite. In practice, our actuators ca
 
 Earlier in Section~\ref{sec:planning_under_differential_constraints}, we described an action trajectory as a continuous function of time which specifies the action at any given moment. This concept is unrealistic for our use case because we want to apply it to real hardware. The speed of an electric motor controlled by a \gls{PWM} signal can be adjusted only once per a duty cycle period. This information alone gives us a good reason to treat time not as a continuous function, but as a sequence of evenly spaced samples of time points, in which the planning algorithm can choose the next action. The choice of the sampling period will be a trade off between maximum possible control over the hardware and the number of decisions the planning algorithm will make.
 
-We will redefine the state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$ based on (\ref{eq:integrate_state_trajectory}):
+We will integrate state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$ based on (\ref{eq:integrate_state_trajectory}) and we will call the resulting function $f_{\Delta t}$ the \textit{system simulator}:
 
 \begin{equation}
 	x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
@@ -379,52 +392,55 @@ where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U(x(\tau))$. T
 	x_{i+1}=f_{\Delta t}(x_i, u_i).
 \]
 
-We can now build a new directed state transition graph. We will start in the initial state $x_0$ and we will iterate over all actions in $U_f$ and predict the states reachable through the state transfer function $f_{\Delta t}$. For every state we visit we add a node to the graph and add connect it with a directed edge to the state from which we came.
+Executing some actions for a time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the system simulator $f_{\Delta t}$ to allow only safe actions:
 
-The length of the shortest path between the initial state node and any other node of the graph is directly proportional to the shortest time it takes to reach the corresponding state with the limited action set and the selected time discretization period. This graph will be at most countably infinite and we will be able to use graph search algorithms to search for desirable paths in this graph.
+\[
+U_f(x)=\left\{u\in U_f \mid c(f_{\Delta t}(x, u)) = F\right\}.
+\]
 
+It is worth noting that if the vehicle is in state when its action set is empty, the vehicle is in a state when a collision within $\Delta t$ is inevitable.
 \subsubsection{Goal Condition}
 
-In Definition~\ref{def:basic_planning_problem} we used a set of goal states to check if a plan is a solution to the problem or not. \todo{Here I want to explain why we want waypoints}
+In Definition~\ref{def:basic_planning_problem} we used a set of goal states to check if a plan is a solution to the problem or not. When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $n>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track. To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in a the given order. The concept of ``passing a sequence of waypoint'' is formulated by the following definitions:
 
-\todo{rewrite this}
-
-To ensure that our vehicle goes around the circuit in the correct direction and even in cases, when the track intersects itself and forms loops, we can place a finite sequence of waypoints along the track. An example of a circuit with waypoints can be seen in Figure 2: Racing circuit with a start/finish line and three way-points. 
-We will require the vehicle to pass all the way points in the given order before we would consider the vehicle to finish a lap when it crosses the finish line.
-
-Figure 2: Racing circuit with a start/finish line and three way-points.
-For the sake of simplicity, we can treat all waypoints as circles of a given radius. We can also ignore the finishing line and instead use the first waypoint on the track as a target. This will force the vehicle to cross the finishing line without any need for modeling of the finish line itself. We do not want to stop at the finishing line anyway, because we should keep circling around the circuit if possible.
-
-\begin{defn}
-	Circular waypoint $\left(w,r\right)\in W$ is a tuple containing the location w and the radius $r$ of the waypoint.
+\begin{defn}[Directly Visible Points]
+	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the shortest path between these two points. The set $D\subseteq \mathbb{R}^2\times\mathbb{R}^2$ captures this relation: 
+	\[
+		(\vec{x}, \vec{y}) \in D \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
+	\]
 \end{defn}
 
 \begin{defn}[Waypoint]
-	Waypoint goal region $G(w,r)=\left\{s\in S \mid \norm{X(s)-w}<r\right\}$ where $X(s)$ is the position vector of the state $s$, is a set of all states which are considered to pass the waypoint. The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$.
+	Waypoint goal region is a set
+	\[
+		G_r(\vec{w})=\left\{x\in X \mid \norm{\vec{p_x}-\vec{w}}<r \land (\vec{p_x}, \vec{w}) \in D \right\},
+	\]
+	where $p_x$ is the position vector of the state $x$ and $r\in \mathbb{R}$ is the radius of the goal region. $G_r(\vec{w})$ is a set of all states which are considered to \textit{pass the waypoint}.
 \end{defn}
-	
-For our purposes it is not necessary to consider the state of the vehicle other than the position. We do not require the vehicle to be oriented in a specific direction or to come to a stop at the goal position.
+
+The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The choice of the radius of the \textit{waypoint goal region} is not too important. The radius should be large enough to cover the whole width of the track, so that it does not force the vehicle to change the trajectory just to pass the artificially added waypoint. On the other hand, the waypoints should not overlap very much. The requirement of \textit{direct visibility} is there to prevent scenarios when the vehicle could pass a waypoint ``behind a wall'' if the radius is too large, as is shown in Figure~\ref{fig:waypoints}.
+
+\begin{figure}
+	\centering
+	\label{fig:waypoints}
+	\missingfigure{WAYPOINTS AND "BEHIND THE WALL"}
+\end{figure}
 
 \begin{defn}
-	A sequence of states $\langle s_0,s_1,s_2,\ldots,s_k\rangle$ passes a sequence of waypoints $\langle \left(\vec{w_1}, r_1\right), \left(\vec{w_2}, r_2\right), \ldots, \left(\vec{w_l}, r_l\right) \rangle, l > 0$ when a sequence of indexes $\langle i_1,i_2,i_3, \ldots i_l \rangle$ exists such that:
+	A sequence of states $\langle x_0,x_1,x_2,\ldots,x_k\rangle$ passes a sequence of waypoints $\langle \vec{w_1}, \vec{w_2}, \ldots, \vec{w_l} \rangle, l > 0$ when a sequence of indexes $\langle i_1,i_2,i_3, \ldots i_l \rangle$ exists such that:
 
 	\begin{equation*}
 		\begin{aligned}
 			\forall m,n &\in \left\{1,\ldots,l\right\}: m<n\implies i_m < i_n \\
-			\forall m &\in \left\{1,\ldots,l\right\}: s_{i_m}\in G(\vec{w_m}, r_m) \\
+			\forall m &\in \left\{1,\ldots,l\right\}: x_{i_m}\in G_r(\vec{w_m}) \\
 			i_l &= k \\
 		\end{aligned}
 	\end{equation*}
 \end{defn}
 
 \begin{defn}
-	The goal condition $g_{\hat{w_l}}: S^* \rightarrow \left\{T,F\right\}$ is a function which for a given sequence of waypoints $\hat{w_l}$ and a state trajectory  $\hat{s_k}=\langle s_0,s_1,s_2,\ldots, s_k\rangle, k>0$ returns $T$ iff $\hat{s_k}$ passes $\hat{w_l}$.
+	The goal condition $g_{\hat{w_l}}: X^* \rightarrow \left\{T,F\right\}$ is a function sutch that for a given sequence of waypoints $\hat{w_l}$ and a state trajectory  $\hat{x_k}=\langle x_0,x_1,x_2,\ldots, x_k\rangle, k>0: g_{\hat{w_l}}(\hat{x_k}) = T \iff \hat{x_k} \text{ passes } \hat{w_l}$.
 \end{defn}
-	
-This goal condition definition gives us an ability to search for a state trajectory which is shorter than the whole lap. This is useful for searching a reference trajectory for only a few corners ahead and reduce the size of the searched portion of the state space. Motion planning in general is an NP-complete problem \cite[Section~6.5]{lavalle_2006} and it might not be possible to plan a reference trajectory for the whole circuit online especially for long circuits with many corners.
-
-\todo{finish this}
-
 
 \subsubsection{Problem Formulation}
 
@@ -435,15 +451,15 @@ In the previous sections, we described and defined the individual components of 
 	A trajectory planning problem for a fast moving car is a tuple $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$:
 
 	\begin{itemize}
-		\item A non-empty set $S\subseteq\mathbb{R}^n$, which is the state space of the vehicle. Each state of the vehicle is represented by $n\in\mathbb{N}:n\geq3$ state variables and it contains the pose of the vehicle in a two dimensional plane and other state variables as defined by the vehicle model which is used.
+		\item A non-empty continuous set $X\subseteq\mathbb{R}^n$, which is the state space of the vehicle. Each state of the vehicle is represented by $n\in\mathbb{N}:n\geq3$ state variables and it contains the configuration of the vehicle in a two dimensional plane and other state variables as defined by the vehicle model which is used.
 
 		\item A non-empty finite set $U_f$ of actions, such that $\forall x\in X, \forall u\in U_f(x): c(f_{\Delta t}(x, u)) = F$, where $c$ is a collision detection function.
 
-		\item A state transition function $f_{\Delta t}:S\times U_f \rightarrow S$ for a fixed time period $\Delta t>0$.
+		\item A \textit{system simulator} $f_{\Delta t}:X\times U_f \rightarrow X$ for a fixed time period $\Delta t>0$.
 		
-		\item An initial state of the vehicle $s_0 \in S$.
+		\item An initial state of the vehicle $x_0 \in X$.
 
-		\item A goal condition function $g_{\hat{w}}: S^* \rightarrow \left\{ T, F\right\}$ for some fixed sequence of waypoints $\hat{w}=\langle w_0, \ldots, w_k \rangle$.
+		\item A goal condition function $g_{\hat{w}}: X^* \rightarrow \left\{ T, F\right\}$ for some fixed sequence of waypoints $\hat{w}=\langle w_0, w_1, w_2,\ldots, w_k \rangle, k>0$.
 	\end{itemize}
 \end{defn}
 
