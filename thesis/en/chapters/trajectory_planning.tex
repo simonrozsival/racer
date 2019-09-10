@@ -31,7 +31,7 @@ With the intuition of what a planning problem is, we can formulate it formally:
 		\item For each state $x\in X$, a set of actions $U(x)$.  A set of all actions $U=\bigcup\limits_{x\in X} U(x)$ is called an \textit{action space}.
 		\item A \textit{state transition function} $f$ defined for every $x\in X$ and $u\in U(x)$, which produces the state of the world after applying the action $u$ to the state $x$.
 		\item An \textit{initial state} of the world $x_0\in X$.
-		\item A goal condition function $g: X^* \rightarrow \left\{T,F\right\}$.
+		\item A goal region $X_g\subset X$.
 	\end{enumerate}
 \end{defn}
 
@@ -39,11 +39,9 @@ With the intuition of what a planning problem is, we can formulate it formally:
 	A solution to a planning problem $\left(X, U, f, x_0, g\right)$ is a \textit{feasible plan}, which a finite sequence of actions $\langle u_0, u_1, \ldots, u_k\rangle\in U^*$ such that:	
 	\begin{gather*}
 		\forall i \in \left\{0,1,\ldots,k\right\}: u_i\in U(x_i) \wedge x_{i+1}=f(x_i, u_i) \\
-		g(\langle x_0, x_1, \ldots x_{k+1} \rangle)=T.
+		x_{k+1} \in X_g.
 	\end{gather*}
 \end{defn}
-
-Determining if a plan meets the goal condition is often performed by checking if the final state $x_{k+1}$ of the plan is in some subset of goal states $X_g\subset X$. Often there are many feasible plans for some task, but it is not sufficient to find just any of these plans. We might be tasked to find an optimal plan, which minimizes some cost function.
 
 \begin{defn}[Optimal Plan]
 	Let $\left(X, U, f, x_0, g\right)$ be a planning problem and $\Pi=\left\{\pi\in U^* \mid \pi \text{ is a feasible plan}\right\}$ a set of all feasible plans. We say that a plan $\pi^*\in \Pi$ is an optimal plan with respect to a cost function $\gamma: \Pi \rightarrow \mathbb{R}$ if
@@ -185,7 +183,7 @@ In order to be able formulate the planning problem for a system with differentia
 	\dot{x}=f(x, u).
 \]
 
-The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} and satisfies a goal condition. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U\cup\left\{u_t\right\}$ which maps an infinite interval $T=\left[0, \infty\right)$ to an action, which should be executed at the given point in time. From some point in time $t_{end}\in\left[0, \infty\right)$, a termination action $u_t$ can be applied to mark the end of the action trajectory ($\forall t>t_{end}: \tilde{u}(t)=u_t$). To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
+The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} which reaches some goal state. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U\cup\left\{u_t\right\}$ which maps an infinite interval $T=\left[0, \infty\right)$ to an action, which should be executed at the given point in time. From some point in time $t_{end}\in\left[0, \infty\right)$, a termination action $u_t$ can be applied to mark the end of the action trajectory ($\forall t>t_{end}: \tilde{u}(t)=u_t$). To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
 
 \begin{equation}
 	\label{eq:integrate_state_trajectory}
@@ -201,15 +199,15 @@ such that $\forall \tau\in\left[0, t_{end}\right]: \tilde{u}(\tau)\in U(\tilde{x
 	\begin{enumerate}
 		\item The state space $X$ is continuous.
 		\item A \textit{state transition function} $f$ defined for every $x\in X$ and $u\in U(x)$, which produces the velocity in the state space after applying the action $u$ to the state $x$: $\dot{x}=f(x, u)$.
-		\item A goal condition function $g: \tilde{X} \rightarrow \left\{T, F\right\}$, where $\tilde{X}$ is the set of all state trajectories obtained by integrating all possible action trajectories over $U$.
 	\end{enumerate}
 \end{defn}
 
 \begin{defn}[Feasible Plan]
-	A solution to a planning problem under differential constraints $\left(X, U, f, x_0, g\right)$ is a \textit{feasible action trajectory} $\tilde{u}$ such that:
+	A solution to a planning problem under differential constraints $\left(X, U, f, x_0, g\right)$ is a \textit{feasible action trajectory} $\tilde{u}$ when $\exists t_{end} \in \left(0, \infty\right)$ such that:
 	\begin{gather*}
-	\exists t_{end} \in \left(0, \infty\right) \forall t \leq t_{end}: \tilde{u}(t)\in U(\tilde{x}(t)) \wedge \tilde{x}(t) = \\ \tilde{x}(0) + \int_0^t f(\tilde{x}(\tau), \tilde{u}(\tau)) d\tau \\
-	g(\tilde{x})=T.
+	\forall t \leq t_{end}: \tilde{u}(t)\in U(\tilde{x}(t)) \\
+	\tilde{x}(t) = \tilde{x}(0) + \int_0^t f(\tilde{x}(\tau), \tilde{u}(\tau)) d\tau \\
+	\tilde{x}(t_{end})\in X_g.
 	\end{gather*}
 \end{defn}
 
@@ -221,7 +219,7 @@ Ideally, every segment of a state trajectory obtained by integrating some action
 
 If the action space is infinite, it should be sampled as well and only a finite number of actions should be considered. This makes it possible to construct a graph where samples of $X$ are the vertices and the edges between them are actions. Starting from $x_0$, we compute all of the possible state trajectories starting in this state with all the actions in the finite set of actions over a time period (either a fixed $\Delta t$ or a time associated with the action) and add the final states as vertices to the graph and connect them with directed edges to the origin state. We repeat this for all added states over and over again.
 
-The size of the graph is affected also by the discretization of time. The shorter the time interval is, the larger the graph will be. Nevertheless, we can perform graph search over and find solutions to planning problems with differential constraints.
+The size of the graph is affected also by the discretization of time. The shorter the time interval is, the larger the graph will be. Nevertheless, we can perform graph search over and find solutions to planning problems with differential constraints. We will describe concrete search algorithms for our problem in Section~\ref{sec:trajectory_planning_algorithms}.
 
 The discretization of time might make some states of the state space unreachable and this could make finding a feasible plan impossible. In order to achieve resolution-completeness of the sampling based algorithm, every time a plan is not found, the discretization should be made finer (e.g., by decreasing the length of the time intervals by half) \cite[Chapter~14.2]{lavalle_2006}.
 
@@ -272,7 +270,7 @@ We only consider the motion of our vehicle on a two-dimensional flat surface. Fo
 
 Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ will consist of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
 
-The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
+The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will define a function $\kappa: X\rightarrow C$ which returns the configuration of the vehicle in the given state. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
 
 \paragraph{Initial State}
 At the start of the race, the vehicle is expected to be situated at a predefined starting location of the racing circuit with its heading angle identical to the direction of the race. The vehicle starts from a standstill with the wheels not spinning and the front wheels pointing the heading direction of the car.
@@ -380,13 +378,13 @@ The action space $U$ as we defined it is infinite. In practice, our actuators ca
 
 Earlier in Section~\ref{sec:planning_under_differential_constraints}, we described an action trajectory as a continuous function of time which specifies the action at any given moment. This concept is unrealistic for our use case because we want to apply it to real hardware. The speed of an electric motor controlled by a \gls{PWM} signal can be adjusted only once per a duty cycle period. This information alone gives us a good reason to treat time not as a continuous function, but as a sequence of evenly spaced samples of time points, in which the planning algorithm can choose the next action. The choice of the sampling period will be a trade off between maximum possible control over the hardware and the number of decisions the planning algorithm will make.
 
-We will integrate state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U(x(t))$ based on (\ref{eq:integrate_state_trajectory}) and we will call the resulting function $f_{\Delta t}$ the \textit{system simulator}:
+We will integrate state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U_f(x(t))$ based on (\ref{eq:integrate_state_trajectory}) and we will call the resulting function $f_{\Delta t}$ the \textit{system simulator}:
 
 \begin{equation}
 	x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
 \end{equation}
 
-where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U(x(\tau))$. The state trajectory function $x(t)$ can be reduced into a sequence $\langle x_0, x_1, x_2, \ldots, x_k\rangle$ and the action trajectory to a sequence of $\langle u_0, u_1, u_2, \ldots, u_{k-1}\rangle$, where the $i$-th step of the sequence $x_i$ corresponds to $x(i\Delta t)$, therefore we can write
+where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U_f(x(\tau))$. The state trajectory function $x(t)$ can be reduced into a sequence $\langle x_0, x_1, x_2, \ldots, x_k\rangle$ and the action trajectory to a sequence of $\langle u_0, u_1, u_2, \ldots, u_{k-1}\rangle$, where the $i$-th step of the sequence $x_i$ corresponds to $x(i\Delta t)$, therefore we can write
 
 \[
 	x_{i+1}=f_{\Delta t}(x_i, u_i).
@@ -399,9 +397,12 @@ U_f(x)=\left\{u\in U_f \mid c(f_{\Delta t}(x, u)) = F\right\}.
 \]
 
 It is worth noting that if the vehicle is in state when its action set is empty, the vehicle is in a state when a collision within $\Delta t$ is inevitable.
-\subsubsection{Goal Condition}
 
-In Definition~\ref{def:basic_planning_problem} we used a set of goal states to check if a plan is a solution to the problem or not. When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $n>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track. To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in a the given order. The concept of ``passing a sequence of waypoint'' is formulated by the following definitions:
+\subsubsection{Goal Region}
+
+When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $l>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track $\hat{w}=\langle \vec{w_0}, \vec{w_1}, \ldots, \vec{w_l} \rangle$.
+
+To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in a the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
 
 \begin{defn}[Directly Visible Points]
 	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the shortest path between these two points. The set $D\subseteq \mathbb{R}^2\times\mathbb{R}^2$ captures this relation: 
@@ -413,9 +414,9 @@ In Definition~\ref{def:basic_planning_problem} we used a set of goal states to c
 \begin{defn}[Waypoint]
 	Waypoint goal region is a set
 	\[
-		G_r(\vec{w})=\left\{x\in X \mid \norm{\vec{p_x}-\vec{w}}<r \land (\vec{p_x}, \vec{w}) \in D \right\},
+		G_r(\vec{w})=\left\{c\in C \mid \norm{\vec{p_c}-\vec{w}}<r \land (\vec{p_c}, \vec{w}) \in D \right\},
 	\]
-	where $p_x$ is the position vector of the state $x$ and $r\in \mathbb{R}$ is the radius of the goal region. $G_r(\vec{w})$ is a set of all states which are considered to \textit{pass the waypoint}.
+	where $p_c$ is the position vector of the vehicle configuration $c$ and $r\in \mathbb{R}$ is the radius of the goal region. $G_r(\vec{w})$ is a set of all configurations which are considered to \textit{pass the waypoint}.
 \end{defn}
 
 The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The choice of the radius of the \textit{waypoint goal region} is not too important. The radius should be large enough to cover the whole width of the track, so that it does not force the vehicle to change the trajectory just to pass the artificially added waypoint. On the other hand, the waypoints should not overlap very much. The requirement of \textit{direct visibility} is there to prevent scenarios when the vehicle could pass a waypoint ``behind a wall'' if the radius is too large, as is shown in Figure~\ref{fig:waypoints}.
@@ -426,21 +427,21 @@ The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The
 	\missingfigure{WAYPOINTS AND "BEHIND THE WALL"}
 \end{figure}
 
-\begin{defn}
-	A sequence of states $\langle x_0,x_1,x_2,\ldots,x_k\rangle$ passes a sequence of waypoints $\langle \vec{w_1}, \vec{w_2}, \ldots, \vec{w_l} \rangle, l > 0$ when a sequence of indexes $\langle i_1,i_2,i_3, \ldots i_l \rangle$ exists such that:
+To implement this goal condition, we must extend the state space $X$ with one extra discrete dimension. This dimension will denote how many waypoints the vehicle has passed since the initial state and we will define a function $\mu: X\rightarrow \mathbb{N}$ which returns this number. For the initial state $x_0$ the number of passed waypoints will always be 0. For a state $x\in X$ the value is defined based on the state from which it was reached $x'\in X$: 
 
-	\begin{equation*}
-		\begin{aligned}
-			\forall m,n &\in \left\{1,\ldots,l\right\}: m<n\implies i_m < i_n \\
-			\forall m &\in \left\{1,\ldots,l\right\}: x_{i_m}\in G_r(\vec{w_m}) \\
-			i_l &= k \\
-		\end{aligned}
-	\end{equation*}
-\end{defn}
+\begin{equation*}
+	\mu(x)=
+	\begin{cases}
+		\mu(x')+1 & \kappa(x)\in G_r(\vec{w_{\mu(x')+1}}) \\
+		\mu(x') & otherwise.
+	\end{cases}
+\end{equation*}
 
-\begin{defn}
-	The goal condition $g_{\hat{w_l}}: X^* \rightarrow \left\{T,F\right\}$ is a function sutch that for a given sequence of waypoints $\hat{w_l}$ and a state trajectory  $\hat{x_k}=\langle x_0,x_1,x_2,\ldots, x_k\rangle, k>0: g_{\hat{w_l}}(\hat{x_k}) = T \iff \hat{x_k} \text{ passes } \hat{w_l}$.
-\end{defn}
+The goal region $X_g$ will be a set of all states, which pass all $l$ waypoints:
+
+\[
+	X_g=\left\{x\in X \mid \mu(x)=l\right\}.
+\]
 
 \subsubsection{Problem Formulation}
 
@@ -448,10 +449,10 @@ In the previous sections, we described and defined the individual components of 
 
 \begin{defn}[Trajectory Planning Problem]
 
-	A trajectory planning problem for a fast moving car is a tuple $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$:
+	A trajectory planning problem for a fast moving car is a tuple $\left(X, U_f, f_{\Delta t}, c, x_0, X_{\hat{w}}\right)$:
 
 	\begin{itemize}
-		\item A non-empty continuous set $X\subseteq\mathbb{R}^n$, which is the state space of the vehicle. Each state of the vehicle is represented by $n\in\mathbb{N}:n\geq3$ state variables and it contains the configuration of the vehicle in a two dimensional plane and other state variables as defined by the vehicle model which is used.
+		\item A non-empty continuous set $X\subseteq\mathbb{R}^n$, which is the state space of the vehicle. Each state of the vehicle is represented by $n\in\mathbb{N}:n\geq4$ state variables and it contains the dimensions of the configuration of the vehicle in a two dimensional plane, a discrete dimension for the number of passed waypoints, and other state variables as defined by the vehicle model which is used.
 
 		\item A non-empty finite set $U_f$ of actions, such that $\forall x\in X, \forall u\in U_f(x): c(f_{\Delta t}(x, u)) = F$, where $c$ is a collision detection function.
 
@@ -459,7 +460,7 @@ In the previous sections, we described and defined the individual components of 
 		
 		\item An initial state of the vehicle $x_0 \in X$.
 
-		\item A goal condition function $g_{\hat{w}}: X^* \rightarrow \left\{ T, F\right\}$ for some fixed sequence of waypoints $\hat{w}=\langle w_0, w_1, w_2,\ldots, w_k \rangle, k>0$.
+		\item A goal region $X_g\subset X$ for some fixed sequence of waypoints $\hat{w}=\langle w_0, w_1, w_2,\ldots, w_l \rangle, l>0$.
 	\end{itemize}
 \end{defn}
 
@@ -468,21 +469,21 @@ In the previous sections, we described and defined the individual components of 
 The vehicle starts in an initial state $x_0$. It is controlled through an input sequence of actions applied over time at a constant rate, because we chose a fixed time interval $\Delta t>0$ between application of any two consequent actions. We can calculate the expected evolution of the state of the vehicle by integrating the velocity from a state transition function. If we take snapshots of the state every $\Delta t$ interval, we will get a sequence of states which we call a state trajectory:
 
 \begin{defn}[Feasible State Trajectory]
-	We say that a sequence of states $\hat{x_k}=\langle x_0,x_1,x_2,…,x_k \rangle ,x_i\in X$ is a feasible state trajectory starting in state $x_0$ when for a fixed time interval $\Delta t>0$:
+	We say that a sequence of states $\hat{x_k}=\langle x_0,x_1,x_2,…,x_k \rangle ,x_i\in X$ is a feasible state trajectory starting in the state $x_0$ when for a fixed time interval $\Delta t>0$:
 	\[
-	\forall i \in \left\{ 0,\ldots,k-1\right\} \exists u\in U(x_i): x_{i+1}=f_{\Delta t} (x_i,u).
+	\forall i \in \left\{ 0,\ldots,k-1\right\} \exists u\in U_f(x_i): x_{i+1}=f_{\Delta t} (x_i,u).
 	\]
 \end{defn}
 
-We say that the state trajectory is feasible to emphasize the fact that it is collision-free. Remember that for each state $x$ we do not allow any actions which would lead to a crash to be in $U(x)$.
+We say that the state trajectory is feasible to emphasize the fact that it is collision-free. Remember that for each state $x$ we do not allow any actions which would lead to a crash to be in $U_f(x)$.
 
 This sequence contains all the information we need to reconstruct the full continuous trajectory by finding the corresponding sequence of actions. In practice, this is not very important to us though. As we mentioned earlier, we do not expect the robot to be able to follow any plan perfectly, so we cannot execute the actions one by one. It is important for us to know in which the state the robot should at any given moment. The solution to our problem is therefore not a sequence of actions, but a state trajectory:
 
 \begin{defn}[Feasible Solution]
-	For an instance of a trajectory planning problem for a fast moving car $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$, a feasible state trajectory $\hat{x_k}$ is a time-optimal feasible solution of the problem if:
+	For an instance of a trajectory planning problem for a fast moving car $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$, a feasible state trajectory $\hat{x_k}=\langle x_0, x_1, \ldots, x_k \rangle$ is a time-optimal feasible solution of the problem if:
 	\begin{itemize}
-		\item the goal condition is met: $g_{\hat{w}}\left( \hat{x_k} \right) = T$,
-		\item and every other feasible state trajectory $\hat{y_l}$, which meets the goal condition, takes longer or the same time to reach the goal (i.e. $l \geq k$).
+		\item the final state is in the goal region: $x_k \in X_g$,
+		\item and for every other feasible state trajectory $\hat{y_l}$, which ends in the goal region, it takes longer or the same time to reach the goal (i.e. $l \geq k$).
 	\end{itemize}
 \end{defn}
 
@@ -492,7 +493,7 @@ The choice of the sampling time interval $\Delta t$ greatly impacts the performa
 
 Instead, we can uniformly subdivide the time interval of length $\Delta t$ into $n\in\mathbb{N}$ smaller intervals of $\frac{\Delta t}{n}$ and apply the state transition function $n$ times for every action in the sequence. This technique will give us better estimate of the motion of the vehicle and reduce the inaccuracy of numerical integration but at the same time it will not increase the computational complexity of the planning algorithm because we do not increase the number of explored sequences of actions. A good pair of $\Delta t$ and $n$ has to be found experimentally to provide good precision while keeping good performance of the algorithm on real hardware.
 
-\subsection{Track Segmentation}
+\section{Track Segmentation}
 
 A natural way of splitting the track into smaller segments is to find the corners of the track. We can then plan the trajectory for the very next turn in front of the vehicle and for one or two  consecutive ones, and imitate the behavior of a human racing driver, as we described it in Section~\ref{sec:racing_line}. To prevent long segments for long straight stretches, we can set a limit for the length of a segment and split long segments into multiple shorter ones.
 
@@ -594,7 +595,104 @@ With the path of circles around the circuit, we can now proceed the second step 
 
 % do I need to prove 
 
-\subsection{Differential Constraints}
+\section{Differential Constraints}
 \label{sec:vehicle_model}
 
-\subsection{Search Algorithm}
+\section{Trajectory Planning Algorithms}
+\label{sec:trajectory_planning_algorithms}
+
+With a complete formulation of the trajectory planning problem for a fast moving car, we can design a planning algorithm which will find a time-optimal feasible solution trajectory starting at any given initial state and which will pass any sequence of waypoints it is given. Our planning algorithm must respect the differential constraints of our vehicle represented by the state transition function and avoid collisions with any obstacles by utilizing the collision detection function.
+
+In this chapter we will introduce several well-known sampling-based algorithms and their variants which we considered for solving our trajectory planning problem. We will describe the main ideas behind these algorithms and discuss if and how they could be used in our specific use case.
+
+\subsection{Rapidly-Exploring Random Trees}
+
+The \gls{RRT} is a simple randomized algorithm designed by Steven M. LaValle with differential constraints of mobile robots in mind \cite{RRT}. The core idea of this algorithm is to build a tree structure rooted in the initial state $x_0$ with branches representing state trajectories by randomly sampling the state space and using the system simulator function to find feasible trajectories in the state space.
+
+The tree is grown iteratively by randomly sampling a state $x_{rand}\in X$ using some sampling scheme and choosing an action $u$ from $U_f$ which will steer the robot to a new state $x_{new}$ towards $x_{rand}$ without colliding with an obstacle from an existing tree node $x_{near}$ which is the closest to $x_rand$ according to some metric $\rho$ on $X$. The new node is added as a vertex to the tree and it is connected via an edge to its parent node $x_{near}$. This process is repeated until a state trajectory which ends in the goal region is found or until a fixed number of iterations is exceeded, in which case the search ends with a failure. The pseudocode of RRT is included in Algorithm~\ref{alg:rrt}.
+
+\begin{algorithm}
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{AddVertex}{AddVertex}
+	\SetKwFunction{AddEdge}{AddEdge}
+	\SetKwFunction{TrajectoryFromBranch}{TrajectoryFromBranch}
+	\SetKwFunction{SelectRandomSample}{SelectRandomSample}	
+	\SetKwFunction{FindNearestNode}{FindNearestNode}
+	
+	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, a metric on the state space $\rho$}
+	\KwOut{State trajectory or $null$}
+	\Parameter{Maximum number of iterations $K\in\mathbb{N}$}
+	
+	$T\gets \left(\left\{x_0\right\}, \emptyset\right)$\;
+	
+	\For{$k=1\ldots K$}{
+		$x_{rand}\gets$ \SelectRandomSample{$X$}\;
+		$x_{near}\gets$ \FindNearestNode{$T$, $x_{rand}$, $\rho$}\;
+		$u_{best}\gets\argmin_{u\in U_f(x_{near})} \rho(x_{rand}, f_{\Delta t}(x_{near}, u))$\;
+		$x_{new}\gets f_{\Delta t}(x_{near}, u_{best})$\;
+		\AddVertex{$T$, $x_{new}$}\;
+		\AddEdge{$T$, $\left(x_{near}, x_{new}\right)$}\;
+		\If{$x_{new}\in X_g$}{
+			\KwRet{\TrajectoryFromBranch{$T$, $x_{new}$}}\;
+		}
+	}
+	
+	\KwRet{null}\;
+	
+	\caption{The RRT algorithm.}
+	\label{alg:rrt}
+\end{algorithm}
+
+\subsubsection{Algorithm Analysis}
+
+\paragraph{Nearest Neighbor Search}
+
+The algorithm performs a search for the closest state to the sampled state among the nodes in the tree according to the metric $\rho$ in every iteration of the algorithm and this search can have considerable impact on the performance of the algorithm.
+
+A naïve solution would be to go over all tree nodes and find a node with minimum distance to the sampled state, but this approach would have linear time complexity with respect to the number of nodes of the tree. A better solution is to use a space partitioning data structure which is designed for nearest neighbor search. A good choice is a balanced $k$-d tree \cite{kd-tree}, where $k$ is the dimension of the partitioned space, in our case the dimension of $X$.
+
+\paragraph{Time Complexity}
+
+The algorithm will run for at most $K$ iterations. During every iteration, a random state will be sampled, nearest node will be found, an action will be selected, and the new state will be inserted into the already explored states tree structure.
+
+We can assume that selecting a random sample of the state space does not depend on the already explored parts of the state space and that this operation time complexity is constant.
+
+The complexity of finding nearest neighbor and inserting a new node into an $k$-d tree with a fixed number of dimensions is logarithmic with respect to the number of nodes in the tree on average, in our case this means $O(\log K)$.
+
+Finding an action which contributes to the largest progress towards the goal will be implemented by evaluating all the $m=|U_f|$ options and measuring the distance between the resulting state and the target state. The time complexity of this operation is $O(m)$.
+
+Checking if a state is a goal state is a constant operation because we only have to check if $\mu{x_{new}}$ equals to the number of waypoints.
+
+The time complexity of a single iteration of the algorithm is $O(\log K + m)$ and so the total time complexity of the algorithm is $O\left(K(\log K+m)\right)$.
+
+\paragraph{Memory Complexity}
+
+In order to capture the state of the algorithm, we need to keep the tree of all already explored states. As we discussed earlier, we use a $k$-d tree because of its nearest neighbor search queries. The memory complexity is linear with the number of nodes stored in the tree. In each iteration of the algorithm we add at most one new node to the tree which will lead to a tree with at most $K$ nodes. The memory complexity of the whole algorithm is therefore $O(K)$.
+
+\paragraph{Completeness}
+
+All nodes added to the tree are added as leaves and an edge between two nodes in the tree always corresponds to application of some action $u\in U_f$. None of the nodes added to the tree corresponds of a state which would collide with some obstacle.
+
+All branches of the tree $T$ correspond to some feasible trajectory in the state space. The algorithm will stop as soon as the tree contains a branch which corresponds to a feasible solution trajectory or if the number of iterations exceeds the limit $K$.
+
+\gls*{RRT} is proven to be probabilistically complete for $K$ approaching infinity \cite{RRT_star}. This means that if we sample the state space long enough and make our tree denser and denser, we are guaranteed to eventually find some solution. Because we chose the discrete-time model, we would have to also make the time discretization finer after each failure to achieve completeness.
+
+\paragraph{Optimality}
+
+The main difference between our modified algorithm and the original algorithm proposed by Steven LaValle is the early termination of the algorithm when the first solution is found \cite{RRT}. We do not try to find a better solution and we do not grow our tree in a way which would guarantee that the first solution we find will be an optimal solution.
+
+\gls*{RRT} does not have any mechanism for finding optimal trajectories. On contrary, it is proven that the paths found by \gls*{RRT} are optimal with probability of 0 \cite{RRT_star}.
+
+There are modifications to the \gls*{RRT} algorithm which utilize the randomized sampling approach and probabilistic completeness of the algorithm, but which are optimal. One of these algorithms is called \gls{RRT*}. Unfortunately, this algorithm is not easily usable for us, because it is not designed for problems with differential constraints. The algorithm uses a ``rewiring'' procedure to optimize the tree edges after a new node is added. This procedure needs to be able to connect two states $x_1, x_2\in X$ with an action trajectory. This would be near impossible in the discrete-time model we chose and even with variable time, this operation would be very expensive and impractical.
+
+\subsubsection{Sampling Schema}
+
+The sampling schema is the most important part of the algorithm when it comes to the rate of convergence to a solution. The sampling function can also have an impact on the completeness of the algorithm.
+
+\paragraph{Uniform sampling} is the simplest form of random node selection. The value for each dimension of the state vector is selected uniformly from the set of valid values.
+
+\paragraph{Goal biasing} is a technique where we choose a state representing the final configuration with probability $p$ and we uniformly sample the space otherwise. This method can be generalized for several goals which can then be useful to bias the exploration of the state space in the direction of several waypoints. The goal of this method is to drive the search towards the goal faster, but at the same time keep the probabilistic completeness of the algorithm, as uniform sampling can help avoid getting stuck in dead ends.
+
+\paragraph{Path biasing} is an extension of the goal biasing sampling scheme. We first find a reference path using a relaxed variant of the problem (e.g., a grid search algorithm without considering the differential constraints) and choosing the points along the path as intermediate goals for the grown tree. This variant of the algorithm is referred to as \textit{RRT-Path} \cite{RRT_guiding_path}.
