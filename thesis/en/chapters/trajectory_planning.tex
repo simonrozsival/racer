@@ -739,4 +739,130 @@ The resulting state trajectory consisting of the discretized states might not be
 
 There is one problem with the discretization which is worth solving. Depending on the resolution of the grid, the next state obtained by the state transition function might fall into the same cell as the source state. This could be a significant problem especially at low speeds, for example when the vehicle is accelerating from a standstill. To solve this problem, we will repeat the same action $k$ times, until the resulting state falls into a different cell. We will then store the resulting state for future expansion with an appropriate cost.
 
+\subsubsection{Cost-to-Come Function}
 
+Our goal is to find the fastest trajectory possible. To achieve this, we must minimize the time it takes for our vehicle to get from the initial state to a goal state. We fixed the time $\Delta t$ we use for the system simulation function $f_{\Delta t}$. This means that the costs of our edges are uniform, and the cost is exactly the constant $\Delta t$. Sometimes we unfold one action $k$ times in order to leave the original grid cell and therefore the cost of this transition is proportionally higher. The cost function $c$ of a search node $v\in V$ can be defined recursively:
+
+\begin{equation*}
+\begin{aligned}
+	g(x_0)&=0 \\
+	g(x_{i+1})&=g(x_i)+k\Delta t,
+\end{aligned}
+\end{equation*}
+
+where $x_0$  is the initial vehicle state, $x_i, x_{i+1}\in X, k\in\mathbb{N}$ such that $k$ is the number of unfolding of some action to reach $x_{i+1}$ from $x_i$. It would be possible to add additional costs for example for driving close to obstacles or for changing steering angle left and right too frequently, but we will use simply the time as the cost.
+
+\subsubsection{Heuristic Function}
+
+The A* algorithm is driven towards the goal by a heuristic function. Designing a good heuristic function can help us converge towards the goal faster by expanding the most promising nodes first. The heuristic function estimates the remaining cost to go from any state to the goal. Our cost function represents time it takes to drive from one state to another. Our heuristic function therefore must estimate the remaining time it will take to reach the goal from a given state.
+
+To guarantee optimality of A* for graph searching, we require the heuristic to be admissible and monotonous. This means that the along any direct path from the initial node and a goal node the value of the heuristic must not increase and therefore maintain a form of triangle inequality.
+
+The inspiration for our heuristic functions were taken from the Stanford Racing Team entry in the DARPA Urban Challenge \cite{}.
+
+\paragraph{Euclidean Distance}
+One of the simplest heuristics is calculating the distance between the position of the vehicle and the position of the goal. Our vehicle must drive past several waypoints. We must calculate the distance from the current position of the vehicle to the next waypoint and then add the distances between the remaining waypoints to obtain the minimum remaining distance $d$.
+
+To calculate the time to reach the last waypoint, we must factor in the velocity of the vehicle. To maintain admissibility of the heuristic, we must assume that the vehicle will travel at maximum velocity. We will calculate the minimum time necessary by dividing the distance $d$ by the maximum possible velocity of the vehicle $v_{max}$.
+
+This heuristic is admissible and monotonous, because as we move closer to the goal along any path, the Euclidean distance decreases and our estimate is always lower or equal to the real capabilities of our vehicle.
+
+We ignore the driving characteristics of our vehicle and we also do not account for collisions with any of the obstacles or the boundary of the racing track. On the other hand, the value of the heuristic is easy to calculate, and it does not need any additional memory.
+
+\paragraph{Shortest Path Through Waypoints}
+We discretize the two-dimensional plane into a grid with the same resolution as we do for the position dimensions of the state space. We will then compute the distance to the goal in an eight-connected grid using dynamic programming. We ignore grid cells which are outside of the racing track or the ones which overlap with some obstacle. Given a distance, we can calculate the minimum time to reach the goal in the same way as in the case of Euclidean distance heuristic.
+
+This heuristic ignores the capabilities of the vehicle and the constraints on steering. Nevertheless, it will guide the search along the course of the racing track, and it will help us avoid dead ends.
+
+\paragraph{Combination of Heuristic Functions}
+To take advantage of several different heuristics $h_1,h_2,\ldots ,h_n$, we can create a new heuristic, which takes the maximum estimated cost-to-go:
+\[
+	h(x)=\max_{i \in {1, 2, \ldots, n}}h_i(x).
+\]
+
+This heuristic will dominate all the original heuristics and it will give us better estimates of the remaining cost. We will the combination of both the euclidean distance and shortest path heuristics as our final heuristic for the A* algorithm.
+
+\subsubsection{Total Cost Estimate}
+
+We will combine the cost-to-come $g$ and the estimate of cost-to-go $h$ into an estimate of the total cost $f$ of the trajectory from the initial state to some goal state through any state $x\in X$:
+
+\[
+	\Sigma(x) = g(x)+h(x).
+\]
+
+In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-to-go heuristic as $h$-value, and the estimate of the total cost the $f$-value. We already used the letter $f$ for the state transition function, so we will instead use the symbol $\Sigma$ to represent the sum of the two components of the estimate.
+
+
+\begin{algorithm}[]
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{HybridAStar}{HybridAStar}
+	\SetKwFunction{ReconstructTrajectory}{ReconstructTrajectory}
+	\SetKwFunction{Expand}{Expand}
+	\SetKwFunction{Open}{Open}	
+	
+	\KwIn{Trajectory planning problem, maximu cost limit}
+	\KwOut{State trajectory or $null$}
+
+	\vspace{3mm}
+
+	\SetKwProg{astar}{Algorithm}{:}{}
+	\astar{\HybridAStar{$(X, U_f, c, f_{\Delta t}, x_0, X_g)$, $g_{max}$}}{
+
+	$O\gets\left\{x_0\right\}$\;
+	$C\gets\emptyset$\;
+	$E\gets\emptyset$\;
+	
+	\While{$O\neq\emptyset$}{
+		$x\gets\argmin_{x'\in O} \Sigma(x')$\;
+		$O\gets O\setminus\left\{x\right\}$\;
+		$C\gets C\cup\left\{\tilde{x}\right\}$\;
+		\If{$x\in X_g$}{
+			\KwRet{\ReconstructTrajectory{$E$, $x$}}\;
+		}
+		\If{$g(x) < g_{max}$}{
+			\Expand{$x$, $O$, $C$, $E$}\;
+		}
+	}
+	
+	\KwRet{null}\;
+	}
+
+	\vspace{3mm}
+	
+	\SetKwProg{procedure}{Procedure}{:}{}
+	\setcounter{AlgoLine}{0}
+	\procedure{\Expand{$x$, $O$, $C$, $E$}}{
+		\ForEach{$u\in U_f$}{
+			$x'\gets x$\;
+			$k\gets 0$\;
+			\Repeat{$x'=x\land \tilde{x}\neq\tilde{x'}$}{
+				$x'\gets f_{\Delta t}(x', u)$\;
+				$k\gets k+1$\;
+			}
+			\If{$\tilde{x'}\notin C\land c(x')=F$}{
+				\eIf{$\exists x''\in O: \tilde{x'}=\tilde{x''}$}{
+					\If{$g(x')<g(x'')\lor (g(x')=g(x'') \land \tau(x') > \tau(x''))$}{
+						$O\gets O\setminus \left\{x''\right\}$\;
+						\Open{$O$, $E$, $x$, $x'$, $k$}\;
+					}
+				}{
+					\Open{$O$, $E$, $x$, $x'$, $k$}\;
+				}			
+			}
+		}
+	}
+
+	\vspace{3mm}
+		
+	\setcounter{AlgoLine}{0}
+	\procedure{\Open{$O$, $E$, $x$, $x'$, $k$}}{
+		$O\gets O\cup\left\{x'\right\}$\;
+		$E\gets E\cup \left\{\left(x, x'\right)\right\}$\;
+		$g(x')\gets g(x)+k\Delta t$\;
+	}
+		
+	\caption{The Hybrid A* algorithm.}
+	\label{alg:hybrid_astar}
+\end{algorithm}
