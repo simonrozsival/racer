@@ -696,3 +696,47 @@ The sampling schema is the most important part of the algorithm when it comes to
 \paragraph{Goal biasing} is a technique where we choose a state representing the final configuration with probability $p$ and we uniformly sample the space otherwise. This method can be generalized for several goals which can then be useful to bias the exploration of the state space in the direction of several waypoints. The goal of this method is to drive the search towards the goal faster, but at the same time keep the probabilistic completeness of the algorithm, as uniform sampling can help avoid getting stuck in dead ends.
 
 \paragraph{Path biasing} is an extension of the goal biasing sampling scheme. We first find a reference path using a relaxed variant of the problem (e.g., a grid search algorithm without considering the differential constraints) and choosing the points along the path as intermediate goals for the grown tree. This variant of the algorithm is referred to as \textit{RRT-Path} \cite{RRT_guiding_path}.
+
+
+\subsection{Hybrid A*}
+
+Due to the infinite number of states reachable from an initial state $x_0\in X$ through actions from the infinite set of actions $U$ and the transition function $f_{\Delta t}$, it is impossible to exhaustively search for an optimal trajectory in the configuration space. Even if we limit the number of actions to a finite set of motion primitives $U_f$ and limit the maximum length of a trajectory, uninformed search for a trajectory will be impractically slow. In order to converge to a goal faster, informed search algorithms estimate graph nodes based on knowledge of the nature of the searched space.
+
+A* is a complete and optimal informed graph search algorithm \cite{Nilsson_astar}. It visits the most promising nodes of the graph first, but it will eventually visit all the reachable nodes, until it finds a path to a goal state, or until every node was visited. We will describe a modified version of the A* algorithm which reduces the searched state space even further by discretizing the original continuous state space into an $n$-dimensional grid while still producing feasible trajectories in the configuration space.
+
+This modified algorithm is referred to as \textit{Hybrid-State A* Search}. It was successfully used for path planning by the Stanford Racing Team in their vehicle \textit{Junior} during the DARPA Urban Challenge in 2007 \cite{dolgov08gppSTAIR}. This algorithm was utilized for navigation in unstructured environments when it was not possible to follow road centerline such as parking lots and for other complex maneuvers such as U-turns or overtaking of other vehicles. It has been explored and successfully used by several other researchers since then \cite{Hybrid_astar}.
+
+\subsubsection{State Space Discretization}
+
+The advantage of A* is that it visits every state at most once and whenever we reach a graph node is visited, we have an assurance that the path through which we came from the initial node is the best possible one and we can ignore this node in the future if we find a different route to it. This works well for discrete search spaces where it is easy to compare two nodes between themselves and determine whether it was already visited or not. In a continuous state space, this can be problematic. Even though we come very close to an already visited node, it does not have to be equal to the node. Let us consider the following example.
+
+\paragraph{Example} Imagine we have a robot which moves in a two-dimensional plane and it is subject to differential constraints. The state space will be the configuration space $X=C$. We will focus on one action $u$ which moves the robot forward and steers to the left. In a fixed time of $\Delta t=1$ second the robot should travel around a quarter of a circle and turns by ninety degrees ($\dfrac{\pi}{2}$ radians). If we start from an initial state $x_0=\left(0,0,0\right)$ then after applying $u$ four times in a row, we would expect to go through states $x_1=\left(1,1,\dfrac{\pi}{2}\right),x_2=\left(0,2,\pi\right),x_3=\left(-1,1,\dfrac{3\pi}{2}\right)$, and arrive to a final state $x_4=\left(0,0,0\right)=x_0$ after 4 seconds. If we try to implement and run this example in a simulation, we might get a slightly different result caused by accumulated rounding errors and other numerical approximations. For example, we might use only a finite number of the decimals of the number $\pi$ and arrive to a heading angle of $\theta<2\pi$. The A* algorithm will consider $x_0$ and $x_4$ as different nodes of the graph and it will continue with the expansion of $x_4$. This example is visualized in Figure~\ref{fig:no_discretization_example}.
+
+\begin{figure}
+	\centering
+	\label{fig:no_discretization_example}
+	\missingfigure{Misaligned rotation image.}
+	\caption{We would expect the car to return to its initial position after the action $u$ was applied 4 times. Due to rounding errors and errors of numerical integration, we might reach a different state very close to the initial state.}
+\end{figure}
+
+\textit{Hybrid A*} divides the state space into a grid of similar states to avoid this problem. Before we expand a state from the configuration space, we will check if the grid cell it falls into is already closed or not. If the cell is closed, we will consider the state to be closed as well and we will not expand it again.
+
+We can select an appropriate resolution for every dimension of the space base on the semantics of each dimension. If we wanted to ignore some dimension of the state space for searching, we can set the resolution for the dimension to $\infty$. We can convert the continuous dimensions of a state vector $x$ into a discrete grid coordinate with cell sizes vector $\sigma$ for the dimensions with this expression:
+
+\[
+	\tilde{x} \cong \left\lfloor \dfrac{x}{\sigma} \right\rfloor.
+\]
+
+We will refer to the discrete coordinates of the state in the state space by adding the ``\textasciitilde'' sign to the variable name.
+The resulting state trajectory consisting of the discretized states might not be feasible. The \textit{hybrid A*} algorithm therefore remembers the continuous state through which we entered every visited discrete grid cell. We will continue the expansion by applying the state transition function to the original continuous state. The final trajectory will therefore be smooth and feasible because it will not be affected by the discretization as can be seen in Figure~\ref{fig:hybrid_astar_discretized_vs_continuous}.
+
+\begin{figure}
+	\centering
+	\label{fig:hybrid_astar_discretized_vs_continuous}
+	\missingfigure{Rough discretized and smooth paths.}
+	\caption{}
+\end{figure}
+
+There is one problem with the discretization which is worth solving. Depending on the resolution of the grid, the next state obtained by the state transition function might fall into the same cell as the source state. This could be a significant problem especially at low speeds, for example when the vehicle is accelerating from a standstill. To solve this problem, we will repeat the same action $k$ times, until the resulting state falls into a different cell. We will then store the resulting state for future expansion with an appropriate cost.
+
+
