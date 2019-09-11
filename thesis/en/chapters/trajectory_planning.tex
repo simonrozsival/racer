@@ -495,7 +495,7 @@ This sequence contains all the information we need to reconstruct the full conti
 
 The choice of the sampling time interval $\Delta t$ greatly impacts the performance of finding solutions to the planning problem. If the optimal time to reach the goal is $t$ seconds, then a state trajectory for a sampling interval $\Delta t_1$ will have more elements than a state trajectory with a sampling rate of $\Delta t_2 > \Delta t_1$. The planning algorithm would therefore have to make more decisions for $\Delta t_1$ and it would take longer to find a solution. On the other hand, a longer sampling interval could find invalid trajectories, because due to a long distance between two poses of the vehicle, the vehicle could ``jump through walls'' as the collision detection algorithm, which tests only the samples from the state trajectory, would give false positives.
 
-Instead, we can uniformly subdivide the time interval of length $\Delta t$ into $n\in\mathbb{N}$ smaller intervals of $\frac{\Delta t}{n}$ and apply the state transition function $n$ times for every action in the sequence. This technique will give us better estimate of the motion of the vehicle and reduce the inaccuracy of numerical integration but at the same time it will not increase the computational complexity of the planning algorithm because we do not increase the number of explored sequences of actions. A good pair of $\Delta t$ and $n$ has to be found experimentally to provide good precision while keeping good performance of the algorithm on real hardware.
+Instead, we can uniformly subdivide the time interval of length $\Delta t$ into $n\in\mathbb{N}$ smaller intervals of $\Delta t/n$ and apply the state transition function $n$ times for every action in the sequence. This technique will give us better estimate of the motion of the vehicle and reduce the inaccuracy of numerical integration but at the same time it will not increase the computational complexity of the planning algorithm because we do not increase the number of explored sequences of actions. A good pair of $\Delta t$ and $n$ has to be found experimentally to provide good precision while keeping good performance of the algorithm on real hardware.
 
 \section{Track Segmentation}
 
@@ -744,19 +744,6 @@ The resulting state trajectory consisting of the discretized states might not be
 
 There is one problem with the discretization which is worth solving. Depending on the resolution of the grid, the next state obtained by the state transition function might fall into the same cell as the source state. This could be a significant problem especially at low speeds, for example when the vehicle is accelerating from a standstill. To solve this problem, we will repeat the same action $k$ times, until the resulting state falls into a different cell. We will then store the resulting state for future expansion with an appropriate cost.
 
-\subsubsection{Cost-to-Come Function}
-
-Our goal is to find the fastest trajectory possible. To achieve this, we must minimize the time it takes for our vehicle to get from the initial state to a goal state. We fixed the time $\Delta t$ we use for the system simulation function $f_{\Delta t}$. This means that the costs of our edges are uniform, and the cost is exactly the constant $\Delta t$. Sometimes we unfold one action $k$ times in order to leave the original grid cell and therefore the cost of this transition is proportionally higher. The cost function $c$ of a search node $v\in V$ can be defined recursively:
-
-\begin{equation*}
-\begin{aligned}
-	g(x_0)&=0 \\
-	g(x_{i+1})&=g(x_i)+k\Delta t,
-\end{aligned}
-\end{equation*}
-
-where $x_0$  is the initial vehicle state, $x_i, x_{i+1}\in X, k\in\mathbb{N}$ such that $k$ is the number of unfolding of some action to reach $x_{i+1}$ from $x_i$. It would be possible to add additional costs for example for driving close to obstacles or for changing steering angle left and right too frequently, but we will use simply the time as the cost.
-
 \subsubsection{Heuristic Function}
 
 The A* algorithm is driven towards the goal by a heuristic function. Designing a good heuristic function can help us converge towards the goal faster by expanding the most promising nodes first. The heuristic function estimates the remaining cost to go from any state to the goal. Our cost function represents time it takes to drive from one state to another. Our heuristic function therefore must estimate the remaining time it will take to reach the goal from a given state.
@@ -787,16 +774,15 @@ To take advantage of several different heuristics $h_1,h_2,\ldots ,h_n$, we can 
 
 This heuristic will dominate all the original heuristics and it will give us better estimates of the remaining cost. We will the combination of both the euclidean distance and shortest path heuristics as our final heuristic for the A* algorithm.
 
-\subsubsection{Total Cost Estimate}
+\subsubsection{Search Records}
 
-We will combine the cost-to-come $g$ and the estimate of cost-to-go $h$ into an estimate of the total cost $f$ of the trajectory from the initial state to some goal state through any state $x\in X$:
+We will conduct search over the state space of our vehicle. Besides the state vector, we need to remember additional information: the cost-to-come from the initial state to the current state and a pointer to the state from which we came to the current state. We will keep this information in records $\left(x, g, v_p\right)$, where $x\in X$ is the state, $g\in \mathbb{R}$ is the cost-to-come, and $v_p$ is the parent search record. The initial state does not have any parent search record. By traversing the search records, we can track back the states to the initial state and reconstruct the state trajectory which ends in any search record.
 
-\[
-	\Sigma(x) = g(x)+h(x).
-\]
+\paragraph{Cost-to-come} The cost of a trajectory accumulates over time and it is non-negative. The cost-to-come for the initial state is $0$. We fixed the time of execution of each action to $\Delta t$ seconds. If we start in a state with cost-to-come $g$ after applying an action $k\in \mathbb{N}$ times, the cost-to-come of the new state will be $g+k\Delta t$.
 
-In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-to-go heuristic as $h$-value, and the estimate of the total cost the $f$-value. We already used the letter $f$ for the state transition function, so we will instead use the symbol $\Sigma$ to represent the sum of the two components of the estimate.
+\subsubsection{Total Cost Estimate} The sum of the cost-to-come and the estimate of the cost-to-go from the heuristic function gives us an estimate of a total cost from the initial state to a goal state. The states with a lower total cost estimate are considered \textit{more promising} and we will explore these states first in order to speed up conversion to the goal region.
 
+\subsubsection{Algorithm Analysis}
 
 \begin{algorithm}[]
 	\caption{The Hybrid A* algorithm.}
@@ -811,47 +797,46 @@ In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-
 	\SetKwFunction{Open}{Open}	
 	\SetKwFunction{Unfold}{Unfold}	
 	
-	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, maximum trajectory cost limit $g_{max}$, tie breaking function $\tau: X\rightarrow \mathbb{R}$}
+	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, maximum trajectory cost limit $g_{max}$}
 	\KwOut{State trajectory or $null$}
 	\Parameter{State space discretization function $\delta: X\rightarrow X$}
-
+	
 	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
-
+	
 	\BlankLine
-
+	
 	\algorithm{\HybridAStar{$\delta$}}{
-		$O\gets\left\{x_0\right\}, C\gets\emptyset, E\gets\emptyset$\;	
+		$O\gets\left\{\left(x_0, 0, null\right)\right\}$\;
+		$C\gets\emptyset$\;	
 		\While{$O\neq\emptyset$}{
-			$x\gets\argmin_{x'\in O} \Sigma(x')$\;
-			$O\gets O\setminus\left\{x\right\}$\;
-			$C\gets C\cup\left\{\delta(x)\right\}$\;
-			\lIf{$x\in X_g$}{ \KwRet{\ReconstructTrajectory{$E$, $x$}} }
-			\lIf{$g(x) < g_{max}$}{ \Expand{$x$, $O$, $C$, $E$, $\delta$} }
+			$v\gets\argmin_{\left(x', g', v_p\right)\in O} g'+h(x')$\;
+			$O\gets O\setminus\left\{v\right\}$\;
+			\If{$x\in X_g$}{ \KwRet{\ReconstructTrajectory{$v$}}\; }
+			$\left(x, g, v_p\right)\gets v$\;
+			\If{$\delta(x) \notin C \land g < g_{max}$}{
+				$C\gets C\cup\left\{\delta(x)\right\}$\;
+				\Expand{$v$, $O$, $C$, $\delta$}\;
+			}
 		}	
 		\KwRet{null}\;
 	}
-
+	
 	\BlankLine
 	
-	\procedure{\Expand{$x$, $O$, $C$, $E$, $\delta$}}{
-		\ForEach{$u\in U_f$}{
+	\procedure{\Expand{$v$, $O$, $C$, $\delta$}}{
+		\ForEach{$u\in U_f(x)$}{
+			$\left(x, g, v_p\right)\gets v$\;
 			$\left(x', k\right)\gets$ \Unfold{$x$, $u$, $\delta$}\;
 			\If{$x' \neq \text{null} \land \delta(x')\notin C$}{
-				\eIf{$\exists x''\in O: \delta(x')=\delta(x'')$}{
-					\If{$g(x')<g(x'')\lor (g(x')=g(x'') \land \tau(x') > \tau(x''))$}{
-						$O\gets O\setminus \left\{x''\right\}$\;
-						\Open{$O$, $E$, $x$, $x'$, $k$}\;
-					}
-				}{
-					\Open{$O$, $E$, $x$, $x'$, $k$}\;
-				}			
+				$g'\gets g+k\Delta t$\;
+				$O\gets O\cup\left\{\left(x', g', v\right)\right\}$\;
 			}
 		}
 	}
-
+	
 	\BlankLine
-
+	
 	\procedure{\Unfold{$x_{start}$, $u$, $\delta$}}{		
 		$\left(x_{last}, k\right)\gets \left(x_{start}, 0\right)$\;
 		\Repeat{$x_{last}=x_{prev}\lor \delta(x_{start})\neq\delta(x_{last})$}{
@@ -863,17 +848,42 @@ In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-
 		\KwRet{$\left(x_{last}, k\right)$}\;
 	}
 	
-	\BlankLine
-
-	\procedure{\Open{$O$, $E$, $x$, $x'$, $k$}}{
-		$O\gets O\cup\left\{x'\right\}$\;
-		$E\gets E\cup \left\{\left(x, x'\right)\right\}$\;
-		$g(x')\gets g(x)+k\Delta t$\;
-	}
-		
 \end{algorithm}
 
-\subsubsection{Algorithm Analysis}
+In this section we will analyze the pseudo-code shown in Algorithm~\ref{alg:hybrid_astar}. We will explain how it differs from the original version of the A* algorithm \cite{Nilsson_astar} and we will then also analyze the time and memory complexity of the algorithm based on our choice of data structures.
 
-In this section we will analyze the pseudo-code shown in Algorithm~\ref{alg:hybrid_astar}. We will explain how it differs from the well-known A* algorithm and we will then also analyze the time and memory complexity of the algorithm.
+The main procedure of the algorithm \texttt{HybridAStar} is very similar to what one could expect from the A* algorithm. We initialize an \textit{open set} $O$ with the initial state search record and also an empty \textit{closed set} $C$. We will say that a state is \textit{opened} if it has a record in $O$ and that it is \textit{closed} when the cell in which it falls into is in $C$.
 
+In the main loop, we obtain the most promising state $x\in O$ by comparing the total cost estimate of the open states. If $x$ reaches the goal region, we reconstruct the state trajectory by traversing the parent search records using a helper function \texttt{ReconstructTrajectory}. We test if the cell in which the state belongs has not been closed yet and only if it has not and the cost-to-come does not exceed the limit do we continue to expansion of the state. We close the cell into which the state $x$ belongs so that we will not expand any further states from this cell.
+
+The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $\delta(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set. This decision was supported by a paper [...\todo{Find the citation}].
+
+The simulation of the movement of the vehicle happens in the \texttt{Unfold} procedure. This function uses the system simulator function $f_{\Delta t}$ repeatedly until the vehicle stops (none of the properties of the vehicle state does not change after an action is applied), or until the vehicle leaves the cell of the parent state in the discretized state space.
+
+\subsubsection{Time Complexity}
+
+The time complexity of the A* algorithm depends mainly on the number of nodes which are expanded. We must also consider the complexity operations we perform whenever we expand a node. This involves an analysis of the way we implement the data structures for the open and closed nodes, which we vaguely expressed as set operations in the Algorithm~\ref{alg:hybrid_astar}.
+
+\paragraph{The number of expanded states} The maximum length of a path in the search space we will explore is limited by the cost limit $g_{max}\in \mathbb{R}$. This limit alone defines a continuous bounded region of states which are reachable from the initial state. There are two factors, which affect the number of nodes that can be expanded: the discretization of time into $\Delta t$ second intervals and the discretization of the state space into a grid via the discretization resolution vector $\vec{\sigma}$. Both of these discretizations limit the number of states which are reachable. The total number of reachable states is then the minimum of these two limits.
+
+Since our cost function is constant for all actions, we will only expand nodes at the ends of action sequences of at most $g_{max}/\Delta t$ steps. Due to the implementation of the \texttt{Unfold} procedure which might apply a single action multiple times in a row, the length of the sequence and therefore the number of expanded nodes can be even smaller. The expanded nodes form a tree with at most $l=\left\lceil g_{max}/\Delta t\right\rceil$ levels with a branching factor of $b=|U_f|$. Each of the states $x$ will be expanded at most once, because if it were to be expanded the second time, its cell would already be closed ($\delta(x)\in C$). This means that in the worst case when there are no obstacles and each state would be in a different cell, the number of expanded nodes would be $O(b^l)$.
+
+The number of reachable in the discretized state space also limits the number of expanded states, as at most one state will be expanded per each discrete cell. If the state space has $d$ dimensions and the maximum number of discrete cells in the individual dimensions is $\vec{n}=\left(n_1, n_2, \ldots, n_d\right)\in \mathbb{N}^d$, the upper limit for the number of cells is $\max(\vec{n})^d$.
+
+\paragraph{Open set operations} In order to keep track of which element should be expanded next, we need to keep the data in the open set arranged in a priority queue by their total cost estimate $g+h(x)$. We use three operations of the priority queue: adding an element, and getting and removing an element with the minimum key. When implemented as a binary heap, all of these operations will have time complexity of $O(\log n)$, where $n$ is the number of nodes in the queue\footnote{The complexity of insertion can be reduced to constant time with an advanced heap, such as a binomial or Fibonacci heap. The choice of the binary heap is motivated by the priority queue in the C++ STL, which implements a binary heap.}. This can be at most $b^l$ and so the time complexity would be $O(\log b^l)=O(l \log b)$.
+
+\paragraph{Closed set operations} In order to keep track of all the cells which have been closed, we need a data structure with an efficient insertion and element retrieval operation. This can be achieved with a hash table with an amortized time complexity of $O(1)$.
+
+\paragraph{Heuristic function} Our heuristic function is implemented as a maximum of several heuristics, which can all be implemented as lookup tables and so the time complexity will be $O(1)$.
+
+\paragraph{The \texttt{Unfold} procedure}
+The time complexity of ``unfolding`` depends on the number of repetitions of the action, before the state leaves the original cell. Each evaluation of the system simulator function $f_{\Delta t}$ is a non-trivial operation, which includes numerical integration, but asymptotically this operation is still $O(1)$. The collision detection function performs a single query into the occupancy grid with inflated obstacles. This is a simple operation with the complexity of $O(1)$. We will assume that in most cases, the number of repetitions is low and it is bound by some small constant. We will assume that the \texttt{Unfold} procedure as a whole is constant.
+
+\paragraph{The \texttt{Expand} procedure}
+The expansion tries to apply all of the available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
+
+\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because planning is an NP-complete problem. \todo[inline]{Verify this}
+
+\subsubsection{Memory Complexity}
+
+Each of the states requires only a constant amount of memory. The only additional information stored in memory are the lookup tables of the heuristic functions which require at most linear space in the size of the discretized search space, which is at most $O(b^l)$. The graph itself does not have to be explicitly held in memory as we traverse it through calling the system simulator. The memory complexity of the open set $O$ (implemented as a priority queue) and the closed set $C$ (implemented as a hash table) is linear with the number of items stored in the data structure. The number of open or closed nodes can be at most the number of all expanded states. The memory complexity of the algorithm in the worst case is therefore $O(b^l)$.
