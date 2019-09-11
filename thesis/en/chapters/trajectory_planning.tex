@@ -77,7 +77,7 @@ When describing the motion of a car-like robot on a two-dimensional plane, we as
 
 The kinematics and dynamics of a robots are typically described by differential equations. These equations give us the velocities at which the state of the robot changes when an action is applied. As an example of these constraints, we can look at a model of a \textit{simple car} \cite[Section~13.1.2.1]{lavalle_2006}.
 
-\paragraph{Example}
+\begin{example}
 The state space of a simple car will consist of the poses in an infinite 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}.
 
 For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
@@ -89,6 +89,7 @@ For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approxim
 	\dot{\theta}&=\dfrac{u_s}{L} \tan u_\varphi.
 \end{aligned}
 \end{equation}
+\end{example}
 
 \begin{figure}
 	\centering
@@ -227,6 +228,8 @@ The discretization of time might make some states of the state space unreachable
 
 In this section we will discuss what it means to plan a trajectory for a fast moving car. What is the difference between trajectory planning for a slow moving car and for a fast moving car? What do we even consider to be a ``fast moving car'' and what is just a slow moving car?
 
+\subsection{Terminology Clarification}
+
 A fast moving car is not a widely used term and it does not have a formal definition. Intuitively, we would consider a ``fast moving car'' to be a Formula 1, a rally car, or a different racing car. The racing drivers push their vehicles to their limits in order to be the first one behind the finish line. We might also consider ordinary driving on a motorway to be ``fast'', especially during a lane change maneuver or when we accelerate to overtake a vehicle in front of us. We might even consider driving at lower speeds to be ``fast'' when it involves taking sharp turns.
 
 One thing these scenarios have in common is that the car reaches a speed at which it can become hard to steer the car in a specific direction because the tires might lose grip and the car might start moving sideways or in a more extreme scenario the car could roll over sideways. The speed which could be considered ``fast'' varies based on the radius of the turn.
@@ -244,7 +247,7 @@ The minimum turning radius $r_{min}\in\mathbb{R}$ is a constant specific for a g
 \end{defn}
 
 \begin{defn}[Trajectory planning problem for a fast moving car]
-	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints, whose solution is a time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} is expected to describe both the poses of the vehicle, as well as a speed profile.
+	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints. The solution of this problem is a collision-free time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} is describes both a path and a speed profile for the given vehicle and track.
 \end{defn}
 
 
@@ -262,7 +265,7 @@ We can now summarize the discussion in this section into a set of requirements f
 	\item The search algorithm we will use must find good solutions which are time-optimal or close to time-optimal in a very short period of time.
 \end{itemize}
 
-\subsection{Problem Formulation}
+\subsection{Problem Analysis}
 
 \subsubsection{The Configuration Space and the State Space}
 
@@ -336,14 +339,14 @@ The idea of \textit{the first method} is to calculate a list of tiles relative t
 	\centering
 	\begin{subfigure}[t]{0.45\textwidth}
 		\missingfigure{FOOTPRINT}
-		\label{fig:collision_detection_overlap}
 		\caption{The relative coordinates to tiles occupied by the footprint of the vehicle when the heading angle is close to $\theta$.}
+		\label{fig:collision_detection_overlap}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[t]{0.45\textwidth}
 		\missingfigure{INFLATED OBSTACLES}
-		\label{fig:collision_detection_inflation}
 		\caption{The obstacles are ``inflated'' by the radius of the vehicle.}
+		\label{fig:collision_detection_inflation}
 	\end{subfigure}
 	
 	\caption{Photos of the experimental vehicle.}
@@ -423,6 +426,7 @@ The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The
 
 \begin{figure}
 	\centering
+	\caption{Waypoints behind the wall.}
 	\label{fig:waypoints}
 	\missingfigure{WAYPOINTS AND "BEHIND THE WALL"}
 \end{figure}
@@ -519,9 +523,9 @@ The goal of the track analysis algorithm is to find interesting points of the tr
 We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in Figure~\ref{fig:thought_process} on different track layouts.
 
 \begin{figure}
-	\label{fig:thought_process}
 	\missingfigure{The thought process of finding the corners of a circuit.}
 	\caption{The thought process of finding the corners of a circuit.}
+	\label{fig:thought_process}
 \end{figure}
 
 We will implement this process with a three step algorithm which will identify the corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).3
@@ -529,7 +533,7 @@ We will implement this process with a three step algorithm which will identify t
 The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance traveled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
 
 \vspace{1cm}
-\begin{algorithm}[H]
+\begin{algorithm}[]
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
@@ -591,12 +595,12 @@ With the path of circles around the circuit, we can now proceed the second step 
 \end{algorithm}
 \vspace{1cm}
 
-% todo algorithm smoothing out
-
-% do I need to prove 
+\todo[inline]{Finish this section.}
 
 \section{Differential Constraints}
 \label{sec:vehicle_model}
+
+\todo[inline]{Port the chapter from Word.}
 
 \section{Trajectory Planning Algorithms}
 \label{sec:trajectory_planning_algorithms}
@@ -710,31 +714,32 @@ This modified algorithm is referred to as \textit{Hybrid-State A* Search}. It wa
 
 The advantage of A* is that it visits every state at most once and whenever we reach a graph node is visited, we have an assurance that the path through which we came from the initial node is the best possible one and we can ignore this node in the future if we find a different route to it. This works well for discrete search spaces where it is easy to compare two nodes between themselves and determine whether it was already visited or not. In a continuous state space, this can be problematic. Even though we come very close to an already visited node, it does not have to be equal to the node. Let us consider the following example.
 
-\paragraph{Example} Imagine we have a robot which moves in a two-dimensional plane and it is subject to differential constraints. The state space will be the configuration space $X=C$. We will focus on one action $u$ which moves the robot forward and steers to the left. In a fixed time of $\Delta t=1$ second the robot should travel around a quarter of a circle and turns by ninety degrees ($\dfrac{\pi}{2}$ radians). If we start from an initial state $x_0=\left(0,0,0\right)$ then after applying $u$ four times in a row, we would expect to go through states $x_1=\left(1,1,\dfrac{\pi}{2}\right),x_2=\left(0,2,\pi\right),x_3=\left(-1,1,\dfrac{3\pi}{2}\right)$, and arrive to a final state $x_4=\left(0,0,0\right)=x_0$ after 4 seconds. If we try to implement and run this example in a simulation, we might get a slightly different result caused by accumulated rounding errors and other numerical approximations. For example, we might use only a finite number of the decimals of the number $\pi$ and arrive to a heading angle of $\theta<2\pi$. The A* algorithm will consider $x_0$ and $x_4$ as different nodes of the graph and it will continue with the expansion of $x_4$. This example is visualized in Figure~\ref{fig:no_discretization_example}.
+\begin{example}
+	Imagine we have a robot which moves in a two-dimensional plane and it is subject to differential constraints. The state space will be the configuration space $X=C$. We will focus on one action $u$ which moves the robot forward and steers to the left. In a fixed time of $\Delta t=1$ second the robot should travel around a quarter of a circle and turns by ninety degrees ($\dfrac{\pi}{2}$ radians). If we start from an initial state $x_0=\left(0,0,0\right)$ then after applying $u$ four times in a row, we would expect to go through states $x_1=\left(1,1,\dfrac{\pi}{2}\right),x_2=\left(0,2,\pi\right),x_3=\left(-1,1,\dfrac{3\pi}{2}\right)$, and arrive to a final state $x_4=\left(0,0,0\right)=x_0$ after 4 seconds. If we try to implement and run this example in a simulation, we might get a slightly different result caused by accumulated rounding errors and other numerical approximations. For example, we might use only a finite number of the decimals of the number $\pi$ and arrive to a heading angle of $\theta<2\pi$. The A* algorithm will consider $x_0$ and $x_4$ as different nodes of the graph and it will continue with the expansion of $x_4$. This example is visualized in Figure~\ref{fig:no_discretization_example}.
+\end{example}
 
 \begin{figure}
 	\centering
-	\label{fig:no_discretization_example}
 	\missingfigure{Misaligned rotation image.}
 	\caption{We would expect the car to return to its initial position after the action $u$ was applied 4 times. Due to rounding errors and errors of numerical integration, we might reach a different state very close to the initial state.}
+	\label{fig:no_discretization_example}
 \end{figure}
 
 \textit{Hybrid A*} divides the state space into a grid of similar states to avoid this problem. Before we expand a state from the configuration space, we will check if the grid cell it falls into is already closed or not. If the cell is closed, we will consider the state to be closed as well and we will not expand it again.
 
-We can select an appropriate resolution for every dimension of the space base on the semantics of each dimension. If we wanted to ignore some dimension of the state space for searching, we can set the resolution for the dimension to $\infty$. We can convert the continuous dimensions of a state vector $x$ into a discrete grid coordinate with cell sizes vector $\sigma$ for the dimensions with this expression:
+We can select an appropriate resolution for every dimension of the space base on the semantics of each dimension. If we wanted to ignore some dimension of the state space for searching, we can set the resolution for the dimension to $\infty$. We can convert the continuous dimensions of a state vector $x$ into a discrete grid coordinate with cell sizes vector $\vec{\sigma}$ with a state space discretization function $\delta: X\rightarrow X$:
 
 \[
-	\tilde{x} \cong \left\lfloor \dfrac{x}{\sigma} \right\rfloor.
+	\delta(x) = \left\lfloor \dfrac{x}{\vec{\sigma}} \right\rfloor.
 \]
 
-We will refer to the discrete coordinates of the state in the state space by adding the ``\textasciitilde'' sign to the variable name.
 The resulting state trajectory consisting of the discretized states might not be feasible. The \textit{hybrid A*} algorithm therefore remembers the continuous state through which we entered every visited discrete grid cell. We will continue the expansion by applying the state transition function to the original continuous state. The final trajectory will therefore be smooth and feasible because it will not be affected by the discretization as can be seen in Figure~\ref{fig:hybrid_astar_discretized_vs_continuous}.
 
 \begin{figure}
 	\centering
-	\label{fig:hybrid_astar_discretized_vs_continuous}
 	\missingfigure{Rough discretized and smooth paths.}
 	\caption{}
+	\label{fig:hybrid_astar_discretized_vs_continuous}
 \end{figure}
 
 There is one problem with the discretization which is worth solving. Depending on the resolution of the grid, the next state obtained by the state transition function might fall into the same cell as the source state. This could be a significant problem especially at low speeds, for example when the vehicle is accelerating from a standstill. To solve this problem, we will repeat the same action $k$ times, until the resulting state falls into a different cell. We will then store the resulting state for future expansion with an appropriate cost.
@@ -758,7 +763,7 @@ The A* algorithm is driven towards the goal by a heuristic function. Designing a
 
 To guarantee optimality of A* for graph searching, we require the heuristic to be admissible and monotonous. This means that the along any direct path from the initial node and a goal node the value of the heuristic must not increase and therefore maintain a form of triangle inequality.
 
-The inspiration for our heuristic functions were taken from the Stanford Racing Team entry in the DARPA Urban Challenge \cite{}.
+The inspiration for our heuristic functions were taken from the Stanford Racing Team entry in the DARPA Urban Challenge \cite{dolgov08gppSTAIR}.
 
 \paragraph{Euclidean Distance}
 One of the simplest heuristics is calculating the distance between the position of the vehicle and the position of the goal. Our vehicle must drive past several waypoints. We must calculate the distance from the current position of the vehicle to the next waypoint and then add the distances between the remaining waypoints to obtain the minimum remaining distance $d$.
@@ -794,6 +799,9 @@ In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-
 
 
 \begin{algorithm}[]
+	\caption{The Hybrid A* algorithm.}
+	\label{alg:hybrid_astar}
+	
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
@@ -801,48 +809,36 @@ In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-
 	\SetKwFunction{ReconstructTrajectory}{ReconstructTrajectory}
 	\SetKwFunction{Expand}{Expand}
 	\SetKwFunction{Open}{Open}	
+	\SetKwFunction{Unfold}{Unfold}	
 	
-	\KwIn{Trajectory planning problem, maximu cost limit}
+	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, maximum trajectory cost limit $g_{max}$, tie breaking function $\tau: X\rightarrow \mathbb{R}$}
 	\KwOut{State trajectory or $null$}
+	\Parameter{State space discretization function $\delta: X\rightarrow X$}
 
-	\vspace{3mm}
-
-	\SetKwProg{astar}{Algorithm}{:}{}
-	\astar{\HybridAStar{$(X, U_f, c, f_{\Delta t}, x_0, X_g)$, $g_{max}$}}{
-
-	$O\gets\left\{x_0\right\}$\;
-	$C\gets\emptyset$\;
-	$E\gets\emptyset$\;
-	
-	\While{$O\neq\emptyset$}{
-		$x\gets\argmin_{x'\in O} \Sigma(x')$\;
-		$O\gets O\setminus\left\{x\right\}$\;
-		$C\gets C\cup\left\{\tilde{x}\right\}$\;
-		\If{$x\in X_g$}{
-			\KwRet{\ReconstructTrajectory{$E$, $x$}}\;
-		}
-		\If{$g(x) < g_{max}$}{
-			\Expand{$x$, $O$, $C$, $E$}\;
-		}
-	}
-	
-	\KwRet{null}\;
-	}
-
-	\vspace{3mm}
-	
+	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
-	\setcounter{AlgoLine}{0}
-	\procedure{\Expand{$x$, $O$, $C$, $E$}}{
+
+	\BlankLine
+
+	\algorithm{\HybridAStar{$\delta$}}{
+		$O\gets\left\{x_0\right\}, C\gets\emptyset, E\gets\emptyset$\;	
+		\While{$O\neq\emptyset$}{
+			$x\gets\argmin_{x'\in O} \Sigma(x')$\;
+			$O\gets O\setminus\left\{x\right\}$\;
+			$C\gets C\cup\left\{\delta(x)\right\}$\;
+			\lIf{$x\in X_g$}{ \KwRet{\ReconstructTrajectory{$E$, $x$}} }
+			\lIf{$g(x) < g_{max}$}{ \Expand{$x$, $O$, $C$, $E$, $\delta$} }
+		}	
+		\KwRet{null}\;
+	}
+
+	\BlankLine
+	
+	\procedure{\Expand{$x$, $O$, $C$, $E$, $\delta$}}{
 		\ForEach{$u\in U_f$}{
-			$x'\gets x$\;
-			$k\gets 0$\;
-			\Repeat{$x'=x\land \tilde{x}\neq\tilde{x'}$}{
-				$x'\gets f_{\Delta t}(x', u)$\;
-				$k\gets k+1$\;
-			}
-			\If{$\tilde{x'}\notin C\land c(x')=F$}{
-				\eIf{$\exists x''\in O: \tilde{x'}=\tilde{x''}$}{
+			$\left(x', k\right)\gets$ \Unfold{$x$, $u$, $\delta$}\;
+			\If{$x' \neq \text{null} \land \delta(x')\notin C$}{
+				\eIf{$\exists x''\in O: \delta(x')=\delta(x'')$}{
 					\If{$g(x')<g(x'')\lor (g(x')=g(x'') \land \tau(x') > \tau(x''))$}{
 						$O\gets O\setminus \left\{x''\right\}$\;
 						\Open{$O$, $E$, $x$, $x'$, $k$}\;
@@ -854,15 +850,30 @@ In literature, the cost-to-come is sometimes referred to as $g$-value, the cost-
 		}
 	}
 
-	\vspace{3mm}
-		
-	\setcounter{AlgoLine}{0}
+	\BlankLine
+
+	\procedure{\Unfold{$x_{start}$, $u$, $\delta$}}{		
+		$\left(x_{last}, k\right)\gets \left(x_{start}, 0\right)$\;
+		\Repeat{$x_{last}=x_{prev}\lor \delta(x_{start})\neq\delta(x_{last})$}{
+			$x_{prev}\gets x_{last}$\;
+			$x_{last}\gets f_{\Delta t}(x_{last}, u)$\;
+			\lIf{$c(x_{last})=T$}{\KwRet{$\left(null, -1\right)$}}
+			$k\gets k+1$\;
+		}
+		\KwRet{$\left(x_{last}, k\right)$}\;
+	}
+	
+	\BlankLine
+
 	\procedure{\Open{$O$, $E$, $x$, $x'$, $k$}}{
 		$O\gets O\cup\left\{x'\right\}$\;
 		$E\gets E\cup \left\{\left(x, x'\right)\right\}$\;
 		$g(x')\gets g(x)+k\Delta t$\;
 	}
 		
-	\caption{The Hybrid A* algorithm.}
-	\label{alg:hybrid_astar}
 \end{algorithm}
+
+\subsubsection{Algorithm Analysis}
+
+In this section we will analyze the pseudo-code shown in Algorithm~\ref{alg:hybrid_astar}. We will explain how it differs from the well-known A* algorithm and we will then also analyze the time and memory complexity of the algorithm.
+
