@@ -609,7 +609,7 @@ With a complete formulation of the trajectory planning problem for a fast moving
 
 In this chapter we will introduce several well-known sampling-based algorithms and their variants which we considered for solving our trajectory planning problem. We will describe the main ideas behind these algorithms and discuss if and how they could be used in our specific use case.
 
-\subsection{Rapidly-Exploring Random Trees}
+\subsection{Rapidly-Exploring Random Trees (RRT)}
 
 The \gls{RRT} is a simple randomized algorithm designed by Steven M. LaValle with differential constraints of mobile robots in mind \cite{RRT}. The core idea of this algorithm is to build a tree structure rooted in the initial state $x_0$ with branches representing state trajectories by randomly sampling the state space and using the system simulator function to find feasible trajectories in the state space.
 
@@ -701,6 +701,9 @@ The sampling schema is the most important part of the algorithm when it comes to
 
 \paragraph{Path biasing} is an extension of the goal biasing sampling scheme. We first find a reference path using a relaxed variant of the problem (e.g., a grid search algorithm without considering the differential constraints) and choosing the points along the path as intermediate goals for the grown tree. This variant of the algorithm is referred to as \textit{RRT-Path} \cite{RRT_guiding_path}.
 
+\subsubsection{Conclusion}
+
+The \gls*{RRT} is a very interesting algorithm. One of its biggest advantages is its simplicity. The algorithm is easy to understand and easy to implement. There are many extensions of the original idea which improve the rate of conversion to the goal. The algorithm is complete, if we allow it to search for a solution long enough. On the other hand, the algorithm finds a trajectory without any guarantee of optimality. The optimal extension of the algorithm \gls{RRT*} is hard to adapt to our use case, when we must consider the differential constraints of the vehicle.
 
 \subsection{Hybrid A*}
 
@@ -708,7 +711,7 @@ Due to the infinite number of states reachable from an initial state $x_0\in X$ 
 
 A* is a complete and optimal informed graph search algorithm \cite{Nilsson_astar}. It visits the most promising nodes of the graph first, but it will eventually visit all the reachable nodes, until it finds a path to a goal state, or until every node was visited. We will describe a modified version of the A* algorithm which reduces the searched state space even further by discretizing the original continuous state space into an $n$-dimensional grid while still producing feasible trajectories in the configuration space.
 
-This modified algorithm is referred to as \textit{Hybrid-State A* Search}. It was successfully used for path planning by the Stanford Racing Team in their vehicle \textit{Junior} during the DARPA Urban Challenge in 2007 \cite{dolgov08gppSTAIR}. This algorithm was utilized for navigation in unstructured environments when it was not possible to follow road centerline such as parking lots and for other complex maneuvers such as U-turns or overtaking of other vehicles. It has been explored and successfully used by several other researchers since then \cite{Hybrid_astar}.
+This modified algorithm is referred to as \textit{Hybrid-State A* Search}. It was successfully used for path planning by the Stanford Racing Team in their vehicle \textit{Junior} during the DARPA Urban Challenge in 2007 \cite{dolgov08gppSTAIR}. This algorithm was utilized for navigation in unstructured environments when it was not possible to follow road center line such as parking lots and for other complex maneuvers such as U-turns or overtaking of other vehicles. It has been explored and successfully used by several other researchers since then \cite{Hybrid_astar}.
 
 \subsubsection{State Space Discretization}
 
@@ -799,14 +802,14 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 	
 	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, maximum trajectory cost limit $g_{max}$}
 	\KwOut{State trajectory or $null$}
-	\Parameter{State space discretization function $\delta: X\rightarrow X$}
+	\Parameter{State space discretization function $\delta: X\rightarrow X$, heuristic function $h$}
 	
 	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
 	
 	\BlankLine
 	
-	\algorithm{\HybridAStar{$\delta$}}{
+	\algorithm{\HybridAStar{$\delta$, $h$}}{
 		$O\gets\left\{\left(x_0, 0, null\right)\right\}$\;
 		$C\gets\emptyset$\;	
 		\While{$O\neq\emptyset$}{
@@ -882,8 +885,142 @@ The time complexity of ``unfolding`` depends on the number of repetitions of the
 \paragraph{The \texttt{Expand} procedure}
 The expansion tries to apply all of the available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
 
-\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because planning is an NP-complete problem. \todo[inline]{Verify this}
+\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because planning is an NP-complete problem. \todo[inline]{Add citation + verify the O}
 
 \subsubsection{Memory Complexity}
 
 Each of the states requires only a constant amount of memory. The only additional information stored in memory are the lookup tables of the heuristic functions which require at most linear space in the size of the discretized search space, which is at most $O(b^l)$. The graph itself does not have to be explicitly held in memory as we traverse it through calling the system simulator. The memory complexity of the open set $O$ (implemented as a priority queue) and the closed set $C$ (implemented as a hash table) is linear with the number of items stored in the data structure. The number of open or closed nodes can be at most the number of all expanded states. The memory complexity of the algorithm in the worst case is therefore $O(b^l)$.
+
+\subsubsection{Conclusion}
+
+The \textit{Hybrid A*} algorithm is a good option for trajectory planning. The size of the state space is enormous and the heuristic function helps us to focus on the most promising directions first and only explore the seemingly bad trajectories if we run to a dead end. The algorithm is systematic and if a solution exists, it will eventually find it. The order in which the algorithm explores the state space gives us a guarantee that the first solution it will find will be the optimal solution. The selected discretization of time $\Delta t$ and of the size of the cells of the state space $\vec{\sigma}$ can have an impact on the existence of a solution. In theory, by making the discretization finer, we are guaranteed to find a solution. In practice, we could fine-tune the size of the cells $\vec{\sigma}$, to balance the performance and the ability to find solutions during the first search in most cases.
+
+\subsection{Space Exploration Guided Heuristic Search (SEHS)}
+
+Chao Chen presents a different approach to the discretization of the state space. In his dissertation, he presents a novel \gls{SEHS} algorithm and several extensions of this algorithm \cite{SEHS}. The author points out that for systems subject to nonholonomic constraints, uniform discretization is suboptimal. Instead, a guidance path consisting of overlapping circles with their centers on the circumferences of each other and with their radii based on the distance to the nearest obstacle from the start position to goal region is found. The path is then used as a heuristic to guide the search and the circles are used to discretize the position dimensions of the state space as a Voronoi diagram around the centers of these circles. This algorithm reduces the number of expanded nodes when compared to both \gls*{RRT} or \textit{Hybrid A*}, which is demonstrated by the author on a series of experiments. In this section, we will describe this search method more in depth.
+
+\subsubsection{Space Exploration (SE)}
+
+Space exploration is a pre-processing step of the planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The centers of each circle lies on the circumference the previous circle along the path. The radii of the circles are in some interval $(r_{min}, r_{max})\subset \mathbb{R}_{>0}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal.
+
+The exploration step can be implemented with a basic \textit{A*} search starting at the initial state location. During the expansion step of \textit{A*}, we will create a fixed number of new circles $n\in \mathbb{N}$ evenly spaced on the circumference of the expanded circle. The radius for each new circle will be calculated by measuring the distance to the closest obstacle and trimming this value to be within the interval of accepted radii. We will not open any circles with a smaller radius than $r_{min}$. The search will end once we expand a circle which includes some endpoint $\vec{x_{goal}}\in \mathbb{R}^2$. The cost function will be the length of the path measured by the distances between the centers of the circles, which is incidentally just the sum of the radii of the circles along the path. The heuristic function $h_{\vec{x_{goal}}}$ will be a simple euclidean distance between the center of a circle and the goal point $\vec{x_{goal}}$.
+
+Our goal is defined by a sequence of waypoints. We will start from the position of the initial state and use the center of the first waypoint as a goal. From the final circle in this path, we will run the algorithm again with the center of the second waypoint as a goal, and so on. The result will be a path through all of the waypoints, which is exactly what we need.
+
+\begin{algorithm}[]
+	\caption{The Space Exploration algorithm.}
+	\label{alg:space_exploration}
+	
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{SpaceExploration}{SpaceExploration}
+	\SetKwFunction{FindPathBetween}{FindPathBetween}
+	\SetKwFunction{Expand}{Expand}
+	\SetKwFunction{DistanceToClosestObstacle}{DistanceToClosestObstacle}
+	\SetKwFunction{ReconstructTrajectory}{ReconstructTrajectory}
+	\SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
+	
+	\KwIn{Occupancy grid $O_r^{m\times n}$, initial position $\vec{x_0}\in \mathbb{R}^2$, list of waypoints $\hat{w}=\left\langle \vec{w_1}, \vec{w_2}, \ldots, \vec{w_l} \right\rangle\in\mathbb{R}^l$.}
+	\KwOut{Path of circles or $null$}
+	\Parameter{Range of valid radii $\left(r_{min}, r_{max}\right)\subset\mathbb{R}_{>0}$, number of child circles $n\in \mathbb{N}$}
+	
+	\SetKwProg{algorithm}{Algorithm}{:}{}
+	\SetKwProg{procedure}{Procedure}{:}{}
+	
+	\BlankLine
+	
+	\algorithm{\SpaceExploration{}}{
+		$\vec{x_{start}}\gets \vec{x_0}$\;		
+		\For{$i=1\ldots l$}{
+			$c_i\gets $ \FindPathBetween{$\vec{x_{start}}$, $\vec{w_i}$}\;
+			\lIf{$c_i=\text{null}$}{ \KwRet{null} }
+			$\vec{x_{start}}\gets \text{center of last circle of } c_i$\; 
+		}
+		\KwRet{$c_1+c_2+\ldots +c_l$}\;
+	}
+
+	\BlankLine
+	
+	\procedure{\FindPathBetween{$\vec{x_{start}}$, $\vec{x_{goal}}$}}{
+		$r_{start}\gets $ \DistanceToClosestObstacle{$O_r^{m\times n}$, $\vec{x_{start}}$, $r_{max}$}\;
+		$O\gets\left\{\left(\vec{x_{start}}, r_{start}, 0, null\right)\right\}$\;
+		$C\gets\emptyset$\;
+		\While{$O\neq\emptyset$}{
+			$v\gets\argmin_{\left(\vec{x'}, r', g', v_p\right)\in O} g'+h_{\vec{x_{goal}}}(\vec{x'})$\;
+			$O\gets O\setminus\left\{v\right\}$\;
+			$\left(\vec{x}, r, g, v_p\right)\gets v$\;
+			\If{$\norm{\vec{x}-\vec{x_{goal}}}<r$}{ \KwRet{\ReconstructTrajectory{$v$}}\; }
+			\If{$\forall \left(\vec{x'}, r'\right) \in C: \norm{\vec{x}-\vec{x'}}\geq r'$}{
+				$C\gets C\cup\left\{\left(\vec{x}, r\right)\right\}$\;
+				\Expand{$v$, $O$, $C$}\;
+			}
+		}	
+		\KwRet{null}\;
+	}
+	
+	\BlankLine
+	
+	\procedure{\Expand{$v$, $O$, $C$}}{		
+		$\left(\vec{x}, r, g, v_p\right)\gets v$\;
+		\ForEach{$\vec{x'}\in $ \PointsOnCircumference{$n$, $\vec{x}$, $r$}}{
+			$r'\gets $ \DistanceToClosestObstacle{$O_r^{m\times n}$, $\vec{x'}$,  $r_{max}$}\;
+			\If{$r' \geq r_{min} \land \forall \left(\vec{x''}, r''\right) \in C: \norm{\vec{x'}-\vec{x''}}\geq r''$}{
+				$g'\gets g+r$\;
+				$O\gets O\cup\left\{\left(\vec{x'}, r', g', v\right)\right\}$\;
+			}
+		}
+	}
+	
+\end{algorithm}
+
+The pseudo-code of space exploration is shown in Algorithm~\ref{alg:space_exploration}. The main method ``stitches'' together the path from paths between the individual waypoins, which are obtained using the \texttt{FindPathBetween} procedure. This procedure implements the space exploration algorithm itself. It is an implementation of the standard A* algorithm and it shares most of the logic with Algorithm~\ref{alg:hybrid_astar}. There are only a few aspects, which deserve additional commentary:
+
+\begin{enumerate}
+	\item A point is considered to be \textit{closed}, when it is an internal point of an already expanded circle. This is not a simple operation which could be implemented using a hash-table. We can assume that we would perform a check against every circle in $C$ and so the complexity would be linear with the size of $C$.
+	
+	\item The function \texttt{PointsOnCircumference} calculates $n$ polar coordinates $p_i=(2\pi i/n, r)$, where $r$ is the given radius, and converts them into Cartesian coordinates with respect to the given center of the circle.
+	
+	\item We implement the \texttt{DistanceToClosestObstacle} function by generating a fixed number of rays around the starting point and using a ray-marching algorithm to find the distance along the ray at which we enter a cell which is occupied by an obstacle. The number of rays must be high enough so that the risk of missing an obstacle between two rays within the radius $r_{max}$ is low. We assume that the obstacles marked in the map are fairly large and that their surfaces are smooth, without long spikes. This approach is inspired by the way a \gls{LIDAR} works.
+\end{enumerate}
+
+The path of circles can be further optimized to find a shorter path between the centers of the circles, while not reducing the clearance from obstacles. The space exploration algorithm might not find the shortest path, because it considers only a fixed number of directions when a circle is expanded. The author of the algorithm proposes a simple iterative algorithm which adjusts the center of each circle $(\vec{x_i}, r_i)$ to be on the line between $\vec{x_{i-1}}$ and $\vec{x_{i+1}}$ in the ratio of $r_{i-1}:r_{i+1}$, if the distance to the nearest obstacle from this point is greater or equal to $r_i$. This process is repeated until some of the circles can be adjusted. At the end of these adjustments, the centers of the circles might not be on the circumferences of other circles, but the circles will still be overlapping. The single optimization step is visualized in Figure~\ref{fig:sehs_space_exploration_optimization} and further details of this process are described in~\cite[Section 2.2.3]{SEHS}.
+
+\begin{figure}
+	\centering
+	\missingfigure{SE path optimization step}
+	\caption{The optimization step of the path of circles moves the center of a circle only if the length of the path through the centers of the circles decreases and the radius of the circle can be increased or it stays the same.}
+	\label{fig:sehs_space_exploration_optimization}
+\end{figure}
+
+\subsubsection{Heuristic Search (HS)}
+
+The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $\delta_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
+
+\paragraph{State Space Discretization}
+We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}\in \mathbb{R}^k$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $\delta_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
+
+\begin{equation*}
+\begin{aligned}
+	i(\vec{x})&=\argmin_{j\in \left\{1, 2, \ldots, k\right\}} \norm{\vec{x}-\vec{c_j}} \\
+	\delta_{x,y}(\vec{x})&=c_{i(x)}.
+\end{aligned}
+\end{equation*}
+
+The path of circles does not give us any information which could be used to discretize the heading angle of the vehicle $\theta$ or any other additional state variables. For these state variables, we have to use the same uniform cell discretization as in \textit{Hybrid A*}.
+
+This space discretization has one big advantage over the uniform grid discretization. When the path goes through a long wide corridor, it will consist of a small number of circles with large radii. Going through this part of the track will not require too many control inputs. When the path goes through a narrow passage between obstacles or through a corner, the radii of the circles will be smaller and so the number of circles in this area will be larger. Going through this region will probably require finer control over the vehicle. We will be able to explore more different control input sequences through this area because the discretization will be denser here.
+
+\paragraph{Heuristic}
+The heuristic function estimates the remaining time which it could take to reach the goal. As in \textit{Hybrid A*}, we will estimate the remaining distance from the current state to the goal region and divide this distance by the maximum possible velocity of the vehicle $v_{max}$. For some point $\vec{x}\in \mathbb{R}^2$ we will find the circle closest to it and add the distance to the center of the next circle and the sum of the distances between the rest of the circles until the end region:
+
+\begin{equation*}
+\begin{aligned}
+	d(\vec{x})&=\norm{\vec{x}-\vec{c_{i(\vec{x})+1}}}+\sum_{j=i(\vec{x})+1}^{k-1} \norm{\vec{c_j}-\vec{c_{j+1}}} \\
+	h(\vec{x})&=\dfrac{d(\vec{x})}{v_{max}}.
+\end{aligned}
+\end{equation*}
+
+\subsubsection{Conclusion}
+
+The \gls*{SEHS} algorithm is a simple yet efficient way of searching a state space for a car-like vehicle. It promises significantly faster convergence towards a solution than \textit{Hybrid A*}, but the implementation itself is very similar. The main difference is in the discretization of the state space, which is much denser when the desired path is near obstacles and less dense when there are no obstacles around. We will implement both \textit{Hybrid A*} and \gls*{SEHS} and compare the results of these two algorithms.
