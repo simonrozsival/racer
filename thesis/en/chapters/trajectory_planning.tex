@@ -413,6 +413,7 @@ To ensure that our vehicle goes around the circuit in the correct direction and 
 	\[
 		(\vec{x}, \vec{y}) \in D \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
 	\]
+\label{def:directly_visible_points}.
 \end{defn}
 
 \begin{defn}[Waypoint]
@@ -796,6 +797,7 @@ The \textit{Hybrid A*} algorithm is a good option for trajectory planning. The s
 Chao Chen presents a different approach to the discretization of the state space. In his dissertation, he presents a novel \gls{SEHS} algorithm and several extensions of this algorithm \cite{SEHS}. The author points out that for systems subject to nonholonomic constraints, uniform discretization is suboptimal. Instead, a guidance path consisting of overlapping circles with their centers on the circumferences of each other and with their radii based on the distance to the nearest obstacle from the start position to goal region is found. The path is then used as a heuristic to guide the search and the circles are used to discretize the position dimensions of the state space as a Voronoi diagram around the centers of these circles. This algorithm reduces the number of expanded nodes when compared to both \gls*{RRT} or \textit{Hybrid A*}, which is demonstrated by the author on a series of experiments. In this section, we will describe this search method more in depth.
 
 \subsubsection{Space Exploration (SE)}
+\label{sec:space_exploration}
 
 Space exploration is a pre-processing step of the planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The centers of each circle lies on the circumference the previous circle along the path. The radii of the circles are in some interval $(r_{min}, r_{max})\subset \mathbb{R}_{>0}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal.
 
@@ -927,24 +929,9 @@ A natural way of splitting the track into smaller segments is to find the corner
 
 Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.\todo{Actually test this.}
 
-In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid, initial pose of the vehicle with respect to the occupancy grid, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit. An occupancy grid can be formalized with the following definition:
+In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit.
 
-\begin{defn}\label{def:occupancy_grid}
-	Occupancy grid $G\in\{0, 1\}^{m\times n}$ of resolution $r\in\mathbb{R}$ is a two dimensional table of $m$ rows and $n$ columns which corresponds to a rectangular area of the environment of the width of $m * r$ meters and the length of $n * r$ meters. The cells of the table fill the area as square tiles of the side length of $r$ meters. The value of a cell $G_{ij}$ reflects on the state of its corresponding area:
-	
-	\[
-	G_{ij} =
-	\begin{cases}
-	-1\text{,} &\quad\text{if } i < 0 \vee j < 0 \vee i \geq m \vee j \geq n\\
-	0\text{,} &\quad\text{or if the corresponding tile contains an obstacle} \\
-	1\text{,} &\quad\text{otherwise.}
-	\end{cases}
-	\]
-\end{defn}
-
-The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. In order to achieve this, we can make a simple observation and derive an algorithm which will produce good approximate solutions.
-
-We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in Figure~\ref{fig:thought_process} on different track layouts.
+The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. We can make a simple observation and derive an algorithm which will produce good approximate solutions. We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in Figure~\ref{fig:thought_process} on different track layouts.
 
 \begin{figure}
 	\missingfigure{The thought process of finding the corners of a circuit.}
@@ -952,57 +939,14 @@ We can inflate imaginary rubber walls with the thickness of a given safety radiu
 	\label{fig:thought_process}
 \end{figure}
 
-We will implement this process with a three step algorithm which will identify the corners and points along long winding bends. The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).3
+We will implement this process with a three step algorithm which will identify the corners and points along long winding bends:
+\begin{itemize}
+	\item The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. 
+	\item The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. 
+	\item In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).
+\end{itemize}
 
-The shortest path can be found in several different ways. The simplest approach would be to use a simple grid search on the occupancy grid. An interesting alternative is the Space Exploration algorithm described by Chao Chen \cite{SEHS} which uses a search algorithm to explore the grid using circles of variable radii which depend on the distance to the closest obstacle. The expansion of a circle is achieved by calculating $k\in\mathbb{N}$ points on the circumference of the expanded circle and calculating maximum possible a radius for the given point as a distance to the closest obstacle. We will add the child circle to the open set if its radius is larger than some minimum radius (i.e., we will avoid points too close to obstacles) and if the circle has not been closed yet. A circle will be considered closed if the center of the circle lies inside of an already closed circle. This allows us to avoid exploring some regions of the occupancy grid multiple times. To search the space efficiently, we will use the A* algorithm as the search method. The cost to come to a circle will equal to the distance traveled from the initial position to the circle and the estimate of the cost to go will be equal to the euclidean distance to the goal position. We will stop searching at the moment when we expand a circle which contains the goal position. The outline of the algorithm is described in Algorithm~\ref{alg:space_exploration} and a visualization of the algorithm is shown in Figure~\ref{fig:sehs_space_exploration}.
-
-\vspace{1cm}
-\begin{algorithm}[]
-	\SetAlgoLined
-	\DontPrintSemicolon
-	
-	\SetKwFunction{Top}{Top}
-	\SetKwFunction{MaxRadius}{MaxRadius}
-	\SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
-	\SetKwFunction{ReconstructPath}{ReconstructPath}
-	
-	\KwIn{Occupancy grid $G$, starting position $\vec{x}_0$, goal position $\vec{g}$}
-	\KwOut{Sequence of circles}
-	\Parameter{Number of expanded children $k$, minimum radius $r_{min}$}
-	
-	$r_0\gets$ \MaxRadius{$G$, $\vec{x}_0$}\;
-	$O\gets\{(\vec{x}_0, r_0)\}$ \Comment*[r]{Open set}
-	$C\gets\emptyset$ \Comment*[r]{Closed set}
-	$P\gets\emptyset$ \Comment*[r]{Set of transitions}
-	
-	\While{$O \neq \emptyset$}{
-		$(\vec{x}, r)\gets $\Top{$O$}\;
-		$O\gets O\setminus\{(\vec{x}, r)\}$\;
-		
-		\If{$\|\vec{x} - \vec{g}\| \leq r$}{
-			\KwRet \ReconstructPath{$(\vec{x}, r)$, $P$}\;
-		}
-		
-		\For{$\vec{p'}$ in \PointsOnCircumference{$(\vec{x}, r)$, $k$}}{
-			$r'\gets$ \MaxRadius{$G$, $\vec{p'}$}\;
-			
-			\If{$r'\geq r_{min}\ \wedge\ \not\exists (\vec{x_{c}, r_{c}})\in C: \|\vec{x_c} - \vec{p'}\| \leq r_c)$}{
-				$O\gets O\cup \{(\vec{p'}, r')\}$\;
-				$P\gets P\cup \{\big((\vec{x}, r), (\vec{p'}, r')\big)\}$\;
-			}
-		}
-		
-		$C\gets C\cup\{(\vec{x}, r)\}$\;
-	}
-	
-	\caption{Space Exploration}
-	\label{alg:space_exploration}
-\end{algorithm}
-\vspace{1cm}
-
-To find the path from the initial position through the check points and to the finish line position, we will simply find the path from the initial point to the first checkpoint and then starting from the last circle of the previous path to the next check point. We repeat this until we close the circuit by reaching the initial position again. The path of circles we find might not be optimal. We can further improve it by iterating over the path it and smoothing it as shown in algorithm~\ref{alg:sehs_smoothing}.
-
-With the path of circles around the circuit, we can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}
+The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The centers of the path of circles found by the \textit{SE} algorithm will never be too close to the boundary of the track, which acts as the imaginary ``rubber wall'' form our thought experiment. We can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points}.
 
 \vspace{1cm}
 \begin{algorithm}[H]
@@ -1012,10 +956,38 @@ With the path of circles around the circuit, we can now proceed the second step 
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
-	\SetKwFunction{AreDirectlyVisible}{AreDirectlyVisible}
+	\SetKwFunction{FindApexes}{FindApexes}
+	\SetKwFunction{SpaceExploration}{SpaceExploration}
 	
-	\KwIn{Occupancy grid $G$, sequence of $n$ points $(\vec{x_i})_{i=0}^{n}$}
-	\KwOut{Sequence of points}
+	\KwIn{Occupancy grid $O_r^{m\times n}$, initial configuration $c_0$, directly visible points relation $D$, sequence of checkpoints $\hat{p}_n=\left\langle \vec{p_0}, \vec{p_1}, \ldots, \vec{p_n} \right\rangle$}
+	\KwOut{Sequence of waypoints}
+		
+	\SetKwProg{algorithm}{Algorithm}{:}{}
+		
+	\BlankLine
+	
+	\algorithm{\FindApexes{$c_0$, $\hat{p}_n$, $O_r^{m\times n}$}}{
+		$\hat{q}_m\gets $ \SpaceExploration{$c_0$, $\hat{p}_n$, $O_r^{m\times n}$}\;
+		$\hat{w}\gets \left\langle \right\rangle$\;
+		$w_{last}\gets q_0, q_{prev}\gets q_0$\;
+		\ForEach{$q_{next}\in \hat{q}_m$} {
+			\If{$(w_{last}, q_{next})\notin D$}{
+				$\hat{w}\gets \hat{w}+\left\langle q_{prev} \right\rangle$\;
+				$w_{last}\gets q_{prev}$\;
+			}
+			$q_{prev}\gets q_{next}$\;
+		}
+		\ForEach{$q_{next}\in \hat{q}_m$} {
+			\If{$(w_{last}, q_{next})\notin D$}{
+				$\hat{w}\gets \hat{w}+\left\langle q_{prev} \right\rangle$\;
+				$w_{last}\gets q_{prev}$\;
+				\If{$(w_{last}, w_{0})\in D$}{
+					\KwRet{$\hat{w}$};
+				}
+			}
+			$q_{prev}\gets q_{next}$\;
+		}
+	}
 \end{algorithm}
 \vspace{1cm}
 

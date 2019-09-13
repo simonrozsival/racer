@@ -85,8 +85,7 @@ Finally, we can define an error between a state trajectory $\hat{x}=\left\langle
 	\hat{e}_{\Delta t}(\hat{x}, \hat{x}_{ref})=\dfrac{\sum_{i=1}^{l} i\cdot e(x_i, x'_i)}{l(l+1)/2}.
 \]
 
-
-\section{Geometric Controllers}
+\section{Geometric Controller}
 
 There are several algorithms which will allow us to track the reference trajectory based only on the geometry of the vehicle and the error between the current state and the desired state. We will use two algorithms, a \gls{PID} controller to regulate the target velocity of the vehicle and a \textit{Pure Pursuit} controller to control the steering angle.
 
@@ -111,8 +110,13 @@ where $x_i, x_{ref, i}$ are the  $i$-th state of the vehicle and the reference s
 
 \subsection{Pure Pursuit}
 
-A \gls*{PID} controller which regulate the steering angle based on the heading misalignment $e_\theta$ could be easily defined as well. There are although other algorithms, which are more advanced, yet very simple as well. The Pure Pursuit algorithm is a purely geometric algorithm used for determining the steering angle of the vehicle based on a target state at a lookahead distance from the rear axle wheel along the trajectory. This target point is sometimes referred to as to a ``carrot'', because the vehicle pursues this target state, but it moves along with the vehicle and it will never reach it. 
-This algorithm was used for self-driving car steering by the researches at The Robotics Institute at the Carnegie Mellon University in the \textit{NavLab} project \cite{Pure_pursuit}.
+A \gls*{PID} controller which regulate the steering angle based on the heading misalignment $e_\theta$ could be easily defined as well. There are although other algorithms, which are more advanced, yet very simple as well. The Pure Pursuit algorithm is a purely geometric algorithm used for determining the steering angle of the vehicle based on a target state at a lookahead distance from the rear axle wheel along the trajectory. This target point is sometimes referred to as to a ``carrot'', because the vehicle pursues this target state, but it moves along with the vehicle and it will never reach it. This algorithm was used for self-driving car steering by the researches at The Robotics Institute at the Carnegie Mellon University in the \textit{NavLab} project \cite{Pure_pursuit}.
+
+\begin{figure}
+	\missingfigure{"Pure pursuit geometry"}
+	\caption{The reference point on the trajectory can be imagined as a ``carrot'' which the vehicle is pursuing. The lookahead distance can be variable based on the velocity of the vehicle.}
+	\label{fig:pure_pursuit}
+\end{figure}
 
 The lookahead distance can greatly affect the performance of the algorithm. Short lookahead distance can cause oscillation whereas long lookahead distance can lead to slow convergence to the path. Instead of using a constant lookahead distance, we will calculate its value from the current velocity of the vehicle:
 
@@ -134,10 +138,63 @@ R&=\dfrac{l_d }{2\sin\alpha} \\
 \end{aligned}
 \end{equation*}
 
-The $v$ in the denominator will ensure that the steering angle is not very large when the vehicle is traveling at high speeds which could lead to sharp turns and loss of control over the vehicle. The vehicle has a limited range of valid steering angles. We must clamp the target angle to the limiting angle $\delta_{min}$ or $\delta_{max}$ which will try to bring the vehicle as close to the desired radius as possible.
+The $v$ in the denominator will ensure that the steering angle is not very large when the vehicle is traveling at high speeds which could lead to sharp turns and loss of control over the vehicle. The geometry is visualized in Figure~\ref{fig:pure_pursuit}. The vehicle has a limited range of valid steering angles. We must clamp the target angle to the limiting angle $\delta_{min}$ or $\delta_{max}$ which will try to bring the vehicle as close to the desired radius as possible.
 
 The vehicle itself cannot change the steering angle instantaneously. This will inherently lead to tracking errors. The lookahead distance gain $K$ must be tuned well so that the vehicle does not start turning too early or too late at a given velocity so that it always stays within the bounds of the track, especially at high speeds.
 
-\section{Model-Based Controller}
+\section{Dynamic Window Approach (DWA)}
 
-\todo[inline]{Coyp&Paste&Fix}
+Another approach to trajectory following is to select the next control input based on a prediction of the effects in a short horizon. While during trajectory planning we had time to plan several corners ahead, the controller needs to be very fast and select control inputs with very little delay after every measurement of the state of the vehicle. In this section, we will consider two model-based algorithms with different properties.
+
+\begin{figure}
+	\missingfigure{"DWA tentacles"}
+	\caption{Application of different actions can be visualized as a set of ``tentacles'' around the vehicle. Each ``tentacle'' is a prediction of the positions of the vehicle during the prediction horizon period.}
+	\label{fig:dwa}
+\end{figure}
+
+At each time when we want to select the next control input for our vehicle, the DWA algorithm \cite{DWA} samples the control space of the robot and simulates the trajectories which the robot would travel if the action was applied for a short time period $T=k\cdot \Delta t,k\in\mathbb{N}$. The resulting trajectories, which do not result in a collision, are scored and the action of the best trajectory is used. The outline of the algorithm adapted for our problem can be seen in Algorithm~\ref{alg:dwa} and it is visualized in Figure~\ref{fig:dwa}.
+
+\begin{algorithm}[]
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{DWA}{DWA}
+	\SetKwFunction{Unfold}{Unfold}
+	\SetKwFunction{EmergencyStop}{EmergencyStop}
+	
+	\KwIn{Collision detection function $c$, time step $\Delta t$, finite set of actions $U_f$, horizon $k\in\mathbb{N}$}
+	\KwOut{An action $u\in U_f$}
+	\Parameter{Initial state $x_0$, reference trajectory $\hat{x}_{ref}$}
+	
+	\SetKwProg{algorithm}{Algorithm}{:}{}
+	
+	\BlankLine
+	
+	\algorithm{\DWA{$x_0$, $\hat{x}_{ref}$}}{
+		$T\gets \emptyset$\;
+		\ForEach{$u\in U_f$}{
+			$\hat{x}'\gets $ \Unfold{$x_0$, $u$, $k$, $\Delta t$}\;
+			\If{$\forall x\in \hat{x}': c(x)=F$}{
+				$T\gets T\cup\left\{\hat{x}'\right\}$\;
+			}
+		}
+	
+		\If{$T=\emptyset$}{
+			\KwRet{\EmergencyStop{}}\;
+		}
+	
+		\KwRet{$\argmin_{\hat{x}\in T} \hat{e}_{\Delta t}(\hat{x})$}\;
+	}
+		
+	\caption{Dynamic Window Approach}
+	\label{alg:dwa}
+\end{algorithm}
+
+The function \texttt{Unfold} simulates the motion of the vehicle from the state $x_0$ using the control command $u$ in the next $k$ steps and returns the state trajectory which is obtained.
+
+The function \texttt{EmergencyStop} is used when there is no valid trajectory and it selects a control input from the set of possible actions which will slow down the vehicle as much as possible before hitting the obstacle.
+
+The time complexity of the algorithm is $O(k\cdot n)$ and it requires $O(k\cdot n)$ of memory, for $n=|U_f|$. Since both values are small constants, the algorithm itself can be very fast and the delay $t_d$ will be low.
+
+The algorithm prefers trajectories which will bring the vehicle closer to the reference trajectory while avoiding collisions with any obstacles along the trajectory which might not have been known during the planning phase.
+
