@@ -11,13 +11,10 @@
 \contentsline {todo}{Actually test this.}{43}{section*.73}
 \contentsline {todo}{Figure: A path of a robot from the thought experiment.}{44}{figure.caption.74}
 \contentsline {todo}{Figure: Hairpin turn and a diff robot turning points.}{44}{figure.caption.74}
-\contentsline {todo}{Describe the algorithm in general.}{45}{section*.77}
-\contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{47}{figure.caption.80}
-\contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{47}{section*.81}
-\contentsline {todo}{Write how this could be improved.}{47}{section*.83}
-\contentsline {todo}{Summarize the time complexity.}{47}{section*.85}
-\contentsline {todo}{Port the chapter from Word.}{47}{section*.86}
-\contentsline {todo}{Describe, what are the purposes of the three values.}{50}{section*.91}
-\contentsline {todo}{Figure: "Pure pursuit geometry"}{51}{figure.caption.92}
-\contentsline {todo}{Figure: "DWA tentacles"}{52}{figure.caption.93}
-\contentsline {todo}{Write this chapter once the source code is stable.}{74}{section*.113}
+\contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{46}{figure.caption.79}
+\contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{46}{section*.80}
+\contentsline {todo}{Port the chapter from Word.}{48}{section*.83}
+\contentsline {todo}{Describe, what are the purposes of the three values.}{51}{section*.88}
+\contentsline {todo}{Figure: "Pure pursuit geometry"}{52}{figure.caption.89}
+\contentsline {todo}{Figure: "DWA tentacles"}{53}{figure.caption.90}
+\contentsline {todo}{Write this chapter once the source code is stable.}{75}{section*.110}
