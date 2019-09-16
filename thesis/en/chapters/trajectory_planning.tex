@@ -409,19 +409,19 @@ When we analyzed the problem earlier in this chapter, we decided to plan a traje
 To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in a the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
 
 \begin{defn}[Directly Visible Points]
-	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the shortest path between these two points. The set $D\subseteq \mathbb{R}^2\times\mathbb{R}^2$ captures this relation: 
+	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the line between these two points. The set $D(O_r^{m\times n})\subseteq \mathbb{R}^2\times\mathbb{R}^2$ for the given occupancy grid captures this relation:
 	\[
-		(\vec{x}, \vec{y}) \in D \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
+		(\vec{x}, \vec{y}) \in D(O_r^{m\times n}) \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
 	\]
 \label{def:directly_visible_points}.
 \end{defn}
 
 \begin{defn}[Waypoint]
-	Waypoint goal region is a set
+	Waypoint goal region in an occupancy grid $O_r^{m\times n}$ is a set of states
 	\[
-		G_r(\vec{w})=\left\{c\in C \mid \norm{\vec{p_c}-\vec{w}}<r \land (\vec{p_c}, \vec{w}) \in D \right\},
+		G_r(\vec{w})=\left\{x\in X \mid \norm{\kappa_{x,y}(x)-\vec{w}}<r \land (\kappa_{x,y}(x), \vec{w}) \in D(O_r^{m\times n}) \right\},
 	\]
-	where $p_c$ is the position vector of the vehicle configuration $c$ and $r\in \mathbb{R}$ is the radius of the goal region. $G_r(\vec{w})$ is a set of all configurations which are considered to \textit{pass the waypoint}.
+	where $r\in \mathbb{R}$ is the radius of the goal region and $\vec{w}\in\mathbb{R}^2$ is the center of the waypoint. $G_r(\vec{w})$ is a set of all states which are considered to \textit{pass the waypoint}.
 \end{defn}
 
 The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The choice of the radius of the \textit{waypoint goal region} is not too important. The radius should be large enough to cover the whole width of the track, so that it does not force the vehicle to change the trajectory just to pass the artificially added waypoint. On the other hand, the waypoints should not overlap very much. The requirement of \textit{direct visibility} is there to prevent scenarios when the vehicle could pass a waypoint ``behind a wall'' if the radius is too large, as is shown in Figure~\ref{fig:waypoints}.
@@ -438,7 +438,7 @@ To implement this goal condition, we must extend the state space $X$ with one ex
 \begin{equation*}
 	\mu(x)=
 	\begin{cases}
-		\mu(x')+1 & \kappa(x)\in G_r(\vec{w_{\mu(x')+1}}) \\
+		\mu(x')+1 & x\in G_r(\vec{w_{\mu(x')+1}}) \\
 		\mu(x') & otherwise.
 	\end{cases}
 \end{equation*}
@@ -799,7 +799,7 @@ Chao Chen presents a different approach to the discretization of the state space
 \subsubsection{Space Exploration (SE)}
 \label{sec:space_exploration}
 
-Space exploration is a pre-processing step of the planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The centers of each circle lies on the circumference the previous circle along the path. The radii of the circles are in some interval $(r_{min}, r_{max})\subset \mathbb{R}_{>0}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal.
+Space exploration is a pre-processing step of the planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The centers of each circle lies on the circumference the previous circle along the path. The radii of the circles are in some closed interval $\left[r_{min}, r_{max}\right]\subset \mathbb{R}_{>0}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal.
 
 The exploration step can be implemented with a basic \textit{A*} search starting at the initial state location. During the expansion step of \textit{A*}, we will create a fixed number of new circles $n\in \mathbb{N}$ evenly spaced on the circumference of the expanded circle. The radius for each new circle will be calculated by measuring the distance to the closest obstacle and trimming this value to be within the interval of accepted radii. We will not open any circles with a smaller radius than $r_{min}$. The search will end once we expand a circle which includes some endpoint $\vec{x_{goal}}\in \mathbb{R}^2$. The cost function will be the length of the path measured by the distances between the centers of the circles, which is incidentally just the sum of the radii of the circles along the path. The heuristic function $h_{\vec{x_{goal}}}$ will be a simple euclidean distance between the center of a circle and the goal point $\vec{x_{goal}}$.
 
@@ -812,6 +812,7 @@ Our goal is defined by a sequence of waypoints. We will start from the position 
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
+	
 	\SetKwFunction{SpaceExploration}{SpaceExploration}
 	\SetKwFunction{FindPathBetween}{FindPathBetween}
 	\SetKwFunction{Expand}{Expand}
@@ -819,16 +820,15 @@ Our goal is defined by a sequence of waypoints. We will start from the position 
 	\SetKwFunction{ReconstructTrajectory}{ReconstructTrajectory}
 	\SetKwFunction{PointsOnCircumference}{PointsOnCircumference}
 	
-	\KwIn{Occupancy grid $O_r^{m\times n}$, initial position $\vec{x_0}\in \mathbb{R}^2$, list of waypoints $\hat{w}=\left\langle \vec{w_1}, \vec{w_2}, \ldots, \vec{w_l} \right\rangle\in\mathbb{R}^l$.}
+	\KwIn{Occupancy grid $O_r^{m\times n}$, initial position $\vec{x_0}\in\mathbb{R}^2$, list of waypoints $\hat{w}=\left\langle \vec{w_1}, \vec{w_2}, \ldots, \vec{w_l} \right\rangle\in\mathbb{R}^l$, range of valid radii $\left[r_{min}, r_{max}\right]\subset\mathbb{R}_{>0}$, number of child circles $n\in\mathbb{N}$.}
 	\KwOut{Path of circles or $null$}
-	\Parameter{Range of valid radii $\left(r_{min}, r_{max}\right)\subset\mathbb{R}_{>0}$, number of child circles $n\in \mathbb{N}$}
 	
 	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
 	
 	\BlankLine
 	
-	\algorithm{\SpaceExploration{}}{
+	\algorithm{\SpaceExploration{$O_r^{m\times n}$, $\vec{x_0}$, $\hat{w}$, $\left[r_{min}, r_{max}\right]\subset\mathbb{R}_{>0}$, $n\in\mathbb{N}$}}{
 		$\vec{x_{start}}\gets \vec{x_0}$\;		
 		\For{$i=1\ldots l$}{
 			$c_i\gets $ \FindPathBetween{$\vec{x_{start}}$, $\vec{w_i}$}\;
@@ -869,7 +869,6 @@ Our goal is defined by a sequence of waypoints. We will start from the position 
 			}
 		}
 	}
-	
 \end{algorithm}
 
 The pseudo-code of space exploration is shown in Algorithm~\ref{alg:space_exploration}. The main method ``stitches'' together the path from paths between the individual waypoins, which are obtained using the \texttt{FindPathBetween} procedure. This procedure implements the space exploration algorithm itself. It is an implementation of the standard A* algorithm and it shares most of the logic with Algorithm~\ref{alg:hybrid_astar}. There are only a few aspects, which deserve additional commentary:
@@ -931,67 +930,188 @@ Another benefit of splitting the track into smaller segments and planning the tr
 
 In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit.
 
-The goal of the track analysis algorithm is to find interesting points of the track which split the track into smaller segments corresponding to stretches between the corners of the track. We can make a simple observation and derive an algorithm which will produce good approximate solutions. We can inflate imaginary rubber walls with the thickness of a given safety radius of the vehicle along the edges of the track and loosely lay an imaginary string through the whole circuit. We can then start tightening the string and eventually it will take a form of alternating straight segments and parts, where it touches the rubber wall at an inner edge of a corner of a track. The string represents the shortest path for the vehicle around the circuit. We can then remove the imaginary rubber walls and start walking from the initial position of the vehicle along the string. We will mark the furthest point which is directly visible from the place where we're standing. By directly visible we mean that it is possible to draw a line between the two points in the occupancy grid and it will not intersect a cell containing an obstacle between the two points. This is the first corner ahead of us. We will then walk to this point and repeat the process, until we can see the first point we marked again. This thought process is visualized in Figure~\ref{fig:thought_process} on different track layouts.
+The goal of the track analysis algorithm is to find points close to corners of the track. We will then be able to split the track into smaller segments which correspond to stretches between the corners of the track. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
 
-\begin{figure}
-	\missingfigure{The thought process of finding the corners of a circuit.}
-	\caption{The thought process of finding the corners of a circuit.}
-	\label{fig:thought_process}
+Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. If we relax our problem and imagine, that robot robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its $z$ axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that some corners it would require several consequent turns to go around the corner, (e.g., a so-called ``hairpin''corner as shown in Figure~\ref{fig:hairpin_corner_thought_process}) and so not every change of direction could be simply interpreted as a corner.
+
+\begin{figure}[tbp]
+	\centering
+	\begin{subfigure}[t]{0.45\textwidth}
+		\missingfigure{A path of a robot from the thought experiment.}
+		\caption{The thought process of finding the corners of a circuit.}
+		\label{fig:thought_process}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[t]{0.45\textwidth}
+		\missingfigure{Hairpin turn and a diff robot turning points.}
+		\caption{The robot from our thought process will have to make two turns in a short period of time to turn 180° and go through a so-called ``hairpin'' corner.}
+		\label{fig:hairpin_corner_thought_process}
+	\end{subfigure}
 \end{figure}
 
-We will implement this process with a three step algorithm which will identify the corners and points along long winding bends:
+We will implement an algorithm based on this thought experiment which will have two steps:
 \begin{itemize}
-	\item The first step will be to find the shortest path through the grid which starts at the initial position of the vehicle and which goes through the checkpoints in the correct order and at any point it does not come closer to an obstacle than to a distance of the safety radius. 
-	\item The second step will simply traverse the path once and select a sub-sequence of the points such that for two consecutive points $A$ and $B$, $B$ was the last point of the points immediately following $A$ on the original track which are directly visible from $A$. 
-	\item In the third step, we will merge points, which are close together (e.g., in a 180° hairpin turn).
+	\item We will find the pivot points in a path for the differential drive robot through the occupancy grid which starts at the initial position of the vehicle and which goes through the checkpoints.
+	\item We will find clusters of the pivot points along the path and merge them into a single waypoint corresponding to a corner of the track.
 \end{itemize}
 
-The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The centers of the path of circles found by the \textit{SE} algorithm will never be too close to the boundary of the track, which acts as the imaginary ``rubber wall'' form our thought experiment. We can now proceed the second step of finding the corners of the circuit. We will traverse the path and mark the centers of circles which are the last directly visible points from the previous point as shown in algorithm~\ref{alg:find_apexes}. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points}.
+\subsection{Finding Pivot Points}
+The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. If we set the minimum and maximum radius of the circles to the radius of the car $r_{car}$ (i.e., the diagonal of its bounding rectangle), then the final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move $r_{car}$ meters forward in this direction, before it picks another direction.
 
-\vspace{1cm}
-\begin{algorithm}[H]
-	\caption{Waypoint Selection}
+We forced the robot to change direction every $r_{car}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
+
+\begin{algorithm}[]
+	\caption{Find Apexes}
 	\label{alg:find_apexes}
 	
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
-	\SetKwFunction{FindApexes}{FindApexes}
+	\SetKwFunction{FindPivotPoints}{FindPivotPoints}
 	\SetKwFunction{SpaceExploration}{SpaceExploration}
+	\SetKwFunction{ProcessNext}{ProcessNext}
+	\SetKwFunction{CorrectTailToHeadConnection}{CorrectTailToHeadConnection}
 	
-	\KwIn{Occupancy grid $O_r^{m\times n}$, initial configuration $c_0$, directly visible points relation $D$, sequence of checkpoints $\hat{p}_n=\left\langle \vec{p_0}, \vec{p_1}, \ldots, \vec{p_n} \right\rangle$}
-	\KwOut{Sequence of waypoints}
+	\KwIn{Occupancy grid $O_r^{m\times n}$, initial state $x_0$, directly visible points relation $O_r^{m\times n}$, sequence of checkpoints $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$}
+	\KwOut{Sequence of pivot points}
 		
 	\SetKwProg{algorithm}{Algorithm}{:}{}
+	\SetKwProg{procedure}{Procedure}{:}{}
 		
 	\BlankLine
 	
-	\algorithm{\FindApexes{$c_0$, $\hat{p}_n$, $O_r^{m\times n}$}}{
-		$\hat{q}_m\gets $ \SpaceExploration{$c_0$, $\hat{p}_n$, $O_r^{m\times n}$}\;
-		$\hat{w}\gets \left\langle \right\rangle$\;
-		$w_{last}\gets q_0, q_{prev}\gets q_0$\;
-		\ForEach{$q_{next}\in \hat{q}_m$} {
-			\If{$(w_{last}, q_{next})\notin D$}{
-				$\hat{w}\gets \hat{w}+\left\langle q_{prev} \right\rangle$\;
-				$w_{last}\gets q_{prev}$\;
-			}
-			$q_{prev}\gets q_{next}$\;
+	\algorithm{\FindPivotPoints{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{car}$}}{
+		$\hat{q}_l\gets $ \SpaceExploration{$O_r^{m\times n}$, $\kappa_{x,y}(x_0)$, $\hat{p}_k$, $\left[r_{car}, r_{car}\right]$}\;
+		$W\gets \emptyset$\;
+		$i_{last}\gets 1$\;
+		\ForEach{$i\in \left\{2,3,\ldots,l\right\}$} {
+			$(W, i_{last})\gets $ \ProcessNext{$W$, $i_{last}$, $i$}\;
 		}
-		\ForEach{$q_{next}\in \hat{q}_m$} {
-			\If{$(w_{last}, q_{next})\notin D$}{
-				$\hat{w}\gets \hat{w}+\left\langle q_{prev} \right\rangle$\;
-				$w_{last}\gets q_{prev}$\;
-				\If{$(w_{last}, w_{0})\in D$}{
-					\KwRet{$\hat{w}$};
-				}
-			}
-			$q_{prev}\gets q_{next}$\;
+		$i_{first}\gets \min W$\;
+		\ForEach{$i\in \left\{1,2,\ldots,i_{first}-1\right\}$} {	
+			$(W, i_{last})\gets $ \ProcessNext{$W$, $i_{last}$, $i$}\;
 		}
+		\KwRet{subsequence $\hat{w}_m\subseteq\hat{q}_l: m=|W| \land \forall q_i\in \hat{w}_m: i\in W$}
+	}
+
+	\BlankLine
+
+	\procedure{\ProcessNext{$W$, $i_{last}$, $i$}}{
+		\If{$\left(\vec{q_{i_{last}}}, \vec{q_i}\right)\notin D(O_r^{m\times n})$}{
+			$i_{last}\gets i-1$\;
+			$W\gets W\cup\left\{ i_{last} \right\}$\;
+		}
+		\KwRet{$(W, i_{last})$}\;
 	}
 \end{algorithm}
-\vspace{1cm}
 
-\todo[inline]{Finish this section.}
+The outcome of the \texttt{FindPivotPoints} algorithm, the pseudo-code of which is shown in Algorithm~\ref{alg:find_apexes}, is a sequence of pivot points such that two adjacent points in the sequence are \textit{directly visible} and the distances between these points are as long as possible. We use the \texttt{SpaceExploration} algorithm to find the initial path $\hat{q}_l$ with $l$ steps of constant length. We then go around the track and we try to merge these steps into longer straight lines.
+
+In the first loop, we start from the initial position and pretend that this is the last marked pivot point. We find the furthest point along $\hat{q}_l$, which is directly visible from the last waypoint, and mark it as an index of the next waypoint. We then repeat this process from next waypoint until we reach the end of the track. Because our track is a closed circuit, we try to connect the last pivot point we found with the first pivot point we found. It might be possible, that all of the points between these two pivot points are directly visible, but it might be necessary to mark another waypoint between the two. In the second loop, we continue from the beginning until we reach the first waypoint. Remember that we only pretended that the initial position of the vehicle is a pivot point and we have not actually marked it.
+
+In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, the length of the final path might be sub-optimal. We placed the first pivot point as the furthest visible point from the initial position, but the furthest visible point from $\vec{q_i}$ might be further along the path. Because our ultimate goal is to find the corners of the circuit and the path for the differential drive robot is just helping us find the approximate positions of the corners, this is not a real issue for us.
+
+\paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, then all of the points will be visible from each other and the whole sequence would collapse into a single waypoint. We will ignore this edge case and assume that the racing circuit has a non-trivial layout.
+
+\subsection{Clustering of the Pivot Points}
+
+\todo[inline]{Describe the algorithm in general.}
+
+\begin{algorithm}[]
+	\caption{Merge Close Points}
+	\label{alg:merge_close_points}
+	
+	\SetAlgoLined
+	\DontPrintSemicolon
+	
+	\SetKwFunction{MergeClosePoints}{MergeClosePoints}
+	\SetKwFunction{CloseNeighbors}{CloseNeighbors}
+	\SetKwFunction{FindMiddleIndex}{FindMiddleIndex}
+	\SetKwFunction{SelectSubsequenceBySkipping}{SelectSubsequenceBySkipping}
+	
+	\KwIn{Sequence of points $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$, minimum distance between corners $d_{min}\in\mathbb{R}_{>0}$}
+	\KwOut{Sequence of locations of corners}
+	
+	\SetKwProg{algorithm}{Algorithm}{:}{}
+	\SetKwProg{procedure}{Procedure}{:}{}
+	
+	\BlankLine
+	
+	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{
+		\Repeat{$n_{max} = 0$}{
+			\Comment{Find the point with most close neighbors.}
+			$i_{max}\gets 0$\;
+			$n_{max}\gets 0$\;
+			\For{$i\in \left\{1, 2, \ldots, |\hat{p}|\right\}$}{
+				$N\gets $ \CloseNeighbors{$i$, $\hat{p}$}\;
+				\If{$|N|>n_{max}$}{
+					$i_{max}\gets i_i$\;
+					$n_{max}\gets |N|$\;
+				}
+			}
+		
+			\Comment{Merge the points in the biggest cluster.}
+			\If{$n_{max}>0$}{
+				$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
+				$i_{mid}\gets $ \FindMiddleIndex{$N\cup\left\{i_{max}\right\}$}\;
+				$\hat{p}\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}\;
+			}
+		}
+		\KwRet{$\hat{p}$}\;
+	}
+
+	\BlankLine
+
+	\procedure{\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}}{
+		$N\gets\emptyset$\;
+		\Comment{Walk forward along the path.}
+		$j\gets (i+1) \mod |\hat{p}|$\;
+		\While{$\norm{\vec{p_i}-\vec{p_j}}<d_{min}\land j\neq i$}{
+			$N\gets N\cup\left\{j\right\}$\;
+			$j\gets (j+1) \mod |\hat{p}|$\;
+		}
+		\Comment{Walk backwards along the path.}
+		$j\gets (i-1) \mod |\hat{p}|$\;
+		\While{$\norm{\vec{p_i}-\vec{p_j}}<d_{min}\land j\neq i$}{
+			$N\gets N\cup\left\{j\right\}$\;
+			$j\gets (j-1) \mod |\hat{p}|$\;
+		}
+		
+		\KwRet{$N$}\;
+	}
+
+	\BlankLine
+	
+	\procedure{\FindMiddleIndex{$I$, $k$}}{
+		$i_{start}\gets i\in I: \forall 0\leq j<|I|: \left(i+j \mod k\right)\in I$\;
+		\KwRet{$\left\lfloor\dfrac{i_{start}+|I|}{2}\mod k\right\rfloor$}\;
+	}
+\end{algorithm}
+
+\subsubsection{Algorithm Analysis}
+
+The algorithm stops, which is summarized as pseudocode in Algorithm~\ref{alg:merge_close_points}, if during an iteration no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
+
+In every iteration, we find the biggest cluster of points along the sequence. We do this by counting the number of points within the radius $d_{min}$ around each point in the sequence. We pick the first point with this number of close neighbors and these neighbors. These points for a consecutive sub-sequence of the original sequence $\hat{p}$. We remove all of these points, except for the point in the middle of this sub-sequence. The point, which had most close neighbors and the point in the middle, can be two different points. This scenario is shown in Figure~\ref{fig:merge points}.
+
+\begin{figure}
+	\missingfigure{Marging points with different $i_{max}$ and $i_{mid}$.}
+	\caption{Visualization of the pivot points clustering algorithm.}
+	\label{fig:merge_points}
+\end{figure}
+
+When the algorithm stops, we are guaranteed that now two consequent points are closer than $d_{max}$. If it was not the case, the algorithm would not stop.
+
+\todo[inline]{Analyze the case when it collapses to just 1 point in the end.}
+
+\paragraph{Time Complexity}
+
+As we discussed earlier in this section, the outer loop will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point 
+
+\todo[inline]{Write how this could be improved.}
+
+\paragraph{Memory Complexity}
+\todo[inline]{Summarize the time complexity.}
 
 \section{Differential Constraints}
 \label{sec:vehicle_model}

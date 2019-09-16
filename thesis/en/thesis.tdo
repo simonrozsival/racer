@@ -5,14 +5,19 @@
 \contentsline {todo}{Figure: WAYPOINTS AND "BEHIND THE WALL"}{26}{figure.caption.26}
 \contentsline {todo}{Figure: Misaligned rotation image.}{33}{figure.caption.43}
 \contentsline {todo}{Figure: Rough discretized and smooth paths.}{33}{figure.caption.44}
-\contentsline {todo}{Find the citation}{35}{section*.54}
+\contentsline {todo}{Find the citation}{37}{section*.54}
 \contentsline {todo}{Add citation + verify the O}{38}{section*.63}
 \contentsline {todo}{Figure: SE path optimization step}{42}{figure.caption.68}
 \contentsline {todo}{Actually test this.}{43}{section*.73}
-\contentsline {todo}{Figure: The thought process of finding the corners of a circuit.}{44}{figure.caption.74}
-\contentsline {todo}{Finish this section.}{45}{section*.75}
-\contentsline {todo}{Port the chapter from Word.}{45}{section*.76}
-\contentsline {todo}{Describe, what are the purposes of the three values.}{48}{section*.81}
-\contentsline {todo}{Figure: "Pure pursuit geometry"}{49}{figure.caption.82}
-\contentsline {todo}{Figure: "DWA tentacles"}{50}{figure.caption.83}
-\contentsline {todo}{Write this chapter once the source code is stable.}{72}{section*.103}
+\contentsline {todo}{Figure: A path of a robot from the thought experiment.}{44}{figure.caption.74}
+\contentsline {todo}{Figure: Hairpin turn and a diff robot turning points.}{44}{figure.caption.74}
+\contentsline {todo}{Describe the algorithm in general.}{45}{section*.77}
+\contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{47}{figure.caption.80}
+\contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{47}{section*.81}
+\contentsline {todo}{Write how this could be improved.}{47}{section*.83}
+\contentsline {todo}{Summarize the time complexity.}{47}{section*.85}
+\contentsline {todo}{Port the chapter from Word.}{47}{section*.86}
+\contentsline {todo}{Describe, what are the purposes of the three values.}{50}{section*.91}
+\contentsline {todo}{Figure: "Pure pursuit geometry"}{51}{figure.caption.92}
+\contentsline {todo}{Figure: "DWA tentacles"}{52}{figure.caption.93}
+\contentsline {todo}{Write this chapter once the source code is stable.}{74}{section*.113}
