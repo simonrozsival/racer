@@ -1013,9 +1013,9 @@ In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, t
 
 \paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, then all of the points will be visible from each other and the whole sequence would collapse into a single waypoint. We will ignore this edge case and assume that the racing circuit has a non-trivial layout.
 
-\subsection{Clustering of the Pivot Points}
+\subsection{Estimating Positions of Corners}
 
-\todo[inline]{Describe the algorithm in general.}
+Once we have a sequence of pivot points, we can estimate the positions of corners based on these pivot points. Whenever the track curves, we expect a pivot point in the vicinity. It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path, where there are several pivot points close to each other. We will try to merge these close pivot points into a single point, to reduce the number of very short segments. This algorithm is summarized as pseudocode in Algorithm~\ref{alg:merge_close_points}.
 
 \begin{algorithm}[]
 	\caption{Merge Close Points}
@@ -1037,25 +1037,26 @@ In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, t
 	
 	\BlankLine
 	
-	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{
-		\Repeat{$n_{max} = 0$}{
-			\Comment{Find the point with most close neighbors.}
-			$i_{max}\gets 0$\;
-			$n_{max}\gets 0$\;
-			\For{$i\in \left\{1, 2, \ldots, |\hat{p}|\right\}$}{
-				$N\gets $ \CloseNeighbors{$i$, $\hat{p}$}\;
-				\If{$|N|>n_{max}$}{
-					$i_{max}\gets i_i$\;
-					$n_{max}\gets |N|$\;
+	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{		
+		\Comment{Count the number of close points for each pivot point.}
+		\For{$i\in \left\{1, 2, \ldots, |\hat{p}|\right\}$}{
+			$N\gets $ \CloseNeighbors{$i$, $\hat{p}$}\;
+			$n\left[\vec{p_i}\right]\gets |N|$\;
+		}
+	
+		\While{$\exists \vec{p} \in \hat{p}: n(\vec{p}) > 0$}{
+			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,|\hat{p}|\right\}} n\left[\vec{p_i}\right]$\;
+			$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
+			$i_{mid}\gets $ \FindMiddleIndex{$N\cup\left\{i_{max}\right\}$}\;
+			$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}\;
+			\ForEach{$i \in N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}{
+				$n\left[\vec{p_i}\right]\gets 0$\;
+				$R\gets $ \CloseNeighbors{$i$, $\hat{p}'$, $d_{min}$}\;
+				\ForEach{$r \in R$}{
+					$n\left[\vec{p'_r}\right]\gets n\left[\vec{p'_r}\right] - 1$\;
 				}
 			}
-		
-			\Comment{Merge the points in the biggest cluster.}
-			\If{$n_{max}>0$}{
-				$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
-				$i_{mid}\gets $ \FindMiddleIndex{$N\cup\left\{i_{max}\right\}$}\;
-				$\hat{p}\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}\;
-			}
+			$\hat{p}\gets\hat{p}'$\;
 		}
 		\KwRet{$\hat{p}$}\;
 	}
@@ -1090,9 +1091,13 @@ In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, t
 
 \subsubsection{Algorithm Analysis}
 
-The algorithm stops, which is summarized as pseudocode in Algorithm~\ref{alg:merge_close_points}, if during an iteration no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
+The algorithm will always complete and return a sequence of points, such that for any of two consecutive points the distance between these points is at least $d_{min}$. 
 
-In every iteration, we find the biggest cluster of points along the sequence. We do this by counting the number of points within the radius $d_{min}$ around each point in the sequence. We pick the first point with this number of close neighbors and these neighbors. These points for a consecutive sub-sequence of the original sequence $\hat{p}$. We remove all of these points, except for the point in the middle of this sub-sequence. The point, which had most close neighbors and the point in the middle, can be two different points. This scenario is shown in Figure~\ref{fig:merge points}.
+If during an iteration no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
+
+In every iteration, we find the biggest cluster of points along the sequence. We do this by comparing the $n$-value of the points. At the very beginning, this value is initialized by explicitly counting the nearby points. Whenever a point $\vec{a}$, which was originally close to a point $\vec{b}$, is removed, the number $n\left[\vec{b}\right]$ is decreased by 1, so the number is always up-to-date. The value of $n\left[\vec{a}\right]$ is set to zero when the point is removed. Therefore a point which was removed cannot be on top of the priority queue, unless none of the points has any close neighbors, at which point the algorithm stops.
+
+We pick the first point with the highest number of close neighbors and we find the indices of these points. These points form a consecutive sub-sequence of the original sequence $\hat{p}$. We remove all of these points, except for the point in the middle of this sub-sequence. Calculating the middle index is not trivial, because the sub-sequence can start close to the end of the sequence and ``wrap'' to the start of the sequence. The value of $i_{start}$ can therefore be higher than $i_{mid}$. The point, which had most close neighbors and the point in the middle, can be two different points. This scenario is shown in Figure~\ref{fig:merge points}.
 
 \begin{figure}
 	\missingfigure{Marging points with different $i_{max}$ and $i_{mid}$.}
@@ -1100,18 +1105,22 @@ In every iteration, we find the biggest cluster of points along the sequence. We
 	\label{fig:merge_points}
 \end{figure}
 
-When the algorithm stops, we are guaranteed that now two consequent points are closer than $d_{max}$. If it was not the case, the algorithm would not stop.
-
 \todo[inline]{Analyze the case when it collapses to just 1 point in the end.}
 
 \paragraph{Time Complexity}
 
-As we discussed earlier in this section, the outer loop will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point 
+At the beginning of the algorithm, we iterate over all of the pivot points and count their close neighbors. We need to store this information in a priority queue, which can be implemented as a binary heap. Building a binary heap is a $O(k \log k)$ operation. To provide access to the information about how many neighbors each point has at the moment, we must keep an additional array of pointers to the heap. Determining how many neighbors each point has at any given moment will therefore be a simple $O(1)$ operation, we must keep updating the table whenever we manipulate with the binary heap. This doubles the work required, but does not increase the asymptotic complexity of any of the heap operations.
 
-\todo[inline]{Write how this could be improved.}
+In theory, it might be necessary to visit all of the points in the sequence to determine if the distance of all of them from the examined point is smaller than $d_{min}$. In practice, this number should be small compared to $k$. The distance between two points in the path found by \texttt{FindPivotPoints} should be at least $r_{car}$ (although it can be sometimes even lower because of the optimization step of the path of circles) and we tried to increase this distance by removing points, which are directly visible. The ratio $\dfrac{d_{min}}{r_{car}}$ gives us a constant estimate of how many points could be close to each other, even though in some cases the number could be higher. We expect the complexity of the \texttt{CloseNeighbors} operation to be $O(1)$ in the average case.
+
+As we discussed earlier in this section, the main loop will run at most $k-1=|\hat{p}|$ times. The stop condition checks if there is any element with more than zero close neighbors. Thanks to the priority queue, we must only check if the element on the top of the queue has more than zero close neighbors, so this operation is constant. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is $O(1)$ thanks to the priority queue.
+
+Merging points of a cluster is also a simple operation, which requires making a copy of the original sequence and to skip an asymptotically constant number of points. For each of the removed nodes and each of its close neighbors, we must decrease the key in the priority queue by 1. This is an $O(\log k)$ operation executed constant number of times.
+
+The total time complexity of the proposed algorithm is $O(k \log k)$, where $k$ is the length of the input sequence of pivot points. In practice, we expect the number of pivot points $k$ to be quite low. Also, the algorithm is used only once at the very beginning of the race.
 
 \paragraph{Memory Complexity}
-\todo[inline]{Summarize the time complexity.}
+The only thing our algorithm has to remember is the number of neighbors for each pivot point in a priority queue. This requires $O(k)$ of memory and additional $O(k)$ of memory to keep the pointers to the heap cells for random access. The total memory complexity is therefore linear.
 
 \section{Differential Constraints}
 \label{sec:vehicle_model}
