@@ -1,20 +1,21 @@
-\contentsline {todo}{Figure: Understeer vs. oversteer}{9}{figure.caption.4}
-\contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{10}{figure.caption.5}
-\contentsline {todo}{Figure: FOOTPRINT}{23}{figure.caption.22}
-\contentsline {todo}{Figure: INFLATED OBSTACLES}{23}{figure.caption.22}
-\contentsline {todo}{Figure: WAYPOINTS AND "BEHIND THE WALL"}{26}{figure.caption.26}
-\contentsline {todo}{Figure: Misaligned rotation image.}{33}{figure.caption.43}
-\contentsline {todo}{Figure: Rough discretized and smooth paths.}{33}{figure.caption.44}
-\contentsline {todo}{Find the citation}{37}{section*.54}
-\contentsline {todo}{Add citation + verify the O}{38}{section*.63}
-\contentsline {todo}{Figure: SE path optimization step}{42}{figure.caption.68}
-\contentsline {todo}{Actually test this.}{43}{section*.73}
-\contentsline {todo}{Figure: A path of a robot from the thought experiment.}{44}{figure.caption.74}
-\contentsline {todo}{Figure: Hairpin turn and a diff robot turning points.}{44}{figure.caption.74}
-\contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{46}{figure.caption.79}
-\contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{46}{section*.80}
-\contentsline {todo}{Port the chapter from Word.}{48}{section*.83}
-\contentsline {todo}{Describe, what are the purposes of the three values.}{51}{section*.88}
-\contentsline {todo}{Figure: "Pure pursuit geometry"}{52}{figure.caption.89}
-\contentsline {todo}{Figure: "DWA tentacles"}{53}{figure.caption.90}
-\contentsline {todo}{Write this chapter once the source code is stable.}{75}{section*.110}
+\contentsline {todo}{This section needs to be rewritten from scratch.}{7}{section*.4}
+\contentsline {todo}{Figure: Understeer vs. oversteer}{9}{figure.caption.9}
+\contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{10}{figure.caption.10}
+\contentsline {todo}{Figure: FOOTPRINT}{23}{figure.caption.27}
+\contentsline {todo}{Figure: INFLATED OBSTACLES}{23}{figure.caption.27}
+\contentsline {todo}{Figure: WAYPOINTS AND "BEHIND THE WALL"}{26}{figure.caption.31}
+\contentsline {todo}{Figure: Misaligned rotation image.}{33}{figure.caption.48}
+\contentsline {todo}{Figure: Rough discretized and smooth paths.}{33}{figure.caption.49}
+\contentsline {todo}{Find the citation}{37}{section*.59}
+\contentsline {todo}{Add citation + verify the O}{38}{section*.68}
+\contentsline {todo}{Figure: SE path optimization step}{42}{figure.caption.73}
+\contentsline {todo}{Actually test this.}{43}{section*.78}
+\contentsline {todo}{Figure: A path of a robot from the thought experiment.}{44}{figure.caption.79}
+\contentsline {todo}{Figure: Hairpin turn and a diff robot turning points.}{44}{figure.caption.79}
+\contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{46}{figure.caption.84}
+\contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{46}{section*.85}
+\contentsline {todo}{Port the chapter from Word.}{48}{section*.88}
+\contentsline {todo}{Describe, what are the purposes of the three values.}{51}{section*.93}
+\contentsline {todo}{Figure: "Pure pursuit geometry"}{52}{figure.caption.94}
+\contentsline {todo}{Figure: "DWA tentacles"}{53}{figure.caption.95}
+\contentsline {todo}{Write this chapter once the source code is stable.}{75}{section*.115}
