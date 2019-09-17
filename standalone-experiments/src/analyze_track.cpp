@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   std::cout << "RUN track analysis" << std::endl;
   const auto track_analysis_start = std::chrono::steady_clock::now();
   racer::track_analysis analysis(*config->occupancy_grid, config->max_distance_between_waypoints, config->neighbor_circles);
-  const auto waypoints = analysis.find_apexes(config->radius, config->initial_position, config->checkpoints);
+  const auto waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints);
   stop_stopwatch("track analysis", track_analysis_start);
 
   // This requires Linux or WSL+Xserver
