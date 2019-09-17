@@ -62,11 +62,11 @@ void plot_track_analysis(
 
     unsigned char *img = nullptr;
     plot_grid(config.occupancy_grid, img);
-    plot_points(config.checkpoints, "b.", config.occupancy_grid->cell_size);
+    plot_points(config.checkpoints, "bx", config.occupancy_grid->cell_size);
+    plot_points({config.initial_position.location()}, "rx", config.occupancy_grid->cell_size);
 
     plot_circles(circles, "r-", config.occupancy_grid->cell_size);
     plot_points(waypoints, "go", config.occupancy_grid->cell_size);
-    plot_points({config.initial_position.location()}, "rx", config.occupancy_grid->cell_size);
 
     plt::show();
 
