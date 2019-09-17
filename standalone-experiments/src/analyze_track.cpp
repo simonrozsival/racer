@@ -15,7 +15,8 @@ void stop_stopwatch(std::string name, const std::chrono::time_point<std::chrono:
 
 int main(int argc, char *argv[])
 {
-  std::cout << "Track analysis standalone experiment - The Racer project" << std::endl;
+  std::cout << "Track analysis standalone experiment - The Racer project" << std::endl
+            << std::endl;
 
   if (argc != 2)
   {

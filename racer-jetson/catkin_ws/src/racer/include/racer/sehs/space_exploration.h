@@ -174,7 +174,8 @@ private:
         std::cout << "space exploration was unsuccessful" << std::endl;
         std::cout << "failed after exploring " << closed.size() << " nodes" << std::endl;
 
-        return std::list<racer::math::circle>();
+        // return std::list<racer::math::circle>();
+        return std::list<racer::math::circle>{closed.begin(), closed.end()};
     }
 
     std::list<std::shared_ptr<circle_node>> expand(const std::shared_ptr<circle_node> &node, const racer::math::point &goal) const

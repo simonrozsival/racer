@@ -74,8 +74,7 @@ public:
             prev_circle = std::make_unique<circle>(next_step);
         }
 
-        return apex_waypoints;
-        // return merge_close(apex_waypoints, 5 * vehicle_radius);
+        return merge_close(apex_waypoints, 5 * vehicle_radius);
     }
 
 private:
@@ -106,7 +105,7 @@ private:
         return true;
     }
 
-    const std::vector<point> merge_close(std::vector<point> original, double min_distance) const
+    const std::list<point> merge_close(std::list<point> original, double min_distance) const
     {
         std::vector<double> weights(original.size(), 1);
         std::vector<point> points{original.begin(), original.end()};
@@ -131,7 +130,7 @@ private:
             }
         }
 
-        return points;
+        return std::list<point>{points.begin(), points.end()};
     }
 };
 } // namespace racer

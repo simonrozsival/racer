@@ -11,7 +11,7 @@
 std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size)
 {
     std::ifstream file(file_name, std::ifstream::in);
-    std::vector<signed char> data;
+    std::vector<uint8_t> data;
 
     const int one_m_cells = std::ceil(1 / cell_size);
 
@@ -46,23 +46,24 @@ std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(std::filesys
         {
             for (int j = 0; j < cols; ++j)
             {
-                int cell;
+                uint8_t cell;
                 if (binary_format)
-                {
-                    uint8_t binary_cell;
-                    ss >> binary_cell;
-                    cell = (int)binary_cell;
-                }
-                else
                 {
                     ss >> cell;
                 }
+                else
+                {
+                    int ascii_value;
+                    ss >> ascii_value;
+                    cell = (uint8_t)ascii_value;
+                }
 
                 const std::size_t index = i * rows + j;
-                data[index] = cell;
+                data[index] = 255 - cell;
                 if (i % one_m_cells == 0 && j % one_m_cells == 0)
-                    std::cout << (cell > 65 ? "##" : "  ");
+                    std::cout << (data[index] > 50 ? "##" : "  ");
             }
+
             if (i % one_m_cells == 0)
                 std::cout << std::endl;
         }

@@ -44,9 +44,9 @@ void plot_grid(const std::unique_ptr<racer::occupancy_grid> &occupancy_grid, uns
     img = new unsigned char[occupancy_grid->cols() * occupancy_grid->rows()];
     const auto raw_grid = occupancy_grid->raw_data();
     for (std::size_t i = 0; i < raw_grid.size(); ++i)
-        img[i] = (unsigned char)raw_grid[i];
+        img[i] = (unsigned char)(25.0 * (double)(255 - raw_grid[i]) / 255.0); // 10% alpha inverted bw color
 
-    plt::imshow(img, occupancy_grid->rows(), occupancy_grid->cols(), 1, {{"interpolation", "nearest"}, {"cmap", "gray"}});
+    plt::imshow(img, occupancy_grid->rows(), occupancy_grid->cols(), 1, {{"cmap", "gray"}});
 }
 
 void plot_track_analysis(
@@ -66,6 +66,7 @@ void plot_track_analysis(
 
     plot_circles(circles, "r-", config.occupancy_grid->cell_size);
     plot_points(waypoints, "go", config.occupancy_grid->cell_size);
+    plot_points({config.initial_position.location()}, "rx", config.occupancy_grid->cell_size);
 
     plt::show();
 
