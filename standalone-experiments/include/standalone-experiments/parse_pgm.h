@@ -8,7 +8,7 @@
 
 #include "racer/occupancy_grid.h"
 
-std::unique_ptr<racer::occupancy_grid> load_occupancy_grid(std::filesystem::path file_name, double cell_size)
+std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size)
 {
     std::ifstream file(file_name, std::ifstream::in);
     std::vector<signed char> data;
