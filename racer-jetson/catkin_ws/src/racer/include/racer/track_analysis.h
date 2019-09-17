@@ -26,7 +26,7 @@ public:
     {
     }
 
-    const std::vector<point> find_apexes(
+    const std::list<point> find_apexes(
         const double vehicle_radius,
         const vehicle_position &initial_position,
         const std::list<point> &circuit_definition) const
@@ -36,10 +36,10 @@ public:
 
         if (circle_path.size() == 0)
         {
-            return std::vector<point>(); // no path was found
+            return std::list<point>(); // no path was found
         }
 
-        std::vector<point> apex_waypoints;
+        std::list<point> apex_waypoints;
 
         auto prev_circle = std::make_unique<circle>(circle_path.front());
         auto last_circle = std::make_unique<circle>(*prev_circle);

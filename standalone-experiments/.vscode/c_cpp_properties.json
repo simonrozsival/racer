@@ -5,7 +5,8 @@
       "includePath": [
         "${workspaceFolder}/**",
         "${workspaceFolder}/include/**",
-        "${workspaceFolder}/../racer-jetson/catkin_ws/src/racer/include/"
+        "${workspaceFolder}/../../racer-jetson/catkin_ws/src/racer/include/",
+        "${workspaceFolder}/../matplotlib-cpp/"
       ],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE"],
       "windowsSdkVersion": "10.0.17763.0",

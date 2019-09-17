@@ -97,6 +97,10 @@ public:
         return std::numeric_limits<int8_t>::max();
     }
 
+    std::vector<int8_t> raw_data() const { return data_; }
+    const int rows() const { return height_; }
+    const int cols() const { return width_; }
+
 private:
     const std::vector<int8_t> data_;
     const uint32_t width_;
