@@ -54,6 +54,8 @@ public:
       return nullptr;
     }
 
+    std::cout << "Load config: " << std::endl;
+
     // load space exploration params
     double radius, min_distance_between_waypoints, max_distance_between_waypoints;
     int neighbor_circles;
@@ -62,12 +64,19 @@ public:
     ss >> min_distance_between_waypoints;
     ss >> max_distance_between_waypoints;
 
+    std::cout << "radius: " << radius << std::endl;
+    std::cout << "neighbor_circles: " << neighbor_circles << std::endl;
+    std::cout << "min_distance_between_waypoints: " << min_distance_between_waypoints << std::endl;
+    std::cout << "max_distance_between_waypoints: " << max_distance_between_waypoints << std::endl;
+
     // load initial position
     double ix, iy, itheta;
     ss >> ix;
     ss >> iy;
     ss >> itheta;
     racer::vehicle_position initial_position(ix, iy, itheta);
+
+    std::cout << "initial position: [" << ix << ", " << iy << "], theta: " << itheta << std::endl;
 
     // load checkpoints
     double x, y;
@@ -76,9 +85,13 @@ public:
     {
       ss >> y;
       checkpoints.emplace_back(x, y);
+      std::cout << "checkpoint: [" << x << ", " << y << "]" << std::endl;
     }
 
     checkpoints.emplace_back(initial_position.x, initial_position.y);
+
+    std::cout << "Config loaded." << std::endl
+              << std::endl;
 
     // put it all together
     return std::make_unique<track_analysis_input>(
