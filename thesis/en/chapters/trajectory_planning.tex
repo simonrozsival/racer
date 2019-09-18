@@ -926,28 +926,15 @@ The \gls*{SEHS} algorithm is a simple yet efficient way of searching a state spa
 
 A natural way of splitting the track into smaller segments is to find the corners of the track. We can then plan the trajectory for the very next turn in front of the vehicle and for one or two  consecutive ones, and imitate the behavior of a human racing driver, as we described it in Section~\ref{sec:racing_line}. To prevent long segments for long straight stretches, we can set a limit for the length of a segment and split long segments into multiple shorter ones.
 
+\todo[inline]{Mention that we chose this over simply splitting it into uniformly long segments.}
+
 Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.\todo{Actually test this.}
 
 In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit.
 
 The goal of the track analysis algorithm is to find points close to corners of the track. We will then be able to split the track into smaller segments which correspond to stretches between the corners of the track. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
 
-Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. If we relax our problem and imagine, that robot robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its $z$ axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that some corners it would require several consequent turns to go around the corner, (e.g., a so-called ``hairpin''corner as shown in Figure~\ref{fig:hairpin_corner_thought_process}) and so not every change of direction could be simply interpreted as a corner.
-
-\begin{figure}[tbp]
-	\centering
-	\begin{subfigure}[t]{0.45\textwidth}
-		\missingfigure{A path of a robot from the thought experiment.}
-		\caption{The thought process of finding the corners of a circuit.}
-		\label{fig:thought_process}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[t]{0.45\textwidth}
-		\missingfigure{Hairpin turn and a diff robot turning points.}
-		\caption{The robot from our thought process will have to make two turns in a short period of time to turn 180° and go through a so-called ``hairpin'' corner.}
-		\label{fig:hairpin_corner_thought_process}
-	\end{subfigure}
-\end{figure}
+Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. If we relax our problem and imagine, that robot robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its $z$ axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that some corners it would require several consequent turns to go around the corner, (e.g., a so-called ``hairpin'0' corner as shown in the bottom left corner of Figure~\ref{fig:corner_detection_hairpin_corner}) and so not every change of direction could be simply interpreted as a corner.
 
 We will implement an algorithm based on this thought experiment which will have two steps:
 \begin{itemize}
@@ -1017,6 +1004,10 @@ In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, t
 
 Once we have a sequence of pivot points, we can estimate the positions of corners based on these pivot points. Whenever the track curves, we expect a pivot point in the vicinity. It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path, where there are several pivot points close to each other. We will try to merge these close pivot points into a single point, to reduce the number of very short segments. This algorithm is summarized as pseudocode in Algorithm~\ref{alg:merge_close_points}.
 
+\todo[inline]{Add filtering by angle.}
+
+\todo[inline]{Can I make the pseudocode simperl?}
+
 \begin{algorithm}[]
 	\caption{Merge Close Points}
 	\label{alg:merge_close_points}
@@ -1026,7 +1017,10 @@ Once we have a sequence of pivot points, we can estimate the positions of corner
 	
 	\SetKwFunction{MergeClosePoints}{MergeClosePoints}
 	\SetKwFunction{CloseNeighbors}{CloseNeighbors}
-	\SetKwFunction{FindMiddleIndex}{FindMiddleIndex}
+	\SetKwFunction{AngleAt}{AngleAt}
+	\SetKwFunction{Walk}{Walk}
+	\SetKwFunction{Next}{Next}
+	\SetKwFunction{Prev}{Prev}
 	\SetKwFunction{SelectSubsequenceBySkipping}{SelectSubsequenceBySkipping}
 	
 	\KwIn{Sequence of points $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$, minimum distance between corners $d_{min}\in\mathbb{R}_{>0}$}
@@ -1037,26 +1031,14 @@ Once we have a sequence of pivot points, we can estimate the positions of corner
 	
 	\BlankLine
 	
-	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{		
-		\Comment{Count the number of close points for each pivot point.}
-		\For{$i\in \left\{1, 2, \ldots, |\hat{p}|\right\}$}{
-			$N\gets $ \CloseNeighbors{$i$, $\hat{p}$}\;
-			$n\left[\vec{p_i}\right]\gets |N|$\;
-		}
-	
-		\While{$\exists \vec{p} \in \hat{p}: n(\vec{p}) > 0$}{
-			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,|\hat{p}|\right\}} n\left[\vec{p_i}\right]$\;
+	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{
+		$\hat{p}'\gets \hat{p}$\;
+		\Repeat{$\hat{p}'\neq\hat{p}$}{
+			$\hat{p}\gets\hat{p}', k\gets |\hat{p}|$\;
+			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,k\right\}} |$\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}$|$\;
 			$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
-			$i_{mid}\gets $ \FindMiddleIndex{$N\cup\left\{i_{max}\right\}$}\;
-			$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}\;
-			\ForEach{$i \in N\cup\left\{i_{max}\right\}\setminus\left\{i_{mid}\right\}$}{
-				$n\left[\vec{p_i}\right]\gets 0$\;
-				$R\gets $ \CloseNeighbors{$i$, $\hat{p}'$, $d_{min}$}\;
-				\ForEach{$r \in R$}{
-					$n\left[\vec{p'_r}\right]\gets n\left[\vec{p'_r}\right] - 1$\;
-				}
-			}
-			$\hat{p}\gets\hat{p}'$\;
+			$i_{corner}\gets \argmin_{i\in N} $ \AngleAt{$i$, $\hat{p}$}\;
+			$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{corner}\right\}$}\;
 		}
 		\KwRet{$\hat{p}$}\;
 	}
@@ -1064,30 +1046,66 @@ Once we have a sequence of pivot points, we can estimate the positions of corner
 	\BlankLine
 
 	\procedure{\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}}{
-		$N\gets\emptyset$\;
+		$k\gets |\hat{p}|$\;
+		$N_{ahead}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+k-1\mod k$}\;
+		$N_{after}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+1\mod k$}\;
+		\KwRet{$N_{ahead}\cup N_{after}$}\;
+	}
+
+	\BlankLine
+
+	\procedure{\Walk{$i$, $\hat{p}$, $d_{min}$, $f_{step}$}}{
+		$N\gets\emptyset, k\gets |\hat{p}|$\;
 		\Comment{Walk forward along the path.}
-		$j\gets (i+1) \mod |\hat{p}|$\;
+		$j\gets f_{step}(i, k)$\;
 		\While{$\norm{\vec{p_i}-\vec{p_j}}<d_{min}\land j\neq i$}{
 			$N\gets N\cup\left\{j\right\}$\;
-			$j\gets (j+1) \mod |\hat{p}|$\;
-		}
-		\Comment{Walk backwards along the path.}
-		$j\gets (i-1) \mod |\hat{p}|$\;
-		\While{$\norm{\vec{p_i}-\vec{p_j}}<d_{min}\land j\neq i$}{
-			$N\gets N\cup\left\{j\right\}$\;
-			$j\gets (j-1) \mod |\hat{p}|$\;
-		}
-		
+			$j\gets f_{step}(j, k)$\;
+		}		
 		\KwRet{$N$}\;
 	}
 
 	\BlankLine
-	
-	\procedure{\FindMiddleIndex{$I$, $k$}}{
-		$i_{start}\gets i\in I: \forall 0\leq j<|I|: \left(i+j \mod k\right)\in I$\;
-		\KwRet{$\left\lfloor\dfrac{i_{start}+|I|}{2}\mod k\right\rfloor$}\;
+
+	\procedure{\AngleAt{$i$, $\hat{p}$}}{
+		$k\gets |\hat{p}|, i_{prev}\gets i+k-1\mod k, i_{next}\gets i+1\mod k$\;
+		$\vec{x}\gets \vec{p_{i_{prev}}} - \vec{p_{i}}$\;
+		$\vec{y}\gets \vec{p_{i_{next}}} - \vec{p_{i}}$\;
+		\KwRet{$\arccos\left(\dfrac{\vec{x}\cdot\vec{y}}{|\vec{x}||\vec{y}|}\right)$}\;
 	}
+
 \end{algorithm}
+
+\begin{figure}[ht]%
+	\centering
+	\begin{subfigure}[b]{0.49\textwidth}%
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_simple}
+		\caption{$d_{min}=7m$}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_handdrawn}
+		\caption{$d_{min}=7m$}
+	\end{subfigure}
+	\vskip\baselineskip
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_circuit_a}
+		\caption{$d_{min}=5m$.}
+		\label{fig:corner_detection_hairpin_corner}
+	\end{subfigure}	
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_zurich}
+		\caption{$d_{min}=5m$.}
+	\end{subfigure}
+	
+	\label{fig:corner_detection}
+	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle.}
+\end{figure}
 
 \subsubsection{Algorithm Analysis}
 
@@ -1112,6 +1130,8 @@ We pick the first point with the highest number of close neighbors and we find t
 At the beginning of the algorithm, we iterate over all of the pivot points and count their close neighbors. We need to store this information in a priority queue, which can be implemented as a binary heap. Building a binary heap is a $O(k \log k)$ operation. To provide access to the information about how many neighbors each point has at the moment, we must keep an additional array of pointers to the heap. Determining how many neighbors each point has at any given moment will therefore be a simple $O(1)$ operation, we must keep updating the table whenever we manipulate with the binary heap. This doubles the work required, but does not increase the asymptotic complexity of any of the heap operations.
 
 In theory, it might be necessary to visit all of the points in the sequence to determine if the distance of all of them from the examined point is smaller than $d_{min}$. In practice, this number should be small compared to $k$. The distance between two points in the path found by \texttt{FindPivotPoints} should be at least $r_{car}$ (although it can be sometimes even lower because of the optimization step of the path of circles) and we tried to increase this distance by removing points, which are directly visible. The ratio $\dfrac{d_{min}}{r_{car}}$ gives us a constant estimate of how many points could be close to each other, even though in some cases the number could be higher. We expect the complexity of the \texttt{CloseNeighbors} operation to be $O(1)$ in the average case.
+
+\todo[inline]{The algorithm changed, rewrite the analysis.}
 
 \todo[inline]{There is a bit too much handwaving in the previous paragraph. Think about a better way to prove or explain the time complexity of this part of the algorithm.}
 

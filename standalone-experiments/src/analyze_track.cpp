@@ -44,13 +44,18 @@ int main(int argc, char *argv[])
   // min_distance_between_waypoints
   std::cout << "RUN track analysis" << std::endl;
   const auto track_analysis_start = std::chrono::steady_clock::now();
-  racer::track_analysis analysis(*config->occupancy_grid, config->max_distance_between_waypoints, config->neighbor_circles);
-  const auto waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints);
+  racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints, config->max_distance_between_waypoints, config->neighbor_circles);
+  const auto waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints, true);
   stop_stopwatch("track analysis", track_analysis_start);
+
+  // this is just for visualization and it does not have to be stopwatched
+  const auto track_analysis_raw_start = std::chrono::steady_clock::now();
+  const auto raw_waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints, false);
+  stop_stopwatch("track analysis without merging", track_analysis_raw_start);
 
   // This requires Linux or WSL+Xserver
   std::cout << "Show interactive plot" << std::endl;
-  plot_track_analysis(*config, circles, waypoints);
+  plot_track_analysis(*config, circles, raw_waypoints, waypoints);
 
   std::cout << "Done." << std::endl;
   return 0;

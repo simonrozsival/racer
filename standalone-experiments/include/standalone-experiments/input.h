@@ -40,13 +40,13 @@ public:
     pgm_file_name.erase(remove_if(pgm_file_name.begin(), pgm_file_name.end(), isspace), pgm_file_name.end());
 
     std::filesystem::path pgm_file_path = input_file_name.parent_path() / pgm_file_name;
-    std::cout << "Loading occupancy grid from file '" << pgm_file_path << "' with the resolution of " << occupancy_grid_resolution << "m." << std::endl;
 
     std::stringstream ss;
     ss << file.rdbuf();
 
     ss >> occupancy_grid_resolution;
 
+    std::cout << "Loading occupancy grid from file '" << pgm_file_path << "' with the resolution of " << occupancy_grid_resolution << "m." << std::endl;
     auto occupancy_grid = load_occupancy_grid_from_pgm(pgm_file_path, occupancy_grid_resolution);
     if (!occupancy_grid)
     {
