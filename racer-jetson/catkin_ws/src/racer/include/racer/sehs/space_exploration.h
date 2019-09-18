@@ -150,10 +150,11 @@ private:
 
         open.push(std::make_shared<circle_node>(from, 0, 0, initial_heading_angle, nullptr));
 
-        while (open.size() > 0 && closed.size() < 10000)
+        while (open.size() > 0 && closed.size() < 100000)
         {
             if (open.top()->examined_circle.contains(to))
             {
+                // success!
                 return open.top()->reconstruct_path();
             }
 
@@ -171,11 +172,9 @@ private:
             closed.push_back(nearest->examined_circle);
         }
 
-        std::cout << "space exploration was unsuccessful" << std::endl;
-        std::cout << "failed after exploring " << closed.size() << " nodes" << std::endl;
+        std::cerr << "space exploration failed after exploring " << closed.size() << " nodes between [" << from.center.x << ", " << from.center.y << "] and [" << to.x << ", " << to.y << "]" << std::endl;
 
-        // return std::list<racer::math::circle>();
-        return std::list<racer::math::circle>{closed.begin(), closed.end()};
+        return std::list<racer::math::circle>();
     }
 
     std::list<std::shared_ptr<circle_node>> expand(const std::shared_ptr<circle_node> &node, const racer::math::point &goal) const
