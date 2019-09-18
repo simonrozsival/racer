@@ -74,9 +74,9 @@ public:
     ss >> ix;
     ss >> iy;
     ss >> itheta;
-    racer::vehicle_position initial_position(ix, iy, itheta);
+    racer::vehicle_position initial_position(ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
 
-    std::cout << "initial position: [" << ix << ", " << iy << "], theta: " << itheta << std::endl;
+    std::cout << "initial position: [" << initial_position.x << ", " << initial_position.y << "], theta: " << initial_position.heading_angle << std::endl;
 
     // load checkpoints
     double x, y;
@@ -84,8 +84,8 @@ public:
     while (ss >> x)
     {
       ss >> y;
-      checkpoints.emplace_back(x, y);
-      std::cout << "checkpoint: [" << x << ", " << y << "]" << std::endl;
+      checkpoints.emplace_back(x * occupancy_grid_resolution, y * occupancy_grid_resolution);
+      std::cout << "checkpoint: [" << checkpoints.back().x << ", " << checkpoints.back().y << "]" << std::endl;
     }
 
     checkpoints.emplace_back(initial_position.x, initial_position.y);

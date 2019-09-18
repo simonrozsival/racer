@@ -1113,6 +1113,8 @@ At the beginning of the algorithm, we iterate over all of the pivot points and c
 
 In theory, it might be necessary to visit all of the points in the sequence to determine if the distance of all of them from the examined point is smaller than $d_{min}$. In practice, this number should be small compared to $k$. The distance between two points in the path found by \texttt{FindPivotPoints} should be at least $r_{car}$ (although it can be sometimes even lower because of the optimization step of the path of circles) and we tried to increase this distance by removing points, which are directly visible. The ratio $\dfrac{d_{min}}{r_{car}}$ gives us a constant estimate of how many points could be close to each other, even though in some cases the number could be higher. We expect the complexity of the \texttt{CloseNeighbors} operation to be $O(1)$ in the average case.
 
+\todo[inline]{There is a bit too much handwaving in the previous paragraph. Think about a better way to prove or explain the time complexity of this part of the algorithm.}
+
 As we discussed earlier in this section, the main loop will run at most $k-1=|\hat{p}|$ times. The stop condition checks if there is any element with more than zero close neighbors. Thanks to the priority queue, we must only check if the element on the top of the queue has more than zero close neighbors, so this operation is constant. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is $O(1)$ thanks to the priority queue.
 
 Merging points of a cluster is also a simple operation, which requires making a copy of the original sequence and to skip an asymptotically constant number of points. For each of the removed nodes and each of its close neighbors, we must decrease the key in the priority queue by 1. This is an $O(\log k)$ operation executed constant number of times.
@@ -1124,5 +1126,22 @@ The only thing our algorithm has to remember is the number of neighbors for each
 
 \section{Differential Constraints}
 \label{sec:vehicle_model}
+
+Our vehicle moves in the world by utilizing two actuators, a steering servo and a DC motor. The directions in which the vehicle can travel are constraint by the properties of these two motors. Just like regular commercially available cars, the vehicle cannot turn on spot without driving forwards or backwards. The car also cannot stop or change the direction of travel instantaneously because of inertia.
+
+In order to make any trajectory planning possible, we must be able to predict the behavior of the vehicle based on its state and the actions we execute. Without a good understanding of how the state of the vehicle evolves over time, we might collide with an obstacle, plan a sub-optimal trajectory, or even plan a trajectory which cannot be followed by the physical vehicle.
+
+In this chapter, the task is to describe all the properties which define the state of the vehicle at any given moment and model the rate of change of the state when a specific input command is supplied to the actuators. In other words, we must describe a state transition function $f$ which calculates a derivative of the vehicle state with respect to time $\dot{x}=f(x, u)$. By integrating $\dot{x}$ over time, we will be able to predict how the state evolves and describe the trajectory of the vehicle.
+
+\paragraph{Kinematic models} are a simple way of modeling the behavior of a vehicle. All the different forces acting on the body of the vehicle are ignored, and we rather calculate the movement only based on the geometry of the vehicle and the velocity of the vehicle. This simplification yields accurate predictions for low speeds when the effects of inertia are negligible, but the error between the predictions and the actual movement of the vehicle will grow larger as the speed of the vehicle increases when compared to a dynamic model \todo{cite}.
+
+\paragraph{Dynamic models} on the other hand describe the forces which act on the vehicle and which result in translation and rotation of the body of the vehicle. We model the effect of the torque created by the engine which is then transmitted through the power train to the wheels. The friction force between the rotating tires and the road causes the vehicle to accelerate or decelerate and at the same time it holds the vehicle on a curve while turning. At a certain speed and wheel angles the lateral force which keeps the vehicle on the curve will not be enough to keep the vehicle on the curve and the car will start drifting sideways.
+
+The dynamic model can give us more accurate predictions at the handling limits of the vehicle. As a trade-off, the dynamic model is much more complex and harder to implement correctly. We must identify many parameters of the vehicle, such as the properties of the tires and the inner workings of the power train. The dynamic model also requires much more arithmetic operations to predict the next state after some period $\Delta t$ which will make planning with this model slower \todo{cite}.
+
+We aim for maximum possible speeds of our vehicle and a precise dynamic model would be ideal for this use case. At the same time, our on-board computer and sensors might not have enough performance and accuracy to be able to use it fully. A kinematic model might be the only usable option for us.
+
+\paragraph{Actuators model} 
+The vehicle has two actuators which influence the motion of the vehicle: a steering servo and a brushed DC motor. These actuators can be controlled by setting a target value of the steering angle $\delta_t$ and the throttle position $\tau_t$, which affects the speed of the vehicle. The steering servo turns and the \gls{ESC} increases or decreases the angular speed of the motor over some time until the desired state is reached. We will model the state of the actuators and how it changes independently for each of the models.
 
 \todo[inline]{Port the chapter from Word.}

@@ -14,8 +14,11 @@
 \contentsline {todo}{Figure: Hairpin turn and a diff robot turning points.}{44}{figure.caption.79}
 \contentsline {todo}{Figure: Marging points with different $i_{max}$ and $i_{mid}$.}{46}{figure.caption.84}
 \contentsline {todo}{Analyze the case when it collapses to just 1 point in the end.}{46}{section*.85}
-\contentsline {todo}{Port the chapter from Word.}{48}{section*.88}
-\contentsline {todo}{Describe, what are the purposes of the three values.}{51}{section*.93}
-\contentsline {todo}{Figure: "Pure pursuit geometry"}{52}{figure.caption.94}
-\contentsline {todo}{Figure: "DWA tentacles"}{53}{figure.caption.95}
-\contentsline {todo}{Write this chapter once the source code is stable.}{75}{section*.115}
+\contentsline {todo}{There is a bit too much handwaving in the previous paragraph. Think about a better way to prove or explain the time complexity of this part of the algorithm.}{48}{section*.87}
+\contentsline {todo}{cite}{49}{section*.90}
+\contentsline {todo}{cite}{49}{section*.92}
+\contentsline {todo}{Port the chapter from Word.}{50}{section*.94}
+\contentsline {todo}{Describe, what are the purposes of the three values.}{53}{section*.99}
+\contentsline {todo}{Figure: "Pure pursuit geometry"}{54}{figure.caption.100}
+\contentsline {todo}{Figure: "DWA tentacles"}{55}{figure.caption.101}
+\contentsline {todo}{Write this chapter once the source code is stable.}{77}{section*.121}
