@@ -926,26 +926,57 @@ The \gls*{SEHS} algorithm is a simple yet efficient way of searching a state spa
 
 A natural way of splitting the track into smaller segments is to find the corners of the track. We can then plan the trajectory for the very next turn in front of the vehicle and for one or two  consecutive ones, and imitate the behavior of a human racing driver, as we described it in Section~\ref{sec:racing_line}. To prevent long segments for long straight stretches, we can set a limit for the length of a segment and split long segments into multiple shorter ones.
 
-\todo[inline]{Mention that we chose this over simply splitting it into uniformly long segments.}
-
 Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.\todo{Actually test this.}
 
-In this section we will describe an algorithm we chose to find the corners of a racing circuit. We will use this algorithm once just before the start of the race, to split the circuit into a series of short segments. We expect to be given the definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and at least two more checkpoints which define the direction in which the vehicle must drive along the circuit.
+In this section we will describe an algorithm we chose to find points close to corners of a racing circuit. We will use this algorithm just once before a race starts.
 
-The goal of the track analysis algorithm is to find points close to corners of the track. We will then be able to split the track into smaller segments which correspond to stretches between the corners of the track. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
+The definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and a sequence of at least two checkpoints $\vec{p_i}\in\mathbb{R}^2$ which defines the direction in which the vehicle has to drive along the circuit and which parts of the grid it should go through in the case when there are multiple ways to reach a goal or of the track intersects itself at some point. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
 
 Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. If we relax our problem and imagine, that robot robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its $z$ axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that some corners it would require several consequent turns to go around the corner, (e.g., a so-called ``hairpin'0' corner as shown in the bottom left corner of Figure~\ref{fig:corner_detection_hairpin_corner}) and so not every change of direction could be simply interpreted as a corner.
 
-We will implement an algorithm based on this thought experiment which will have two steps:
+We will implement an algorithm based on this thought experiment which will have three steps:
 \begin{itemize}
 	\item We will find the pivot points in a path for the differential drive robot through the occupancy grid which starts at the initial position of the vehicle and which goes through the checkpoints.
-	\item We will find clusters of the pivot points along the path and merge them into a single waypoint corresponding to a corner of the track.
+	\item We will eliminate pivot points, where the direction does not change significantly.
+	\item We will find clusters of the remaining pivot points along the path and keep only one of them, this point will be one of the final waypoints.
 \end{itemize}
 
-\subsection{Finding Pivot Points}
-The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. If we set the minimum and maximum radius of the circles to the radius of the car $r_{car}$ (i.e., the diagonal of its bounding rectangle), then the final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move $r_{car}$ meters forward in this direction, before it picks another direction.
+\begin{figure}[]%
+	\centering
+	\begin{subfigure}[b]{0.49\textwidth}%
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_simple}
+		\caption{}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_handdrawn}
+		\caption{}
+	\end{subfigure}
+	\vskip\baselineskip
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_circuit_a}
+		\caption{}
+		\label{fig:corner_detection_hairpin_corner}
+	\end{subfigure}	
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}
+		\centering
+		\includegraphics[width=\textwidth]{../img/corner_detection_zurich}
+		\caption{}
+	\end{subfigure}
+	
+	\label{fig:corner_detection}
+	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle. All of the tracks are $500\times 500$ grids with a resolution of \protect \SI{0.05}{\meter} per cell. The radius of the car is set to $r_{car}=$ \protect\SI{0.5}{\meter}, the radii of the circles during space exploration were limited to $\left[r_{car}, 10\cdot r_{car}\right]$ and the number of expanded neighbor circles is $n=15$. The minimum distance between two waypoints is $d_{min}$=\protect\SI{3}{\meter}.}
+\end{figure}
 
-We forced the robot to change direction every $r_{car}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
+
+\subsection{Finding Pivot Points}
+The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the radius of the car $r_{car}$ (i.e., the diagonal of its bounding rectangle), then the final path will not go through any narrow corridors, where the car could not fit.
+
+We forced the robot to change direction after at most $r_{max}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
 
 \begin{algorithm}[]
 	\caption{Find Pivot Points}
@@ -1002,22 +1033,28 @@ In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, t
 
 \subsection{Estimating Positions of Corners}
 
-Once we have a sequence of pivot points, we can estimate the positions of corners based on these pivot points. Whenever the track curves, we expect a pivot point in the vicinity. It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path, where there are several pivot points close to each other. We will try to merge these close pivot points into a single point, to reduce the number of very short segments. This algorithm is summarized as pseudocode in Algorithm~\ref{alg:merge_close_points}.
+Once we have a sequence of pivot points, we can estimate the positions of corners based on these pivot points. Whenever the track curves, we expect a pivot point in the vicinity.
 
-\todo[inline]{Add filtering by angle.}
+At some pivot points, the direction of the robot changes only very little. This means, that the angle between the previous point, the current point, and the next point along the path, will be close to $\pi$. The first pass of our algorithm removes pivot points, at which the angle is above some angle threshold value $\alpha_{max}$. To calculate the angle between three consecutive points along the path $\vec{p_{i-1}}, \vec{p_i}, \vec{p_{i+1}}\in\mathbb{R}^2$, we use the law of cosines to calculate the angle between the vectors $\vec{x}=\vec{p_{i-1}}-\vec{p_i}$ and $\vec{y}=\vec{p_{i+1}}-\vec{p_i}$:
 
-\todo[inline]{Can I make the pseudocode simperl?}
+\[
+	\alpha(\vec{x}, \vec{y})=\arccos \left(\dfrac{\vec{x}\cdot\vec{y}}{\norm{\vec{x}}\norm{\vec{y}}}\right),
+\]
+
+where $\cdot$ represents the scalar product between the two vectors.
+
+It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path, where there are several pivot points close to each other. We will try to merge these close pivot points into a single point, to reduce the number of very short segments. This complete algorithm is summarized as pseudocode in Algorithm~\ref{alg:find_corners}.
 
 \begin{algorithm}[]
-	\caption{Merge Close Points}
-	\label{alg:merge_close_points}
+	\caption{Find Corners}
+	\label{alg:find_Corners}
 	
 	\SetAlgoLined
 	\DontPrintSemicolon
 	
+	\SetKwFunction{FindCorners}{FindCorners}
 	\SetKwFunction{MergeClosePoints}{MergeClosePoints}
 	\SetKwFunction{CloseNeighbors}{CloseNeighbors}
-	\SetKwFunction{AngleAt}{AngleAt}
 	\SetKwFunction{Walk}{Walk}
 	\SetKwFunction{Next}{Next}
 	\SetKwFunction{Prev}{Prev}
@@ -1025,19 +1062,28 @@ Once we have a sequence of pivot points, we can estimate the positions of corner
 	
 	\KwIn{Sequence of points $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$, minimum distance between corners $d_{min}\in\mathbb{R}_{>0}$}
 	\KwOut{Sequence of locations of corners}
+	\Comment{We will use the notation $\vec{p_{i-1}}$ and $\vec{p_{i+1}}$ to reference the previous and next point of the $i$-th point in the sequence. The sequence of points represents a loop. The previous point for $\vec{p_1}$ is the very last point $\vec{p_k}$ and the next point after $\vec{p_k}$ is $\vec{p_1}$. }
 	
 	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
 	
 	\BlankLine
+		
+	\algorithm{\FindCorners{$\hat{p}$, $\alpha_{max}$, $d_{min}$}}{
+		$R\gets \left\{i\in\left\{1,\ldots,|\hat{p}|\right\}\mid \alpha(\vec{p_{i-1}}-\vec{p_i},\vec{p_{i+1}}-\vec{p_i})>\alpha_{max}\right\}$\;
+		$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $R$}\;
+		\KwRet{\MergeClosePoints{$\hat{p}'$, $d_{min}$}}\;
+	}
 	
-	\algorithm{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{
+	\BlankLine
+	
+	\procedure{\MergeClosePoints{$\hat{p}$, $d_{min}$}}{
 		$\hat{p}'\gets \hat{p}$\;
 		\Repeat{$\hat{p}'\neq\hat{p}$}{
 			$\hat{p}\gets\hat{p}', k\gets |\hat{p}|$\;
 			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,k\right\}} |$\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}$|$\;
 			$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
-			$i_{corner}\gets \argmin_{i\in N} $ \AngleAt{$i$, $\hat{p}$}\;
+			$i_{corner}\gets \argmin_{i\in N} \alpha(\vec{p_{i-1}}-\vec{p_i}, \vec{p_{i+1}}-\vec{p_i})$\;
 			$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{corner}\right\}$}\;
 		}
 		\KwRet{$\hat{p}$}\;
@@ -1046,122 +1092,237 @@ Once we have a sequence of pivot points, we can estimate the positions of corner
 	\BlankLine
 
 	\procedure{\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}}{
-		$k\gets |\hat{p}|$\;
-		$N_{ahead}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+k-1\mod k$}\;
-		$N_{after}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+1\mod k$}\;
+		$N_{ahead}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i-1$}\;
+		$N_{after}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+1$}\;
 		\KwRet{$N_{ahead}\cup N_{after}$}\;
 	}
 
 	\BlankLine
 
 	\procedure{\Walk{$i$, $\hat{p}$, $d_{min}$, $f_{step}$}}{
-		$N\gets\emptyset, k\gets |\hat{p}|$\;
-		\Comment{Walk forward along the path.}
-		$j\gets f_{step}(i, k)$\;
+		$N\gets\emptyset$\;
+		$j\gets f_{step}(i)$\;
 		\While{$\norm{\vec{p_i}-\vec{p_j}}<d_{min}\land j\neq i$}{
 			$N\gets N\cup\left\{j\right\}$\;
-			$j\gets f_{step}(j, k)$\;
+			$j\gets f_{step}(j)$\;
 		}		
 		\KwRet{$N$}\;
 	}
 
-	\BlankLine
-
-	\procedure{\AngleAt{$i$, $\hat{p}$}}{
-		$k\gets |\hat{p}|, i_{prev}\gets i+k-1\mod k, i_{next}\gets i+1\mod k$\;
-		$\vec{x}\gets \vec{p_{i_{prev}}} - \vec{p_{i}}$\;
-		$\vec{y}\gets \vec{p_{i_{next}}} - \vec{p_{i}}$\;
-		\KwRet{$\arccos\left(\dfrac{\vec{x}\cdot\vec{y}}{|\vec{x}||\vec{y}|}\right)$}\;
-	}
-
 \end{algorithm}
-
-\begin{figure}[ht]%
-	\centering
-	\begin{subfigure}[b]{0.49\textwidth}%
-		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_simple}
-		\caption{$d_{min}=7m$}
-	\end{subfigure}
-	\hfill
-	\begin{subfigure}[b]{0.49\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_handdrawn}
-		\caption{$d_{min}=7m$}
-	\end{subfigure}
-	\vskip\baselineskip
-	\begin{subfigure}[b]{0.49\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_circuit_a}
-		\caption{$d_{min}=5m$.}
-		\label{fig:corner_detection_hairpin_corner}
-	\end{subfigure}	
-	\hfill
-	\begin{subfigure}[b]{0.49\textwidth}
-		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_zurich}
-		\caption{$d_{min}=5m$.}
-	\end{subfigure}
-	
-	\label{fig:corner_detection}
-	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle.}
-\end{figure}
 
 \subsubsection{Algorithm Analysis}
 
 The algorithm will always complete and return a sequence of points, such that for any of two consecutive points the distance between these points is at least $d_{min}$. 
 
-If during an iteration no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
+If during an iteration in \texttt{MergeClosePoints} no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$, the algorithm stops. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
 
-In every iteration, we find the biggest cluster of points along the sequence. We do this by comparing the $n$-value of the points. At the very beginning, this value is initialized by explicitly counting the nearby points. Whenever a point $\vec{a}$, which was originally close to a point $\vec{b}$, is removed, the number $n\left[\vec{b}\right]$ is decreased by 1, so the number is always up-to-date. The value of $n\left[\vec{a}\right]$ is set to zero when the point is removed. Therefore a point which was removed cannot be on top of the priority queue, unless none of the points has any close neighbors, at which point the algorithm stops.
-
-We pick the first point with the highest number of close neighbors and we find the indices of these points. These points form a consecutive sub-sequence of the original sequence $\hat{p}$. We remove all of these points, except for the point in the middle of this sub-sequence. Calculating the middle index is not trivial, because the sub-sequence can start close to the end of the sequence and ``wrap'' to the start of the sequence. The value of $i_{start}$ can therefore be higher than $i_{mid}$. The point, which had most close neighbors and the point in the middle, can be two different points. This scenario is shown in Figure~\ref{fig:merge points}.
-
-\begin{figure}
-	\missingfigure{Marging points with different $i_{max}$ and $i_{mid}$.}
-	\caption{Visualization of the pivot points clustering algorithm.}
-	\label{fig:merge_points}
-\end{figure}
-
-\todo[inline]{Analyze the case when it collapses to just 1 point in the end.}
+In every iteration, we find the biggest cluster of points along the sequence and we find the indices of these close points. These points form a consecutive sub-sequence of the original sequence $\hat{p}$. We remove all of these points, except for the point with the most significant change of direction or in other words, the point with the most acute angle along the path.
 
 \paragraph{Time Complexity}
 
-At the beginning of the algorithm, we iterate over all of the pivot points and count their close neighbors. We need to store this information in a priority queue, which can be implemented as a binary heap. Building a binary heap is a $O(k \log k)$ operation. To provide access to the information about how many neighbors each point has at the moment, we must keep an additional array of pointers to the heap. Determining how many neighbors each point has at any given moment will therefore be a simple $O(1)$ operation, we must keep updating the table whenever we manipulate with the binary heap. This doubles the work required, but does not increase the asymptotic complexity of any of the heap operations.
+At the beginning of the algorithm, we iterate over all of the pivot points and remove the points with large obtuse angles. Calculating the angle is a constant operation and so this part requires $O(k)$ time.
 
-In theory, it might be necessary to visit all of the points in the sequence to determine if the distance of all of them from the examined point is smaller than $d_{min}$. In practice, this number should be small compared to $k$. The distance between two points in the path found by \texttt{FindPivotPoints} should be at least $r_{car}$ (although it can be sometimes even lower because of the optimization step of the path of circles) and we tried to increase this distance by removing points, which are directly visible. The ratio $\dfrac{d_{min}}{r_{car}}$ gives us a constant estimate of how many points could be close to each other, even though in some cases the number could be higher. We expect the complexity of the \texttt{CloseNeighbors} operation to be $O(1)$ in the average case.
+As we discussed earlier in this section, the main loop in \texttt{MergeClosePoints} will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is a linear operation.
 
-\todo[inline]{The algorithm changed, rewrite the analysis.}
-
-\todo[inline]{There is a bit too much handwaving in the previous paragraph. Think about a better way to prove or explain the time complexity of this part of the algorithm.}
-
-As we discussed earlier in this section, the main loop will run at most $k-1=|\hat{p}|$ times. The stop condition checks if there is any element with more than zero close neighbors. Thanks to the priority queue, we must only check if the element on the top of the queue has more than zero close neighbors, so this operation is constant. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is $O(1)$ thanks to the priority queue.
-
-Merging points of a cluster is also a simple operation, which requires making a copy of the original sequence and to skip an asymptotically constant number of points. For each of the removed nodes and each of its close neighbors, we must decrease the key in the priority queue by 1. This is an $O(\log k)$ operation executed constant number of times.
-
-The total time complexity of the proposed algorithm is $O(k \log k)$, where $k$ is the length of the input sequence of pivot points. In practice, we expect the number of pivot points $k$ to be quite low. Also, the algorithm is used only once at the very beginning of the race.
+The total time complexity of the proposed algorithm is quadratic in the length of the size of the input sequence $O(k^2)$. In practice, we expect the number of pivot points $k$ to be quite low. Also, the algorithm is used only once at the very beginning of the race. The quadratic algorithm is sufficient for this task and it is insignificant when compared to \texttt{FindPivotPoints}.
 
 \paragraph{Memory Complexity}
-The only thing our algorithm has to remember is the number of neighbors for each pivot point in a priority queue. This requires $O(k)$ of memory and additional $O(k)$ of memory to keep the pointers to the heap cells for random access. The total memory complexity is therefore linear.
+The only thing our algorithm has to remember is the input sequence of points. This requires $O(k)$ of memory. The total memory complexity is therefore linear.
 
 \section{Differential Constraints}
 \label{sec:vehicle_model}
-
-Our vehicle moves in the world by utilizing two actuators, a steering servo and a DC motor. The directions in which the vehicle can travel are constraint by the properties of these two motors. Just like regular commercially available cars, the vehicle cannot turn on spot without driving forwards or backwards. The car also cannot stop or change the direction of travel instantaneously because of inertia.
 
 In order to make any trajectory planning possible, we must be able to predict the behavior of the vehicle based on its state and the actions we execute. Without a good understanding of how the state of the vehicle evolves over time, we might collide with an obstacle, plan a sub-optimal trajectory, or even plan a trajectory which cannot be followed by the physical vehicle.
 
 In this chapter, the task is to describe all the properties which define the state of the vehicle at any given moment and model the rate of change of the state when a specific input command is supplied to the actuators. In other words, we must describe a state transition function $f$ which calculates a derivative of the vehicle state with respect to time $\dot{x}=f(x, u)$. By integrating $\dot{x}$ over time, we will be able to predict how the state evolves and describe the trajectory of the vehicle.
 
-\paragraph{Kinematic models} are a simple way of modeling the behavior of a vehicle. All the different forces acting on the body of the vehicle are ignored, and we rather calculate the movement only based on the geometry of the vehicle and the velocity of the vehicle. This simplification yields accurate predictions for low speeds when the effects of inertia are negligible, but the error between the predictions and the actual movement of the vehicle will grow larger as the speed of the vehicle increases when compared to a dynamic model \todo{cite}.
+The state of our vehicle consists of several parts:
+\begin{itemize}
+	\item the configuration of the vehicle $(x, y, \theta)\in C$,
+	\item the state of the actuators,
+	\item the state variables of the kinematics and dynamics of the vehicle.
+\end{itemize}
+
+\paragraph{Actuators model} 
+The vehicle we will be modeling has two actuators which influence the motion of the vehicle: a steering servo and a brushed DC motor. These actuators can be controlled by setting a target value of the steering angle $\delta_t$ and the throttle position $\tau_t$, which affects the speed of the motor. In general, the vehicle can have more actuators and other mechanical components, which would have to be modeled and whose state we would have to capture. These could be an internal combustion engine, brakes, or a clutch and a gearbox.
+
+\paragraph{Kinematic models} are a simple way of modeling the behavior of a vehicle. All the different forces acting on the body of the vehicle are ignored, and we rather calculate the movement only based on the geometry of the vehicle and the velocity of the vehicle. This simplification yields accurate predictions for low speeds when the effects of inertia are negligible, but the error between the predictions and the actual movement of the vehicle will grow larger as the speed of the vehicle increases and the tires start to slip.
 
 \paragraph{Dynamic models} on the other hand describe the forces which act on the vehicle and which result in translation and rotation of the body of the vehicle. We model the effect of the torque created by the engine which is then transmitted through the power train to the wheels. The friction force between the rotating tires and the road causes the vehicle to accelerate or decelerate and at the same time it holds the vehicle on a curve while turning. At a certain speed and wheel angles the lateral force which keeps the vehicle on the curve will not be enough to keep the vehicle on the curve and the car will start drifting sideways.
 
-The dynamic model can give us more accurate predictions at the handling limits of the vehicle. As a trade-off, the dynamic model is much more complex and harder to implement correctly. We must identify many parameters of the vehicle, such as the properties of the tires and the inner workings of the power train. The dynamic model also requires much more arithmetic operations to predict the next state after some period $\Delta t$ which will make planning with this model slower \todo{cite}.
+The dynamic model can give us more accurate predictions at the handling limits of the vehicle. As a trade-off, the dynamic model is more complex and harder to implement correctly. We must identify many parameters of the vehicle, such as the properties of the tires and the characteristics of the power train. The dynamic model also requires more arithmetic operations to predict the next state after some period $\Delta t$ which can make planning with this model slower.
 
-We aim for maximum possible speeds of our vehicle and a precise dynamic model would be ideal for this use case. At the same time, our on-board computer and sensors might not have enough performance and accuracy to be able to use it fully. A kinematic model might be the only usable option for us.
+\subsection{Actuators Model}
 
-\paragraph{Actuators model} 
-The vehicle has two actuators which influence the motion of the vehicle: a steering servo and a brushed DC motor. These actuators can be controlled by setting a target value of the steering angle $\delta_t$ and the throttle position $\tau_t$, which affects the speed of the vehicle. The steering servo turns and the \gls{ESC} increases or decreases the angular speed of the motor over some time until the desired state is reached. We will model the state of the actuators and how it changes independently for each of the models.
+\subsubsection{Steering Servo Model}
 
-\todo[inline]{Port the chapter from Word.}
+The front wheels of the vehicle are controlled through a servo motor. The servo motor can be turned to a specific position and this position is directly transferred to the steering angle of the front wheels. Each of the wheels is set to a slightly different angle, because the car has \textit{Ackermann} steering geometry. When the car goes around a circle, the inner wheel traces a circle of smaller radius than the outer wheel. The steering angle of the inner wheel therefore must be larger than the steering angle on the outer wheel \footnote{https://en.wikipedia.org/wiki/Ackermann\_steering\_geometry}. We will simplify this by taking a single steering angle $\delta$ which would be required if the wheel was in the middle of the axle.
+
+The change is not instantaneous. The setting period depends on the difference between the previous position and the target position as well as the level of charge of the battery. The servo might overshoot or undershoot the target by a small margin and the steering angle for a given servo position might vary over time because of mechanical imperfections. We will neglect these effects for simplicity.
+
+We will use a simple linear model for the steering angle adjustment:
+\begin{equation}
+\begin{aligned}
+	\dot{\delta}(t) &= \sign(\delta_t-\delta(t)) \dot{\delta}_{c} \\
+	d(t, \Delta t)&=\int_{0}^{\Delta t} \dot{\delta}(t + t') dt' \\
+	\delta(t+\Delta t) &= \begin{cases}
+		\delta(t) + d(t, \Delta t) & \text{when }|d(t, \Delta t)| < |\delta_t - \delta(t)| \\
+		\delta_t & \text{otherwise,}
+	\end{cases}		
+\end{aligned}
+\end{equation}
+
+where $\delta_t$ is the target turning radius and $\delta(t)$ is the steering angle at time $t$. The $\dot{\delta}_{c}$ factor is a constant adjustment speed. We assume that the target steering angle is in the range of possible steering angles $\left[-\delta_{max},\delta_{max}\right]$.
+
+\subsubsection{Brushed DC Motor Model}
+
+The car is driven forward and backwards by a brushed DC motor. The axle of the motor spins and this rotation is directly transferred through a gearbox and a differential to all of the four wheels of the vehicle. If we know the angular velocity of the motor, we can calculate the angular velocity of the wheels\footnote{The velocity of each individual wheel can be different because of differentials. This is noticeable mostly during turns, when the outer wheel spins faster than the inner wheel. We will neglect the effect of the differential in this thesis.}. The rotation of the motor creates a torque which is transferred to the wheels and this torque then creates a force between the road surface and the tires.
+
+The torque the motor produces can be modeled as an inverse proportion to the angular speed of the motor shaft. At the stall point $\tau_{s}$, the torque of the motor is the highest, but the motor does not spin. At the highest \gls{RPM} of the motor, the torque is zero. This speed is called the no load speed $\omega_n$. The torque to speed curve is shown in Figure~\ref{fig:torque_to_speed} and the immediate torque can be calculated from this formula:
+
+\begin{equation}
+	\tau=\tau_s - \dfrac{\tau_s}{\omega_n}\omega,
+\end{equation}
+
+where $\omega$ is the angular speed of the motor shaft.
+
+The motor is controlled via an \gls{ESC}. We can set a \textit{throttle} value through a \gls{PWM} signal, and the \gls*{ESC} will increase or decrease the input voltage which will cause a change to the angular speed of the shaft.
+
+\todo{Finish this section.}
+
+\subsubsection{State Variables}
+
+To account for the actuator models, we will extend the state space $X$ with two new continuous dimensions for the current steering angle $\delta$ and the motor angular velocity $\omega$.
+
+\subsection{Kinematic Model}
+
+The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. This simplification makes reasoning about the movement of the vehicle easier while still being reasonably accurate, and it is commonly used in research \todo{multiple citations}. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite{Rajamani_lateral_dynamics}.
+
+\subsubsection{No Slip Condition}
+We assume that the wheels are rolling in the same direction in which they are pointing. When the front wheels are turned to a steering angle $\delta\neq 0$, our vehicle will be going around a circle with a constant radius. We will also assume that the wheels are rolling against the road surface and that the vehicle never loses traction.
+
+These simplifications will cause our model to be imprecise during high speed cornering, when the car can start ``drifting'' when the wheels lose grip and the vehicle will start moving sideways.
+
+From the no slip assumption, we can derive the radius of a circle which the vehicle will go around if the steering angle is kept constant: 
+
+\begin{equation}
+R=\dfrac{L}{\tan\delta}.
+\end{equation}
+
+Since the motor is directly connected to the wheels and we assume that the wheels are rolling perfectly against the surface, the velocity of the vehicle is directly proportional to the angular velocity of the motor:
+
+\begin{equation}
+v=\omega r_{eff},
+\end{equation}
+
+where $r_{eff}$ is the effective wheel radius.
+
+When the steering angle is zero and the vehicle drives in a straight line, it does not make sense to define a radius of a circle it goes around. We could also say that in such case the radius of the circle is infinite.
+
+\subsubsection{Slip Angle}
+
+Based on the no-slip condition, all the wheels are moving at the same speed v but in a different direction. The rear virtual wheel is moving in the heading direction of the vehicle and the front wheels in the direction they are pointing. Therefore, the center of gravity will not move in the direction of the orientation of the vehicle, but it will be slightly offset by the steering angle $\delta$. From the geometry of the vehicle, we can determine the direction, in which the center of gravity will move:
+
+\begin{equation}
+	\beta=\arctan\dfrac{l_r \tan\delta}{L}.
+\end{equation}
+
+\subsubsection{Kinematics Equations}
+
+The linear and rotational velocity of the body of the vehicle is described by these equations:
+
+\begin{equation}
+\begin{aligned}
+\dot{x}&=v\cos\left(\theta + \beta\right) \\
+\dot{y}&=v\sin\left(\theta + \beta\right) \\
+\dot{\theta}&=\dfrac{v\cos\beta\tan\delta}{L}.
+\end{aligned}
+\end{equation}
+
+The kinematic model does not require any extra state variables on top of the configuration and the state variables of the actuators.
+
+\subsection{Dynamic Model}
+
+
+\subsubsection{Tire Model}
+
+The tire is the interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. We calculate the lateral and longitudinal components of this force separately. The lateral component acts in the direction perpendicular to the orientation of the wheel, the longitudinal component is oriented with respect to the orientation of the tire.
+
+For the sake of simplicity, our tire model is based on a simple linear tire model \todo{Add citation}. There are several other more advanced tire models, such as Brush, Fiala, or Pacejka models \todo{Add citations}, which give more precise results, especially for large slip angles. These models are not practical for us as they have many parameters which need to be experimentally identified.
+
+\paragraph{Lateral Forces}
+
+Tire side slip angles are the angles between the direction in which the wheels are pointing and in which the vehicle is moving. These angles will be different for front and rear wheels because the rear wheel is fixed while the front wheel can be steered:
+
+\begin{equation}
+\begin{aligned}
+\alpha_f=\delta - \arctan \left(\dfrac{l_f \dot{\theta}}{v}+\beta\right) \\
+\alpha_r=\arctan \left(\dfrac{l_r \dot{\theta}}{v}-\beta\right).
+\end{aligned}
+\end{equation}
+
+When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero.
+
+From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on the slip angle curve. We approximate this curve with a simple linear model shown in \todo{Figure X} and expressed by the equation:
+
+\begin{equation}
+F_{yi}=\begin{cases}
+C_a \alpha_i & \alpha_i < \alpha_{max} \\
+F_{y,max} & \text{otherwise.}
+\end{cases}
+\end{equation}
+
+where the index $i\in\left\{f,r\right\}$ represents the front or rear tire and $C_a$ is a constant called \textit{cornering stiffness}, which must be determined experimentally.
+
+We will assume that the slip angles $\alpha_f$ and $\alpha_r$ are small and our vehicle does not drift. In the opposite case, our linear tire model would not be able to correctly predict the behavior of the vehicle.
+
+\paragraph{Longitudinal Forces}
+
+The slip ratio, also referred to as longitudinal slip, is the difference between the peripheral velocity of a point at the circumference of the wheel and the velocity at which the vehicle travels during the same time. If the wheels are rolling perfectly, then these velocities will be the same and there will be no slip. When the wheel spins while accelerating it will move at a higher speed than the vehicle and the slip ratio will be positive. The relationship is expressed by the following equation:
+
+\begin{equation}
+s=\dfrac{\omega_w r_{eff}-v}{|v|}
+\end{equation}
+
+Our vehicle does not have a clutch or a torque convertor. This means that our motor is always physically connected to the wheels and the angular velocity of the wheels $\omega_w$ is directly proportional to the angular velocity of the engine $\omega$ and it is only scaled by the combined gear ratio of the gearbox and the differential $GR$. Our gearbox is fixed and so the gear ratio does not change and is constant. The wheel angular velocity is therefore expressed as:
+
+\begin{equation}
+\omega_w = (GR) \omega.
+\end{equation}
+
+If the wheels are rolling against the surface, and the slip ratio is zero, then there is no friction force between the tires and the surface and therefore there will be no acceleration as a result. When the wheels are spinning slightly faster and the slip ratio is positive, there will be friction force acting against the direction of the wheel rotation and this force will cause the vehicle to accelerate. We call this force traction force. At a certain slip ratio, the wheels will spin too fast and the vehicle will lose its traction.
+
+Maximum traction force at a wheel is depends on the weight of the vehicle W and the distribution of weight between the front and rear axles. Acceleration and deceleration influence weight distribution between the wheels. The weight distribution in turn affects the maximum traction force that can be exerted by the wheels. We will omit weight transfer for the sake of simplicity, and we divide the weight on each of the axles proportionally to the distance from the center of gravity.
+
+The traction maximum traction force of a virtual tire is:
+\begin{equation}
+F_{max,i}=\mu W_i=\mu \dfrac{l_i}{L} mg,
+\end{equation}
+
+where $i\in\left\{f,r\right\}$ represents values related to the front or the rear axle and $\mu$ is a friction coefficient between the tires and the road surface. We model the relationship between the slip ratio and the amount of force with a simple linear model which can be seen in Figure~\ref{fig:slip_ratio} and we express it with the following equation:
+
+\begin{equation}
+F_{x,i}=\begin{cases}
+C_t s_i &	s_i < s_{max} \\
+F_{max,i} & \text{otherwise,}
+\end{cases}
+\end{equation}
+
+where $C_t$ is a traction constant corresponding to the slope of the slip ratio line.
+
+The difference between the pointing direction of the wheels and the actual direction of motion of the vehicle causes a friction force perpendicular to the direction of the wheels and causes the vehicle to rotate around the z-axis and stay on curves.
+
+\subsection{Kinematics Equations}
+
+\begin{equation}
+\begin{aligned}
+\dot{x}&=v\cos\left(\theta + \beta\right) \\
+\dot{y}&=v\sin\left(\theta + \beta\right).
+\end{aligned}
+\end{equation}
+
+\todo[inline]{Revise and finish this chapter.}
+
+\subsubsection{State Variables}
+
