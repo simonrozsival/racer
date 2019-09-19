@@ -16,7 +16,6 @@ public:
   const double radius;
   const int neighbor_circles;
   const double min_distance_between_waypoints;
-  const double max_distance_between_waypoints;
 
 public:
   static std::unique_ptr<track_analysis_input> load(std::filesystem::path input_file_name)
@@ -57,17 +56,15 @@ public:
     std::cout << "Load config: " << std::endl;
 
     // load space exploration params
-    double radius, min_distance_between_waypoints, max_distance_between_waypoints;
+    double radius, min_distance_between_waypoints;
     int neighbor_circles;
     ss >> radius;
     ss >> neighbor_circles;
     ss >> min_distance_between_waypoints;
-    ss >> max_distance_between_waypoints;
 
     std::cout << "radius: " << radius << std::endl;
     std::cout << "neighbor_circles: " << neighbor_circles << std::endl;
     std::cout << "min_distance_between_waypoints: " << min_distance_between_waypoints << std::endl;
-    std::cout << "max_distance_between_waypoints: " << max_distance_between_waypoints << std::endl;
 
     // load initial position
     double ix, iy, itheta;
@@ -100,8 +97,7 @@ public:
         std::move(occupancy_grid),
         radius,
         neighbor_circles,
-        min_distance_between_waypoints,
-        max_distance_between_waypoints);
+        min_distance_between_waypoints);
   }
 
   track_analysis_input(
@@ -110,14 +106,12 @@ public:
       std::unique_ptr<racer::occupancy_grid> occupancy_grid,
       double radius,
       int neighbor_circles,
-      double min_distance_between_waypoints,
-      double max_distance_between_waypoints) : initial_position(initial_position),
+      double min_distance_between_waypoints) : initial_position(initial_position),
                                                checkpoints(checkpoints),
                                                occupancy_grid(std::move(occupancy_grid)),
                                                radius(radius),
                                                neighbor_circles(neighbor_circles),
-                                               min_distance_between_waypoints(min_distance_between_waypoints),
-                                               max_distance_between_waypoints(max_distance_between_waypoints)
+                                               min_distance_between_waypoints(min_distance_between_waypoints)
   {
   }
 };

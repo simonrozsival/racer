@@ -22,11 +22,9 @@ public:
     track_analysis(
         const occupancy_grid &grid,
         const double min_distance_between_waypoints,
-        const double max_distance_between_waypoints,
         const int number_of_neighbors)
         : grid_(grid),
           min_distance_between_waypoints_(min_distance_between_waypoints),
-          max_distance_between_waypoints_(max_distance_between_waypoints),
           number_of_neighbors_(number_of_neighbors)
     {
     }
@@ -37,7 +35,7 @@ public:
         const std::list<point> &circuit_definition,
         bool post_process) const
     {
-        sehs::space_exploration exploration(grid_, vehicle_radius, 2 * vehicle_radius, number_of_neighbors_);
+        sehs::space_exploration exploration(grid_, vehicle_radius, 10 * vehicle_radius, number_of_neighbors_);
         auto circle_path = exploration.explore_grid(initial_position, circuit_definition);
 
         if (circle_path.size() == 0)
@@ -91,7 +89,6 @@ public:
 private:
     const occupancy_grid &grid_;
     const double min_distance_between_waypoints_;
-    const double max_distance_between_waypoints_;
     const int number_of_neighbors_;
 
     bool are_directly_visible(const point &a, const point &b) const

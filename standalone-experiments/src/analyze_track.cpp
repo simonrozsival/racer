@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
   // Step 1: Run just space exploration
   std::cout << "RUN space exploration" << std::endl;
   const auto se_start = std::chrono::steady_clock::now();
-  racer::sehs::space_exploration se(*config->occupancy_grid, config->radius, 2 * config->radius, config->neighbor_circles);
+  racer::sehs::space_exploration se(*config->occupancy_grid, config->radius, 10 * config->radius, config->neighbor_circles);
   const auto circles = se.explore_grid(config->initial_position, config->checkpoints);
   stop_stopwatch("space exploration", se_start);
 
@@ -44,7 +44,7 @@ int main(int argc, char *argv[])
   // min_distance_between_waypoints
   std::cout << "RUN track analysis" << std::endl;
   const auto track_analysis_start = std::chrono::steady_clock::now();
-  racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints, config->max_distance_between_waypoints, config->neighbor_circles);
+  racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints, config->neighbor_circles);
   const auto waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints, true);
   stop_stopwatch("track analysis", track_analysis_start);
 

@@ -79,7 +79,7 @@ void plot_points(const std::string &name, const std::list<racer::math::point> &p
         points_x.push_back(point.x / cell_size);
         points_y.push_back(point.y / cell_size);
     }
-    double size = cell_size * 100;
+    double size = cell_size * 200;
     plt::plot(points_x, points_y, format, {{"label", name}, {"markersize", std::to_string(size)}});
 }
 
