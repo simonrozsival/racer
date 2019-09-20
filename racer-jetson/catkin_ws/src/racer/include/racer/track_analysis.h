@@ -21,29 +21,17 @@ class track_analysis
 public:
     track_analysis(
         const occupancy_grid &grid,
-        const double min_distance_between_waypoints,
-        const int number_of_neighbors)
+        const double min_distance_between_waypoints)
         : grid_(grid),
-          min_distance_between_waypoints_(min_distance_between_waypoints),
-          number_of_neighbors_(number_of_neighbors)
+          min_distance_between_waypoints_(min_distance_between_waypoints)
     {
     }
 
-    const std::list<point> find_corners(
-        const double vehicle_radius,
-        const vehicle_position &initial_position,
-        const std::list<point> &circuit_definition,
+    const std::vector<point> find_pivot_points(
+        const std::list<circle> circle_path,
         bool post_process) const
     {
-        sehs::space_exploration exploration(grid_, vehicle_radius, 10 * vehicle_radius, number_of_neighbors_);
-        auto circle_path = exploration.explore_grid(initial_position, circuit_definition);
-
-        if (circle_path.size() == 0)
-        {
-            return std::list<point>(); // no path was found
-        }
-
-        std::vector<point> apex_waypoints;
+        std::vector<point> pivot_points;
 
         auto prev_circle = std::make_unique<circle>(circle_path.front());
         auto last_circle = std::make_unique<circle>(*prev_circle);
@@ -53,7 +41,7 @@ public:
         {
             if (!are_directly_visible(last_circle->center, next_step.center))
             {
-                apex_waypoints.push_back(prev_circle->center);
+                pivot_points.push_back(prev_circle->center);
                 last_circle = std::move(prev_circle);
             }
 
@@ -63,33 +51,32 @@ public:
         // continue from the beginning
         for (const auto &next_step : circle_path)
         {
-            if (next_step.center == apex_waypoints.front())
+            if (next_step.center == pivot_points.front())
             {
                 break;
             }
 
             if (!are_directly_visible(last_circle->center, next_step.center))
             {
-                apex_waypoints.push_back(prev_circle->center);
+                pivot_points.push_back(prev_circle->center);
                 last_circle = std::move(prev_circle);
             }
 
             prev_circle = std::make_unique<circle>(next_step);
         }
 
-        if (!post_process)
-        {
-            return std::list<point>{apex_waypoints.begin(), apex_waypoints.end()};
-        }
+        return pivot_points;
+    }
 
-        const auto sharp_turns = remove_insignificant_turns(apex_waypoints, M_PI * (4.0 / 5.0));
+    std::list<point> find_corners(std::vector<point> pivot_points, double max_angle)
+    {
+        const auto sharp_turns = remove_insignificant_turns(pivot_points, max_angle);
         return merge_close(sharp_turns, min_distance_between_waypoints_);
     }
 
 private:
     const occupancy_grid &grid_;
     const double min_distance_between_waypoints_;
-    const int number_of_neighbors_;
 
     bool are_directly_visible(const point &a, const point &b) const
     {
