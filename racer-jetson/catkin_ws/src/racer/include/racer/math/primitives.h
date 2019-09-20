@@ -5,8 +5,6 @@
 #include <list>
 #include <algorithm>
 
-const double pi = atan(1) * 4.0;
-
 namespace racer::math
 {
 
@@ -188,9 +186,9 @@ private:
     static double to_small_angle(double angle)
     {
         while (angle < 0)
-            angle += 2 * pi;
-        while (angle >= 2 * pi)
-            angle -= 2 * pi;
+            angle += 2 * M_PI;
+        while (angle >= 2 * M_PI)
+            angle -= 2 * M_PI;
         return angle;
     }
 };

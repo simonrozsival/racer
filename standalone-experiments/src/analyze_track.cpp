@@ -33,25 +33,26 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  // Step 1: Run just space exploration
+  // Step 1
   std::cout << "RUN space exploration" << std::endl;
   const auto se_start = std::chrono::steady_clock::now();
   racer::sehs::space_exploration se(*config->occupancy_grid, config->radius, 10 * config->radius, config->neighbor_circles);
   const auto circles = se.explore_grid(config->initial_position, config->checkpoints);
   stop_stopwatch("space exploration", se_start);
 
-  // Step 2: Run the full track analysis
-  // min_distance_between_waypoints
-  std::cout << "RUN track analysis" << std::endl;
-  const auto track_analysis_start = std::chrono::steady_clock::now();
-  racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints, config->neighbor_circles);
-  const auto waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints, true);
-  stop_stopwatch("track analysis", track_analysis_start);
+  // Step 2
+  std::cout << "RUN find pivot points" << std::endl;
+  const auto find_pivot_points_start = std::chrono::steady_clock::now();
+  racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints);
+  const auto raw_waypoints = analysis.find_pivot_points(circles, true);
+  stop_stopwatch("find pivot points", find_pivot_points_start);
 
-  // this is just for visualization and it does not have to be stopwatched
-  const auto track_analysis_raw_start = std::chrono::steady_clock::now();
-  const auto raw_waypoints = analysis.find_corners(config->radius, config->initial_position, config->checkpoints, false);
-  stop_stopwatch("track analysis without merging", track_analysis_raw_start);
+  // Step 3
+  std::cout << "RUN find corners" << std::endl;
+  const auto find_corners_start = std::chrono::steady_clock::now();
+  const double max_angle = M_PI * (4.0 / 5.0);
+  const auto waypoints = analysis.find_corners(raw_waypoints, max_angle);
+  stop_stopwatch("find corners", find_corners_start);
 
   // This requires Linux or WSL+Xserver
   std::cout << "Show interactive plot" << std::endl;

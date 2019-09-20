@@ -10,6 +10,7 @@
 class track_analysis_input
 {
 public:
+  const std::string name;
   const racer::vehicle_position initial_position;
   const std::list<racer::math::point> checkpoints;
   const std::unique_ptr<racer::occupancy_grid> occupancy_grid;
@@ -92,6 +93,7 @@ public:
 
     // put it all together
     return std::make_unique<track_analysis_input>(
+        input_file_name.filename(),
         initial_position,
         checkpoints,
         std::move(occupancy_grid),
@@ -101,12 +103,14 @@ public:
   }
 
   track_analysis_input(
+      std::string name,
       racer::vehicle_position initial_position,
       std::list<racer::math::point> checkpoints,
       std::unique_ptr<racer::occupancy_grid> occupancy_grid,
       double radius,
       int neighbor_circles,
-      double min_distance_between_waypoints) : initial_position(initial_position),
+      double min_distance_between_waypoints) : name(name),
+                                               initial_position(initial_position),
                                                checkpoints(checkpoints),
                                                occupancy_grid(std::move(occupancy_grid)),
                                                radius(radius),

@@ -63,9 +63,9 @@ public:
 
         double min_so_far = max_radius;
         const double number_of_samples = 60;
-        const double step = 2 * pi / number_of_samples;
+        const double step = 2 * M_PI / number_of_samples;
 
-        for (double angle = 0; angle < 2 * pi; angle += step)
+        for (double angle = 0; angle < 2 * M_PI; angle += step)
         {
             min_so_far = std::min(min_so_far, find_distance(center, angle, min_so_far));
         }

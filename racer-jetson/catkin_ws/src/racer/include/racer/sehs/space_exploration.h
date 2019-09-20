@@ -180,7 +180,7 @@ private:
     std::list<std::shared_ptr<circle_node>> expand(const std::shared_ptr<circle_node> &node, const racer::math::point &goal) const
     {
         std::list<std::shared_ptr<circle_node>> nodes;
-        const double sector_angle = 2 * pi; // this could be changed to narrow the search direction
+        const double sector_angle = 2 * M_PI; // this could be changed to narrow the search direction
 
         for (auto center : node->examined_circle.points_on_circumference(node->heading_angle - (sector_angle / 2), sector_angle, number_of_expanded_points_))
         {
