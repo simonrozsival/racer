@@ -96,7 +96,9 @@ For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approxim
 	\label{fig:simple_car}
 	
 	\begin{tikzpicture}[
-		axis/.style={thin, densely dashed, gray}
+	axis/.style={thin, densely dashed, gray},
+	axle/.style={thick, gray},
+	vec/.style={ultra thick, ->, >=latex}
 	]
 	
 	% the axes
@@ -145,17 +147,20 @@ For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approxim
 		\draw[axis] (frontLeft) -- ++(0, 1);		
 		\draw[<->, >=latex] ($ (rearLeft) + (0, 0.8) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$L$} ($ (frontLeft) + (0, 0.8) $);
 		
+		\filldraw[axle] (\rearX, \rightY + \wW/2) -- (\rearX, \leftY - \wW/2); % the axle 
 		\draw[thick] (\rearX - \wL/2, \rightY - \wW/2) rectangle (\rearX + \wL/2, \rightY + \wW/2); % rear right wheel/tire
 		\draw[thick] (\rearX - \wL/2, \leftY - \wW/2) rectangle (\rearX + \wL/2, \leftY + \wW/2); % rear left wheel/tire
-		\filldraw[thick] (\rearX, \rightY + \wW/2) -- (\rearX, \w/2) circle (2pt) node[right, xshift=1mm] {$(x, y)$} -- (\rearX, \leftY - \wW/2); % the axle 
 		
 		% front axle
 		\draw[thick, rotate around={\statePhi:(\frontX, \rightY)}] (\frontX - \wL/2, \rightY - \wW/2) rectangle (\frontX + \wL/2, \rightY + \wW/2); % rear right wheel/tire
 		\draw[thick, rotate around={\statePhi:(\frontX, \leftY)}] (\frontX - \wL/2, \leftY - \wW/2) rectangle (\frontX + \wL/2, \leftY + \wW/2); % rear left wheel/tire
-		\filldraw[thick] (\frontX, \rightY + \wW/2) -- (\frontX, \leftY - \wW/2); % the axle 
+		\filldraw[axle] (\frontX, \rightY + \wW/2) -- (\frontX, \leftY - \wW/2); % the axle 
 		
 		% connect the axles
-		\draw[thick] (front) -- (\rearX, \w/2);
+		\draw[axle] (front) -- (\rearX, \w/2);
+		
+		% xy
+		\filldraw[] (\rearX, \w/2) circle (2pt) node[right, xshift=1mm] {$(x, y)$};
 		
 		% visualize phi
 		\draw[axis, rotate around={\statePhi:(front)}] (front) -- (\frontX + 2, \w/2);
@@ -946,30 +951,30 @@ We will implement an algorithm based on this thought experiment which will have 
 	\begin{subfigure}[b]{0.49\textwidth}%
 		\centering
 		\includegraphics[width=\textwidth]{../img/corner_detection_simple}
-		\caption{}
+		\caption{Circuit ``Simple''}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{../img/corner_detection_handdrawn}
-		\caption{}
+		\caption{Circuit ``U''}
 	\end{subfigure}
 	\vskip\baselineskip
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{../img/corner_detection_circuit_a}
-		\caption{}
+		\caption{Circuit ``Tornado''}
 		\label{fig:corner_detection_hairpin_corner}
 	\end{subfigure}	
 	\hfill
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{../img/corner_detection_zurich}
-		\caption{}
+		\caption{Circuit ``Zurich''}
 	\end{subfigure}
 	
 	\label{fig:corner_detection}
-	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle. All of the tracks are $500\times 500$ grids with a resolution of \protect \SI{0.05}{\meter} per cell. The radius of the car is set to $r_{car}=$ \protect\SI{0.5}{\meter}, the radii of the circles during space exploration were limited to $\left[r_{car}, 10\cdot r_{car}\right]$ and the number of expanded neighbor circles is $n=15$. The minimum distance between two waypoints is $d_{min}$=\protect\SI{3}{\meter}.}
+	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle. All of the tracks are $500\times 500$ grids with a resolution of \protect \SI{0.05}{\meter} per cell. The radius of the car is set to $r_{car}=$ \protect\SI{0.5}{\meter}, the radii of the circles during space exploration were limited to $\left[r_{car}, 10\cdot r_{car}\right]$ and the number of expanded neighbor circles is $n=8$. The minimum distance between two waypoints is $d_{min}$=\protect\SI{3}{\meter}.}
 \end{figure}
 
 
@@ -1135,6 +1140,8 @@ The only thing our algorithm has to remember is the input sequence of points. Th
 
 In order to make any trajectory planning possible, we must be able to predict the behavior of the vehicle based on its state and the actions we execute. Without a good understanding of how the state of the vehicle evolves over time, we might collide with an obstacle, plan a sub-optimal trajectory, or even plan a trajectory which cannot be followed by the physical vehicle.
 
+Car-like robots are typically underactuated. The configuration space $C$ has three degrees of freedom: the $x, y$ position and the heading angle $\theta$. On the other hand, the actions which control the vehicle, have only two degrees of freedom: a steering angle of the front wheels and the motor throttle. The vehicle moves only in the direction in which it is pointing and it changes the heading direction only while it is moving. Systems with such limited directions of motion are called non-holonomic in literature.
+
 In this chapter, the task is to describe all the properties which define the state of the vehicle at any given moment and model the rate of change of the state when a specific input command is supplied to the actuators. In other words, we must describe a state transition function $f$ which calculates a derivative of the vehicle state with respect to time $\dot{x}=f(x, u)$. By integrating $\dot{x}$ over time, we will be able to predict how the state evolves and describe the trajectory of the vehicle.
 
 The state of our vehicle consists of several parts:
@@ -1162,7 +1169,7 @@ The front wheels of the vehicle are controlled through a servo motor. The servo 
 The change is not instantaneous. The setting period depends on the difference between the previous position and the target position as well as the level of charge of the battery. The servo might overshoot or undershoot the target by a small margin and the steering angle for a given servo position might vary over time because of mechanical imperfections. We will neglect these effects for simplicity.
 
 We will use a simple linear model for the steering angle adjustment:
-\begin{equation}
+\begin{equation*}
 \begin{aligned}
 	\dot{\delta}(t) &= \sign(\delta_t-\delta(t)) \dot{\delta}_{c} \\
 	d(t, \Delta t)&=\int_{0}^{\Delta t} \dot{\delta}(t + t') dt' \\
@@ -1171,7 +1178,7 @@ We will use a simple linear model for the steering angle adjustment:
 		\delta_t & \text{otherwise,}
 	\end{cases}		
 \end{aligned}
-\end{equation}
+\end{equation*}
 
 where $\delta_t$ is the target turning radius and $\delta(t)$ is the steering angle at time $t$. The $\dot{\delta}_{c}$ factor is a constant adjustment speed. We assume that the target steering angle is in the range of possible steering angles $\left[-\delta_{max},\delta_{max}\right]$.
 
@@ -1179,17 +1186,21 @@ where $\delta_t$ is the target turning radius and $\delta(t)$ is the steering an
 
 The car is driven forward and backwards by a brushed DC motor. The axle of the motor spins and this rotation is directly transferred through a gearbox and a differential to all of the four wheels of the vehicle. If we know the angular velocity of the motor, we can calculate the angular velocity of the wheels\footnote{The velocity of each individual wheel can be different because of differentials. This is noticeable mostly during turns, when the outer wheel spins faster than the inner wheel. We will neglect the effect of the differential in this thesis.}. The rotation of the motor creates a torque which is transferred to the wheels and this torque then creates a force between the road surface and the tires.
 
-The torque the motor produces can be modeled as an inverse proportion to the angular speed of the motor shaft. At the stall point $\tau_{s}$, the torque of the motor is the highest, but the motor does not spin. At the highest \gls{RPM} of the motor, the torque is zero. This speed is called the no load speed $\omega_n$. The torque to speed curve is shown in Figure~\ref{fig:torque_to_speed} and the immediate torque can be calculated from this formula:
+The torque the motor produces can be modeled as an inverse proportion to the angular speed of the motor shaft. At the stall point $\tau_{s}$, the torque of the motor is the highest, but the motor does not spin. At the highest \gls{RPM} of the motor, the torque is zero. This speed is called the no load speed $\omega_n$. The torque to speed curve is shown in Figure~\ref{fig:torque_to_speed}\todo{Add the figure} and the immediate torque can be calculated from this formula:
 
-\begin{equation}
+\begin{equation*}
 	\tau=\tau_s - \dfrac{\tau_s}{\omega_n}\omega,
-\end{equation}
+\end{equation*}
 
-where $\omega$ is the angular speed of the motor shaft.
+where $\omega$ is the angular speed of the motor shaft. Our vehicle does not have a clutch or a torque convertor. This means that our motor is always physically connected to the wheels and the angular velocity of the wheels $\omega_w$ is directly proportional to the angular velocity of the engine $\omega$ and it is only scaled by the combined gear ratio of the gearbox and the differential $GR$. Our gearbox is fixed and so the gear ratio does not change and is constant. The wheel angular velocity is therefore expressed as:
 
-The motor is controlled via an \gls{ESC}. We can set a \textit{throttle} value through a \gls{PWM} signal, and the \gls*{ESC} will increase or decrease the input voltage which will cause a change to the angular speed of the shaft.
+\begin{equation*}
+\omega_w = (GR) \omega.
+\end{equation*}
 
-\todo{Finish this section.}
+The motor is controlled via an \gls{ESC}. We can set a specific throttle percentage and the \gls*{ESC} will increase or decrease the input voltage which will change the speed of the shaft rotation.
+
+\todo[inline]{Finish this section by describing how the engine speed is adjusted from the data we collected.}
 
 \subsubsection{State Variables}
 
@@ -1197,53 +1208,238 @@ To account for the actuator models, we will extend the state space $X$ with two 
 
 \subsection{Kinematic Model}
 
-The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. This simplification makes reasoning about the movement of the vehicle easier while still being reasonably accurate, and it is commonly used in research \todo{multiple citations}. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite{Rajamani_lateral_dynamics}.
+The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. This simplification makes reasoning about the movement of the vehicle easier while still being reasonably accurate, and it is commonly used in research \todo{multiple citations}. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite{Rajamani_lateral_dynamics} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
 
-\subsubsection{No Slip Condition}
+\begin{figure}[h!]
+	\centering
+	
+	\begin{tikzpicture}[
+	axis/.style={thin, densely dashed, gray},
+	axle/.style={thick, gray},
+	vec/.style={ultra thick, ->, >=latex}
+	]
+	
+	% the axes
+	\path[name path=AX] (-1,0)--(6,0);
+	\draw[thin, ->] (-0.5,0)--(6,0) node[right]{$x$};
+	\draw[thin, ->] (0,-0.5)--(0,4.5) node[above]{$y$};
+	
+	\def\lr{3}
+	\def\lf{3}
+	\def\L{\lr+\lf}
+	\def\wW{0.55} % wheel width
+	\def\wL{1.25} % wheel length
+	\def\xoffset{2cm}
+	\def\yoffset{1.5cm}
+		
+	\def\stateTheta{45} % heading angle of the vehicle
+	\def\stateDelta{-35} % steering angle of the front wheels
+	\def\stateBeta{-17.5} % steering angle of the front wheels
+	
+	% the rotated vehicle
+	\begin{scope}[xshift=\xoffset, yshift=\yoffset]
+	\begin{scope}[rotate=\stateTheta]
+	
+	% longitudinal axis
+	\path[name path=AL] (-2.5, 0) -- (\L+2, 0);
+	\draw[axis] (-2.2, 0) -- (\L+2, 0);
+	
+	% visualize theta
+	\path[name intersections={of=AL and AX, by={X}}];
+	\draw[rotate=-\stateTheta] (X)++(0.5,0) arc (0:\stateTheta:0.5) node[right, yshift=-0.5mm, xshift=1mm] {$\theta$}; % theta
+	
+	% axle coordinates
+	\def\rearX{0}
+	\def\centerX{\lr}
+	\def\frontX{\L}
+	
+	\coordinate (front) at (\frontX, 0);
+	\coordinate (cog) at (\lr, 0);
+	\coordinate (rear) at (\rearX, 0);
+	
+	% visualize the wheelbase length
+	\draw[axis] (rear) -- ++(0, 2);
+	\draw[axis] (cog) -- ++(0, 2);
+	\draw[axis] (front) -- ++(0, 2);
+	\draw[<->, >=latex] ($ (rear) + (0, 1.5) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$l_r$} ($ (cog) + (0, 1.5) $);
+	\draw[<->, >=latex] ($ (cog) + (0, 1.5) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$l_f$} ($ (front) + (0, 1.5) $);
+	
+	% connect the axles
+	\draw[axle] (front) -- (rear);
+	
+	% wheels
+	\draw[thick] (\rearX - \wL/2, -\wW/2) rectangle (\rearX + \wL/2, \wW/2); % rear wheel/tire
+	\draw[thick, rotate around={\stateDelta:(\frontX, 0)}] (\frontX - \wL/2, -\wW/2) rectangle (\frontX + \wL/2, \wW/2); % front wheel/tire
+	
+	% center of gravity
+	\filldraw[thick] (cog) circle (2pt) node[below, xshift=4mm, yshift=-1mm] {$(x, y)$};
+
+	% visualize delta
+	\draw[axis, rotate around={\stateDelta:(front)}] (front) -- ++(2, 0);
+	\draw (front)++(1.2,0) arc (0:\stateDelta:1.2) node[right, yshift=5mm] {$\delta$}; % delta
+	
+	% visualize beta/velocity
+	\draw[vec, rotate around={\stateBeta:(cog)}] (cog) -- node[below, xshift=3mm] {$v$} ++(1.5, 0);
+	\draw (cog)++(1,0) arc (0:\stateBeta:1) node[right, yshift=4.25mm, xshift=1mm] {$\beta$}; % beta
+	
+	\end{scope}
+	\end{scope}
+	
+	\end{tikzpicture}
+	
+	\caption{The two front and two rear wheels are merged into a single wheel at the center of each axle for simplification. The $(x,y)$ position of the center of gravity moves at the speed $v$ in the direction $\theta+\beta$ in the global reference frame.}
+	\label{fig:kinematic_bicycle}
+\end{figure}
+
 We assume that the wheels are rolling in the same direction in which they are pointing. When the front wheels are turned to a steering angle $\delta\neq 0$, our vehicle will be going around a circle with a constant radius. We will also assume that the wheels are rolling against the road surface and that the vehicle never loses traction.
 
 These simplifications will cause our model to be imprecise during high speed cornering, when the car can start ``drifting'' when the wheels lose grip and the vehicle will start moving sideways.
 
-From the no slip assumption, we can derive the radius of a circle which the vehicle will go around if the steering angle is kept constant: 
+Since the motor is directly connected to the wheels and we assume that the wheels are rolling perfectly against the surface, the speed of the vehicle is directly proportional to the engine angular velocity:
 
-\begin{equation}
-R=\dfrac{L}{\tan\delta}.
-\end{equation}
+\begin{equation*}
+v=\omega_w r,
+\end{equation*}
 
-Since the motor is directly connected to the wheels and we assume that the wheels are rolling perfectly against the surface, the velocity of the vehicle is directly proportional to the angular velocity of the motor:
+where $r$ is the radius of the wheels and $\omega_w$ is the angular velocity of the wheels.
 
-\begin{equation}
-v=\omega r_{eff},
-\end{equation}
+Based on the no-slip condition, all the wheels are moving at the same speed $v$ but in a different direction. The rear virtual wheel is moving in the heading direction of the vehicle $\theta$ and the front wheels in the direction they are pointing $\theta + \delta$. Therefore, the center of gravity will not move in the direction of the orientation of the vehicle, but it will be slightly offset by the steering angle $\delta$. From the geometry of the vehicle, we can determine the direction, in which the center of gravity will move:
 
-where $r_{eff}$ is the effective wheel radius.
+\begin{equation*}
+	\beta=\arctan\left(\dfrac{l_r}{l_r+l_f}\tan\delta\right).
+\end{equation*}
 
-When the steering angle is zero and the vehicle drives in a straight line, it does not make sense to define a radius of a circle it goes around. We could also say that in such case the radius of the circle is infinite.
+The linear and rotational velocity of the body of the vehicle in the global reference frame is described by these equations:
 
-\subsubsection{Slip Angle}
-
-Based on the no-slip condition, all the wheels are moving at the same speed v but in a different direction. The rear virtual wheel is moving in the heading direction of the vehicle and the front wheels in the direction they are pointing. Therefore, the center of gravity will not move in the direction of the orientation of the vehicle, but it will be slightly offset by the steering angle $\delta$. From the geometry of the vehicle, we can determine the direction, in which the center of gravity will move:
-
-\begin{equation}
-	\beta=\arctan\dfrac{l_r \tan\delta}{L}.
-\end{equation}
-
-\subsubsection{Kinematics Equations}
-
-The linear and rotational velocity of the body of the vehicle is described by these equations:
-
-\begin{equation}
+\begin{equation*}
 \begin{aligned}
 \dot{x}&=v\cos\left(\theta + \beta\right) \\
 \dot{y}&=v\sin\left(\theta + \beta\right) \\
-\dot{\theta}&=\dfrac{v\cos\beta\tan\delta}{L}.
+\dot{\theta}&=\dfrac{v\cos\beta\tan\delta}{l_r + l_f}.
 \end{aligned}
-\end{equation}
+\end{equation*}
 
-The kinematic model does not require any extra state variables on top of the configuration and the state variables of the actuators.
+The kinematic model does not require any extra state variables on top of the configuration and the state variables of the actuators. The final state space $X$ would therefore have five continuous dimensions:
+
+\begin{equation*}
+	X=\left\{\left(x,y,\theta,\delta,\omega\right)\mid x,y,\omega\in\mathbb{R}, \theta,\delta\in\left[0, 2\pi\right)\right\}.
+\end{equation*}
 
 \subsection{Dynamic Model}
 
+\todo[inline]{This section is an early WIP and should not be reviewed just yet.}
+
+\begin{equation*}
+\begin{aligned}
+F_{aero}&=\dfrac{1}{2}C_\alpha \rho A v^2=c_\alpha v^2 \\
+F_{roll}&\approx c_r|v| \\
+F_{load}&=F_{areo}+F_{roll}.
+\end{aligned}
+\end{equation*}
+
+\begin{equation*}
+\begin{aligned}
+F_{tr}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
+\dot{v}&=\dfrac{1}{m}\left(F_{traction}-F_{load}\right).
+\end{aligned}
+\end{equation*}
+
+\begin{equation*}
+\begin{aligned}
+\dot{x}&=v\cos\left(\theta + \beta\right) \\
+\dot{y}&=v\sin\left(\theta + \beta\right) \\
+\dot{\beta}&=\dfrac{1}{mv}\left(F_{yf}+F_{yr}\right)-\dot{\theta} \\
+\ddot{\theta}&=\dfrac{1}{I_z}\left(l_f \left(F_{yf}\cos\delta - F_{xf}\sin\delta \right) - l_r F_{yr}\right).
+\end{aligned}
+\end{equation*}
+
+\begin{figure}[h!]
+	\centering
+	
+	\begin{tikzpicture}[
+	axis/.style={thin, densely dashed, gray},
+	axle/.style={thick, gray},
+	vec/.style={ultra thick, ->, >=latex}
+	]
+	
+	% the axes
+	\path[name path=AX] (-1,0)--(6,0);
+	\draw[thin, ->] (-0.5,0)--(6,0) node[right]{$x$};
+	\draw[thin, ->] (0,-0.5)--(0,4.5) node[above]{$y$};
+	
+	\def\lr{3}
+	\def\lf{3}
+	\def\L{\lr+\lf}
+	\def\wW{0.55} % wheel width
+	\def\wL{1.25} % wheel length
+	\def\xoffset{2.0cm}
+	\def\yoffset{1.5cm}
+	
+	\def\stateTheta{45} % heading angle of the vehicle
+	\def\stateDelta{-35} % steering angle of the front wheels
+	\def\stateBeta{-17.5} % steering angle of the front wheels
+	
+	% the rotated vehicle
+	\begin{scope}[xshift=\xoffset, yshift=\yoffset]
+	\begin{scope}[rotate=\stateTheta]
+	
+	% longitudinal axis
+	\path[name path=AL] (-2.5, 0) -- (\L+2, 0);
+	\draw[axis] (-2.2, 0) -- (\L+2, 0);
+	
+	% visualize theta
+	\path[name intersections={of=AL and AX, by={X}}];
+	\draw[rotate=-\stateTheta] (X)++(0.5,0) arc (0:\stateTheta:0.5) node[right, yshift=-0.5mm, xshift=1mm] {$\theta$}; % theta
+	
+	% axle coordinates
+	\def\rearX{0}
+	\def\centerX{\lr}
+	\def\frontX{\L}
+	
+	\coordinate (front) at (\frontX, 0);
+	\coordinate (cog) at (\lr, 0);6
+	\coordinate (rear) at (\rearX, 0);
+	
+	% visualize the wheelbase length
+	\draw[axis] (rear) -- ++(0, 2);
+	\draw[axis] (cog) -- ++(0, 2);
+	\draw[axis] (front) -- ++(0, 2);
+	\draw[<->, >=latex] ($ (rear) + (0, 1.5) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$l_r$} ($ (cog) + (0, 1.5) $);
+	\draw[<->, >=latex] ($ (cog) + (0, 1.5) $) -- node[above, xshift=-1.5mm, yshift=-1mm] {$l_f$} ($ (front) + (0, 1.5) $);
+
+	% connect the axles
+	\draw[axle] (front) -- (rear);
+	
+	% wheels
+	\draw[thick] (\rearX - \wL/2, -\wW/2) rectangle (\rearX + \wL/2, \wW/2); % rear wheel/tire
+	\draw[thick, rotate around={\stateDelta:(\frontX, 0)}] (\frontX - \wL/2, -\wW/2) rectangle (\frontX + \wL/2, \wW/2); % front wheel/tire
+
+	% center of gravity
+	\filldraw[thick] (cog) circle (2pt) node[below, xshift=4mm, yshift=-1mm] {$(x, y)$};
+	
+	% visualize delta
+	\draw (front)++(1.2,0) arc (0:\stateDelta:1.2) node[right, yshift=5mm] {$\delta$}; % delta
+	
+	% visualize beta/velocity
+	\draw[vec, rotate around={\stateBeta:(cog)}] (cog) -- node[below, xshift=3mm] {$v$} ++(1.5, 0);
+	\draw (cog)++(1,0) arc (0:\stateBeta:1) node[right, yshift=4.25mm, xshift=1mm] {$\beta$}; % beta
+	
+	% forces	
+	\draw[vec] (rear) -- ++(0, -1) node[right, xshift=-0.1mm, yshift=0.5mm] {$F_{yr}$};
+	\draw[vec, rotate around={\stateDelta:(\frontX, 0)}] (front) -- ++(0, -1) node[right] {$F_{yf}$};
+	\draw[vec] (rear) -- ++(2, 0) node[below, xshift=-1mm, yshift=-4mm] {$F_{xr}$};
+	\draw[vec, rotate around={\stateDelta:(\frontX, 0)}] (front) -- ++(2, 0) node[below, xshift=1.75mm] {$F_{xf}$};
+	\draw[vec] (cog) -- ++(2.25, 0) node[left, xshift=-8mm, yshift=-4.5mm] {$F_{tr}$};
+	\draw[vec] (cog) -- ++(-0.75, 0) node[above, xshift=-1.5mm, yshift=2mm] {$F_{load}$};
+
+	\end{scope}
+	\end{scope}
+	
+	\end{tikzpicture}
+	
+	\caption{The dynamic model calculates the acceleration and the yaw rate based on the forces which act on the body of the vehicle. The configuration $(x, y, \theta)$ represents the position of the center of gravity of the vehicle and the heading angle in the global reference frame.}
+	\label{fig:dynamic_bicycle}
+\end{figure}
 
 \subsubsection{Tire Model}
 
@@ -1255,23 +1451,23 @@ For the sake of simplicity, our tire model is based on a simple linear tire mode
 
 Tire side slip angles are the angles between the direction in which the wheels are pointing and in which the vehicle is moving. These angles will be different for front and rear wheels because the rear wheel is fixed while the front wheel can be steered:
 
-\begin{equation}
+\begin{equation*}
 \begin{aligned}
 \alpha_f=\delta - \arctan \left(\dfrac{l_f \dot{\theta}}{v}+\beta\right) \\
 \alpha_r=\arctan \left(\dfrac{l_r \dot{\theta}}{v}-\beta\right).
 \end{aligned}
-\end{equation}
+\end{equation*}
 
 When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero.
 
 From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on the slip angle curve. We approximate this curve with a simple linear model shown in \todo{Figure X} and expressed by the equation:
 
-\begin{equation}
+\begin{equation*}
 F_{yi}=\begin{cases}
 C_a \alpha_i & \alpha_i < \alpha_{max} \\
 F_{y,max} & \text{otherwise.}
 \end{cases}
-\end{equation}
+\end{equation*}
 
 where the index $i\in\left\{f,r\right\}$ represents the front or rear tire and $C_a$ is a constant called \textit{cornering stiffness}, which must be determined experimentally.
 
@@ -1281,48 +1477,36 @@ We will assume that the slip angles $\alpha_f$ and $\alpha_r$ are small and our 
 
 The slip ratio, also referred to as longitudinal slip, is the difference between the peripheral velocity of a point at the circumference of the wheel and the velocity at which the vehicle travels during the same time. If the wheels are rolling perfectly, then these velocities will be the same and there will be no slip. When the wheel spins while accelerating it will move at a higher speed than the vehicle and the slip ratio will be positive. The relationship is expressed by the following equation:
 
-\begin{equation}
-s=\dfrac{\omega_w r_{eff}-v}{|v|}
-\end{equation}
-
-Our vehicle does not have a clutch or a torque convertor. This means that our motor is always physically connected to the wheels and the angular velocity of the wheels $\omega_w$ is directly proportional to the angular velocity of the engine $\omega$ and it is only scaled by the combined gear ratio of the gearbox and the differential $GR$. Our gearbox is fixed and so the gear ratio does not change and is constant. The wheel angular velocity is therefore expressed as:
-
-\begin{equation}
-\omega_w = (GR) \omega.
-\end{equation}
+\begin{equation*}
+s=\dfrac{\omega_w r-v}{|v|}
+\end{equation*}
 
 If the wheels are rolling against the surface, and the slip ratio is zero, then there is no friction force between the tires and the surface and therefore there will be no acceleration as a result. When the wheels are spinning slightly faster and the slip ratio is positive, there will be friction force acting against the direction of the wheel rotation and this force will cause the vehicle to accelerate. We call this force traction force. At a certain slip ratio, the wheels will spin too fast and the vehicle will lose its traction.
 
 Maximum traction force at a wheel is depends on the weight of the vehicle W and the distribution of weight between the front and rear axles. Acceleration and deceleration influence weight distribution between the wheels. The weight distribution in turn affects the maximum traction force that can be exerted by the wheels. We will omit weight transfer for the sake of simplicity, and we divide the weight on each of the axles proportionally to the distance from the center of gravity.
 
 The traction maximum traction force of a virtual tire is:
-\begin{equation}
+\begin{equation*}
 F_{max,i}=\mu W_i=\mu \dfrac{l_i}{L} mg,
-\end{equation}
+\end{equation*}
 
 where $i\in\left\{f,r\right\}$ represents values related to the front or the rear axle and $\mu$ is a friction coefficient between the tires and the road surface. We model the relationship between the slip ratio and the amount of force with a simple linear model which can be seen in Figure~\ref{fig:slip_ratio} and we express it with the following equation:
 
-\begin{equation}
-F_{x,i}=\begin{cases}
+\begin{equation*}
+F_{xi}=\begin{cases}
 C_t s_i &	s_i < s_{max} \\
 F_{max,i} & \text{otherwise,}
 \end{cases}
-\end{equation}
+\end{equation*}
 
 where $C_t$ is a traction constant corresponding to the slope of the slip ratio line.
 
 The difference between the pointing direction of the wheels and the actual direction of motion of the vehicle causes a friction force perpendicular to the direction of the wheels and causes the vehicle to rotate around the z-axis and stay on curves.
 
-\subsection{Kinematics Equations}
-
-\begin{equation}
-\begin{aligned}
-\dot{x}&=v\cos\left(\theta + \beta\right) \\
-\dot{y}&=v\sin\left(\theta + \beta\right).
-\end{aligned}
-\end{equation}
-
-\todo[inline]{Revise and finish this chapter.}
-
 \subsubsection{State Variables}
 
+The dynamic bicycle model requires several extra state variables when compared to the kinematic model. The final state space $X$ would therefore have 2 extra continuous dimensions for the yaw rate $\dot{\theta}$ and the current slip angle $\beta$:
+
+\begin{equation*}
+X=\left\{\left(x,y,\theta,\dot{\theta},\beta,\omega,\delta\right)\mid x,y,\omega,\dot{\theta}\in\mathbb{R}; \theta,\delta,\beta\in\left[0, 2\pi\right)\right\}.
+\end{equation*}
