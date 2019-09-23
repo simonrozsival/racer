@@ -23,7 +23,6 @@
 
 std::shared_ptr<racer::following_strategies::dwa> dwa;
 std::shared_ptr<racer::following_strategies::trajectory_error_calculator> error_calculator;
-double max_allowed_speed_percentage;
 
 visualization_msgs::MarkerArray prepare_visualization(
   const racer_ros::Follower& follower,
@@ -52,7 +51,7 @@ void spin(
 
       geometry_msgs::Twist msg;
 
-      msg.linear.x = max_allowed_speed_percentage * action->throttle;
+      msg.linear.x = action->throttle;
       msg.angular.z = -action->target_steering_angle;
 
       command_pub.publish(msg);
@@ -85,8 +84,6 @@ void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level
     config.max_position_error);
 
   dwa->reconfigure(error_calculator);
-
-  max_allowed_speed_percentage = config.max_allowed_speed_percentage;
 
   ROS_INFO("DWA was reconfigured");
 }
@@ -197,9 +194,8 @@ int main(int argc, char* argv[]) {
 
   double max_speed, max_reversing_speed, acceleration;
 
-  node.param<double>("max_allowed_speed_percentage", max_allowed_speed_percentage, 1.0);
-  node.param<double>("max_speed", max_speed, 6.0);
-  node.param<double>("max_reversing_speed", max_reversing_speed, -3.0);
+  node.param<double>("max_speed", max_speed, 3.0);
+  node.param<double>("max_reversing_speed", max_reversing_speed, -1.5);
   node.param<double>("acceleration", acceleration, 3.0);
 
   racer::vehicle_model::vehicle vehicle(
@@ -209,8 +205,8 @@ int main(int argc, char* argv[]) {
     0.55, // safe length
     2.0 / 3.0 * M_PI, // steering speed (rad/s)
     1.0 / 6.0 * M_PI, // max steering angle (rad)
-    max_allowed_speed_percentage * max_speed, // speed (ms^-1)
-    max_allowed_speed_percentage * max_reversing_speed, // speed (ms^-1)
+    max_speed, // speed (ms^-1)
+    max_reversing_speed, // speed (ms^-1)
     acceleration // acceleration (ms^-2)
   );
 
