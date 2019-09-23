@@ -34,7 +34,7 @@ namespace racer::following_strategies {
             error_tolerance_ = error_tolerance;
         }
 
-        double reset() {
+        void reset() {
             last_error_ = 0;
             accumulated_error_ = 0;
         }

@@ -6,9 +6,12 @@
 #include <sstream>
 
 #include "racer/math/primitives.h"
+#include "racer/sehs/space_exploration.h"
 #include "racer/track_analysis.h"
 #include "racer/occupancy_grid.h"
 #include "racer/vehicle_model/base_vehicle_model.h"
+
+#include "racer_ros/utils.h"
 
 #include "nav_msgs/OccupancyGrid.h"
 #include "visualization_msgs/MarkerArray.h"
@@ -46,12 +49,7 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
     throw std::runtime_error("There is already an existing map.");
   }
 
-  grid = std::make_unique<racer::occupancy_grid>(
-      map->data,
-      map->info.width,
-      map->info.height,
-      map->info.resolution,
-      racer::math::point(map->info.origin.position.x, map->info.origin.position.y));
+  grid = racer_ros::msg_to_grid(*map);
   frame_id = map->header.frame_id;
 
   load_circuit();
@@ -71,8 +69,10 @@ void load_circuit()
 
   ROS_DEBUG("Analyzing the circuit...");
 
+  racer::sehs::space_exploration space_exploration(
+    *grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
   racer::track_analysis analysis(
-      *grid, min_distance_between_waypoints, branching_factor);
+      *grid, min_distance_between_waypoints);
 
   std::list<racer::math::point> final_check_points;
   for (const auto &check_point : check_points)
@@ -82,7 +82,9 @@ void load_circuit()
   final_check_points.push_back(position->location()); // back to the start
 
   ROS_DEBUG("start track analysis/space exploration");
-  auto apexes = analysis.find_apexes(vehicle_radius, *position, final_check_points);
+  const auto path = space_exploration.explore_grid(*position, final_check_points);
+  const auto pivot_points = analysis.find_pivot_points(path);
+  const std::list<racer::math::point> apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
   ROS_DEBUG("finished track analysis/space exploration");
 
   if (apexes.size() == 0)

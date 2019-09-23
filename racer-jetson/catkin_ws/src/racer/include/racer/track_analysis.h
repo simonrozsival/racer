@@ -8,7 +8,6 @@
 #include <algorithm>
 
 #include "racer/math/primitives.h"
-#include "racer/sehs/space_exploration.h"
 #include "racer/occupancy_grid.h"
 
 using namespace racer::math;
@@ -27,9 +26,7 @@ public:
     {
     }
 
-    const std::vector<point> find_pivot_points(
-        const std::list<circle> circle_path,
-        bool post_process) const
+    const std::vector<point> find_pivot_points(const std::list<circle> circle_path) const
     {
         std::vector<point> pivot_points;
 
