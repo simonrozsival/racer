@@ -10,22 +10,20 @@
       <param name="frequency" value="25" />
     </node>
 
-    <node pkg="racer" name="planning" type="planning_node">
+    <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="allow_reverse" value="true" />
       <param name="frequency" value="5" />
     </node>
 
     <group>
         <node pkg="racer" name="following" type="dwa_following_node" output="screen">
             <param name="map_topic" value="/obstacles/costmap/costmap" />
-            <param name="prediction_horizon_s" value="1.0" />
-            <param name="max_allowed_speed_percentage" value="0.2" />
+            <param name="prediction_horizon_s" value="0.7" />
 
-            <param name="distance_to_obstacle_weight" value="30" />
-            <param name="position_weight" value="5" />
-            <param name="heading_weight" value="5" />
-            <param name="velocity_weight" value="10" />
+            <param name="distance_to_obstacle_weight" value="10" />
+            <param name="position_weight" value="10" />
+            <param name="heading_weight" value="10" />
+            <param name="velocity_weight" value="1" />
 
             <param name="frequency" value="20" />
         </node>

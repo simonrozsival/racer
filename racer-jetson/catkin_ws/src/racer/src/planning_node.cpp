@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <mutex>
 
+#include <nav_msgs/GetMap.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
 
@@ -94,7 +95,7 @@ int main(int argc, char* argv[]) {
   racer::astar::sehs::discretization discretization(
     vehicle.radius(), number_of_expanded_points, M_PI / 12.0, 0.25);
   
-  double time_step_s = 0.1;
+  double time_step_s = 1.0 / 25.0;
 
   racer_ros::Planner planner(
     vehicle,
@@ -109,8 +110,25 @@ int main(int argc, char* argv[]) {
     if (!planner.is_initialized() && last_known_map && next_waypoints) {
       std::lock_guard<std::mutex> guard(lock);
 
+      // get the base map for space exploration
+      while (!ros::service::waitForService("static_map", ros::Duration(3.0))) {
+        ROS_INFO("'planning_node': Map service isn't available yet.");
+        continue;
+      }
+
+      auto map_service_client = node.serviceClient<nav_msgs::GetMap>("/static_map");
+
+      nav_msgs::GetMap::Request map_req;
+      nav_msgs::GetMap::Response map_res;
+      if (!map_service_client.call(map_req, map_res)) {
+        ROS_ERROR("Cannot obtain the base map from the map service. Another attempt will be made.");
+        ros::Duration(1.0).sleep();
+        continue;
+      }
+
+      const auto base_occupancy_grid = racer_ros::msg_to_grid(map_res.map);
       const std::list<racer::math::point> points{ next_waypoints->begin(), next_waypoints->end() };
-      discretization.explore_grid(*last_known_map, last_known_position->position, points);
+      discretization.explore_grid(*base_occupancy_grid, last_known_position->position, points);
     }
 
     if (last_known_map && last_known_position && next_waypoints) {

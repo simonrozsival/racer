@@ -82,12 +82,8 @@ void loop() {
     manual_driving_msg.linear.x = fmap(throttle_pwm, THROTTLE_REVERSE_PWM, THROTTLE_FORWARD_PWM, -1.0, 1.0);
     manual_driving_msg.angular.z = -1 * fmap(steering_pwm, STEERING_LEFT_PWM, STEERING_RIGHT_PWM, -1.0, 1.0);
     manual_driving.publish(&manual_driving_msg);
-  } else {
-    if (blinking_counter % 10 == 0) {
-      digitalWrite(PIN_LED, blinking_counter % 20 == 0 ? HIGH : LOW);
-    }
-
-    ++blinking_counter;
+  } else if (++blinking_counter % 10 == 0) {
+    digitalWrite(PIN_LED, blinking_counter % 20 == 0 ? HIGH : LOW);
   }
 
   delay(DUTY_CYCLE_MS);

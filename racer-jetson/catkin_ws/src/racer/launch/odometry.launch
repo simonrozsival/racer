@@ -1,20 +1,21 @@
 <launch>
   <include file="$(find racer)/launch/arduinos.launch" />
   <include file="$(find racer)/launch/imu.launch" />
-  <node pkg="odometry_node" type="node" name="odometry" output="screen">
-    <param name="max_steering_angle" value="30" />
+
+  <node pkg="racer_sensors" type="odometry_node" name="odometry" output="screen">
+    <param name="max_steering_angle" value="24" />
     <param name="publish_tf" value="false" />
     <param name="odometry_topic" value="/odom" />
   </node>
+
   <node pkg="robot_pose_ekf" type="robot_pose_ekf" name="robot_pose_ekf" output="screen">
     <param name="output_frame" value="odom" />
-    <param name="base_footprint_frame" value="base_link" />
-    <param name="freq" value="40.0" />
+    <param name="base_footprint_frame" value="base_footprint" />
     <param name="sensor_timeout" value="1.0" />
     <param name="odom_used" value="true" />
     <param name="imu_used" value="true" />
     <param name="vo_used" value="false" />
-    <param name="debug" value="true" />
+    <param name="debug" value="false" />
     <param name="self_diagnose" value="false" />
   </node>
 </launch>

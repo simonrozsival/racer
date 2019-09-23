@@ -49,19 +49,62 @@
 \usepackage{dcolumn}        % improved alignment of table columns
 \usepackage{booktabs}       % improved horizontal lines in tables
 \usepackage{paralist}       % improved enumerate and itemize
-\usepackage[usenames]{xcolor}  % typesetting in color
+\usepackage{xcolor}  % typesetting in color
 
 %% Additional packages
+\usepackage{amsthm}
 \usepackage[allow-number-unit-breaks]{siunitx}
 \usepackage{textcomp}
+\usepackage[acronym]{glossaries}
+\usepackage{fancyvrb}
+\usepackage{enumitem}
+\usepackage{mathtools}
+\usepackage{interval}
+\usepackage{cprotect}
+\usepackage{todonotes}
+\usepackage{graphicx}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{scopes}
+\usetikzlibrary{intersections}
+
 
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
 \usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
 \SetKwComment{Comment}{$\triangleright$\ }{}
-\SetKwInOut{Parameter}{parameter}
+\SetKwInOut{Parameter}{Parameter}
+\SetKw{Continue}{continue}
 
 %% Custom settings
 \renewcommand\vec{\bm}
+\VerbatimFootnotes
+\newcommand\norm[1]{\left\lVert#1\right\rVert}
+\DeclareMathOperator*{\argmin}{arg\,min} % Jan Hlavacek
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator{\sign}{sgn}
+
+%% Glossaries
+\makeglossaries
+
+\newacronym{AMCL}{AMCL}{Adaptive Monte Carlo Localization}
+\newacronym{ROS}{ROS}{Robot Operating System}
+\newacronym{EKF}{EKF}{Extended Kalmann Filter}
+\newglossaryentry{LIDAR}{name={LIDAR},description={Light Detection And Ranging}}
+\newglossaryentry{PID}{name={PID},description={Proportional-integral-derivative controller}}
+\newacronym{IMU}{IMU}{Inertial Meassurement Unit}
+\newacronym{PWM}{PWM}{Pulse Width Modulation}
+\newacronym{ESC}{ESC}{Electronic Speed Controller}
+\newacronym{RC}{RC}{Radio-controlled}
+\newacronym{DC}{DC}{Direct Current}
+\newacronym{SLAM}{SLAM}{Simultaneous Localization And Mapping}
+\newacronym{REP}{REP}{ROS Enhancement Proposal}
+\newacronym{DWA}{DWA}{Dynamic Window Approach}
+\newacronym{RPM}{RPM}{Rotations Per Minute}
+\newacronym{RRT}{RRT}{Rapidly-Exploring Random Trees}
+\newacronym{RRT*}{RRT$^*$}{Optimal RRT}
+\newacronym{SEHS}{SEHS}{Space Exploration Guided Heuristic Search}
 
 %%% Basic information on the thesis
 
@@ -125,6 +168,8 @@ Abstract.
 
 \tableofcontents
 
+\listoftodos
+
 %%% Each chapter is kept in a separate file
 \include{chapters/introduction}
 \include{chapters/autonomous_driving_background}
@@ -138,15 +183,17 @@ Abstract.
 \include{bibliography}
 
 %%% Figures used in the thesis (consider if this is needed)
-\listoffigures
+% \listoffigures
 
 %%% Tables used in the thesis (consider if this is needed)
 %%% In mathematical theses, it could be better to move the list of tables to the beginning of the thesis.
-\listoftables
+% \listoftables
+
+\printglossaries
 
 %%% Abbreviations used in the thesis, if any, including their explanation
 %%% In mathematical theses, it could be better to move the list of abbreviations to the beginning of the thesis.
-\chapwithtoc{List of Abbreviations}
+% \chapwithtoc{List of Abbreviations}
 
 %%% Attachments to the master thesis, if any. Each attachment must be
 %%% referred to at least once from the text of the thesis. Attachments
@@ -160,9 +207,10 @@ Abstract.
 %%% should be uploaded to SIS and optionally also included in the thesis on a~CD/DVD.
 %%% Allowed file formats are specified in provision of the rector no. 72/2017.
 \appendix
-\chapter{Attachments}
 
-\section{First Attachment}
+\include{appendixes/hardware}
+\include{appendixes/programmer_documentation}
+\include{appendixes/user_documentation}
 
 \openright
 \end{document}
