@@ -18,14 +18,16 @@ using namespace racer;
 
 namespace racer_ros {
 
-    std::unique_ptr<racer::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid& map) {  
-    return std::make_unique<racer::occupancy_grid>(
-        map.data,
-        map.info.width,
-        map.info.height,
-        map.info.resolution,
-        racer::math::point(map.info.origin.position.x, map.info.origin.position.y)
-    );
+    std::unique_ptr<racer::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid& map) {
+        // convert signed bytes (which are expected to be in the range 0-100) to unsigned bytes
+        std::vector<uint8_t> data { map.data.begin(), map.data.end() };
+        return std::make_unique<racer::occupancy_grid>(
+            data,
+            map.info.width,
+            map.info.height,
+            map.info.resolution,
+            racer::math::point(map.info.origin.position.x, map.info.origin.position.y)
+        );
     }
 
     std::unique_ptr<racer::vehicle_model::kinematic_bicycle_model::state> pose_and_twist_to_state(
