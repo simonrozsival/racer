@@ -71,7 +71,7 @@ namespace racer::following_strategies {
 
         double heading_error(const state& a, const state& reference) const {
             double delta = abs(racer::math::angle(a.position.heading_angle) - racer::math::angle(reference.position.heading_angle));
-            return std::min(delta, 2 * pi - delta);
+            return std::min(delta, 2 * M_PI - delta);
         }
 
         double velocity_error(const state& a, const state& reference) const {

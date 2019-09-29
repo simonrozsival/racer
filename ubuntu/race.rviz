@@ -25,7 +25,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: ""
+    SyncSource: LidarLaserScan
 Preferences:
   PromptSaveOnExit: true
 Toolbars:
@@ -86,7 +86,7 @@ Visualization Manager:
       Marker Topic: /racer/visualization/waypoints
       Name: Waypoints
       Namespaces:
-        {}
+        waypoints: true
       Queue Size: 100
       Value: true
     - Alpha: 1
@@ -117,13 +117,29 @@ Visualization Manager:
       Frame Timeout: 15
       Frames:
         All Enabled: true
+        base_link:
+          Value: true
+        imu:
+          Value: true
+        laser:
+          Value: true
+        map:
+          Value: true
+        odom:
+          Value: true
       Marker Scale: 1
       Name: TF
       Show Arrows: true
       Show Axes: true
       Show Names: true
       Tree:
-        {}
+        map:
+          odom:
+            base_link:
+              imu:
+                {}
+              laser:
+                {}
       Update Interval: 0
       Value: true
     - Alpha: 0.4000000059604645
@@ -157,7 +173,7 @@ Visualization Manager:
       Marker Topic: /racer/visualization/dwa
       Name: DWA tentacles
       Namespaces:
-        {}
+        dwa: true
       Queue Size: 100
       Value: true
     - Alpha: 0.699999988079071
@@ -193,6 +209,36 @@ Visualization Manager:
       Topic: /trajectory
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Axes Length: 1
+      Axes Radius: 0.10000000149011612
+      Class: rviz/PoseWithCovariance
+      Color: 255; 25; 0
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: true
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: true
+      Enabled: true
+      Head Length: 0.30000001192092896
+      Head Radius: 0.10000000149011612
+      Name: PoseWithCovariance
+      Shaft Length: 1
+      Shaft Radius: 0.05000000074505806
+      Shape: Arrow
+      Topic: /robot_pose_ekf/odom_combined
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -225,11 +271,11 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Scale: 117.02799224853516
+      Scale: 87.89469146728516
       Target Frame: base_link
       Value: TopDownOrtho (rviz)
-      X: 1.6710504293441772
-      Y: -0.6788702011108398
+      X: 0.85361248254776
+      Y: -1.0058385133743286
     Saved: ~
 Window Geometry:
   Displays:
