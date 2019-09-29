@@ -1,4 +1,4 @@
-\contentsline {todo}{This section needs to be rewritten from scratch.}{7}{section*.4}
+\contentsline {todo}{Add more related projects: MIT Racecar, AutoRally}{7}{section*.4}
 \contentsline {todo}{Figure: Understeer vs. oversteer}{9}{figure.caption.9}
 \contentsline {todo}{Figure: Classical line and Late apex: https://drivingfast.net/racing-line}{10}{figure.caption.10}
 \contentsline {todo}{Figure: FOOTPRINT}{23}{figure.caption.27}
@@ -11,13 +11,13 @@
 \contentsline {todo}{Figure: SE path optimization step}{42}{figure.caption.73}
 \contentsline {todo}{Actually test this.}{43}{section*.78}
 \contentsline {todo}{Add the figure}{50}{section*.91}
-\contentsline {todo}{Finish this section by describing how the engine speed is adjusted.}{51}{section*.92}
+\contentsline {todo}{Finish this section by describing how the engine speed is adjusted from the data we collected.}{51}{section*.92}
 \contentsline {todo}{multiple citations}{51}{section*.94}
-\contentsline {todo}{This section is WIP and should not be reviewed just yet.}{52}{section*.96}
-\contentsline {todo}{Add citation}{53}{section*.99}
-\contentsline {todo}{Add citations}{53}{section*.100}
+\contentsline {todo}{This section is an early WIP and should not be reviewed just yet.}{52}{section*.96}
+\contentsline {todo}{Add citation}{54}{section*.99}
+\contentsline {todo}{Add citations}{54}{section*.100}
 \contentsline {todo}{Figure X}{54}{section*.102}
 \contentsline {todo}{Describe, what are the purposes of the three values.}{58}{section*.109}
 \contentsline {todo}{Figure: "Pure pursuit geometry"}{59}{figure.caption.110}
 \contentsline {todo}{Figure: "DWA tentacles"}{60}{figure.caption.111}
-\contentsline {todo}{Write this chapter once the source code is stable.}{82}{section*.131}
+\contentsline {todo}{Write this chapter once the source code is stable.}{88}{section*.137}
