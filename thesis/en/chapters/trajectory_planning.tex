@@ -376,10 +376,10 @@ Our vehicle has two actuators which can be controlled:
 The electric signal we send to the actuators is interpreted as a target value and the actuator adjusts its output to match the target value over a time period at a rate which we cannot control. We define the \textit{action space} for these actuators like this:
 
 \[
-	U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t,\tau_t\in\left[-1, 1\right] \right\}
+	U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t\in\left[\delta_{min},\delta_{max}\right] \tau_t\in\left[-1, 1\right] \right\}
 \]
 
-$U$ is a set of tuples of a steering angle proportion $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed.
+$U$ is a set of tuples of a steering angle $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed.
 
 The action space $U$ as we defined it is infinite. In practice, our actuators can be set only to a fixed number of values. The \gls*{PWM} signal which controls the servo motors can only encode a finite number of levels. For a specific vehicle hardware, we can use only a finite subset $U_f\subset U$, $\abs{U_f}\in\mathbb{N}$ of valid actions.
 
@@ -632,10 +632,10 @@ The advantage of A* is that it visits every state at most once and whenever we r
 
 \textit{Hybrid A*} divides the state space into a grid of similar states to avoid this problem. Before we expand a state from the configuration space, we will check if the grid cell it falls into is already closed or not. If the cell is closed, we will consider the state to be closed as well and we will not expand it again.
 
-We can select an appropriate resolution for every dimension of the space base on the semantics of each dimension. If we wanted to ignore some dimension of the state space for searching, we can set the resolution for the dimension to $\infty$. We can convert the continuous dimensions of a state vector $x$ into a discrete grid coordinate with cell sizes vector $\vec{\sigma}$ with a state space discretization function $\delta: X\rightarrow X$:
+We can select an appropriate resolution for every dimension of the space base on the semantics of each dimension. If we wanted to ignore some dimension of the state space for searching, we can set the resolution for the dimension to $\infty$. We can convert the continuous dimensions of a state vector $x$ into a discrete grid coordinate with cell sizes vector $\vec{\sigma}$ with a state space discretization function $d: X\rightarrow X$:
 
 \[
-\delta(x) = \left\lfloor \dfrac{x}{\vec{\sigma}} \right\rfloor.
+d(x) = \left\lfloor \dfrac{x}{\vec{\sigma}} \right\rfloor.
 \]
 
 The resulting state trajectory consisting of the discretized states might not be feasible. The \textit{hybrid A*} algorithm therefore remembers the continuous state through which we entered every visited discrete grid cell. We will continue the expansion by applying the state transition function to the original continuous state. The final trajectory will therefore be smooth and feasible because it will not be affected by the discretization as can be seen in Figure~\ref{fig:hybrid_astar_discretized_vs_continuous}.
@@ -704,14 +704,14 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 	
 	\KwIn{Trajectory planning problem $(X, U_f, c, f_{\Delta t}, x_0, X_g)$, maximum trajectory cost limit $g_{max}$}
 	\KwOut{State trajectory or $null$}
-	\Parameter{State space discretization function $\delta: X\rightarrow X$, heuristic function $h$}
+	\Parameter{State space discretization function $d: X\rightarrow X$, heuristic function $h$}
 	
 	\SetKwProg{algorithm}{Algorithm}{:}{}
 	\SetKwProg{procedure}{Procedure}{:}{}
 	
 	\BlankLine
 	
-	\algorithm{\HybridAStar{$\delta$, $h$}}{
+	\algorithm{\HybridAStar{$d$, $h$}}{
 		$O\gets\left\{\left(x_0, 0, null\right)\right\}$\;
 		$C\gets\emptyset$\;	
 		\While{$O\neq\emptyset$}{
@@ -719,9 +719,9 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 			$O\gets O\setminus\left\{v\right\}$\;
 			\If{$x\in X_g$}{ \KwRet{\ReconstructTrajectory{$v$}}\; }
 			$\left(x, g, v_p\right)\gets v$\;
-			\If{$\delta(x) \notin C \land g < g_{max}$}{
-				$C\gets C\cup\left\{\delta(x)\right\}$\;
-				\Expand{$v$, $O$, $C$, $\delta$}\;
+			\If{$d(x) \notin C \land g < g_{max}$}{
+				$C\gets C\cup\left\{d(x)\right\}$\;
+				\Expand{$v$, $O$, $C$, $d$}\;
 			}
 		}	
 		\KwRet{null}\;
@@ -729,11 +729,11 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 	
 	\BlankLine
 	
-	\procedure{\Expand{$v$, $O$, $C$, $\delta$}}{
+	\procedure{\Expand{$v$, $O$, $C$, $d$}}{
 		\ForEach{$u\in U_f(x)$}{
 			$\left(x, g, v_p\right)\gets v$\;
-			$\left(x', k\right)\gets$ \Unfold{$x$, $u$, $\delta$}\;
-			\If{$x' \neq \text{null} \land \delta(x')\notin C$}{
+			$\left(x', k\right)\gets$ \Unfold{$x$, $u$, $d$}\;
+			\If{$x' \neq \text{null} \land d(x')\notin C$}{
 				$g'\gets g+k\Delta t$\;
 				$O\gets O\cup\left\{\left(x', g', v\right)\right\}$\;
 			}
@@ -742,9 +742,9 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 	
 	\BlankLine
 	
-	\procedure{\Unfold{$x_{start}$, $u$, $\delta$}}{		
+	\procedure{\Unfold{$x_{start}$, $u$, $d$}}{		
 		$\left(x_{last}, k\right)\gets \left(x_{start}, 0\right)$\;
-		\Repeat{$x_{last}=x_{prev}\lor \delta(x_{start})\neq\delta(x_{last})$}{
+		\Repeat{$x_{last}=x_{prev}\lor d(x_{start})\neq d(x_{last})$}{
 			$x_{prev}\gets x_{last}$\;
 			$x_{last}\gets f_{\Delta t}(x_{last}, u)$\;
 			\lIf{$c(x_{last})=T$}{\KwRet{$\left(null, -1\right)$}}
@@ -761,7 +761,7 @@ The main procedure of the algorithm \texttt{HybridAStar} is very similar to what
 
 In the main loop, we obtain the most promising state $x\in O$ by comparing the total cost estimate of the open states. If $x$ reaches the goal region, we reconstruct the state trajectory by traversing the parent search records using a helper function \texttt{ReconstructTrajectory}. We test if the cell in which the state belongs has not been closed yet and only if it has not and the cost-to-come does not exceed the limit do we continue to expansion of the state. We close the cell into which the state $x$ belongs so that we will not expand any further states from this cell.
 
-The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $\delta(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set. This decision was supported by a paper [...\todo{Find the citation}].
+The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set. This decision was supported by a paper [...\todo{Find the citation}].
 
 The simulation of the movement of the vehicle happens in the \texttt{Unfold} procedure. This function uses the system simulator function $f_{\Delta t}$ repeatedly until the vehicle stops (none of the properties of the vehicle state does not change after an action is applied), or until the vehicle leaves the cell of the parent state in the discretized state space.
 
@@ -771,7 +771,7 @@ The time complexity of the A* algorithm depends mainly on the number of nodes wh
 
 \paragraph{The number of expanded states} The maximum length of a path in the search space we will explore is limited by the cost limit $g_{max}\in \mathbb{R}$. This limit alone defines a continuous bounded region of states which are reachable from the initial state. There are two factors, which affect the number of nodes that can be expanded: the discretization of time into $\Delta t$ second intervals and the discretization of the state space into a grid via the discretization resolution vector $\vec{\sigma}$. Both of these discretizations limit the number of states which are reachable. The total number of reachable states is then the minimum of these two limits.
 
-Since our cost function is constant for all actions, we will only expand nodes at the ends of action sequences of at most $g_{max}/\Delta t$ steps. Due to the implementation of the \texttt{Unfold} procedure which might apply a single action multiple times in a row, the length of the sequence and therefore the number of expanded nodes can be even smaller. The expanded nodes form a tree with at most $l=\left\lceil g_{max}/\Delta t\right\rceil$ levels with a branching factor of $b=|U_f|$. Each of the states $x$ will be expanded at most once, because if it were to be expanded the second time, its cell would already be closed ($\delta(x)\in C$). This means that in the worst case when there are no obstacles and each state would be in a different cell, the number of expanded nodes would be $O(b^l)$.
+Since our cost function is constant for all actions, we will only expand nodes at the ends of action sequences of at most $g_{max}/\Delta t$ steps. Due to the implementation of the \texttt{Unfold} procedure which might apply a single action multiple times in a row, the length of the sequence and therefore the number of expanded nodes can be even smaller. The expanded nodes form a tree with at most $l=\left\lceil g_{max}/\Delta t\right\rceil$ levels with a branching factor of $b=|U_f|$. Each of the states $x$ will be expanded at most once, because if it were to be expanded the second time, its cell would already be closed ($d(x)\in C$). This means that in the worst case when there are no obstacles and each state would be in a different cell, the number of expanded nodes would be $O(b^l)$.
 
 The number of reachable in the discretized state space also limits the number of expanded states, as at most one state will be expanded per each discrete cell. If the state space has $d$ dimensions and the maximum number of discrete cells in the individual dimensions is $\vec{n}=\left(n_1, n_2, \ldots, n_d\right)\in \mathbb{N}^d$, the upper limit for the number of cells is $\max(\vec{n})^d$.
 
@@ -897,15 +897,15 @@ The path of circles can be further optimized to find a shorter path between the 
 
 \subsubsection{Heuristic Search (HS)}
 
-The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $\delta_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
+The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $d_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
 
 \paragraph{State Space Discretization}
-We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}\in \mathbb{R}^k$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $\delta_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
+We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}\in \mathbb{R}^k$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $d_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
 
 \begin{equation*}
 \begin{aligned}
 i(\vec{x})&=\argmin_{j\in \left\{1, 2, \ldots, k\right\}} \norm{\vec{x}-\vec{c_j}} \\
-\delta_{x,y}(\vec{x})&=c_{i(x)}.
+d_{x,y}(\vec{x})&=c_{i(x)}.
 \end{aligned}
 \end{equation*}
 
@@ -918,8 +918,8 @@ The heuristic function estimates the remaining time which it could take to reach
 
 \begin{equation*}
 \begin{aligned}
-d(\vec{x})&=\norm{\vec{x}-\vec{c_{i(\vec{x})+1}}}+\sum_{j=i(\vec{x})+1}^{k-1} \norm{\vec{c_j}-\vec{c_{j+1}}} \\
-h(\vec{x})&=\dfrac{d(\vec{x})}{v_{max}}.
+m(\vec{x})&=\norm{\vec{x}-\vec{c_{i(\vec{x})+1}}}+\sum_{j=i(\vec{x})+1}^{k-1} \norm{\vec{c_j}-\vec{c_{j+1}}} \\
+h(\vec{x})&=\dfrac{m(\vec{x})}{v_{max}}.
 \end{aligned}
 \end{equation*}
 
@@ -1162,51 +1162,208 @@ The dynamic model can give us more accurate predictions at the handling limits o
 
 \subsection{Actuators Model}
 
+In this section, we will describe the behavior of the actuators of our vehicle and we will propose a mathematical model of the state of these actuators. The model is tailored to the experimental vehicle which we used and which is described in more detail in Chapter~\ref{chapter:hardware}.
+
 \subsubsection{Steering Servo Model}
 
-The front wheels of the vehicle are controlled through a servo motor. The servo motor can be turned to a specific position and this position is directly transferred to the steering angle of the front wheels. Each of the wheels is set to a slightly different angle, because the car has \textit{Ackermann} steering geometry. When the car goes around a circle, the inner wheel traces a circle of smaller radius than the outer wheel. The steering angle of the inner wheel therefore must be larger than the steering angle on the outer wheel \footnote{https://en.wikipedia.org/wiki/Ackermann\_steering\_geometry}. We will simplify this by taking a single steering angle $\delta$ which would be required if the wheel was in the middle of the axle.
+\paragraph{Steering Angle to PWM Mapping}
 
-The change is not instantaneous. The setting period depends on the difference between the previous position and the target position as well as the level of charge of the battery. The servo might overshoot or undershoot the target by a small margin and the steering angle for a given servo position might vary over time because of mechanical imperfections. We will neglect these effects for simplicity.
+The position of the steering servo is transferred to the front wheels through mechanical linkages. The inner wheel is steered more than the outer wheel, because the outer wheel will circumscribe a circle with a larger radius than the inner wheel. When the wheels are rolling perfectly against the surface at slow speed, the vehicle will keep going around a circle with a constant radius.
 
-We will use a simple linear model for the steering angle adjustment:
-\begin{equation*}
+We measured the radius $R$ of the inner wheel as it circumscribes a circle, with the steering servo set to several constant \gls{PWM} values. From this radius, we can calculate the steering angle $\delta$ of a virtual front wheel in the middle of the front axis from the geometry of the vehicle:
+
+\begin{equation}
+\delta=\arctan\left(\dfrac{L}{R+W/2}\right),
+\end{equation}
+
+where $L$ is the length of the wheelbase and $W$ is the width of the axles. The geometry is captured in Figure~\ref{fig:steering_angle_radius_geometry}. More information about Ackermann steering geometry can be found in \cite{Rajamani_lateral_dynamics}.\texttt{}
+
+Using the least squares method, we identified a line which approximates the relationship between a steering angle and the \gls*{PWM} signal which corresponds to this angle:
+
+\begin{equation}
+PWM(\delta)=12.701\cdot\delta + 1476.686,
+\end{equation}
+
+where $\delta\in\left[\ang{-21.16}, \ang{26.57}\right]$ is the steering angle expressed in degrees and $\ang{-21.16}$ is the maximum steering angle to the right and $\ang{26.57}$ is the maximum steering angle to the left. The relationship between the steering angle and the \gls*{PWM} value is shown in Figure~\ref{fig:steering_angle_to_pwm}.
+
+\begin{figure}[h]
+	\centering
+	
+	\begin{tikzpicture}[
+	axis/.style={thin, densely dashed, gray},
+	axle/.style={ultra thick, black},
+	vec/.style={ultra thick, ->, >=latex}
+	]
+	
+	\def\L{0.3} % wheelbase of the vehicle
+	\def\W{0.3} % axle width
+	\def\wW{0.05} % wheel width
+	\def\wL{0.1} % wheel length
+	\def\xoffset{3cm}
+	\def\yoffset{0.8cm}
+	\def\R{0.95}
+	\def\stateDelta{17.52556837}
+	
+	\begin{scope}[scale=5]
+	
+	\coordinate (O) at (0, 0);
+	\coordinate (front) at (\R, \L);
+	\coordinate (rearRight) at (\R + \W/2, 0);
+	\coordinate (frontRight) at (\R + \W/2, \L);
+	
+	% the circle	
+	\draw[gray, dashed] (O) circle (\R);
+	\draw[gray] (O) circle (\R - \W/2);
+	
+	% visualize delta
+	\draw[thin] (front) -- ++(0, \L);
+	\draw[thin, rotate around={\stateDelta:(front)}] (front) -- ++(0, \L);
+	\draw (front)++(0, 0.2) arc (90:90+\stateDelta:0.2) node[above, xshift=1.6mm] {$\delta$};
+	
+	% visualiza the geometry
+	\draw[thin, ->, >=latex] (O) -- node[below] {$R$} (\R - \W / 2, 0);
+	\draw[thin] (O) -- (front);
+	\draw (O)++(0.2, 0) arc (0:\stateDelta:0.2) node[right, yshift=-1.3mm, xshift=1mm] {$\delta$};
+	
+	% longitudinal axle
+	\draw[axle] (\R, 0) -- ++(0, \L);
+	
+	% visualize the wheelbase length
+	\draw[axis] (rearRight) -- ++(0.25, 0);
+	\draw[axis] (frontRight) -- ++(0.25, 0);		
+	\draw[<->, >=latex] ($ (rearRight) + (0.2, 0) $) -- node[right] {$L$} ($ (frontRight) + (0.2, 0) $);
+	
+	% visualize the width length
+	\draw[axis] (\R - \W/2, 0) -- ++(0, -0.25);
+	\draw[axis] (\R + \W/2, 0) -- ++(0, -0.25);		
+	\draw[<->, >=latex] (\R - \W/2, -0.2) -- node[below] {$W$} (\R + \W/2, -0.2);
+	
+	% rear axle
+	\draw[axle] (\R - \W/2, 0) -- ++(\W, 0);
+	\filldraw[] (\R - \W/2, -\wL/2) rectangle ++(\wW, \wL);
+	\filldraw[] (\R + \W/2 - \wW, -\wL/2) rectangle ++(\wW, \wL);
+	
+	% front axle
+	\def\deltaL{\stateDelta + 3}
+	\def\deltaR{\stateDelta - 2}
+	\draw[axle] (\R - \W/2, \L) -- ++(\W, 0);
+	\filldraw[rotate around={\deltaL:(\R - \W/2 + \wW/2, \L)}] (\R - \W/2, \L - \wL/2) rectangle ++(\wW, \wL); % front left wheel/tire
+	\filldraw[rotate around={\deltaR:(\R + \W/2 - \wW/2, \L)}] (\R + \W/2 - \wW, \L - \wL/2) rectangle ++(\wW, \wL); % front right wheel/tire
+	
+	\end{scope}
+	\end{tikzpicture}
+	
+	\caption{For a fixed steering angle $\delta$ of the virtual front center wheel, the vehicle will move along a circle of radius $R$, unless the wheels start skidding. The proportions of the vehicle in the picture are the same as on the experimental vehicle, where $W=L=\SI{0.3}{\meter}$.}
+	\label{fig:steering_angle_radius_geometry}
+\end{figure}
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{../img/steering_angle_to_pwm}
+	\caption{The measurement shows the imperfections in the hardware construction. The vehicle is able to go around circles with smaller radii when it is turning left (positive steering angles) than when it is turning right (negative steering angles).}
+	\label{fig:steering_angle_to_pwm}
+\end{figure}
+
+\paragraph{Servo Setting Time}
+
+It takes non-trivial time for the steering servo to move from its previous position to a newly set position. The steering angle changes continuously as the servo adjusts and it affects the direction in which the vehicle travels in the meantime. In this experiment, we measure the setting time of the servo between different steering angles and based on the data, we will find a relationship between the distance between the servo position and the time it will take to set.
+
+The position of the servo is set through a \gls{PWM} value between \SI{1200}{\micro\second} (rightmost position), \SI{1500}{\micro\second} (center position), and \SI{1800}{\micro\second} (leftmost position). In this procedure, the vehicle switches between a right position $r$ and a left position $l$ a hundred times while the vehicle is stationary and it is placed on a flat surface. The servo produces a noise during the whole setting period and is mostly quiet during the periods between adjustments.
+
+We record the sound the servo makes through a microphone. The audio track is then edited using \textit{Audacity}\footnote{https://www.audacityteam.org/} to remove background noise and low frequency ``buzzing'' of the servo and to use the ``Sound Finder'' analysis tool to label periods of sound in the cleaned audio track (see Figure~\ref{fig:audacity}). The start and end times of the labeled intervals are then exported into a text file for further analysis.
+
+We carried out this procedure for five pairs of \gls*{PWM} values: $(1800, 1200)$, $(1750, 1250)$, $(1700, 1300)$, $(1650, 1450)$, $(1600, 1400)$. Each of these pairs is symmetrical around the center position \SI{1500}{\micro\second} and the \textit{distance} between the two positions decreases from \SI{600}{\micro\second} to \SI{200}{\micro\second}. This might have biased the results and decrease the accuracy of our result.
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{../img/servo_experiment_audacity}
+	\protect\caption{The servo setting periods are clearly identifiable in an audio recording after background noise and low frequency sounds are removed. This figure shows the interface of the \textit{Audacity} tool used to analyze a recording of adjustments between the PWM signal of \SI{1400}{\micro\second} and \SI{1600}{\micro\second}.}
+	\label{fig:audacity}
+\end{figure}
+
+We used the method of least squares to find a best fitting line in the form of $t=ad+b$, where $t$ is the setting time in seconds and $d$ is the distance between the \gls*{PWM} values. Based on the data we recorded, the relationship between the distance to the new servo position and the setting time is visualized in the Figure~\ref{fig:servo_linear_regression} and in the following equation:
+
+\begin{equation}
+\label{eq:servo_setting_time}
 \begin{aligned}
-	\dot{\delta}(t) &= \sign(\delta_t-\delta(t)) \dot{\delta}_{c} \\
-	d(t, \Delta t)&=\int_{0}^{\Delta t} \dot{\delta}(t + t') dt' \\
-	\delta(t+\Delta t) &= \begin{cases}
-		\delta(t) + d(t, \Delta t) & \text{when }|d(t, \Delta t)| < |\delta_t - \delta(t)| \\
-		\delta_t & \text{otherwise,}
-	\end{cases}		
+t(d)&=0.000329\cdot d + 0.1174\\
+t(\alpha,\beta)&=t(\abs{PWM(\alpha)-PWM(\beta)}),
 \end{aligned}
-\end{equation*}
+\end{equation}
 
-where $\delta_t$ is the target turning radius and $\delta(t)$ is the steering angle at time $t$. The $\dot{\delta}_{c}$ factor is a constant adjustment speed. We assume that the target steering angle is in the range of possible steering angles $\left[-\delta_{max},\delta_{max}\right]$.
+where $\alpha,\beta\in\left[\delta_{min}, \delta_{max}\right]$.
 
-\subsubsection{Brushed DC Motor Model}
+\begin{figure}
+	\includegraphics[width=\textwidth]{../img/servo_setting_time_linreg.eps}
+	\caption{The setting time of the steering servo can be estimated with a linear function of the distance between the start and end PWM values.}
+	\label{fig:servo_linear_regression}
+\end{figure}
 
-The car is driven forward and backwards by a brushed DC motor. The axle of the motor spins and this rotation is directly transferred through a gearbox and a differential to all of the four wheels of the vehicle. If we know the angular velocity of the motor, we can calculate the angular velocity of the wheels\footnote{The velocity of each individual wheel can be different because of differentials. This is noticeable mostly during turns, when the outer wheel spins faster than the inner wheel. We will neglect the effect of the differential in this thesis.}. The rotation of the motor creates a torque which is transferred to the wheels and this torque then creates a force between the road surface and the tires.
+\paragraph{Steering Angle Model}
 
-The torque the motor produces can be modeled as an inverse proportion to the angular speed of the motor shaft. At the stall point $\tau_{s}$, the torque of the motor is the highest, but the motor does not spin. At the highest \gls{RPM} of the motor, the torque is zero. This speed is called the no load speed $\omega_n$. The torque to speed curve is shown in Figure~\ref{fig:torque_to_speed}\todo{Add the figure} and the immediate torque can be calculated from this formula:
+With the knowledge of how long it takes to adjust the steering angle of the front wheels, we can formulate the rate of change of the steering angle $\dot{\delta}$ in radians per second based on the current steering angle $\delta$ and target steering angle $\delta_t$:
 
-\begin{equation*}
-	\tau=\tau_s - \dfrac{\tau_s}{\omega_n}\omega,
-\end{equation*}
+\begin{equation}
+\begin{aligned}
+\Delta \delta&=\min\left\{\abs{\delta-\delta_t}, 2\pi-\abs{\delta-\delta_t}\right\}\\
+\dot{\delta}&=\begin{cases}
+\nicefrac{\Delta \delta}{t(\delta, \delta_t)} & \text{when }\delta \neq \delta_t\\
+0 & \text{otherwise.}
+\end{cases}
+\end{aligned}
+\end{equation}
 
-where $\omega$ is the angular speed of the motor shaft. Our vehicle does not have a clutch or a torque convertor. This means that our motor is always physically connected to the wheels and the angular velocity of the wheels $\omega_w$ is directly proportional to the angular velocity of the engine $\omega$ and it is only scaled by the combined gear ratio of the gearbox and the differential $GR$. Our gearbox is fixed and so the gear ratio does not change and is constant. The wheel angular velocity is therefore expressed as:
+\subsubsection{DC Motor Model}
 
-\begin{equation*}
-\omega_w = (GR) \omega.
-\end{equation*}
+We need to be able to model the angular velocity of the motor shaft. The motor is directly connected to the wheels. Therefore, if we can predict the velocity at which the motor shaft rotates, we can predict how fast the wheels will turn. This, of course, does not give us all the information to determine the longitudinal velocity of the vehicle, because the wheels might skid when the friction forces between the tires and the road surface are exceeded.
 
-The motor is controlled via an \gls{ESC}. We can set a specific throttle percentage and the \gls*{ESC} will increase or decrease the input voltage which will change the speed of the shaft rotation.
+Our goal is to create a model of the engine RPM as a function of the previous \gls{RPM} and the control inputs. We measured the RPM of the motor shaft using a Hall effect encoder while we were manually controlling the vehicle on dry asphalt at a temperature of around \SI{15}{\degreeCelsius}. We also recorded the throttle and steering angle inputs from the remote control. We use the collected data to identify the parameters of our model and to validate the accuracy of the model.
 
-\todo[inline]{Finish this section by describing how the engine speed is adjusted from the data we collected.}
+The torque of the motor depends directly on the speed at which its axle rotates. For a DC motor, the relationship can be approximated with a linear function which depends on two parameters: the maximum angular velocity $\omega_{max}$ and stall torque $T_{stall}$ as it is shown in Figure~\ref{fig:torque_rpm_curve}. The maximum angular velocity is measured with full throttle when there is no load on the motor and the stall torque is reached when the vehicle starts moving from standstill.
 
-\subsubsection{State Variables}
+The throttle control input $\tau_t$ limits the amount of torque transferred to the wheels. The torque is counteracted by the load on the motor, e.g., friction or air resistance. While driving the experimental car manually, we learned that the steering angle $\delta$ of the front wheels is one of the most significant factors limiting the speed of the motor. When the car is at its maximum speed and the throttle is released, the car will travel a significant distance before it comes to a full stop. When the steering angle is large, the car stops almost immediately. The vehicle reaches a lower speed when it travels around a circle compared to going straight when full throttle is applied. The rate of change of angular velocity of a rigid body is equal to the total torque applied to the body divided by its moment of inertia.
 
-To account for the actuator models, we will extend the state space $X$ with two new continuous dimensions for the current steering angle $\delta$ and the motor angular velocity $\omega$.
+We model the rate of change of the angular velocity of the motor with the following set of parametric equations, which are inspired by the mechanics of the motor:
 
-\subsection{Kinematic Model}
+\begin{equation}
+\begin{aligned}
+\label{eq:motor_model}
+T_{max}&=\left(1 - \dfrac{\omega}{\omega_{max}}\right)x_1 \\
+T_{drive}&=T_{max}\cdot \tau_t \\
+T_{load}&=\omega^{x_2} \left(x_3 + x_4|\delta_t|\right)^{x_5} \\
+\dot{\omega}&=\dfrac{T_{drive}-T_{load}}{x_6}.
+\end{aligned}
+\end{equation}
+
+The parameters $x_i\in\mathbb{R}$ are obtained using a numerical optimization algorithm which minimizes mean squared error between the predicted RPM and RPM measured using the experimental vehicle. The parameter $x_1$ replaces $T_{stall}$ and $x_6$ replaces the moment of inertia of the power train. Nevertheless, the values assigned to these parameters by the optimization algorithm must not be interpreted as the values of these two properties.
+
+By integrating the $\dot{\omega}$ numerically over a time period $\Delta t$, we will obtain the change in the RPM of the vehicle. The performance of our model with fitted parameters is shown in Figure~\ref{fig:motor_rpm_model} for a time period of almost two minutes. The \gls*{RPM} shown in this figure is relative to the maximum \gls*{RPM} of the motor, which we identified to be \SI{15500}{RPM}.
+
+We also tried training a neural network with three input neurons and one output neuron to predict $\dot{\omega}$ or $\omega$ directly. We experimented with supervised learning and with reinforcement learning using neuro-evolution (NEAT) but we were not able to obtain a neural network with better estimates of $\omega$ than the predictions from the model described in (\ref{eq:motor_model}).
+
+\begin{figure}
+	\centering
+	
+	\begin{tikzpicture}
+	
+	% the axes
+	\draw[thick, ->] (-1,0)--(8,0) node[right]{$RPM$};
+	\draw[thick, ->] (0,-1)--(0,6) node[above]{$torque$};
+	
+	\draw[ultra thick] (0, 4.5) node[left]{$T_{stall}$}--(7, 0)node[below]{$\omega_{max}$};
+	
+	\end{tikzpicture}
+	
+	\caption{Linear approximation of a DC motor torque curve. This linear model has two parameters: the maximum RPM without any load $\omega_{max}$ and stall torque $T_{stall}$.}
+	\label{fig:torque_rpm_curve}
+\end{figure}
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth]{../img/fit_8000}
+	\caption{The first chart shows the throttle and steering inputs as well as the measured RPM (normalized). The second chart compares the measured and predicted RPMs for the same time period using the fitted parameters of our model.}
+	\label{fig:motor_rpm_model}
+\end{figure}
+
+\subsection{Kinematic Bicycle Model}
 
 The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. This simplification makes reasoning about the movement of the vehicle easier while still being reasonably accurate, and it is commonly used in research \todo{multiple citations}. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite{Rajamani_lateral_dynamics} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
 
@@ -1325,31 +1482,43 @@ The kinematic model does not require any extra state variables on top of the con
 	X=\left\{\left(x,y,\theta,\delta,\omega\right)\mid x,y,\omega\in\mathbb{R}, \theta,\delta\in\left[0, 2\pi\right)\right\}.
 \end{equation*}
 
-\subsection{Dynamic Model}
+\subsection{Dynamic Bicycle Model}
 
-\todo[inline]{This section is an early WIP and should not be reviewed just yet.}
+Forces are the cause of linear and angular acceleration of every rigid body. The dynamic bicycle model models the forces between the tires of the vehicle and the road surface and describes the resulting accelerations. We will only focus on a two-dimensional case and we will ignore any forces in the axis perpendicular to the road and any changes in roll or pitch of the vehicle.
+
+We will model two types of forces: the longitudinal forces $F_x$, which cause the motion forward or backward, and lateral forces $F_y$, which allow the vehicle to turn and which cause rotation of the vehicle. Different forces act on the front and rear tires. We will distinguish these forces with an additional $f$ or $r$ subscript. An overview of all of the forces and other important variables is shown in Figure~\ref{fig:dynamic_bicycle}.
+
+If we knew the longitudinal forces of the wheels $F_{xr}$ and $F_{xf}$, we could determine the total traction force acting at the center of gravity of the vehicle and the subsequent acceleration $\dot{v}$ of the vehicle:
 
 \begin{equation*}
 \begin{aligned}
-F_{aero}&=\dfrac{1}{2}C_\alpha \rho A v^2=c_\alpha v^2 \\
+F_{aero}&=\dfrac{1}{2}c_\alpha \rho A v^2=c_\alpha v^2 \\
 F_{roll}&\approx c_r|v| \\
-F_{load}&=F_{areo}+F_{roll}.
-\end{aligned}
-\end{equation*}
-
-\begin{equation*}
-\begin{aligned}
-F_{tr}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
+F_{load}&=F_{areo}+F_{roll} \\
+F_{traction}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
 \dot{v}&=\dfrac{1}{m}\left(F_{traction}-F_{load}\right).
 \end{aligned}
 \end{equation*}
 
+where $m\in\mathbb{R}_+$ is the mass of the vehicle, $A\in\mathbb{R}_+$ is the cross-sectional area of the vehicle, and $c_r, c_\alpha\in\mathbb{R}$ are the rolling resistance and aerodynamic drag coefficients.
+
+The vehicle moves in the direction of the slip angle $\beta$ and it rotates around its $z$ axis at the angular velocity $\dot{\theta}$. With the knowledge of the lateral forces $F_{yf}$ and $F_{yr}$ we can model the behavior of these state variables:
+
+\begin{equation*}
+\begin{aligned}
+\dot{\beta}&=\dfrac{1}{mv}\left(F_{yf}+F_{yr}\right)-\dot{\theta} \\
+\ddot{\theta}&=\dfrac{1}{I_z}\left(l_f \left(F_{yf}\cos\delta - F_{xf}\sin\delta \right) - l_r F_{yr}\right),
+\end{aligned}
+\end{equation*}
+
+where $I_z$ is the angular momentum of the vehicle around the $z$ axis which is the rotational equivalent of mass.
+
+The change of the coordinates center of gravity of the vehicle in the two dimensional plane is then calculated the same way as we did in the kinematic model:
+
 \begin{equation*}
 \begin{aligned}
 \dot{x}&=v\cos\left(\theta + \beta\right) \\
-\dot{y}&=v\sin\left(\theta + \beta\right) \\
-\dot{\beta}&=\dfrac{1}{mv}\left(F_{yf}+F_{yr}\right)-\dot{\theta} \\
-\ddot{\theta}&=\dfrac{1}{I_z}\left(l_f \left(F_{yf}\cos\delta - F_{xf}\sin\delta \right) - l_r F_{yr}\right).
+\dot{y}&=v\sin\left(\theta + \beta\right).
 \end{aligned}
 \end{equation*}
 
@@ -1429,7 +1598,7 @@ F_{tr}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
 	\draw[vec, rotate around={\stateDelta:(\frontX, 0)}] (front) -- ++(0, -1) node[right] {$F_{yf}$};
 	\draw[vec] (rear) -- ++(2, 0) node[below, xshift=-1mm, yshift=-4mm] {$F_{xr}$};
 	\draw[vec, rotate around={\stateDelta:(\frontX, 0)}] (front) -- ++(2, 0) node[below, xshift=1.75mm] {$F_{xf}$};
-	\draw[vec] (cog) -- ++(2.25, 0) node[left, xshift=-8mm, yshift=-4.5mm] {$F_{tr}$};
+	\draw[vec] (cog) -- ++(2.25, 0) node[left, xshift=-8mm, yshift=-4.5mm] {$F_{traction}$};
 	\draw[vec] (cog) -- ++(-0.75, 0) node[above, xshift=-1.5mm, yshift=2mm] {$F_{load}$};
 
 	\end{scope}
@@ -1443,7 +1612,7 @@ F_{tr}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
 
 \subsubsection{Tire Model}
 
-The tire is the interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. We calculate the lateral and longitudinal components of this force separately. The lateral component acts in the direction perpendicular to the orientation of the wheel, the longitudinal component is oriented with respect to the orientation of the tire.
+In the previous section, we assumed that we know the longitudinal and lateral forces $F_{xf}, F_{xr}, F_{yf}$, and $F_{yr}$. In this section, we will show how to calculate these forces. The tire is the interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. We calculate the lateral and longitudinal components of this force separately. The lateral component acts in the direction perpendicular to the orientation of the wheel, the longitudinal component is oriented with respect to the orientation of the tire.
 
 For the sake of simplicity, our tire model is based on a simple linear tire model \todo{Add citation}. There are several other more advanced tire models, such as Brush, Fiala, or Pacejka models \todo{Add citations}, which give more precise results, especially for large slip angles. These models are not practical for us as they have many parameters which need to be experimentally identified.
 
@@ -1460,7 +1629,7 @@ Tire side slip angles are the angles between the direction in which the wheels a
 
 When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero.
 
-From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on the slip angle curve. We approximate this curve with a simple linear model shown in \todo{Figure X} and expressed by the equation:
+From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on the slip angle curve. We approximate this curve with a simple linear model shown in Figure~\ref{fig:lateral_slip_angle_curve} and expressed by the equation:
 
 \begin{equation*}
 F_{yi}=\begin{cases}
@@ -1473,19 +1642,28 @@ where the index $i\in\left\{f,r\right\}$ represents the front or rear tire and $
 
 We will assume that the slip angles $\alpha_f$ and $\alpha_r$ are small and our vehicle does not drift. In the opposite case, our linear tire model would not be able to correctly predict the behavior of the vehicle.
 
+\begin{figure}
+	\centering
+	\missingfigure{Lateral slip curve}
+	\label{fig:lateral_slip_angle_curve}
+\end{figure}
+
 \paragraph{Longitudinal Forces}
 
 The slip ratio, also referred to as longitudinal slip, is the difference between the peripheral velocity of a point at the circumference of the wheel and the velocity at which the vehicle travels during the same time. If the wheels are rolling perfectly, then these velocities will be the same and there will be no slip. When the wheel spins while accelerating it will move at a higher speed than the vehicle and the slip ratio will be positive. The relationship is expressed by the following equation:
 
 \begin{equation*}
-s=\dfrac{\omega_w r-v}{|v|}
+\begin{aligned}
+\omega_w&=(GR)\omega \\
+s&=\dfrac{\omega_w r-v}{|v|},
+\end{aligned}
 \end{equation*}
 
-If the wheels are rolling against the surface, and the slip ratio is zero, then there is no friction force between the tires and the surface and therefore there will be no acceleration as a result. When the wheels are spinning slightly faster and the slip ratio is positive, there will be friction force acting against the direction of the wheel rotation and this force will cause the vehicle to accelerate. We call this force traction force. At a certain slip ratio, the wheels will spin too fast and the vehicle will lose its traction.
+where $(GR)\in\mathbb{R}$ is a combined gear ratio of the gearbox and the differential between the motor and the wheels. If the wheels are rolling against the surface, and the slip ratio is zero, then there is no friction force between the tires and the surface and therefore there will be no acceleration as a result. When the wheels are spinning slightly faster and the slip ratio is positive, there will be friction force acting against the direction of the wheel rotation and this force will cause the vehicle to accelerate. We call this force traction force. At a certain slip ratio, the wheels will spin too fast and the vehicle will lose its traction.
 
 Maximum traction force at a wheel is depends on the weight of the vehicle W and the distribution of weight between the front and rear axles. Acceleration and deceleration influence weight distribution between the wheels. The weight distribution in turn affects the maximum traction force that can be exerted by the wheels. We will omit weight transfer for the sake of simplicity, and we divide the weight on each of the axles proportionally to the distance from the center of gravity.
 
-The traction maximum traction force of a virtual tire is:
+The maximum traction force of a virtual tire depends on the weight of the vehicle and on the weight distribution between the front and rear wheels:
 \begin{equation*}
 F_{max,i}=\mu W_i=\mu \dfrac{l_i}{L} mg,
 \end{equation*}
@@ -1499,14 +1677,12 @@ F_{max,i} & \text{otherwise,}
 \end{cases}
 \end{equation*}
 
-where $C_t$ is a traction constant corresponding to the slope of the slip ratio line.
-
-The difference between the pointing direction of the wheels and the actual direction of motion of the vehicle causes a friction force perpendicular to the direction of the wheels and causes the vehicle to rotate around the z-axis and stay on curves.
+where $C_t$ is a traction constant which corresponds to the slope of the slip ratio line.
 
 \subsubsection{State Variables}
 
 The dynamic bicycle model requires several extra state variables when compared to the kinematic model. The final state space $X$ would therefore have 2 extra continuous dimensions for the yaw rate $\dot{\theta}$ and the current slip angle $\beta$:
 
 \begin{equation*}
-X=\left\{\left(x,y,\theta,\dot{\theta},\beta,\omega,\delta\right)\mid x,y,\omega,\dot{\theta}\in\mathbb{R}; \theta,\delta,\beta\in\left[0, 2\pi\right)\right\}.
+X=\left\{\left(x,y,\theta,\dot{\theta},v,\beta,\omega,\delta\right)\mid x,y,v,\omega,\dot{\theta}\in\mathbb{R}; \theta,\delta,\beta\in\left[0, 2\pi\right)\right\}.
 \end{equation*}
