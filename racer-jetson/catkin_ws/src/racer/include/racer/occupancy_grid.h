@@ -19,7 +19,16 @@ namespace racer
 class occupancy_grid
 {
 public:
-    const double cell_size;
+
+    occupancy_grid()
+        : cell_size_{0},
+          data_{},
+          width_{0},
+          height_{0},
+          size_{0},
+          origin_{}
+    {
+    }
 
     occupancy_grid(
         const std::vector<uint8_t> data,
@@ -27,7 +36,7 @@ public:
         const uint32_t height,
         const double cell_size,
         const racer::math::point origin)
-        : cell_size(cell_size),
+        : cell_size_(cell_size),
           data_(data),
           width_(width),
           height_(height),
@@ -36,10 +45,16 @@ public:
     {
     }
 
+    occupancy_grid(const occupancy_grid& grid) = default;
+    occupancy_grid& operator=(const occupancy_grid& grid) = default;
+
+    occupancy_grid(occupancy_grid&& grid) = default;
+    occupancy_grid& operator=(occupancy_grid&& grid) = default;
+
     uint8_t value_at(double x, double y) const
     {
-        int x_cell = int((x - origin_.x) / cell_size);
-        int y_cell = int((y - origin_.y) / cell_size);
+        int x_cell = int((x - origin_.x()) / cell_size_);
+        int y_cell = int((y - origin_.y()) / cell_size_);
         const std::size_t index = index_of(x_cell, y_cell);
 
         uint8_t val = index < 0 || index >= size_
@@ -56,7 +71,7 @@ public:
 
     double distance_to_closest_obstacle(const racer::math::point &center, double max_radius) const
     {
-        if (collides(center.x, center.y))
+        if (collides(center.x(), center.y()))
         {
             return 0;
         }
@@ -78,16 +93,22 @@ public:
         return std::numeric_limits<uint8_t>::max();
     }
 
+    bool is_valid() const {
+        return size_ > 0;
+    }
+
     std::vector<uint8_t> raw_data() const { return data_; }
-    const int rows() const { return height_; }
-    const int cols() const { return width_; }
+    int rows() const { return height_; }
+    int cols() const { return width_; }
+    double cell_size() const { return cell_size_; }
 
 private:
-    const std::vector<uint8_t> data_;
-    const uint32_t width_;
-    const uint32_t height_;
-    const std::size_t size_;
-    const racer::math::point origin_;
+    double cell_size_;
+    std::vector<uint8_t> data_;
+    uint32_t width_;
+    uint32_t height_;
+    std::size_t size_;
+    racer::math::point origin_;
 
     std::size_t index_of(std::size_t x, std::size_t y) const
     {
@@ -98,22 +119,20 @@ private:
     {
         // this algorithm could be more accurate
         double distance = 0;
-        const auto step = racer::math::vector(cell_size * std::cos(angle), cell_size * std::sin(angle));
+        const auto step = racer::math::vector(cell_size_ * std::cos(angle), cell_size_ * std::sin(angle));
 
-        double x = point.x - origin_.x;
-        double y = point.y - origin_.y;
+        auto pt = point - origin_;
 
         while (distance < max_radius)
         {
-            x += step.x;
-            y += step.y;
+            pt = pt + step;
 
-            if (collides(x, y))
+            if (collides(pt.x(), pt.y()))
             {
                 return distance;
             }
 
-            distance += cell_size;
+            distance += cell_size_;
         }
 
         return std::min(max_radius, distance);

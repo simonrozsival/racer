@@ -16,7 +16,7 @@ namespace racer::astar {
     template <typename TDiscreteState>
     class discretization {
     public:
-        virtual std::unique_ptr<TDiscreteState> discretize(const state& state) const = 0;
+        virtual TDiscreteState discretize(const state& state) const = 0;
         virtual bool is_ready() const = 0;
     };
 
@@ -24,14 +24,14 @@ namespace racer::astar {
     class discretized_search_problem : public racer::astar::base_search_problem<TDiscreteState, state, trajectory> {
     public:
         discretized_search_problem(
-            std::unique_ptr<state> initial_state,
-            std::unique_ptr<TDiscreteState> discrete_state,
+            state initial_state,
+            TDiscreteState discrete_state,
             double time_step_s,
             racer::vehicle_model::vehicle vehicle,
             const std::list<action>& available_actions,
             const discretization<TDiscreteState>& discretization,
             const racer::circuit& circuit)
-            : racer::astar::base_search_problem<TDiscreteState, state, trajectory>(std::move(initial_state), std::move(discrete_state)),
+            : racer::astar::base_search_problem<TDiscreteState, state, trajectory>(initial_state, discrete_state),
             time_step_s_(time_step_s),
             vehicle_(vehicle),
             transition_(std::make_unique<racer::math::euler_method>(time_step_s), vehicle),
@@ -48,9 +48,9 @@ namespace racer::astar {
 
             for (const auto& action : available_actions_) {
                 int steps = 0;
-                std::unique_ptr<state> prediction = std::make_unique<state>(examined_state);
-                std::unique_ptr<TDiscreteState> discretized_prediction = nullptr;
-                std::list<std::unique_ptr<state>> states;
+                state prediction = examined_state;
+                TDiscreteState discretized_prediction;
+                std::list<state> states;
 
                 bool skip = false;
                 bool left_initial_cell_or_stopped = false;
@@ -58,26 +58,26 @@ namespace racer::astar {
                 while (!left_initial_cell_or_stopped) {
                     ++steps;
 
-                    auto next_prediction = transition_.predict(*prediction, action);
-                    if (collides(*next_prediction)) {
+                    auto next_prediction = transition_.predict(prediction, action);
+                    if (collides(next_prediction)) {
                         skip = true;
                         break;
                     }
 
-                    discretized_prediction = std::move(discretization_.discretize(*next_prediction));
+                    discretized_prediction = discretization_.discretize(next_prediction);
 
                     left_initial_cell_or_stopped =
-                        *discretized_prediction != *discretized_examined_state
-                        || *prediction == *next_prediction;
+                        discretized_prediction != discretized_examined_state
+                        || prediction == next_prediction;
 
-                    if (*prediction != examined_state) {
+                    if (prediction != examined_state) {
                         states.push_back(std::move(prediction));
                     }
 
                     prediction = std::move(next_prediction);
                 }
 
-                if (skip || !prediction || !discretized_prediction) {
+                if (skip || !prediction.is_valid()) {
                     continue;
                 }
 
@@ -93,17 +93,17 @@ namespace racer::astar {
             return passed_waypoints == circuit_.number_of_waypoints;
         }
 
-        virtual const bool passes_waypoint(const std::list<std::unique_ptr<state>>& examined_states, size_t passed_waypoints) const override {
+        virtual const bool passes_waypoint(const std::list<state>& examined_states, size_t passed_waypoints) const override {
             return std::any_of(
                 examined_states.cbegin(),
                 examined_states.cend(),
-                [passed_waypoints, this](const std::unique_ptr<state>& examined_state) {
-                return circuit_.passes_waypoint(examined_state->position, passed_waypoints);
+                [passed_waypoints, this](const state& examined_state) {
+                return circuit_.passes_waypoint(examined_state.position(), passed_waypoints);
             });
         }
 
         virtual const double estimate_cost_to_go(const state& examined_state, size_t passed_waypoints) const override {
-            auto dist = circuit_.distance_to_waypoint(examined_state.position.x, examined_state.position.y, passed_waypoints)
+            auto dist = circuit_.distance_to_waypoint(examined_state.position().location(), passed_waypoints)
                 + circuit_.remaining_distance_estimate(passed_waypoints);
             return dist / vehicle_.max_speed;
         }
@@ -136,12 +136,12 @@ namespace racer::astar {
 
     private:
         bool collides(const state& examined_state) const {
-            return circuit_.collides(examined_state.position);
+            return circuit_.collides(examined_state.position());
         }
 
         void prepend_states(std::list<trajectory_step>& path, const search_node<TDiscreteState, state>& node) const {
             for (auto it = node.states.rbegin(); it != node.states.rend(); ++it) {
-                path.emplace_front(**it, node.passed_waypoints);
+                path.emplace_front(*it, node.passed_waypoints);
             }
         }
     };

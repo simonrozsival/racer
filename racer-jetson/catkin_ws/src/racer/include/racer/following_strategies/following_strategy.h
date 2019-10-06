@@ -12,7 +12,7 @@ namespace racer::following_strategies {
 
     class following_strategy {
     public:
-        virtual std::unique_ptr<action> select_action(
+        virtual action select_action(
             const state& current_state,
             const std::size_t passed_waypoints,
             const trajectory& reference_trajectory,

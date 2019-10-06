@@ -22,7 +22,7 @@
 #include "racer_ros/Follower.h"
 
 std::shared_ptr<racer::following_strategies::dwa> dwa;
-std::shared_ptr<racer::following_strategies::trajectory_error_calculator> error_calculator;
+racer::following_strategies::trajectory_error_calculator error_calculator;
 
 visualization_msgs::MarkerArray prepare_visualization(
   const racer_ros::Follower& follower,
@@ -41,25 +41,23 @@ void spin(
   while (ros::ok()) {
     if (follower.is_initialized()) {
       auto action = follower.select_driving_command();
-
-      if (!action) {
+      if (!action.is_valid()) {
         action = follower.stop();
-        ROS_DEBUG("following node: STOP!");
-      } else {
-        ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action->throttle, action->target_steering_angle);
       }
+
+      ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action.throttle(), action.target_steering_angle());
 
       geometry_msgs::Twist msg;
 
-      msg.linear.x = action->throttle;
-      msg.angular.z = -action->target_steering_angle;
+      msg.linear.x = action.throttle();
+      msg.angular.z = -action.target_steering_angle();
 
       command_pub.publish(msg);
 
       if (visualization_pub.getNumSubscribers() > 0) {
         const auto msg = prepare_visualization(
           follower,
-          *action,
+          action,
           actions);
         visualization_pub.publish(msg);
       }
@@ -75,13 +73,14 @@ void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level
     return;
   }
 
-  error_calculator = std::make_shared<racer::following_strategies::trajectory_error_calculator>(
+  error_calculator = {
     config.position_weight,
     config.heading_weight,
     config.velocity_weight,
     config.velocity_undershoot_overshoot_ratio,
     config.distance_to_obstacle_weight,
-    config.max_position_error);
+    config.max_position_error
+  };
 
   dwa->reconfigure(error_calculator);
 
@@ -117,8 +116,8 @@ void create_visualization_line(
   for (const auto state : trajectory) {
     geometry_msgs::Point point;
 
-    point.x = state.position.x;
-    point.y = state.position.y;
+    point.x = state.position().location().x();
+    point.y = state.position().location().y();
     point.z = 0;
 
     line.points.push_back(point);
@@ -136,33 +135,33 @@ visualization_msgs::MarkerArray prepare_visualization(
   const auto map = follower.map();
 
   const auto reference_subtrajectory = follower.reference_trajectory().find_reference_subtrajectory(from, follower.next_waypoint());
-  if (reference_subtrajectory == nullptr) {
+  if (reference_subtrajectory.empty()) {
     return msg;
   }
 
   int id = 0;
   for (const auto action : all_actions) {
     const auto trajectory = dwa->unfold(from, action, map);
-    if (trajectory) {
+    if (!trajectory.empty()) {
       visualization_msgs::Marker line;
       line.header.frame_id = follower.map_frame_id;
       line.header.stamp = ros::Time::now();
 
-      const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, map);
-      create_visualization_line(id++, *trajectory, score, line);
+      const double score = error_calculator.calculate_error(trajectory, reference_subtrajectory, map);
+      create_visualization_line(id++, trajectory, score, line);
 
       msg.markers.push_back(line);
     }
   }
 
   const auto trajectory = dwa->unfold(from, selected_action, map);
-  if (trajectory) {
+  if (!trajectory.empty()) {
     visualization_msgs::Marker selected_line;
     selected_line.header.frame_id = follower.map_frame_id;
     selected_line.header.stamp = ros::Time::now();
 
-    const double score = error_calculator->calculate_error(*trajectory, *reference_subtrajectory, map);
-    create_visualization_line(id++, *trajectory, score, selected_line);
+    const double score = error_calculator.calculate_error(trajectory, reference_subtrajectory, map);
+    create_visualization_line(id++, trajectory, score, selected_line);
  
     selected_line.scale.x = 0.05;
     selected_line.color.a = 1.0;
@@ -228,15 +227,14 @@ int main(int argc, char* argv[]) {
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  error_calculator = 
-    std::make_shared<racer::following_strategies::trajectory_error_calculator>(
-      position_weight,
-      heading_weight,
-      velocity_weight,
-      1.0,
-      distance_to_obstacle_weight,
-      vehicle.radius() * 5
-    );
+  racer::following_strategies::trajectory_error_calculator error_calculator = {
+    position_weight,
+    heading_weight,
+    velocity_weight,
+    1.0,
+    distance_to_obstacle_weight,
+    vehicle.radius() * 5
+  };
 
   dwa =
     std::make_shared<racer::following_strategies::dwa>(

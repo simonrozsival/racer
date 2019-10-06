@@ -10,60 +10,71 @@ namespace racer::math
 
 struct vector
 {
-    double x, y;
-    vector(double x, double y) : x(x), y(y) {}
+private:
+    double x_, y_;
 
-    double dot(const vector &other) const
-    {
-        return x * other.x + y * other.y;
-    }
+public:
+    vector() : x_{0}, y_{0} {}
+    vector(double x, double y) : x_{x}, y_{y} {}
+    
+    vector(vector&& vec) = default;
+    vector& operator =(vector&& vec) = default;
+    
+    vector(const vector& vec) = default;
+    vector& operator =(const vector& vec) = default;
+    
+    constexpr const double& x() const noexcept { return x_; }
+    constexpr const double& y() const noexcept { return y_; }
 
-    vector(const vector &other)
-    {
-        x = other.x;
-        y = other.y;
+    double dot(const vector &other) const noexcept {
+        return x_ * other.x_ + y_ * other.y_;
     }
 
     vector normal() const
     {
-        double size = std::sqrt(x * x + y * y);
+        double size = std::sqrt(x_ * x_ + y_ * y_);
         return vector(
-            -y / size,
-            x / size);
+            -y_ / size,
+            x_ / size);
     }
 
     bool operator==(const vector &other) const
     {
-        return x == other.x && y == other.y;
+        return x_ == other.x_ && y_ == other.y_;
     }
 
     bool operator!=(const vector &other) const
     {
-        return x != other.x && y != other.y;
+        return x_ != other.x_ && y_ != other.y_;
     }
 
     vector rotate(double radians) const
     {
         return vector(
-            x * std::cos(radians) - y * std::sin(radians),
-            y * std::cos(radians) + x * std::sin(radians));
+            x_ * std::cos(radians) - y_ * std::sin(radians),
+            y_ * std::cos(radians) + x_ * std::sin(radians));
     }
 
     vector operator-(const vector &other) const
     {
-        return vector(x - other.x, y - other.y);
+        return vector(x_ - other.x_, y_ - other.y_);
     }
 
     vector operator+(const vector &other) const
     {
-        return vector(x + other.x, y + other.y);
+        return vector(x_ + other.x_, y_ + other.y_);
+    }
+
+    vector operator*(const double scale) const
+    {
+        return vector(scale * x_, scale * y_);
     }
 
     vector interpolate_with(const vector &other, const double weight, const double weight_other) const
     {
         const double wa = weight / (weight + weight_other);
         const double wb = weight_other / (weight + weight_other);
-        return vector(wa * x + wb * other.x, wa * y + wb * other.y);
+        return vector(wa * x_ + wb * other.x_, wa * y_ + wb * other.y_);
     }
 
     inline double length_sq() const
@@ -84,6 +95,11 @@ struct vector
     inline double distance(const vector &other) const
     {
         return std::sqrt(distance_sq(other));
+    }
+
+    inline double angle() const
+    {
+        return std::atan2(y_, x_);
     }
 };
 
@@ -222,8 +238,8 @@ struct circle
         for (double angle = starting_angle; angle < starting_angle + arc_angle; angle += step)
         {
             points.emplace_back(
-                center.x + radius * std::cos(angle),
-                center.y + radius * std::sin(angle));
+                center.x() + radius * std::cos(angle),
+                center.y() + radius * std::sin(angle));
         }
 
         return points;

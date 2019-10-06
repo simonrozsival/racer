@@ -99,7 +99,7 @@ public:
         std::list<racer::math::circle> path;
 
         path.push_back(generate_circle(initial_position.location()));
-        double initial_heading_angle = initial_position.heading_angle;
+        double initial_heading_angle = initial_position.heading_angle();
 
         auto goal_it = waypoints.cbegin();
 
@@ -119,7 +119,7 @@ public:
             auto last_but_one = --(--path.end());
 
             auto final_direction = last->center - last_but_one->center;
-            initial_heading_angle = atan2(final_direction.y, final_direction.x);
+            initial_heading_angle = final_direction.angle();
 
             // move to the next waypoint
             ++goal_it;
@@ -172,7 +172,7 @@ private:
             closed.push_back(nearest->examined_circle);
         }
 
-        std::cerr << "space exploration failed after exploring " << closed.size() << " nodes between [" << from.center.x << ", " << from.center.y << "] and [" << to.x << ", " << to.y << "]" << std::endl;
+        std::cerr << "space exploration failed after exploring " << closed.size() << " nodes between [" << from.center.x() << ", " << from.center.y() << "] and [" << to.x() << ", " << to.y() << "]" << std::endl;
 
         return std::list<racer::math::circle>();
     }
@@ -189,7 +189,7 @@ private:
             {
                 double distance_estimate = (circle.center - goal).length();
                 auto direction = circle.center - node->examined_circle.center;
-                double heading_angle = atan2(direction.y, direction.x);
+                double heading_angle = direction.angle();
 
                 nodes.push_back(
                     std::make_shared<circle_node>(

@@ -12,35 +12,35 @@ namespace racer::astar {
     template <typename TKey, typename TState>
     struct neighbor_transition {
         neighbor_transition(
-            std::unique_ptr<TKey> key,
-            std::list<std::unique_ptr<TState>> states,
+            TKey key,
+            std::list<TState> states,
             const double cost)
             : key(std::move(key)), states(std::move(states)), cost(cost)
         {
         }
 
-        std::unique_ptr<TKey> key;
-        std::list<std::unique_ptr<TState>> states;
+        TKey key;
+        std::list<TState> states;
 
         const double cost;
 
-        const std::unique_ptr<TState>& final_state() const {
+        const TState& final_state() const {
             return states.back();
         }
     };
 
     template <typename TKey, typename TState>
     struct search_node {
-        const std::unique_ptr<TKey> key;
-        const std::list<std::unique_ptr<TState>> states;
+        const TKey key;
+        const std::list<TState> states;
         const double cost_to_come;
         const double cost_estimate;
         const size_t passed_waypoints;
         const std::weak_ptr<search_node<TKey, TState>> parent;
 
         search_node(
-            std::unique_ptr<TKey> key,
-            std::list<std::unique_ptr<TState>> states,
+            TKey key,
+            std::list<TState> states,
             std::weak_ptr<search_node<TKey, TState>> parent,
             double cost_to_come,
             double cost_estimate,
@@ -58,7 +58,7 @@ namespace racer::astar {
             return cost_estimate - cost_to_come;
         }
 
-        const std::unique_ptr<TState>& final_state() const {
+        const TState& final_state() const {
             return states.back();
         }
     };
@@ -66,20 +66,20 @@ namespace racer::astar {
     template <typename TKey, typename TState, typename TTrajectory>
     class base_search_problem {
     public:
-        base_search_problem(std::unique_ptr<TState> initial_state, std::unique_ptr<TKey> initial_key)
-            : initial_state(std::move(initial_state)), initial_key(std::move(initial_key))
+        base_search_problem(TState initial_state, TKey initial_key)
+            : initial_state(initial_state), initial_key(initial_key)
         {
         }
 
         virtual std::list<neighbor_transition<TKey, TState>> valid_neighbors(const TState& state) const = 0;
         virtual const bool is_goal(size_t passed_waypoints) const = 0;
-        virtual const bool passes_waypoint(const std::list<std::unique_ptr<TState>>& examined_state, size_t passed_waypoints) const = 0;
+        virtual const bool passes_waypoint(const std::list<TState>& examined_state, size_t passed_waypoints) const = 0;
         virtual const double estimate_cost_to_go(const TState& state, std::size_t passed_waypoints) const = 0;
         virtual const TTrajectory reconstruct_trajectory(const search_node<TKey, TState>& node) const = 0;
         virtual const TTrajectory no_solution() const = 0;
 
-        std::unique_ptr<TKey> initial_key;
-        std::unique_ptr<TState> initial_state;
+        const TKey initial_key;
+        const TState initial_state;
     };
 
     template <typename TKey, typename TState>
@@ -136,11 +136,11 @@ namespace racer::astar {
         closed_set<TKey> closed;
         std::list<std::shared_ptr<search_node<TKey, TState>>> expanded_nodes; // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
 
-        std::list<std::unique_ptr<TState>> initial_state;
-        initial_state.push_back(std::move(problem->initial_state));
+        std::list<TState> initial_state;
+        initial_state.push_back(problem->initial_state);
 
         auto inital_node = std::make_shared<search_node<TKey, TState>>(
-            std::move(problem->initial_key),
+            problem->initial_key,
             std::move(initial_state),
             std::weak_ptr<search_node<TKey, TState>>(), 0, 0, 0);
 
@@ -151,7 +151,7 @@ namespace racer::astar {
 
             // skip items of the `opened` set until we find some which
             // has not been closed yet
-            if (closed.contains(*expanded_node->key, expanded_node->passed_waypoints)) {
+            if (closed.contains(expanded_node->key, expanded_node->passed_waypoints)) {
                 continue;
             }
 
@@ -164,24 +164,24 @@ namespace racer::astar {
                 return result;
             }
 
-            closed.add(*expanded_node->key, expanded_node->passed_waypoints);
+            closed.add(expanded_node->key, expanded_node->passed_waypoints);
 
-            for (auto& neighbor : problem->valid_neighbors(*expanded_node->final_state())) {
+            for (auto& neighbor : problem->valid_neighbors(expanded_node->final_state())) {
                 size_t passed_waypoints =
                     problem->passes_waypoint(neighbor.states, expanded_node->passed_waypoints)
                         ? expanded_node->passed_waypoints + 1
                         : expanded_node->passed_waypoints;
 
-                if (closed.contains(*neighbor.key, passed_waypoints)) {
+                if (closed.contains(neighbor.key, passed_waypoints)) {
                     continue;
                 }
 
                 auto cost_to_come = expanded_node->cost_to_come + neighbor.cost;
-                auto cost_estimate = cost_to_come + problem->estimate_cost_to_go(*neighbor.final_state(), passed_waypoints);
+                auto cost_estimate = cost_to_come + problem->estimate_cost_to_go(neighbor.final_state(), passed_waypoints);
                 auto node =
                     std::make_shared<search_node<TKey, TState>>(
-                        std::move(neighbor.key),
-                        std::move(neighbor.states),
+                        neighbor.key,
+                        neighbor.states,
                         expanded_node,
                         cost_to_come,
                         cost_estimate,

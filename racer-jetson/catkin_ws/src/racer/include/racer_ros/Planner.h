@@ -40,10 +40,10 @@ namespace racer_ros {
       bool is_initialized() const;
 
       std::unique_ptr<racer_msgs::Trajectory> plan(
-        const std::shared_ptr<racer::occupancy_grid> grid,
-        const std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::state> initial_state,
+        const racer::occupancy_grid& grid,
+        const racer::vehicle_model::kinematic_bicycle_model::state& initial_state,
         const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& available_actions,
-        const std::shared_ptr<std::vector<racer::math::point>> waypoints,
+        const std::vector<racer::math::point>& waypoints,
         const int next_waypoint,
         const double waypoint_radius) const;
 

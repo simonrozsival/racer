@@ -32,10 +32,10 @@ int lookahead;
 std::list<racer::math::point> check_points;
 
 // state variables
-std::unique_ptr<racer::vehicle_position> position;
-std::unique_ptr<racer::occupancy_grid> grid;
+racer::vehicle_position position;
+racer::occupancy_grid grid;
 std::string frame_id;
-std::unique_ptr<std::vector<racer::math::circle>> waypoints;
+std::vector<racer::math::circle> waypoints;
 
 int next_waypoint = -1;
 int last_published_next_waypoint = -2;
@@ -44,7 +44,7 @@ void load_circuit();
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-  if (grid)
+  if (grid.is_valid())
   {
     throw std::runtime_error("There is already an existing map.");
   }
@@ -57,12 +57,12 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 void load_circuit()
 {
-  if (!position)
+  if (!position.is_valid())
   {
     return;
   }
 
-  if (!grid)
+  if (!grid.is_valid())
   {
     return;
   }
@@ -70,19 +70,15 @@ void load_circuit()
   ROS_DEBUG("Analyzing the circuit...");
 
   racer::sehs::space_exploration space_exploration(
-    *grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
+    grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
   racer::track_analysis analysis(
-      *grid, min_distance_between_waypoints);
+    grid, min_distance_between_waypoints);
 
-  std::list<racer::math::point> final_check_points;
-  for (const auto &check_point : check_points)
-  {
-    final_check_points.push_back(racer::math::point(check_point.x, check_point.y));
-  }
-  final_check_points.push_back(position->location()); // back to the start
+  std::list<racer::math::point> final_check_points { check_points.begin(), check_points.end() };
+  final_check_points.push_back(position.location()); // back to the start
 
   ROS_DEBUG("start track analysis/space exploration");
-  const auto path = space_exploration.explore_grid(*position, final_check_points);
+  const auto path = space_exploration.explore_grid(position, final_check_points);
   const auto pivot_points = analysis.find_pivot_points(path);
   const std::list<racer::math::point> apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
   ROS_DEBUG("finished track analysis/space exploration");
@@ -101,39 +97,39 @@ void load_circuit()
     wps.emplace_back(apex, waypoint_radius);
   }
 
-  waypoints = std::make_unique<std::vector<racer::math::circle>>(wps);
+  waypoints = std::vector<racer::math::circle>(wps);
   next_waypoint = 0;
 
-  ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints->size());
+  ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints.size());
   ROS_DEBUG("Next waypoint: %d", next_waypoint);
 }
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
   bool try_init = false;
-  if (!position)
+  if (!position.is_valid())
   {
     try_init = true;
   }
 
-  position = std::make_unique<racer::vehicle_position>(state->x, state->y, state->heading_angle);
+  position = { state->x, state->y, state->heading_angle };
 
   if (try_init)
   {
     load_circuit();
   }
 
-  if (!waypoints)
+  if (waypoints.empty())
   {
     return;
   }
 
   std::lock_guard<std::mutex> guard(state_lock);
 
-  const auto wp = (*waypoints)[next_waypoint];
-  if (wp.contains(position->location()))
+  const auto wp = waypoints[next_waypoint];
+  if (wp.contains(position.location()))
   {
-    next_waypoint = (next_waypoint + 1) % waypoints->size();
+    next_waypoint = (next_waypoint + 1) % waypoints.size();
     std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint << std::endl;
   }
 }
@@ -180,7 +176,7 @@ int main(int argc, char *argv[])
   while (ros::ok())
   {
     std::unique_lock<std::mutex> guard(analysis_lock);
-    if (waypoints && last_published_next_waypoint != next_waypoint)
+    if (!waypoints.empty() && last_published_next_waypoint != next_waypoint)
     {
       racer_msgs::Waypoints msg;
       msg.header.stamp = ros::Time::now();
@@ -189,10 +185,10 @@ int main(int argc, char *argv[])
 
       for (std::size_t i = 0; i < lookahead; ++i)
       {
-        const auto &waypoint = (*waypoints)[(next_waypoint + i) % waypoints->size()];
+        const auto &waypoint = waypoints[(next_waypoint + i) % waypoints.size()];
         racer_msgs::Waypoint wp;
-        wp.position.x = waypoint.center.x;
-        wp.position.y = waypoint.center.y;
+        wp.position.x = waypoint.center.x();
+        wp.position.y = waypoint.center.y();
         wp.radius = waypoint.radius;
 
         msg.waypoints.push_back(wp);
@@ -205,13 +201,13 @@ int main(int argc, char *argv[])
       if (visualization_pub.getNumSubscribers() > 0)
       {
         visualization_msgs::MarkerArray markers;
-        for (std::size_t i = 0; i < waypoints->size(); ++i)
+        for (std::size_t i = 0; i < waypoints.size(); ++i)
         {
-          bool is_advertised = next_waypoint + lookahead > waypoints->size()
-                                   ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints->size()
+          bool is_advertised = next_waypoint + lookahead > waypoints.size()
+                                   ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints.size()
                                    : next_waypoint <= i && i < next_waypoint + lookahead;
 
-          const auto wp = (*waypoints)[i];
+          const auto wp = waypoints[i];
 
           visualization_msgs::Marker marker;
           marker.header.frame_id = frame_id;
@@ -222,8 +218,8 @@ int main(int argc, char *argv[])
           marker.type = visualization_msgs::Marker::SPHERE;
           marker.action = visualization_msgs::Marker::ADD;
 
-          marker.pose.position.x = wp.center.x;
-          marker.pose.position.y = wp.center.y;
+          marker.pose.position.x = wp.center.x();
+          marker.pose.position.y = wp.center.y();
           marker.pose.position.z = 0;
 
           marker.scale.x = 2 * wp.radius;

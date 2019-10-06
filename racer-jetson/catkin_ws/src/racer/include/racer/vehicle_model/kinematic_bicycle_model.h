@@ -14,12 +14,29 @@
 namespace racer::vehicle_model::kinematic_bicycle_model {
         
     struct action {
-        const double throttle, target_steering_angle;
+    private:
+        double throttle_, target_steering_angle_;
+        bool is_valid_;
 
-        action(double throttle, double target_steering_angle)
-            : throttle(throttle), target_steering_angle(target_steering_angle)
+    public:
+        action() : throttle_{0}, target_steering_angle_{0}, is_valid_{false}
         {
         }
+
+        action(double throttle, double target_steering_angle)
+            : throttle_(throttle), target_steering_angle_(target_steering_angle), is_valid_{true}
+        {
+        }
+
+        action(const action& action) = default;
+        action& operator=(const action& action) = default;
+
+        action(action&& action) = default;
+        action& operator=(action&& action) = default;
+
+        constexpr const double& throttle() const { return throttle_; }
+        constexpr const double& target_steering_angle() const { return target_steering_angle_; }
+        constexpr const bool is_valid() const { return is_valid_; }
 
         static const std::list<action> create_actions(const int throttle_levels, const int steering_levels) {
             std::list<action> actions;
@@ -36,7 +53,7 @@ namespace racer::vehicle_model::kinematic_bicycle_model {
             return actions;
         }
 
-        static const std::list<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels) {
+        static std::list<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels) {
             std::list<action> actions;
 
             const double steering_step = 2.0 / double(steering_levels - 1);
@@ -53,16 +70,35 @@ namespace racer::vehicle_model::kinematic_bicycle_model {
     };
 
     struct state {
-        const vehicle_position position;
-        const double speed, steering_angle;
+    private:
+        vehicle_position position_;
+        double speed_, steering_angle_;
 
-        state(vehicle_position position, double speed, double steering_angle)
-            : position(position), speed(speed), steering_angle(steering_angle)
+    public:
+        state()
+            : position_{},
+              speed_{0},
+              steering_angle_{0}
         {
         }
 
+        state(vehicle_position position, double speed, double steering_angle)
+            : position_(position), speed_(speed), steering_angle_(steering_angle)
+        {
+        }
+    
+        state(const state& s) = default;
+        state& operator=(const state& s) = default;
+
+        state(state&& s) = default;
+        state& operator=(state&& s) = default;
+
+        constexpr const vehicle_position& position() const noexcept { return position_; }
+        constexpr const double& speed() const noexcept { return speed_; }
+        constexpr const double& steering_angle() const noexcept { return steering_angle_; }
+
         bool operator ==(const state& other) const {
-            return position == other.position && speed == other.speed && steering_angle == other.steering_angle;
+            return position_ == other.position_ && speed_ == other.speed_ && steering_angle_ == other.steering_angle_;
         }
 
         bool operator !=(const state& other) const {
@@ -70,56 +106,87 @@ namespace racer::vehicle_model::kinematic_bicycle_model {
         }
 
         double distance_to(const state& other) const {
-            return (position.location() - other.position.location()).length();
+            return (position_.location() - other.position_.location()).length();
         }
+
+        bool is_valid() const noexcept { return position_.is_valid(); }
     };
 
     struct trajectory_step {
-        const state step;
-        const std::size_t passed_waypoints;
+    private:
+        state step_;
+        std::size_t passed_waypoints_;
 
-        trajectory_step(const state& step, const std::size_t passed_waypoints)
-            : step(step), passed_waypoints(passed_waypoints)
+    public:
+        trajectory_step()
+            : step_{}, passed_waypoints_{0}
         {
         }
+
+        trajectory_step(const state& step, const std::size_t passed_waypoints)
+            : step_(step), passed_waypoints_(passed_waypoints)
+        {
+        }
+
+        trajectory_step(const trajectory_step& step) = default;
+        trajectory_step& operator=(const trajectory_step& step) = default;
+
+        trajectory_step(trajectory_step&& step) = default;
+        trajectory_step& operator=(trajectory_step&& step) = default;
+
+        constexpr const state& step() const noexcept { return step_; }
+        constexpr const std::size_t& passed_waypoints() const noexcept { return passed_waypoints_; }
     };
 
     struct trajectory {
-        const std::list<trajectory_step> steps;
+    private:
+        std::list<trajectory_step> steps_;
 
-        trajectory(const std::list<trajectory_step> steps)
-            : steps(steps)
+    public:
+        trajectory() : steps_{}
         {
         }
 
-        std::unique_ptr<trajectory> find_reference_subtrajectory(const state& current_state, std::size_t passed_waypoints) const {
+        trajectory(const std::list<trajectory_step> steps)
+            : steps_(steps)
+        {
+        }
+        
+        trajectory(const trajectory& traj) = default;
+        trajectory& operator=(const trajectory& traj) = default;
+
+        trajectory(trajectory&& traj) = default;
+        trajectory& operator=(trajectory&& traj) = default;
+
+        trajectory find_reference_subtrajectory(const state& current_state, std::size_t passed_waypoints) const {
             const auto reference_state = find_reference_state(current_state, passed_waypoints);
-            std::list<trajectory_step> sublist{ reference_state, steps.end() };
-            return std::make_unique<trajectory>(sublist);
+            std::list<trajectory_step> sublist{ reference_state, steps_.end() };
+            return { sublist };
         }
 
-        bool empty() const {
-            return steps.empty();
-        }
+        constexpr const std::list<trajectory_step>& steps() const noexcept { return steps_; }
+
+        bool empty() const noexcept { return steps_.empty(); }
+        bool is_valid() const noexcept { return !steps_.empty(); }
 
     private:
-        std::list<trajectory_step>::const_iterator find_reference_state(const state& state, const std::size_t passed_waypoints) const {
-            if (steps.empty()) {
-                return steps.end();
+        std::list<trajectory_step>::const_iterator find_reference_state(const state& state, const std::size_t passed_waypoints) const noexcept {
+            if (steps_.empty()) {
+                return steps_.end();
             }
 
-            auto best_so_far = steps.begin();
+            auto best_so_far = steps_.begin();
             double distance = HUGE_VAL;
             int i = 0;
 
-            for (auto it = steps.begin(); it != steps.end(); ++it) {
-                if (it->passed_waypoints < passed_waypoints) {
+            for (auto it = steps_.begin(); it != steps_.end(); ++it) {
+                if (it->passed_waypoints() < passed_waypoints) {
                     continue;
-                } else if (it->passed_waypoints > passed_waypoints + 1) { // do not skip a waypoint
+                } else if (it->passed_waypoints() > passed_waypoints + 1) { // do not skip a waypoint
                     break;
                 }
                 ++i;
-                double next_distance = state.distance_to(it->step);
+                double next_distance = state.distance_to(it->step());
                 if (next_distance < distance) {
                     best_so_far = it;
                     distance = next_distance;
@@ -142,38 +209,39 @@ namespace racer::vehicle_model::kinematic_bicycle_model {
         }
 
     public:
-        std::unique_ptr<state> predict(const state& current, const action& input) const override {
+        state predict(const state& current, const action& input) const override {
             double speed = calculate_speed(current, input);
             double steering_angle = calculate_steering_angle(current, input);
             racer::math::angle slip_angle = atan((vehicle_.distance_of_center_of_gravity_to_rear_axle / vehicle_.wheelbase) * tan(racer::math::angle(steering_angle)));
 
-            vehicle_position position_derivative(
-                speed * cos(current.position.heading_angle + slip_angle),
-                speed * sin(current.position.heading_angle + slip_angle),
-                speed * cos(slip_angle) * tan(racer::math::angle(steering_angle)) / vehicle_.wheelbase);
+            vehicle_position position_derivative {
+                speed * cos(current.position().heading_angle() + slip_angle),
+                speed * sin(current.position().heading_angle() + slip_angle),
+                speed * cos(slip_angle) * tan(racer::math::angle(steering_angle)) / vehicle_.wheelbase
+            };
 
-            return std::make_unique<state>(current.position + position_derivative.integrate(integrator_), speed, steering_angle);
+            return { current.position() + position_derivative.integrate(integrator_), speed, steering_angle };
         }
 
     private:
         double calculate_speed(const state& current, const action& input) const {
-            double target_speed = input.throttle * vehicle_.max_speed;
-            double acceleration = sign(target_speed - current.speed) * vehicle_.max_acceleration;
+            double target_speed = input.throttle() * vehicle_.max_speed;
+            double acceleration = sign(target_speed - current.speed()) * vehicle_.max_acceleration;
             double speed_delta = integrator_->integrate(acceleration);
 
-            return abs(current.speed - target_speed) < abs(speed_delta)
+            return abs(current.speed() - target_speed) < abs(speed_delta)
                 ? target_speed // don't overshoot
-                : std::min(vehicle_.max_speed, std::max(vehicle_.max_reversing_speed, current.speed + speed_delta));
+                : std::min(vehicle_.max_speed, std::max(vehicle_.max_reversing_speed, current.speed() + speed_delta));
         }
 
         double calculate_steering_angle(const state& current, const action& input) const {
-            double target_steering_angle = input.target_steering_angle * vehicle_.max_steering_angle;
-            double speed = sign(target_steering_angle - current.steering_angle) * vehicle_.max_steering_speed;
+            double target_steering_angle = input.target_steering_angle() * vehicle_.max_steering_angle;
+            double speed = sign(target_steering_angle - current.steering_angle()) * vehicle_.max_steering_speed;
             double delta = integrator_->integrate(speed);
 
-            return abs(target_steering_angle - current.steering_angle) < abs(speed)
+            return abs(target_steering_angle - current.steering_angle()) < abs(speed)
                 ? target_steering_angle
-                : std::min(vehicle_.max_steering_angle, std::max(-vehicle_.max_steering_angle, current.steering_angle + delta));
+                : std::min(vehicle_.max_steering_angle, std::max(-vehicle_.max_steering_angle, current.steering_angle() + delta));
         }
 
         double sign(double x) const {

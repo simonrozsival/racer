@@ -13,13 +13,13 @@ public:
   const std::string name;
   const racer::vehicle_position initial_position;
   const std::list<racer::math::point> checkpoints;
-  const std::unique_ptr<racer::occupancy_grid> occupancy_grid;
+  const racer::occupancy_grid occupancy_grid;
   const double radius;
   const int neighbor_circles;
   const double min_distance_between_waypoints;
 
 public:
-  static std::unique_ptr<track_analysis_input> load(std::filesystem::path input_file_name)
+  static track_analysis_input load(std::filesystem::path input_file_name)
   {
     std::ifstream file(input_file_name, std::ifstream::in);
     if (!file.is_open())
@@ -74,7 +74,7 @@ public:
     ss >> itheta;
     racer::vehicle_position initial_position(ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
 
-    std::cout << "initial position: [" << initial_position.x << ", " << initial_position.y << "], theta: " << initial_position.heading_angle << std::endl;
+    std::cout << "initial position: [" << initial_position.location().x() << ", " << initial_position.location().y() << "], theta: " << initial_position.heading_angle() << std::endl;
 
     // load checkpoints
     double x, y;
@@ -83,16 +83,16 @@ public:
     {
       ss >> y;
       checkpoints.emplace_back(x * occupancy_grid_resolution, y * occupancy_grid_resolution);
-      std::cout << "checkpoint: [" << checkpoints.back().x << ", " << checkpoints.back().y << "]" << std::endl;
+      std::cout << "checkpoint: [" << checkpoints.back().x() << ", " << checkpoints.back().y() << "]" << std::endl;
     }
 
-    checkpoints.emplace_back(initial_position.x, initial_position.y);
+    checkpoints.emplace_back(initial_position.location().x(), initial_position.location().y());
 
     std::cout << "Config loaded." << std::endl
               << std::endl;
 
     // put it all together
-    return std::make_unique<track_analysis_input>(
+    return track_analysis_input(
         input_file_name.filename(),
         initial_position,
         checkpoints,
@@ -106,13 +106,13 @@ public:
       std::string name,
       racer::vehicle_position initial_position,
       std::list<racer::math::point> checkpoints,
-      std::unique_ptr<racer::occupancy_grid> occupancy_grid,
+      racer::occupancy_grid occupancy_grid,
       double radius,
       int neighbor_circles,
       double min_distance_between_waypoints) : name(name),
                                                initial_position(initial_position),
                                                checkpoints(checkpoints),
-                                               occupancy_grid(std::move(occupancy_grid)),
+                                               occupancy_grid(occupancy_grid),
                                                radius(radius),
                                                neighbor_circles(neighbor_circles),
                                                min_distance_between_waypoints(min_distance_between_waypoints)

@@ -15,7 +15,6 @@ public:
     const vehicle_position start_position;
     const occupancy_grid &grid;
     const std::vector<racer::math::point> waypoints;
-    const double cell_size;
 
 private:
     const double waypoint_radius_sq_;
@@ -23,7 +22,6 @@ private:
 
 public:
     circuit(
-        double cell_size,
         vehicle_position start,
         std::vector<racer::math::point> list_of_waypoints,
         double waypoint_radius,
@@ -32,7 +30,6 @@ public:
           start_position(start),
           grid(grid),
           waypoints(std::vector<racer::math::point>{list_of_waypoints.begin(), list_of_waypoints.end()}),
-          cell_size(cell_size),
           waypoint_radius_sq_(waypoint_radius * waypoint_radius)
     {
         double remaining_distance = 0;
@@ -42,7 +39,7 @@ public:
         for (size_t n = waypoints.size() - 1; n > 0; --n)
         {
             distances.push_front(remaining_distance);
-            remaining_distance += (waypoints[n - 1] - waypoints[n]).length();
+            remaining_distance += (waypoints[n - 1]).distance(waypoints[n]);
         }
 
         distances.push_front(remaining_distance);
@@ -52,28 +49,29 @@ public:
 
     bool collides(const vehicle_position &position) const
     {
-        return grid.collides(position.x, position.y);
+        return grid.collides(position.location().x(), position.location().y());
     }
 
-    bool passes_waypoint(const vehicle_position &position, size_t waypoint_index) const
+    bool passes_waypoint(const vehicle_position &position, std::size_t waypoint_index) const
     {
         // I assume that waypoint_index is always in the bounds
-        const double dx = position.x - waypoints[waypoint_index].x;
-        const double dy = position.y - waypoints[waypoint_index].y;
-        return dx * dx + dy * dy < waypoint_radius_sq_;
+        return distance_to_waypoint_sq(position.location(), waypoint_index) < waypoint_radius_sq_;
     }
 
-    double distance_to_waypoint(double x, double y, size_t n) const
+    double distance_to_waypoint_sq(const math::vector& position, std::size_t n) const
     {
         if (n >= waypoints.size())
             return 0;
 
-        auto dx = x - waypoints[n].x;
-        auto dy = y - waypoints[n].y;
-        return sqrt(dx * dx + dy * dy);
+        return position.distance_sq(waypoints[n]);
     }
 
-    double remaining_distance_estimate(size_t n) const
+    double distance_to_waypoint(const math::vector& position, std::size_t n) const
+    {
+        return std::sqrt(distance_to_waypoint_sq(position, n));
+    }
+
+    double remaining_distance_estimate(std::size_t n) const
     {
         if (n >= waypoints.size())
             return 0;

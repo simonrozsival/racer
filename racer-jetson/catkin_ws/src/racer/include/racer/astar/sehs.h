@@ -12,12 +12,22 @@ namespace racer::astar::sehs
 
 struct discrete_state
 {
-    const int circle, heading, speed;
+    int circle, heading, speed;
+
+    discrete_state() : circle(0), heading(0), speed(0)
+    {
+    }
 
     discrete_state(int circle, int heading, int speed)
         : circle(circle), heading(heading), speed(speed)
     {
     }
+
+    discrete_state(const discrete_state& other) = default;
+    discrete_state& operator =(const discrete_state& other) = default;
+
+    discrete_state(discrete_state&& other) = default;
+    discrete_state& operator =(discrete_state&& other) = default;
 
     bool operator==(const discrete_state &other) const
     {
@@ -52,13 +62,13 @@ public:
         return is_initialized_;
     }
 
-    std::unique_ptr<discrete_state> discretize(const state &state) const
+    discrete_state discretize(const state &state) const override
     {
         int closest_circle = 0;
         double min_distance_sq;
         for (int i = 0; i < circles_.size(); ++i)
         {
-            double distance_sq = (state.position.location() - circles_[i].center).length_sq();
+            double distance_sq = state.position().location().distance_sq(circles_[i].center);
             if (i == 0 || distance_sq < min_distance_sq)
             {
                 closest_circle = i;
@@ -66,10 +76,11 @@ public:
             }
         }
 
-        return std::make_unique<discrete_state>(
+        return {
             closest_circle,
-            (int)floor(racer::math::angle(state.position.heading_angle) / heading_),
-            (int)floor(state.speed / speed_));
+            (int)floor(racer::math::angle(state.position().heading_angle()) / heading_),
+            (int)floor(state.speed() / speed_)
+        };
     }
 
     void explore_grid(

@@ -52,14 +52,12 @@ double get_current_speed(const racer::vehicle_position current_position) {
 
   if (prev_position) {
     racer::math::vector delta = current_position.location() - prev_position->location();
-    double distance = delta.length();
-    double travel_angle = atan2(delta.y, delta.x);
-    double direction = angle_difference(travel_angle, prev_position->heading_angle) < (M_PI / 2) ? 1.0 : -1.0;
+    double direction = angle_difference(delta.angle(), prev_position->heading_angle()) < (M_PI / 2) ? 1.0 : -1.0;
     double elapsed_time = now - prev_position_time;
 
-    current_speed = direction * distance / elapsed_time;
+    current_speed = direction * delta.length() / elapsed_time;
 
-    if (std::abs(current_speed) < 0.001) {
+    if (std::abs(current_speed) < 1e-3) {
       current_speed = 0;
     }
   }
@@ -74,7 +72,7 @@ racer::vehicle_position get_current_position(const tf::Transform& transform) {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
-  return racer::vehicle_position(origin.x(), origin.y(), rotation);
+  return { origin.x(), origin.y(), rotation };
 }
 
 void publish_state(
@@ -87,9 +85,9 @@ void publish_state(
   state.header.frame_id = odom_frame_id;
   state.header.stamp = ros::Time::now();
 
-  state.x = position.x;
-  state.y = position.y;
-  state.heading_angle = position.heading_angle;
+  state.x = position.location().x();
+  state.y = position.location().y();
+  state.heading_angle = position.heading_angle();
   state.speed = current_speed;
   state.steering_angle = current_target_steering_angle;
 
