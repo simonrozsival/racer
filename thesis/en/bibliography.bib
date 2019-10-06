@@ -113,20 +113,16 @@ url = {http://www.asawicki.info/Mirror/Car Physics for Games/Car Physics for Gam
 urldate = {2019/05/03},
 year = {2003}
 }
-@inbook{Rajamani_lateral_dynamics,
-author = {{Rajesh Rajamani}, Dr},
-doi = {10.1007/978-1-4614-1433-9_2},
-pages = {15--46},
-title = {{Lateral Vehicle Dynamics}},
-year = {2012}
+
+@book{rajamani,
+	author = {Rajamani, R},
+	year = {2006},
+	month = {01},
+	pages = {},
+	title = {Vehicle Dynamics and Control},
+	doi = {10.1007/0-387-28823-6}
 }
-@inbook{Rajamani_longitudinal_dynamics,
-author = {{Rajesh Rajamani}, Dr},
-doi = {10.1007/978-1-4614-1433-9_4},
-pages = {87--111},
-title = {{Longitudinal Vehicle Dynamics}},
-year = {2012}
-}
+
 @misc{Pure_pursuit,
 author = {Conlter, R Craig},
 title = {{Implementation of the Pure Pursuit Path Tracking Algorithm}},
@@ -442,7 +438,21 @@ year = {2010}
 	date = {2019}
 }
 
+@mastersthesis{rc_identification,
+	author = {Carlo Ravizzoli},
+	title = {Identification and control of an RC car for drifting purposes},
+	type = {Master Thesis},
+	school = {Politecnico di Milano},
+	date = {2017}
+}
 
+@mastersthesis{rc_identification_2,
+	author = {Filippo Consoli},
+	title = {Identification and validation of a sensored radio controlled drifting car},
+	type = {Master Thesis},
+	school = {Politecnico di Milano},
+	date = {2017}
+}
 
 
 
@@ -498,3 +508,19 @@ year = {2010}
 	keywords = "State Estimation, Sensor Fusion, Robust Performance, Autonomous Vehicles, Kalman Filters",
 	abstract = "Autonomous driving requires accurate information about the vehicle pose and motion state in order to achieve precise tracking of the planned trajectory. In this paper we propose a robust architecture to localize a high performance race car and show experimental results with speeds up to 150 km h-1 and utilizing approximately 80% of the available friction level. The concept has been applied using the development vehicle DevBot taking part in the Roborace competition. To achieve robust and reliable performance, we use two independent localization pipelines, one based on GPS and one on LIDARs. We propose to fuse them via a Kalman Filter based on a purely kinematic model and show, that it can outperform a high fidelity model under realistic race conditions. An outstanding property of this concept is that it does not depend on any of the vehicles parameter and is therefore robust to varying tire and track conditions. Further we present an adaption method for the measurement covariances based on the track layout. This allows to combine the strengths of each localization method."
 }
+
+@article{pacejka,
+	title = "Magic Formula Tyre Model with Transient Properties",
+	abstract = "The tyre force and moment generating properties connected with the vehicle's horizontal motions are considered. Knowledge of tyre properties is necessary to properly design vehicle components and advanced control systems. For this purpose, mathematical models of the tyre are being used in vehicle simulation models. The steady-state empirical 'Magic Formula tyre model' is discussed. The aligning torque description is based on the concepts of pneumatic trail and residual torque. This facilitates its combined slip description. Following Michelin, weighting functions have been introduced to model the combined slip force generation. A full set of equations of the steady-state part of the model of the new version 'Delft Tyre 97' is presented. The non-steady state behaviour of the tyre is of importance in rapid transient maneuvres, when cornering on uneven roads and for the analysis of oscillatory braking and steering properties. A relatively simple model for longitudinal and lateral transient responses restricted to relatively low time and path frequencies is introduced.",
+ 	author = "H.B. Pacejka and I.J.M. Besselink",
+ 	year = "1997",
+ 	doi = "10.1080/00423119708969658",
+ 	language = "English",
+ 	volume = "27",
+ 	pages = "234--249",
+ 	journal = "Vehicle System Dynamics",
+ 	issn = "0042-3114",
+ 	publisher = "Taylor and Francis Ltd.",
+ 	number = "S1", 	
+ }
+ 

@@ -344,18 +344,20 @@ The idea of \textit{the first method} is to calculate a list of tiles relative t
 \begin{figure}[!tbp]%
 	\centering
 	\begin{subfigure}[t]{0.45\textwidth}
-		\missingfigure{FOOTPRINT}
-		\caption{The relative coordinates to tiles occupied by the footprint of the vehicle when the heading angle is close to $\theta$.}
+		\centering
+		\includegraphics[width=0.95\textwidth]{../img/footprint}
+		\caption{The figure shows which tiles can be occupied by the vehicle when the heading angle is close to $\theta$ for a center anywhere in the cell which contains its center. The dashed line is a boundary of all possible configurations of the vehicle. The dark gray squares are the grid cells which should be tested for collision.}
 		\label{fig:collision_detection_overlap}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[t]{0.45\textwidth}
-		\missingfigure{INFLATED OBSTACLES}
-		\caption{The obstacles are ``inflated'' by the radius of the vehicle.}
+		\centering
+		\includegraphics[width=0.95\textwidth]{../img/obstacle_inflation}
+		\caption{The obstacles are ``inflated'' by the radius of the vehicle and every cell, which is closer to any obstacle than the radius of the vehicle is marked as dangerous. To detect collision, it is necessary to check if the cell which contains the center of the vehicle body is dangerous or not.}
 		\label{fig:collision_detection_inflation}
 	\end{subfigure}
 	
-	\caption{Photos of the experimental vehicle.}
+	\caption{These figures compare two approaches to collision checking. The second approach requires fewer operations whenever we need to test a collision and therefore we chose the ``obstacle inflation'' method.}
 \end{figure}
 
 \textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required, which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
@@ -433,9 +435,9 @@ The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The
 
 \begin{figure}
 	\centering
-	\caption{Waypoints behind the wall.}
+	\includegraphics[width=\textwidth,trim=0 0 80 0, clip]{../img/waypoint_behind_wall}
+	\caption{If the waypoint did not require direct visibility, the blue car would pass the waypoint whose radius is marked with the dashed line. The green area represents the actual waypoint area.}
 	\label{fig:waypoints}
-	\missingfigure{WAYPOINTS AND "BEHIND THE WALL"}
 \end{figure}
 
 To implement this goal condition, we must extend the state space $X$ with one extra discrete dimension. This dimension will denote how many waypoints the vehicle has passed since the initial state and we will define a function $\mu: X\rightarrow \mathbb{N}$ which returns this number. For the initial state $x_0$ the number of passed waypoints will always be 0. For a state $x\in X$ the value is defined based on the state from which it was reached $x'\in X$: 
@@ -625,8 +627,8 @@ The advantage of A* is that it visits every state at most once and whenever we r
 
 \begin{figure}
 	\centering
-	\missingfigure{Misaligned rotation image.}
-	\caption{We would expect the car to return to its initial position after the action $u$ was applied 4 times. Due to rounding errors and errors of numerical integration, we might reach a different state very close to the initial state.}
+	\includegraphics[width=0.5\textwidth]{../img/non_discretized_astar_state_duplication}
+	\caption{We would expect the car to return to its initial position after the action $u$ was applied 4 times. Due to rounding errors and errors of numerical integration, we might reach a different state close to the initial state. The figure shows how the initial state, represented by the blue circle, gradually drifts from the expected position until it reaches the fourth state, represented by the red circle, which is different from the initial state.}
 	\label{fig:no_discretization_example}
 \end{figure}
 
@@ -638,14 +640,7 @@ We can select an appropriate resolution for every dimension of the space base on
 d(x) = \left\lfloor \dfrac{x}{\vec{\sigma}} \right\rfloor.
 \]
 
-The resulting state trajectory consisting of the discretized states might not be feasible. The \textit{hybrid A*} algorithm therefore remembers the continuous state through which we entered every visited discrete grid cell. We will continue the expansion by applying the state transition function to the original continuous state. The final trajectory will therefore be smooth and feasible because it will not be affected by the discretization as can be seen in Figure~\ref{fig:hybrid_astar_discretized_vs_continuous}.
-
-\begin{figure}
-	\centering
-	\missingfigure{Rough discretized and smooth paths.}
-	\caption{}
-	\label{fig:hybrid_astar_discretized_vs_continuous}
-\end{figure}
+The \textit{hybrid A*} algorithm stores the exact state through which we entered every visited discrete grid cell. The motion is continued by applying the action from the original continuous state, not the discretized one.
 
 There is one problem with the discretization which is worth solving. Depending on the resolution of the grid, the next state obtained by the state transition function might fall into the same cell as the source state. This could be a significant problem especially at low speeds, for example when the vehicle is accelerating from a standstill. To solve this problem, we will repeat the same action $k$ times, until the resulting state falls into a different cell. We will then store the resulting state for future expansion with an appropriate cost.
 
@@ -761,7 +756,7 @@ The main procedure of the algorithm \texttt{HybridAStar} is very similar to what
 
 In the main loop, we obtain the most promising state $x\in O$ by comparing the total cost estimate of the open states. If $x$ reaches the goal region, we reconstruct the state trajectory by traversing the parent search records using a helper function \texttt{ReconstructTrajectory}. We test if the cell in which the state belongs has not been closed yet and only if it has not and the cost-to-come does not exceed the limit do we continue to expansion of the state. We close the cell into which the state $x$ belongs so that we will not expand any further states from this cell.
 
-The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set. This decision was supported by a paper [...\todo{Find the citation}].
+The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set.
 
 The simulation of the movement of the vehicle happens in the \texttt{Unfold} procedure. This function uses the system simulator function $f_{\Delta t}$ repeatedly until the vehicle stops (none of the properties of the vehicle state does not change after an action is applied), or until the vehicle leaves the cell of the parent state in the discretized state space.
 
@@ -787,7 +782,7 @@ The time complexity of ``unfolding`` depends on the number of repetitions of the
 \paragraph{The \texttt{Expand} procedure}
 The expansion tries to apply all of the available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
 
-\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because planning is an NP-complete problem. \todo[inline]{Add citation + verify the O}
+\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because motion planning was shown to be PSPACE-hard \cite[Chapter~6.5.1]{lavalle_2006}.
 
 \subsubsection{Memory Complexity}
 
@@ -890,8 +885,8 @@ The path of circles can be further optimized to find a shorter path between the 
 
 \begin{figure}
 	\centering
-	\missingfigure{SE path optimization step}
-	\caption{The optimization step of the path of circles moves the center of a circle only if the length of the path through the centers of the circles decreases and the radius of the circle can be increased or it stays the same.}
+	\includegraphics[width=0.5\textwidth]{../img/se_optimization_step}
+	\caption{The optimization step of the path of circles moves the center of a circle only if the length of the path through the centers of the circles decreases and the radius of the circle can be increased or it stays the same. The center of the new circle might not be placed on a circumference of another circle.}
 	\label{fig:sehs_space_exploration_optimization}
 \end{figure}
 
@@ -1176,7 +1171,7 @@ We measured the radius $R$ of the inner wheel as it circumscribes a circle, with
 \delta=\arctan\left(\dfrac{L}{R+W/2}\right),
 \end{equation}
 
-where $L$ is the length of the wheelbase and $W$ is the width of the axles. The geometry is captured in Figure~\ref{fig:steering_angle_radius_geometry}. More information about Ackermann steering geometry can be found in \cite{Rajamani_lateral_dynamics}.\texttt{}
+where $L$ is the length of the wheelbase and $W$ is the width of the axles. The geometry is captured in Figure~\ref{fig:steering_angle_radius_geometry}. More information about Ackermann steering geometry can be found in \cite[Chapter~2]{rajamani}.
 
 Using the least squares method, we identified a line which approximates the relationship between a steering angle and the \gls*{PWM} signal which corresponds to this angle:
 
@@ -1184,7 +1179,7 @@ Using the least squares method, we identified a line which approximates the rela
 PWM(\delta)=12.701\cdot\delta + 1476.686,
 \end{equation}
 
-where $\delta\in\left[\ang{-21.16}, \ang{26.57}\right]$ is the steering angle expressed in degrees and $\ang{-21.16}$ is the maximum steering angle to the right and $\ang{26.57}$ is the maximum steering angle to the left. The relationship between the steering angle and the \gls*{PWM} value is shown in Figure~\ref{fig:steering_angle_to_pwm}.
+where $\delta\in\left[\ang{-21.16}, \ang{26.57}\right]$ is the steering angle expressed in degrees and $\ang{-21.16}$ is the maximum steering angle to the right and $\ang{26.57}$ is the maximum steering angle to the left. The relationship between the steering angle and the \gls*{PWM} value is shown in Figure~\ref{fig:steering_angle_to_pwm}. This measurement was in part inspired by the experiments in \cite{ctu_martin_vajnar} and \cite{rc_identification}.
 
 \begin{figure}[h]
 	\centering
@@ -1365,7 +1360,7 @@ We also tried training a neural network with three input neurons and one output 
 
 \subsection{Kinematic Bicycle Model}
 
-The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. This simplification makes reasoning about the movement of the vehicle easier while still being reasonably accurate, and it is commonly used in research \todo{multiple citations}. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite{Rajamani_lateral_dynamics} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
+The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite[Chapter~2]{rajamani} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
 
 \begin{figure}[h!]
 	\centering
@@ -1492,7 +1487,7 @@ If we knew the longitudinal forces of the wheels $F_{xr}$ and $F_{xf}$, we could
 
 \begin{equation*}
 \begin{aligned}
-F_{aero}&=\dfrac{1}{2}c_\alpha \rho A v^2=c_\alpha v^2 \\
+F_{aero}&=\dfrac{1}{2} \rho CA v^2=c_\alpha v^2 \\
 F_{roll}&\approx c_r|v| \\
 F_{load}&=F_{areo}+F_{roll} \\
 F_{traction}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
@@ -1506,7 +1501,7 @@ The vehicle moves in the direction of the slip angle $\beta$ and it rotates arou
 
 \begin{equation*}
 \begin{aligned}
-\dot{\beta}&=\dfrac{1}{mv}\left(F_{yf}+F_{yr}\right)-\dot{\theta} \\
+\dot{\beta}&=\dfrac{1}{mv}\left(F_{yf}\cos\delta+F_{yr}\right)-\dot{\theta} \\
 \ddot{\theta}&=\dfrac{1}{I_z}\left(l_f \left(F_{yf}\cos\delta - F_{xf}\sin\delta \right) - l_r F_{yr}\right),
 \end{aligned}
 \end{equation*}
@@ -1614,7 +1609,7 @@ The change of the coordinates center of gravity of the vehicle in the two dimens
 
 In the previous section, we assumed that we know the longitudinal and lateral forces $F_{xf}, F_{xr}, F_{yf}$, and $F_{yr}$. In this section, we will show how to calculate these forces. The tire is the interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. We calculate the lateral and longitudinal components of this force separately. The lateral component acts in the direction perpendicular to the orientation of the wheel, the longitudinal component is oriented with respect to the orientation of the tire.
 
-For the sake of simplicity, our tire model is based on a simple linear tire model \todo{Add citation}. There are several other more advanced tire models, such as Brush, Fiala, or Pacejka models \todo{Add citations}, which give more precise results, especially for large slip angles. These models are not practical for us as they have many parameters which need to be experimentally identified.
+For the sake of simplicity, our tire model is based on a linear tire model \cite[Chapter~13]{rajamani}. There are several other more advanced tire models, such as Brush, Fiala, Dugoff, or Pacejka models \cite{rajamani, pacejka}, which give more precise results, especially for large slip angles. These models are not practical for us as they have many parameters which need to be experimentally identified.
 
 \paragraph{Lateral Forces}
 
@@ -1622,31 +1617,23 @@ Tire side slip angles are the angles between the direction in which the wheels a
 
 \begin{equation*}
 \begin{aligned}
-\alpha_f=\delta - \arctan \left(\dfrac{l_f \dot{\theta}}{v}+\beta\right) \\
-\alpha_r=\arctan \left(\dfrac{l_r \dot{\theta}}{v}-\beta\right).
+\alpha_f=\delta - \arctan \left(\dfrac{l_f \dot{\theta}}{v}+\tan\beta\right) \\
+\alpha_r=\arctan \left(\dfrac{l_r \dot{\theta}}{v}-\tan\beta\right).
 \end{aligned}
 \end{equation*}
 
-When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero.
-
-From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on the slip angle curve. We approximate this curve with a simple linear model shown in Figure~\ref{fig:lateral_slip_angle_curve} and expressed by the equation:
+When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero. From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on a linear model expressed by the equation:
 
 \begin{equation*}
 F_{yi}=\begin{cases}
 C_a \alpha_i & \alpha_i < \alpha_{max} \\
-F_{y,max} & \text{otherwise.}
+C_a \alpha_{max} & \text{otherwise.}
 \end{cases}
 \end{equation*}
 
 where the index $i\in\left\{f,r\right\}$ represents the front or rear tire and $C_a$ is a constant called \textit{cornering stiffness}, which must be determined experimentally.
 
 We will assume that the slip angles $\alpha_f$ and $\alpha_r$ are small and our vehicle does not drift. In the opposite case, our linear tire model would not be able to correctly predict the behavior of the vehicle.
-
-\begin{figure}
-	\centering
-	\missingfigure{Lateral slip curve}
-	\label{fig:lateral_slip_angle_curve}
-\end{figure}
 
 \paragraph{Longitudinal Forces}
 
@@ -1655,7 +1642,10 @@ The slip ratio, also referred to as longitudinal slip, is the difference between
 \begin{equation*}
 \begin{aligned}
 \omega_w&=(GR)\omega \\
-s&=\dfrac{\omega_w r-v}{|v|},
+s&=\begin{cases}
+\dfrac{v - r\omega_w}{v} & \text{if } v > r\omega_w, \\
+\dfrac{r\omega_w - v}{r\omega_w} & \text{otherwise.}
+\end{cases}
 \end{aligned}
 \end{equation*}
 
@@ -1665,10 +1655,10 @@ Maximum traction force at a wheel is depends on the weight of the vehicle W and 
 
 The maximum traction force of a virtual tire depends on the weight of the vehicle and on the weight distribution between the front and rear wheels:
 \begin{equation*}
-F_{max,i}=\mu W_i=\mu \dfrac{l_i}{L} mg,
+F_{max,i}=\mu W_i=\mu \dfrac{l_i}{l_f+l_r} mg,
 \end{equation*}
 
-where $i\in\left\{f,r\right\}$ represents values related to the front or the rear axle and $\mu$ is a friction coefficient between the tires and the road surface. We model the relationship between the slip ratio and the amount of force with a simple linear model which can be seen in Figure~\ref{fig:slip_ratio} and we express it with the following equation:
+where $i\in\left\{f,r\right\}$ represents values related to the front or the rear axle and $\mu$ is a friction coefficient between the tires and the road surface. We model the relationship between the slip ratio and the amount of force with a simple linear model expressed with the following equation:
 
 \begin{equation*}
 F_{xi}=\begin{cases}
@@ -1678,6 +1668,16 @@ F_{max,i} & \text{otherwise,}
 \end{equation*}
 
 where $C_t$ is a traction constant which corresponds to the slope of the slip ratio line.
+
+\subsubsection{Parameters}
+
+\todo[inline]{Describe how to identify the parameters.}
+
+Parameters to measure: $m, I_z$.
+
+Parameters to identify: $c_\alpha, c_r, C_a, C_t, \mu$.
+
+Source: \cite{rc_identification}, \cite{rc_identification_2}.
 
 \subsubsection{State Variables}
 
