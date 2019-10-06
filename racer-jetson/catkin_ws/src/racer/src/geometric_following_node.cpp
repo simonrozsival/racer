@@ -67,7 +67,7 @@ int main(int argc, char* argv[]) {
   double min_lookahead, lookahead_coef;
   node.param<double>("min_lookahead", min_lookahead, 1.0);
   node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
-  auto pure_pursuit = std::make_shared<racer::following_strategies::pure_pursuit>(wheelbase, min_lookahead, lookahead_coef);
+  racer::following_strategies::pure_pursuit pure_pursuit { wheelbase, min_lookahead, lookahead_coef };
   ROS_DEBUG("Pure pursuit was initialized (min lookahead=%fm, lookahead velocity coef=%f)", min_lookahead, lookahead_coef);
 
   dynamic_reconfigure::Server<racer::PIDConfig> server;
@@ -96,13 +96,13 @@ int main(int argc, char* argv[]) {
     if (follower.is_initialized()) {
       auto action = follower.select_driving_command();
 
-      if (!action) {
+      if (!action.is_valid()) {
         action = follower.stop();
         ROS_DEBUG("following node: STOP!");
       }
 
-      double throttle = std::min(max_allowed_speed_percentage, std::max(-max_allowed_speed_percentage, action->throttle));
-      double steering_angle = -action->target_steering_angle;
+      double throttle = std::min(max_allowed_speed_percentage, std::max(-max_allowed_speed_percentage, action.throttle()));
+      double steering_angle = -action.target_steering_angle();
 
       geometry_msgs::Twist msg;
       msg.linear.x = throttle;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
       command_pub.publish(msg);
 
       if (visualization_pub.getNumSubscribers() > 0) {
-        auto pursuied_point = pure_pursuit->find_reference_position(
+        auto pursuied_point = pure_pursuit.find_reference_position(
           follower.last_known_state(),
           follower.next_waypoint(),
           follower.reference_trajectory()
@@ -126,8 +126,8 @@ int main(int argc, char* argv[]) {
         marker.type = visualization_msgs::Marker::SPHERE;
         marker.action = visualization_msgs::Marker::ADD;
     
-        marker.pose.position.x = pursuied_point.x;
-        marker.pose.position.y = pursuied_point.y;
+        marker.pose.position.x = pursuied_point.x();
+        marker.pose.position.y = pursuied_point.y();
         marker.pose.position.z = 0;
 
         // sphere with radius 5cm

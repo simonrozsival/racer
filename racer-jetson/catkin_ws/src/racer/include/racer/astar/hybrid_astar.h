@@ -5,12 +5,22 @@
 
 namespace racer::astar::hybrid_astar {
     struct discrete_state {
-        const int x, y, heading, speed;
+        int x, y, heading, speed;
+
+        discrete_state() : x(0), y(0), heading(0), speed(0)
+        {
+        }
 
         discrete_state(int x, int y, int heading, int speed)
             : x(x), y(y), heading(heading), speed(speed)
         {
         }
+
+        discrete_state(const discrete_state& state) = default;
+        discrete_state& operator=(const discrete_state& state) = default;
+
+        discrete_state(discrete_state&& state) = default;
+        discrete_state& operator=(discrete_state&& state) = default;
 
         bool operator ==(const discrete_state& other) const {
             return x == other.x && y == other.y && heading == other.heading && speed == other.speed;
@@ -23,21 +33,22 @@ namespace racer::astar::hybrid_astar {
 
     struct discretization : public racer::astar::discretization<discrete_state> {
     private:
-        const double x, y, speed;
-        const racer::math::angle heading;
+        const double x_, y_, speed_;
+        const racer::math::angle heading_;
 
     public:
         discretization(double x, double y, racer::math::angle heading, double speed)
-            : x(x), y(y), heading(heading), speed(speed)
+            : x_(x), y_(y), heading_(heading), speed_(speed)
         {
         }
 
-        std::unique_ptr<discrete_state> discretize(const state& state) const {
-            return std::make_unique<discrete_state>(
-                (int)floor(state.position.x / x),
-                (int)floor(state.position.y / y),
-                (int)floor(racer::math::angle(state.position.heading_angle) / heading),
-                (int)floor(state.speed / speed));
+        discrete_state discretize(const state& state) const {
+            return {
+                (int)floor(state.position().location().x() / x_),
+                (int)floor(state.position().location().y() / y_),
+                (int)floor(racer::math::angle(state.position().heading_angle()) / heading_),
+                (int)floor(state.speed() / speed_)
+            };
         }
 
         bool is_ready() const override { return true; }

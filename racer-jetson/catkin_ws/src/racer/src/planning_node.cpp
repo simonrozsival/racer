@@ -19,9 +19,9 @@
 
 std::mutex lock;
 
-std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::state> last_known_position;
-std::shared_ptr<racer::occupancy_grid> last_known_map;
-std::shared_ptr<std::vector<racer::math::point>> next_waypoints;
+racer::vehicle_model::kinematic_bicycle_model::state last_known_position;
+racer::occupancy_grid last_known_map;
+std::vector<racer::math::point> next_waypoints;
 int next_waypoint;
 double waypoint_radius;
 std::string map_frame;
@@ -30,26 +30,25 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map) {
   std::lock_guard<std::mutex> guard(lock);
 
   map_frame = map->header.frame_id;
-  last_known_map = std::move(racer_ros::msg_to_grid(*map));
+  last_known_map = racer_ros::msg_to_grid(*map);
 }
 
 void state_update(const racer_msgs::State::ConstPtr& state) {
   std::lock_guard<std::mutex> guard(lock);
 
-  racer::vehicle_position position(state->x, state->y, state->heading_angle);
-  last_known_position = std::make_unique<racer::vehicle_model::kinematic_bicycle_model::state>(position, state->speed, state->steering_angle);
+  racer::vehicle_position position { state->x, state->y, state->heading_angle};
+  last_known_position = { position, state->speed, state->steering_angle };
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr& waypoints) {
   std::lock_guard<std::mutex> guard(lock);
 
-  next_waypoints = std::make_shared<std::vector<racer::math::point>>();
-
+  next_waypoints.clear();
   waypoint_radius = waypoints->waypoints[0].radius;
   next_waypoint = waypoints->next_waypoint;
 
   for (const auto& wp : waypoints->waypoints) {
-    next_waypoints->emplace_back(wp.position.x, wp.position.y);
+    next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 }
 
@@ -107,7 +106,7 @@ int main(int argc, char* argv[]) {
   bool found_trajectory_last_time = true;
 
   while (ros::ok()) {
-    if (!planner.is_initialized() && last_known_map && next_waypoints) {
+    if (!planner.is_initialized() && last_known_map.is_valid() && !next_waypoints.empty()) {
       std::lock_guard<std::mutex> guard(lock);
 
       // get the base map for space exploration
@@ -127,11 +126,11 @@ int main(int argc, char* argv[]) {
       }
 
       const auto base_occupancy_grid = racer_ros::msg_to_grid(map_res.map);
-      const std::list<racer::math::point> points{ next_waypoints->begin(), next_waypoints->end() };
-      discretization.explore_grid(*base_occupancy_grid, last_known_position->position, points);
+      const std::list<racer::math::point> points{ next_waypoints.begin(), next_waypoints.end() };
+      discretization.explore_grid(base_occupancy_grid, last_known_position.position(), points);
     }
 
-    if (last_known_map && last_known_position && next_waypoints) {
+    if (last_known_map.is_valid() && last_known_position.is_valid() && !next_waypoints.empty()) {
       if (found_trajectory_last_time) {
         ROS_INFO("planning trajecotry just by going forward...");
       } else {

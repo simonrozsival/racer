@@ -12,6 +12,12 @@ namespace racer::following_strategies {
         {
         }
 
+        pid(const pid& other) = default;
+        pid& operator=(const pid& other) = default;
+        
+        pid(pid&& other) = default;
+        pid& operator=(pid&& other) = default;
+
         double predict_next(const double current, const double target) {
             double error = target - current;
             double error_derivative = last_error_ - error;

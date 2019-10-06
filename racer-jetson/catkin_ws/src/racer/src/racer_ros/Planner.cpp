@@ -17,28 +17,27 @@ namespace racer_ros {
   }
 
   std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
-    const std::shared_ptr<racer::occupancy_grid> grid,
-    const std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::state> state,
+    const racer::occupancy_grid& grid,
+    const racer::vehicle_model::kinematic_bicycle_model::state& state,
     const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& available_actions,
-    const std::shared_ptr<std::vector<racer::math::point>> waypoints,
+    const std::vector<racer::math::point>& waypoints,
     const int next_waypoint,
     const double waypoint_radius) const {
 
-    auto discrete_initial_state = discretization_.discretize(*state);
-    const double initial_heading_angle = state->position.heading_angle;
+    auto discrete_initial_state = discretization_.discretize(state);
+    const double initial_heading_angle = state.position().heading_angle();
 
     racer::circuit circuit(
-      grid->cell_size,
-      state->position,
-      *waypoints,
+      state.position(),
+      waypoints,
       waypoint_radius,
-      *grid
+      grid
     );
 
-    auto initial_state = std::make_unique<racer::vehicle_model::kinematic_bicycle_model::state>(state->position, state->speed, state->steering_angle); // make a unique copy
+    auto initial_state { state };
     auto problem = std::make_unique<racer::astar::discretized_search_problem<discrete_state>>(
-      std::move(initial_state),
-      std::move(discrete_initial_state),
+      initial_state,
+      discrete_initial_state,
       time_step_s_,
       model_,
       available_actions,
@@ -60,28 +59,28 @@ namespace racer_ros {
     trajectory->header.frame_id = map_frame_;
 
     double prev_heading_angle = initial_heading_angle;
-    for (const auto& step : solution.steps) {
+    for (const auto& step : solution.steps()) {
       racer_msgs::TrajectoryState state;
 
       // the plan only considers the list of waypoints passed to the planner
       // - the first waypoint will have index 0, so its index has to be offset
       // by the actual index of the first waypoint 
-      state.next_waypoint.data = next_waypoint + step.passed_waypoints;
+      state.next_waypoint.data = next_waypoint + step.passed_waypoints();
       
-      state.pose.position.x = step.step.position.x;
-      state.pose.position.y = step.step.position.y;
+      state.pose.position.x = step.step().position().location().x();
+      state.pose.position.y = step.step().position().location().y();
       state.pose.position.z = 0;
       
-      state.pose.orientation = tf::createQuaternionMsgFromYaw(step.step.position.heading_angle);
+      state.pose.orientation = tf::createQuaternionMsgFromYaw(step.step().position().heading_angle());
       
-      state.velocity.linear.x = cos(step.step.position.heading_angle) * step.step.speed;
-      state.velocity.linear.y = sin(step.step.position.heading_angle) * step.step.speed;
+      state.velocity.linear.x = cos(step.step().position().heading_angle()) * step.step().speed();
+      state.velocity.linear.y = sin(step.step().position().heading_angle()) * step.step().speed();
 
-      state.velocity.angular.z = (prev_heading_angle - step.step.position.heading_angle) / time_step_s_;
+      state.velocity.angular.z = (prev_heading_angle - step.step().position().heading_angle()) / time_step_s_;
       
       trajectory->trajectory.push_back(state);
 
-      prev_heading_angle = step.step.position.heading_angle;
+      prev_heading_angle = step.step().position().heading_angle();
     }
 
     return trajectory;

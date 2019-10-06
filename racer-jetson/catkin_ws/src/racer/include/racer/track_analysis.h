@@ -77,19 +77,15 @@ private:
 
     bool are_directly_visible(const point &a, const point &b) const
     {
+        double cell_size_sq = grid_.cell_size() * grid_.cell_size();
         double distance = (a - b).length();
-        double dx = grid_.cell_size * (b.x - a.x) / distance;
-        double dy = grid_.cell_size * (b.y - a.y) / distance;
+        auto step = (b - a) * (grid_.cell_size() / distance);
 
-        double x = a.x;
-        double y = a.y;
-
-        while ((point(x, y) - b).length() >= grid_.cell_size)
+        auto pt = a;
+        while (pt.distance_sq(b) >= cell_size_sq)
         {
-            x += dx;
-            y += dy;
-
-            if (grid_.collides(x, y))
+            pt = pt + step;
+            if (grid_.collides(pt.x(), pt.y()))
             {
                 return false;
             }

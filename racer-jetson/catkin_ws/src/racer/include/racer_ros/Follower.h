@@ -24,10 +24,10 @@ namespace racer_ros {
       std::string map_frame_id;
 
       Follower(std::shared_ptr<racer::following_strategies::following_strategy> strategy)
-        : strategy_(strategy),
-        next_waypoint_(0),
-        stop_(action(0, 0)),
-        state_(nullptr)
+        : strategy_{strategy},
+        next_waypoint_{0},
+        stop_{0, 0},
+        state_{}
       {
       }
 
@@ -38,22 +38,21 @@ namespace racer_ros {
       void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
       void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
 
-
-      std::unique_ptr<action> select_driving_command() const;
-      std::unique_ptr<action> stop() const;
+      action select_driving_command() const;
+      action stop() const;
 
       const int next_waypoint() const {  return next_waypoint_; }
 
       const state last_known_state() const {
-        return *state_; // copy
+        return state_;
       }
 
       const trajectory reference_trajectory() const {
-        return *reference_trajectory_; // copy
+        return reference_trajectory_;
       }
 
       const racer::occupancy_grid map() const {
-        return *map_; // copy
+        return map_;
       }
 
     private:
@@ -61,9 +60,9 @@ namespace racer_ros {
       const action stop_;
       int next_waypoint_;
 
-      std::unique_ptr<racer::occupancy_grid> map_;
-      std::unique_ptr<trajectory> reference_trajectory_;
-      std::unique_ptr<state> state_;
+      racer::occupancy_grid map_;
+      trajectory reference_trajectory_;
+      state state_;
   };
 
 }

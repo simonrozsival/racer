@@ -19,13 +19,13 @@ namespace plt = matplotlibcpp;
 
 void plot_vehicle_position(const racer::vehicle_position &position, const double length, const double cell_size)
 {
-    auto end = racer::math::vector(length / cell_size, 0).rotate(-position.heading_angle);
+    auto end = racer::math::vector(length / cell_size, 0).rotate(-position.heading_angle());
 
     std::vector<double> x, y, u, v;
-    x.push_back(position.x / cell_size);
-    y.push_back(position.y / cell_size);
-    u.push_back(end.x);
-    v.push_back(end.y);
+    x.push_back(position.location().x() / cell_size);
+    y.push_back(position.location().y() / cell_size);
+    u.push_back(end.x());
+    v.push_back(end.y());
 
     plt::quiver(x, y, u, v);
 }
@@ -35,8 +35,8 @@ void plot_path_of_circles(const std::string &name, const std::list<racer::math::
     std::vector<double> circles_x, circles_y;
     for (const auto &circle : circles)
     {
-        circles_x.push_back(circle.center.x / cell_size);
-        circles_y.push_back(circle.center.y / cell_size);
+        circles_x.push_back(circle.center.x() / cell_size);
+        circles_y.push_back(circle.center.y() / cell_size);
     }
     plt::plot(circles_x, circles_y, format, {{"label", name}});
 }
@@ -76,8 +76,8 @@ void plot_points(const std::string &name, const std::list<racer::math::point> &p
     std::vector<double> points_x, points_y;
     for (const auto &point : points)
     {
-        points_x.push_back(point.x / cell_size);
-        points_y.push_back(point.y / cell_size);
+        points_x.push_back(point.x() / cell_size);
+        points_y.push_back(point.y() / cell_size);
     }
     double size = cell_size * 200;
     plt::plot(points_x, points_y, format, {{"label", name}, {"markersize", std::to_string(size)}});
