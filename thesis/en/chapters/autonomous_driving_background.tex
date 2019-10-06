@@ -20,9 +20,11 @@ The actual effects of the control inputs are measured by the sensors and the con
 
 \section{Related Work}
 
-\todo[inline]{Add more related projects: MIT Racecar, AutoRally}
-
 \paragraph{DARPA Urban Challenge} In 2007, the DARPA Urban Challenge took place in the USA. The challenge was successfully completed by several vehicles with different approaches to trajectory planning. The entry from the Carnegie Mellon University, Boss, won the competition. It uses the Anytime D* algorithm for navigation in unstructured environment \cite{Boss}. The Stanford team used an algorithm called Hybrid A* in their vehicle called Junior \cite{Junior}. This algorithm is an extension of the A* algorithm which discretizes the continuous search space into a discrete grid to avoid examining similar configurations multiple times, but it keeps the information about the trajectories in the continuous configuration space to produce smooth feasible trajectories. The team from MIT used modified RRT algorithm in their vehicle \cite{RRT_urban_driving}.
+
+\paragraph{MIT RACECAR} RACECAR (Rapid Autonomous Complex-Environment Competing Ackermann-steering Robot) is a project at MIT which uses an RC car to test various perception, planning, and control algorithms. The cars are used by students in various courses at MIT\footnote{https://racecar.mit.edu/education}.
+
+\paragraph{AutoRally} The Georgia Tech uses an RC-car based platform AutoRally to test algorithms for self-driving cars. The publications of algorithms tested on AutoRally include both classical planning-based approaches, such as MPC, and also deep learning end-to-end driving policies\footnote{https://autorally.github.io/}.
 
 \paragraph{The F1/10 Competition}
 

@@ -97,8 +97,6 @@ An advantage of the geometric controller is its simplicity and very straightforw
 
 The proportional term is equal to the error between the current value and the reference value. The derivative term is the change in the error since the previous iteration. Finally, the integral term is the accumulated error over time since the last time there was no error.
 
-\todo[inline]{Describe, what are the purposes of the three values.}
-
 We can use \gls*{PID} to calculate the target throttle control input $\tau_t$ from the velocity error $e_v$:
 
 \begin{align*}
@@ -166,7 +164,7 @@ A \gls*{PID} controller which regulate the steering angle based on the heading m
 	\draw[thick, rotate around={\stateDeltaT:(\frontX, 0)}] (\frontX - \wL/2, -\wW/2) rectangle (\frontX + \wL/2, \wW/2); % front wheel/tire
 	
 	% reference point
-	\filldraw  (\stateAlpha:\ld) circle (3pt);
+	\filldraw  (\stateAlpha:\ld) circle (3pt) node[above] {$P$};
 	\draw[] (0, 0) -- node[right, xshift=2mm]{$l_d$} (lookaheadPoint);
 	\draw (0,0)++(1.5,0) arc (0:\stateAlpha:1.5) node[above, xshift=3mm, yshift=1mm] {$\alpha$}; % alpha
 	
@@ -181,7 +179,7 @@ A \gls*{PID} controller which regulate the steering angle based on the heading m
 	
 	\end{tikzpicture}
 
-	\caption{The reference point on the trajectory can be imagined as a ``carrot'' which the vehicle is pursuing. The lookahead distance can be variable based on the velocity of the vehicle.}
+	\caption{The reference point $P$ can be imagined as a ``carrot'' which the vehicle is pursuing. The lookahead distance $l_d$ can be variable based on the velocity of the vehicle.}
 	\label{fig:pure_pursuit}
 \end{figure}
 
@@ -214,8 +212,9 @@ The vehicle itself cannot change the steering angle instantaneously. This will i
 Another approach to trajectory following is to select the next control input based on a prediction of the effects in a short horizon. While during trajectory planning we had time to plan several corners ahead, the controller needs to be very fast and select control inputs with very little delay after every measurement of the state of the vehicle. In this section, we will consider two model-based algorithms with different properties.
 
 \begin{figure}
-	\missingfigure{"DWA tentacles"}
-	\caption{Application of different actions can be visualized as a set of ``tentacles'' around the vehicle. Each ``tentacle'' is a prediction of the positions of the vehicle during the prediction horizon period.}
+	\centering
+	\includegraphics[trim=200 170 0 0, clip, width=0.75\textwidth]{../img/dwa_tentacles}
+	\caption{Application of different actions can be visualized as a set of ``tentacles'' around the vehicle. Each ``tentacle'' is a prediction of the positions of the vehicle during the prediction horizon period. Each of the predicted trajectories is scored and the action which produces the best trajectory is selected.}
 	\label{fig:dwa}
 \end{figure}
 
