@@ -7,6 +7,7 @@
 
 #include "racer/math/primitives.h"
 #include "racer/track_analysis.h"
+#include "racer/sehs/space_exploration.h"
 
 int main(int argc, char *argv[])
 {
@@ -53,7 +54,7 @@ int main(int argc, char *argv[])
             {
                 const auto start = std::chrono::steady_clock::now();
 
-                racer::sehs::space_exploration se(*config->occupancy_grid, config->radius, 10 * config->radius, neighbor_circles);
+                racer::sehs::space_exploration se(config->occupancy_grid, config->radius, 10 * config->radius, neighbor_circles);
                 const auto circles = se.explore_grid(config->initial_position, config->checkpoints);
 
                 const auto end = std::chrono::steady_clock::now();
@@ -98,7 +99,6 @@ int main(int argc, char *argv[])
     std::cout << "--------------------" << std::endl;
     std::cout << "circuit name, number of pivot points, computation time in ms" << std::endl;
 
-    const double max_angle = M_PI * (4.0 / 5.0);
     std::vector<std::vector<racer::math::point>> pivot_points_outputs;
     for (std::size_t i = 0; i < configs.size(); ++i)
     {
@@ -108,8 +108,8 @@ int main(int argc, char *argv[])
         for (std::size_t j = 0; j < repetitions; ++j)
         {
             const auto start = std::chrono::steady_clock::now();
-            racer::track_analysis analysis(*config->occupancy_grid, config->min_distance_between_waypoints);
-            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i], max_angle);
+            racer::track_analysis analysis(config->occupancy_grid, config->min_distance_between_waypoints);
+            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i]);
 
             const auto end = std::chrono::steady_clock::now();
             const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

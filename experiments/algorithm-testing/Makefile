@@ -7,7 +7,7 @@ track_analysis:
 		-Wall \
 		-O3 \
 		-I./include \
-		-I../racer-jetson/catkin_ws/src/racer/include \
+		-I../../racer-jetson/catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \
 		-lpython2.7
 
@@ -18,7 +18,7 @@ track_analysis_benchmark:
 		-Wall \
 		-O3 \
 		-I./include \
-		-I../racer-jetson/catkin_ws/src/racer/include
+		-I../../racer-jetson/catkin_ws/src/racer/include
 
 
 clean:
