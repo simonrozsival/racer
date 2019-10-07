@@ -2,7 +2,7 @@
 #include <chrono>
 
 #include "standalone-experiments/input.h"
-//#include "standalone-experiments/plot.h"
+#include "standalone-experiments/plot.h"
 
 #include "racer/math/primitives.h"
 #include "racer/track_analysis.h"
@@ -50,14 +50,15 @@ int main(int argc, char *argv[])
 
   // Step 3
   std::cout << "RUN find corners" << std::endl;
+  const double max_angle = 4.0 / 5.0 * M_PI;
   const auto find_corners_start = std::chrono::steady_clock::now();
-  const double max_angle = M_PI * (4.0 / 5.0);
   const auto waypoints = analysis.find_corners(raw_waypoints, max_angle);
   stop_stopwatch("find corners", find_corners_start);
 
   // This requires Linux or WSL+Xserver
-  //std::cout << "Show interactive plot" << std::endl;
-  //plot_track_analysis(*config, circles, raw_waypoints, waypoints);
+  std::cout << "Show interactive plot" << std::endl;
+  std::list<racer::math::vector> raw_waypoints_list{raw_waypoints.begin(), raw_waypoints.end()};
+  plot_track_analysis(*config, circles, raw_waypoints_list, waypoints);
 
   std::cout << "Done." << std::endl;
   return 0;
