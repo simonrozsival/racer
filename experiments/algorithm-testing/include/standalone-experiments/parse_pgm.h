@@ -20,10 +20,6 @@ racer::occupancy_grid load_occupancy_grid_from_pgm(std::filesystem::path file_na
     {
         std::string magic;
         getline(file, magic);
-        if (magic.compare("P2") != 0 && magic.compare("P5") != 0)
-        {
-            throw std::runtime_error("Bad PGM format.");
-        }
         bool binary_format = magic.compare("P5") == 0;
 
         if (file.peek() == (int)'#')
@@ -71,7 +67,7 @@ racer::occupancy_grid load_occupancy_grid_from_pgm(std::filesystem::path file_na
         file.close();
         std::cout << "finished parsing pgm file" << std::endl;
 
-        return { data, cols, rows, cell_size, racer::math::point(0, 0) };
+        return {data, cols, rows, cell_size, racer::math::point(0, 0)};
     }
 
     std::cerr << "cannot open pgm file" << std::endl;
