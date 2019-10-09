@@ -30,7 +30,7 @@ namespace racer::following_strategies {
       return atan(2 * wheelbase_ * sin(alpha) / calculate_lookahead(current_state));
     }
 
-    vehicle_position find_reference_position(
+    vehicle_configuration find_reference_position(
       const state& current_state,
       int passed_waypoints,
       const trajectory& trajectory) const {
@@ -45,7 +45,7 @@ namespace racer::following_strategies {
       const double lookahead = calculate_lookahead(current_state);
       const double lookahead_sq = lookahead * lookahead;
       auto reference_step = sub_trajectory.steps().begin();
-      while (reference_step != sub_trajectory.steps().end() && reference_step->step().position().location().distance_sq(rear_axle_center) < lookahead_sq) {
+      while (reference_step != sub_trajectory.steps().end() && reference_step->step().position().distance_sq(rear_axle_center) < lookahead_sq) {
         ++reference_step;
       }
 
@@ -65,7 +65,7 @@ namespace racer::following_strategies {
 
     racer::math::point calculate_rear_axle_center(const state& current_state) const {
       auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(current_state.position().heading_angle());
-      return current_state.position().location() + rear_wheel_offset;
+      return current_state.position() + rear_wheel_offset;
     }
   };
 

@@ -36,9 +36,9 @@ public:
         // first iteration
         for (const auto &next_step : circle_path)
         {
-            if (!are_directly_visible(last_circle->center, next_step.center))
+            if (!are_directly_visible(last_circle->center(), next_step.center()))
             {
-                pivot_points.push_back(prev_circle->center);
+                pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
             }
 
@@ -48,14 +48,14 @@ public:
         // continue from the beginning
         for (const auto &next_step : circle_path)
         {
-            if (next_step.center == pivot_points.front())
+            if (next_step.center() == pivot_points.front())
             {
                 break;
             }
 
-            if (!are_directly_visible(last_circle->center, next_step.center))
+            if (!are_directly_visible(last_circle->center(), next_step.center()))
             {
-                pivot_points.push_back(prev_circle->center);
+                pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
             }
 
@@ -84,7 +84,7 @@ private:
         auto pt = a;
         while (pt.distance_sq(b) >= cell_size_sq)
         {
-            pt = pt + step;
+            pt += step;
             if (grid_.collides(pt.x(), pt.y()))
             {
                 return false;

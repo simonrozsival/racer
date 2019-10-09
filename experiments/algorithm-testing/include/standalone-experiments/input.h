@@ -11,7 +11,7 @@ class track_analysis_input
 {
 public:
   const std::string name;
-  const racer::vehicle_position initial_position;
+  const racer::vehicle_configuration initial_position;
   const std::list<racer::math::point> checkpoints;
   const racer::occupancy_grid occupancy_grid;
   const double radius;
@@ -21,7 +21,7 @@ public:
 public:
   track_analysis_input(
       std::string name,
-      racer::vehicle_position initial_position,
+      racer::vehicle_configuration initial_position,
       std::list<racer::math::point> checkpoints,
       racer::occupancy_grid occupancy_grid,
       double radius,
@@ -89,7 +89,7 @@ public:
     ss >> ix;
     ss >> iy;
     ss >> itheta;
-    racer::vehicle_position initial_position(ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
+    racer::vehicle_configuration initial_position(ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
 
     std::cout << "initial position: [" << initial_position.location().x() << ", " << initial_position.location().y() << "], theta: " << initial_position.heading_angle() << std::endl;
 

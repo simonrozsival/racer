@@ -1,4 +1,4 @@
-all: track_analysis track_analysis_benchmark
+all: track_analysis track_analysis_benchmark planning_benchmark
 
 track_analysis:
 	g++ src/analyze_track.cpp \
@@ -20,6 +20,16 @@ track_analysis_benchmark:
 		-I./include \
 		-I../../racer-jetson/catkin_ws/src/racer/include
 
+planning_benchmark:
+	g++ src/planning_benchmark.cpp \
+		-o bin/planning_benchmark \
+		-std=c++17 \
+		-Wall \
+		-O3 \
+		-I./include \
+		-I../../racer-jetson/catkin_ws/src/racer/include \
+		-I/usr/include/python2.7 \
+		-lpython2.7
 
 clean:
 	rm bin/*

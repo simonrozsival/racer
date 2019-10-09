@@ -11,14 +11,14 @@
 #include <racer_msgs/State.h>
 
 #include "racer/math/primitives.h"
-#include "racer/vehicle_position.h"
+#include "racer/vehicle_configuration.h"
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
 double max_steering_angle;
 
 // current state
-std::unique_ptr<racer::vehicle_position> prev_position;
+std::unique_ptr<racer::vehicle_configuration> prev_position;
 double prev_position_time;
 ros::Time prev_transform_stamp;
 
@@ -46,7 +46,7 @@ double angle_difference(double alpha, double beta) {
   return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
 }
 
-double get_current_speed(const racer::vehicle_position current_position) {
+double get_current_speed(const racer::vehicle_configuration current_position) {
   double now = ros::Time().now().toSec();
   double current_speed = 0;
 
@@ -63,12 +63,12 @@ double get_current_speed(const racer::vehicle_position current_position) {
   }
 
   prev_position_time = now;
-  prev_position = std::make_unique<racer::vehicle_position>(current_position);
+  prev_position = std::make_unique<racer::vehicle_configuration>(current_position);
 
   return current_speed;
 }
 
-racer::vehicle_position get_current_position(const tf::Transform& transform) {
+racer::vehicle_configuration get_current_position(const tf::Transform& transform) {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
@@ -77,7 +77,7 @@ racer::vehicle_position get_current_position(const tf::Transform& transform) {
 
 void publish_state(
   const ros::Publisher& state_pub,
-  const racer::vehicle_position& position,
+  const racer::vehicle_configuration& position,
   const double current_speed)
 {
   racer_msgs::State state;

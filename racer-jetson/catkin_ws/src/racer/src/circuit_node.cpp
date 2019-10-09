@@ -32,7 +32,7 @@ int lookahead;
 std::list<racer::math::point> check_points;
 
 // state variables
-racer::vehicle_position position;
+racer::vehicle_configuration position;
 racer::occupancy_grid grid;
 std::string frame_id;
 std::vector<racer::math::circle> waypoints;
@@ -70,11 +70,11 @@ void load_circuit()
   ROS_DEBUG("Analyzing the circuit...");
 
   racer::sehs::space_exploration space_exploration(
-    grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
+      grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
   racer::track_analysis analysis(
-    grid, min_distance_between_waypoints);
+      grid, min_distance_between_waypoints);
 
-  std::list<racer::math::point> final_check_points { check_points.begin(), check_points.end() };
+  std::list<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
   final_check_points.push_back(position.location()); // back to the start
 
   ROS_DEBUG("start track analysis/space exploration");
@@ -112,7 +112,7 @@ void state_update(const racer_msgs::State::ConstPtr &state)
     try_init = true;
   }
 
-  position = { state->x, state->y, state->heading_angle };
+  position = {state->x, state->y, state->heading_angle};
 
   if (try_init)
   {
@@ -187,9 +187,9 @@ int main(int argc, char *argv[])
       {
         const auto &waypoint = waypoints[(next_waypoint + i) % waypoints.size()];
         racer_msgs::Waypoint wp;
-        wp.position.x = waypoint.center.x();
-        wp.position.y = waypoint.center.y();
-        wp.radius = waypoint.radius;
+        wp.position.x = waypoint.center().x();
+        wp.position.y = waypoint.center().y();
+        wp.radius = waypoint.radius();
 
         msg.waypoints.push_back(wp);
       }
@@ -222,8 +222,8 @@ int main(int argc, char *argv[])
           marker.pose.position.y = wp.center.y();
           marker.pose.position.z = 0;
 
-          marker.scale.x = 2 * wp.radius;
-          marker.scale.y = 2 * wp.radius;
+          marker.scale.x = 2 * wp.radius();
+          marker.scale.y = 2 * wp.radius();
           marker.scale.z = 0.1;
 
           marker.color.r = is_advertised ? 1.0 : 0.0;

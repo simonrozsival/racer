@@ -92,7 +92,7 @@ public:
     }
 
     const std::list<racer::math::circle> explore_grid(
-        const racer::vehicle_position &initial_position,
+        const racer::vehicle_configuration &initial_position,
         const std::list<racer::math::point> &waypoints)
     {
 
@@ -118,7 +118,7 @@ public:
             auto last = --path.end();
             auto last_but_one = --(--path.end());
 
-            auto final_direction = last->center - last_but_one->center;
+            auto final_direction = last->center() - last_but_one->center();
             initial_heading_angle = final_direction.angle();
 
             // move to the next waypoint
@@ -172,7 +172,7 @@ private:
             closed.push_back(nearest->examined_circle);
         }
 
-        std::cerr << "space exploration failed after exploring " << closed.size() << " nodes between [" << from.center.x() << ", " << from.center.y() << "] and [" << to.x() << ", " << to.y() << "]" << std::endl;
+        std::cerr << "space exploration failed after exploring " << closed.size() << " nodes between [" << from.center().x() << ", " << from.center().y() << "] and [" << to.x() << ", " << to.y() << "]" << std::endl;
 
         return std::list<racer::math::circle>();
     }
@@ -185,16 +185,16 @@ private:
         for (auto center : node->examined_circle.points_on_circumference(node->heading_angle - (sector_angle / 2), sector_angle, number_of_expanded_points_))
         {
             auto circle = generate_circle(center);
-            if (circle.radius >= min_radius_)
+            if (circle.radius() >= min_radius_)
             {
-                double distance_estimate = (circle.center - goal).length();
-                auto direction = circle.center - node->examined_circle.center;
+                double distance_estimate = circle.center().distance(goal);
+                auto direction = circle.center() - node->examined_circle.center();
                 double heading_angle = direction.angle();
 
                 nodes.push_back(
                     std::make_shared<circle_node>(
                         circle,
-                        node->distance_from_start + node->examined_circle.radius,
+                        node->distance_from_start + node->examined_circle.radius(),
                         distance_estimate,
                         heading_angle,
                         node));
@@ -206,9 +206,9 @@ private:
 
     racer::math::circle try_to_optimize(const racer::math::circle &a, const racer::math::circle &b, const racer::math::circle &c) const
     {
-        racer::math::point interpolated_center = a.center.interpolate_with(c.center, a.radius, b.radius);
+        racer::math::point interpolated_center = a.center().interpolate_with(c.center(), a.radius(), b.radius());
         const double radius = grid_.distance_to_closest_obstacle(interpolated_center, max_radius_);
-        return radius >= b.radius ? racer::math::circle(interpolated_center, radius) : b;
+        return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
     }
 
     const std::list<racer::math::circle> optimize_path(const std::list<racer::math::circle> original) const
@@ -225,7 +225,7 @@ private:
                 if (can_be_optimized[i])
                 {
                     const auto optimized_circle = try_to_optimize(circles[i - 1], circles[i], circles[i + 1]);
-                    if (optimized_circle.center != circles[i].center && optimized_circle.radius != circles[i].radius)
+                    if (optimized_circle.center() != circles[i].center() && optimized_circle.radius() != circles[i].radius())
                     {
                         circles[i] = optimized_circle;
                         can_be_optimized[i - 1] = true;
