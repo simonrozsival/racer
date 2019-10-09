@@ -33,7 +33,7 @@ namespace racer_ros {
     racer::vehicle_model::kinematic_bicycle_model::state pose_and_twist_to_state(
         const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist
     ) {
-        racer::vehicle_position initial_postition(
+        racer::vehicle_configuration initial_postition(
             { pose.position.x, pose.position.y },
             tf::getYaw(pose.orientation)
         );

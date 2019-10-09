@@ -82,7 +82,7 @@ namespace racer::following_strategies {
         double velocity_undershooting_overshooting_ratio_, max_position_error_, obstacle_proximity_error_weight_;
 
         double position_error(const state& a, const state& reference) const {
-            return (a.position().location() - reference.position().location()).length() / max_position_error_;
+            return (a.position() - reference.position()).length() / max_position_error_;
         }
 
         double heading_error(const state& a, const state& reference) const {
@@ -101,7 +101,7 @@ namespace racer::following_strategies {
         }
 
         double obstacle_proximity_error(const state& a, const occupancy_grid& grid) const {
-            const auto value_at = grid.value_at(a.position().location().x(), a.position().location().y());
+            const auto value_at = grid.value_at(a.position().x(), a.position().y());
             const double val = double(value_at) / double(grid.max_value());
             return val;
         }
@@ -176,7 +176,7 @@ namespace racer::following_strategies {
 
                 // the obstacles in the map are inflated so it is sufficient to check
                 // just the grid cell which the center of the vehicle lies in
-                if (grid.collides(current.position().location().x(), current.position().location().y())) {
+                if (grid.collides(current.position().x(), current.position().y())) {
                    return {};
                 }
 

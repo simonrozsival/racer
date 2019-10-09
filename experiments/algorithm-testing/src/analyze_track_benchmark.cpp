@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
                 racer::math::circle last = path.front();
                 for (const auto &c : path)
                 {
-                    path_length += c.center.distance(last.center);
+                    path_length += c.distance(last);
                 }
             }
 

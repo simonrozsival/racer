@@ -23,11 +23,11 @@ struct discrete_state
     {
     }
 
-    discrete_state(const discrete_state& other) = default;
-    discrete_state& operator =(const discrete_state& other) = default;
+    discrete_state(const discrete_state &other) = default;
+    discrete_state &operator=(const discrete_state &other) = default;
 
-    discrete_state(discrete_state&& other) = default;
-    discrete_state& operator =(discrete_state&& other) = default;
+    discrete_state(discrete_state &&other) = default;
+    discrete_state &operator=(discrete_state &&other) = default;
 
     bool operator==(const discrete_state &other) const
     {
@@ -52,8 +52,12 @@ private:
     bool is_initialized_;
 
 public:
-    discretization(double vehicle_radius, int number_of_expanded_points, racer::math::angle heading, double speed)
-        : vehicle_radius_(vehicle_radius), number_of_expanded_points_(number_of_expanded_points), heading_(heading), speed_(speed), is_initialized_(false)
+    discretization(double vehicle_radius, int number_of_expanded_points, double heading, double speed)
+        : speed_(speed),
+          heading_(heading),
+          vehicle_radius_(vehicle_radius),
+          number_of_expanded_points_(number_of_expanded_points),
+          is_initialized_(false)
     {
     }
 
@@ -66,9 +70,9 @@ public:
     {
         int closest_circle = 0;
         double min_distance_sq;
-        for (int i = 0; i < circles_.size(); ++i)
+        for (std::size_t i = 0; i < circles_.size(); ++i)
         {
-            double distance_sq = state.position().location().distance_sq(circles_[i].center);
+            double distance_sq = state.position().distance_sq(circles_[i].center());
             if (i == 0 || distance_sq < min_distance_sq)
             {
                 closest_circle = i;
@@ -78,14 +82,13 @@ public:
 
         return {
             closest_circle,
-            (int)floor(racer::math::angle(state.position().heading_angle()) / heading_),
-            (int)floor(state.speed() / speed_)
-        };
+            (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
+            (int)floor(state.speed() / speed_)};
     }
 
     void explore_grid(
         const racer::occupancy_grid &grid,
-        const racer::vehicle_position &initial_position,
+        const racer::vehicle_configuration &initial_position,
         const std::list<racer::math::point> &waypoints)
     {
 

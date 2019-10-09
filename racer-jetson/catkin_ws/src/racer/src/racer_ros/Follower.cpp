@@ -22,7 +22,7 @@ namespace racer_ros {
   }
       
   void Follower::state_observed(const racer_msgs::State::ConstPtr& state) {
-    racer::vehicle_position position = { state->x, state->y, state->heading_angle };
+    racer::vehicle_configuration position = { state->x, state->y, state->heading_angle };
     state_ = { position, state->speed, state->steering_angle };
   }
 

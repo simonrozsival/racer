@@ -44,8 +44,8 @@ namespace racer::astar::hybrid_astar {
 
         discrete_state discretize(const state& state) const {
             return {
-                (int)floor(state.position().location().x() / x_),
-                (int)floor(state.position().location().y() / y_),
+                (int)floor(state.position().x() / x_),
+                (int)floor(state.position().y() / y_),
                 (int)floor(racer::math::angle(state.position().heading_angle()) / heading_),
                 (int)floor(state.speed() / speed_)
             };

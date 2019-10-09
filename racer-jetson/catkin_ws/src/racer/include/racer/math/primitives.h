@@ -16,17 +16,18 @@ private:
 public:
     vector() : x_{0}, y_{0} {}
     vector(double x, double y) : x_{x}, y_{y} {}
-    
-    vector(vector&& vec) = default;
-    vector& operator =(vector&& vec) = default;
-    
-    vector(const vector& vec) = default;
-    vector& operator =(const vector& vec) = default;
-    
-    constexpr const double& x() const noexcept { return x_; }
-    constexpr const double& y() const noexcept { return y_; }
 
-    double dot(const vector &other) const noexcept {
+    vector(vector &&vec) = default;
+    vector &operator=(vector &&vec) = default;
+
+    vector(const vector &vec) = default;
+    vector &operator=(const vector &vec) = default;
+
+    const double &x() const { return x_; }
+    const double &y() const { return y_; }
+
+    double dot(const vector &other) const
+    {
         return x_ * other.x_ + y_ * other.y_;
     }
 
@@ -63,6 +64,13 @@ public:
     vector operator+(const vector &other) const
     {
         return vector(x_ + other.x_, y_ + other.y_);
+    }
+
+    vector &operator+=(const vector &other)
+    {
+        x_ += other.x_;
+        y_ += other.y_;
+        return *this;
     }
 
     vector operator*(const double scale) const
@@ -217,18 +225,21 @@ void hash_combine(size_t &seed, T const &v)
 
 struct circle
 {
-    racer::math::point center;
-    double radius;
+private:
+    racer::math::point center_;
+    double radius_;
 
+public:
     circle(const point &center, double radius)
-        : center(center), radius(radius)
+        : center_(center), radius_(radius)
     {
     }
 
-    circle(const circle &other)
-        : center(other.center), radius(other.radius)
-    {
-    }
+    circle(const circle &other) = default;
+    circle &operator=(const circle &other) = default;
+
+    circle(circle &&other) = default;
+    circle &operator=(circle &&other) = default;
 
     const std::list<racer::math::point> points_on_circumference(double starting_angle, double arc_angle, size_t number_of_points) const
     {
@@ -238,29 +249,42 @@ struct circle
         for (double angle = starting_angle; angle < starting_angle + arc_angle; angle += step)
         {
             points.emplace_back(
-                center.x() + radius * std::cos(angle),
-                center.y() + radius * std::sin(angle));
+                center_.x() + radius_ * std::cos(angle),
+                center_.y() + radius_ * std::sin(angle));
         }
 
         return points;
     }
 
+    const racer::math::point &center() const { return center_; }
+    const double &radius() const { return radius_; }
+
     bool overlaps_with(const circle &other) const
     {
-        return (other.center - center).length_sq() < std::pow(radius + other.radius, 2);
+        return distance_sq(other) < std::pow(radius_ + other.radius_, 2);
     }
 
     bool contains(const point &pt) const
     {
-        return (center - pt).length_sq() < std::pow(radius, 2);
+        return center_.distance_sq(pt) < std::pow(radius_, 2);
+    }
+
+    inline double distance(const circle &other) const
+    {
+        return center_.distance(other.center_);
+    }
+
+    inline double distance_sq(const circle &other) const
+    {
+        return center_.distance_sq(other.center_);
     }
 
     bool operator==(const circle &other) const
     {
         // for the purposes of this algorithm, we assume that two circles
         // are equal, if they mostly overlap
-        double dist = (other.center - center).length_sq();
-        return dist <= std::pow(radius, 2) || dist <= std::pow(other.radius, 2);
+        double dist_sq = distance_sq(other);
+        return dist_sq <= std::pow(radius_, 2) || dist_sq <= std::pow(other.radius_, 2);
     }
 };
 } // namespace racer::math

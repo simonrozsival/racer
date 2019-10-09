@@ -19,7 +19,6 @@ namespace racer
 class occupancy_grid
 {
 public:
-
     occupancy_grid()
         : cell_size_{0},
           data_{},
@@ -45,13 +44,58 @@ public:
     {
     }
 
-    occupancy_grid(const occupancy_grid& grid) = default;
-    occupancy_grid& operator=(const occupancy_grid& grid) = default;
+    occupancy_grid(const occupancy_grid &grid) = default;
+    occupancy_grid &operator=(const occupancy_grid &grid) = default;
 
-    occupancy_grid(occupancy_grid&& grid) = default;
-    occupancy_grid& operator=(occupancy_grid&& grid) = default;
+    occupancy_grid(occupancy_grid &&grid) = default;
+    occupancy_grid &operator=(occupancy_grid &&grid) = default;
 
-    uint8_t value_at(double x, double y) const
+    occupancy_grid inflate(int r) const
+    {
+        std::vector<uint8_t> inflated{data_.begin(), data_.end()}; // start with a copy
+        inflated.reserve(size_);
+        const int r2 = r * r;
+
+        for (std::size_t i{0}; i < width_; ++i)
+        {
+            for (std::size_t j{0}; j < height_; ++j)
+            {
+                const std::size_t index = index_of(i, j);
+                if (!is_dangerous(data_[index]))
+                {
+                    continue;
+                }
+
+                for (int dx{-r}; dx <= r; ++dx)
+                {
+                    for (int dy{-r}; dy <= r; ++dy)
+                    {
+                        if ((dx < 0 && i < static_cast<std::size_t>(std::abs(dx))) || (dy < 0 && j < static_cast<std::size_t>(std::abs(dy))) || (dx > 0 && width_ <= i + static_cast<std::size_t>(std::abs(dx))) || (dy > 0 && height_ <= j + static_cast<std::size_t>(std::abs(dy))) || (dx == 0 && dy == 0))
+                        {
+                            continue;
+                        }
+
+                        if (dx * dx + dy * dy <= r2)
+                        {
+                            std::size_t x = i + dx;
+                            std::size_t y = j + dy;
+                            auto offset_index = index_of(x, y);
+                            inflated[offset_index] = data_[index];
+                        }
+                    }
+                }
+            }
+        }
+
+        return {
+            inflated,
+            width_,
+            height_,
+            cell_size_,
+            origin_};
+    }
+
+    inline uint8_t value_at(double x, double y) const
     {
         int x_cell = int((x - origin_.x()) / cell_size_);
         int y_cell = int((y - origin_.y()) / cell_size_);
@@ -64,9 +108,9 @@ public:
         return val;
     }
 
-    bool collides(double x, double y) const
+    inline bool collides(double x, double y) const
     {
-        return value_at(x, y) >= 50;
+        return is_dangerous(value_at(x, y));
     }
 
     double distance_to_closest_obstacle(const racer::math::point &center, double max_radius) const
@@ -93,7 +137,8 @@ public:
         return std::numeric_limits<uint8_t>::max();
     }
 
-    bool is_valid() const {
+    bool is_valid() const
+    {
         return size_ > 0;
     }
 
@@ -114,6 +159,8 @@ private:
     {
         return y * width_ + x;
     }
+
+    inline bool is_dangerous(uint8_t value) const { return value >= 50; }
 
     double find_distance(const racer::math::point &point, const double angle, const double max_radius) const
     {

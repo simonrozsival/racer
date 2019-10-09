@@ -25,23 +25,27 @@ std::shared_ptr<racer::following_strategies::dwa> dwa;
 racer::following_strategies::trajectory_error_calculator error_calculator;
 
 visualization_msgs::MarkerArray prepare_visualization(
-  const racer_ros::Follower& follower,
-  const racer::vehicle_model::kinematic_bicycle_model::action& selected_action,
-  const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& all_actions);
+    const racer_ros::Follower &follower,
+    const racer::vehicle_model::kinematic_bicycle_model::action &selected_action,
+    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> &all_actions);
 
 void spin(
-  const int frequency,
-  const racer_ros::Follower& follower,
-  const std::list<racer::vehicle_model::kinematic_bicycle_model::action> actions,
-  const ros::Publisher command_pub,
-  const ros::Publisher visualization_pub) {
+    const int frequency,
+    const racer_ros::Follower &follower,
+    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> actions,
+    const ros::Publisher command_pub,
+    const ros::Publisher visualization_pub)
+{
 
   ros::Rate rate(frequency);
 
-  while (ros::ok()) {
-    if (follower.is_initialized()) {
+  while (ros::ok())
+  {
+    if (follower.is_initialized())
+    {
       auto action = follower.select_driving_command();
-      if (!action.is_valid()) {
+      if (!action.is_valid())
+      {
         action = follower.stop();
       }
 
@@ -54,11 +58,12 @@ void spin(
 
       command_pub.publish(msg);
 
-      if (visualization_pub.getNumSubscribers() > 0) {
+      if (visualization_pub.getNumSubscribers() > 0)
+      {
         const auto msg = prepare_visualization(
-          follower,
-          action,
-          actions);
+            follower,
+            action,
+            actions);
         visualization_pub.publish(msg);
       }
     }
@@ -68,38 +73,41 @@ void spin(
   }
 }
 
-void dynamic_reconfigure_callback(const racer::DWAConfig& config, uint32_t level) {
-  if (!dwa) {
+void dynamic_reconfigure_callback(const racer::DWAConfig &config, uint32_t level)
+{
+  if (!dwa)
+  {
     return;
   }
 
   error_calculator = {
-    config.position_weight,
-    config.heading_weight,
-    config.velocity_weight,
-    config.velocity_undershoot_overshoot_ratio,
-    config.distance_to_obstacle_weight,
-    config.max_position_error
-  };
+      config.position_weight,
+      config.heading_weight,
+      config.velocity_weight,
+      config.velocity_undershoot_overshoot_ratio,
+      config.distance_to_obstacle_weight,
+      config.max_position_error};
 
   dwa->reconfigure(error_calculator);
 
   ROS_INFO("DWA was reconfigured");
 }
 
-void setup_dynamic_reconfigure() {
+void setup_dynamic_reconfigure()
+{
   dynamic_reconfigure::Server<racer::DWAConfig> server;
-  dynamic_reconfigure::Server<racer::DWAConfig>::CallbackType f;  
+  dynamic_reconfigure::Server<racer::DWAConfig>::CallbackType f;
   f = boost::bind(&dynamic_reconfigure_callback, _1, _2);
   server.setCallback(f);
   ROS_INFO("dynamic reconfiguration for DWA was set up");
 }
 
 void create_visualization_line(
-  int id,
-  const std::list<racer::vehicle_model::kinematic_bicycle_model::state>& trajectory,
-  double score,
-  visualization_msgs::Marker& line) {
+    int id,
+    const std::list<racer::vehicle_model::kinematic_bicycle_model::state> &trajectory,
+    double score,
+    visualization_msgs::Marker &line)
+{
 
   line.type = visualization_msgs::Marker::LINE_STRIP;
   line.scale.x = 0.01;
@@ -113,11 +121,12 @@ void create_visualization_line(
 
   line.color.a = 0.5;
 
-  for (const auto state : trajectory) {
+  for (const auto state : trajectory)
+  {
     geometry_msgs::Point point;
 
-    point.x = state.position().location().x();
-    point.y = state.position().location().y();
+    point.x = state.position().x();
+    point.y = state.position().y();
     point.z = 0;
 
     line.points.push_back(point);
@@ -125,9 +134,10 @@ void create_visualization_line(
 }
 
 visualization_msgs::MarkerArray prepare_visualization(
-  const racer_ros::Follower& follower,
-  const racer::vehicle_model::kinematic_bicycle_model::action& selected_action,
-  const std::list<racer::vehicle_model::kinematic_bicycle_model::action>& all_actions) {
+    const racer_ros::Follower &follower,
+    const racer::vehicle_model::kinematic_bicycle_model::action &selected_action,
+    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> &all_actions)
+{
 
   visualization_msgs::MarkerArray msg;
 
@@ -135,14 +145,17 @@ visualization_msgs::MarkerArray prepare_visualization(
   const auto map = follower.map();
 
   const auto reference_subtrajectory = follower.reference_trajectory().find_reference_subtrajectory(from, follower.next_waypoint());
-  if (reference_subtrajectory.empty()) {
+  if (reference_subtrajectory.empty())
+  {
     return msg;
   }
 
   int id = 0;
-  for (const auto action : all_actions) {
+  for (const auto action : all_actions)
+  {
     const auto trajectory = dwa->unfold(from, action, map);
-    if (!trajectory.empty()) {
+    if (!trajectory.empty())
+    {
       visualization_msgs::Marker line;
       line.header.frame_id = follower.map_frame_id;
       line.header.stamp = ros::Time::now();
@@ -155,24 +168,26 @@ visualization_msgs::MarkerArray prepare_visualization(
   }
 
   const auto trajectory = dwa->unfold(from, selected_action, map);
-  if (!trajectory.empty()) {
+  if (!trajectory.empty())
+  {
     visualization_msgs::Marker selected_line;
     selected_line.header.frame_id = follower.map_frame_id;
     selected_line.header.stamp = ros::Time::now();
 
     const double score = error_calculator.calculate_error(trajectory, reference_subtrajectory, map);
     create_visualization_line(id++, trajectory, score, selected_line);
- 
+
     selected_line.scale.x = 0.05;
     selected_line.color.a = 1.0;
-    
+
     msg.markers.push_back(selected_line);
   }
 
   return msg;
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
   ros::init(argc, argv, "dwa_following_node");
   ros::NodeHandle node("~");
 
@@ -198,15 +213,15 @@ int main(int argc, char* argv[]) {
   node.param<double>("acceleration", acceleration, 3.0);
 
   racer::vehicle_model::vehicle vehicle(
-    0.155, // cog_offset
-    0.31, // wheelbase
-    0.35, // safe width
-    0.55, // safe length
-    2.0 / 3.0 * M_PI, // steering speed (rad/s)
-    1.0 / 6.0 * M_PI, // max steering angle (rad)
-    max_speed, // speed (ms^-1)
-    max_reversing_speed, // speed (ms^-1)
-    acceleration // acceleration (ms^-2)
+      0.155,               // cog_offset
+      0.31,                // wheelbase
+      0.35,                // safe width
+      0.55,                // safe length
+      2.0 / 3.0 * M_PI,    // steering speed (rad/s)
+      1.0 / 6.0 * M_PI,    // max steering angle (rad)
+      max_speed,           // speed (ms^-1)
+      max_reversing_speed, // speed (ms^-1)
+      acceleration         // acceleration (ms^-2)
   );
 
   double integration_step_s, prediction_horizon_s;
@@ -214,7 +229,7 @@ int main(int argc, char* argv[]) {
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
   std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::model> model =
-    std::make_shared<racer::vehicle_model::kinematic_bicycle_model::model>(std::make_unique<racer::math::euler_method>(integration_step_s), vehicle);
+      std::make_shared<racer::vehicle_model::kinematic_bicycle_model::model>(std::make_unique<racer::math::euler_method>(integration_step_s), vehicle);
 
   const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
 
@@ -228,21 +243,19 @@ int main(int argc, char* argv[]) {
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
   racer::following_strategies::trajectory_error_calculator error_calculator = {
-    position_weight,
-    heading_weight,
-    velocity_weight,
-    1.0,
-    distance_to_obstacle_weight,
-    vehicle.radius() * 5
-  };
+      position_weight,
+      heading_weight,
+      velocity_weight,
+      1.0,
+      distance_to_obstacle_weight,
+      vehicle.radius() * 5};
 
   dwa =
-    std::make_shared<racer::following_strategies::dwa>(
-      lookahead,
-      actions,
-      model,
-      error_calculator
-    );
+      std::make_shared<racer::following_strategies::dwa>(
+          lookahead,
+          actions,
+          model,
+          error_calculator);
 
   ROS_DEBUG("DWA following strategy was initialized");
   racer_ros::Follower follower(dwa);

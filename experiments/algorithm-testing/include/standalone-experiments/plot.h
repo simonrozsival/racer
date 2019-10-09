@@ -13,11 +13,11 @@
 #include "standalone-experiments/input.h"
 
 #include "racer/math/primitives.h"
-#include "racer/vehicle_position.h"
+#include "racer/vehicle_configuration.h"
 
 namespace plt = matplotlibcpp;
 
-void plot_vehicle_position(const racer::vehicle_position &position, const double length, const double cell_size)
+void plot_vehicle_configuration(const racer::vehicle_configuration &position, const double length, const double cell_size)
 {
     auto end = racer::math::vector(length / cell_size, 0).rotate(-position.heading_angle());
 
@@ -35,8 +35,8 @@ void plot_path_of_circles(const std::string &name, const std::list<racer::math::
     std::vector<double> circles_x, circles_y;
     for (const auto &circle : circles)
     {
-        circles_x.push_back(circle.center.x() / cell_size);
-        circles_y.push_back(circle.center.y() / cell_size);
+        circles_x.push_back(circle.center().x() / cell_size);
+        circles_y.push_back(circle.center().y() / cell_size);
     }
     plt::plot(circles_x, circles_y, format, {{"label", name}});
 }
@@ -83,6 +83,18 @@ void plot_points(const std::string &name, const std::list<racer::math::point> &p
     plt::plot(points_x, points_y, format, {{"label", name}, {"markersize", std::to_string(size)}});
 }
 
+void plot_trajectory(const std::string &name, const racer::vehicle_model::kinematic_bicycle_model::trajectory trajectory, const double cell_size)
+{
+    std::list<racer::math::point> points;
+    for (const auto &step : trajectory.steps())
+    {
+        points.push_back(step.step().position());
+    }
+
+    plot_points(name, points, "k.", cell_size);
+    plot_points(name, points, "r-", cell_size);
+}
+
 void plot_grid(const racer::occupancy_grid &occupancy_grid, unsigned char *img)
 {
     img = new unsigned char[occupancy_grid.cols() * occupancy_grid.rows() * 4];
@@ -119,13 +131,36 @@ void plot_track_analysis(
     unsigned char *circles_img = nullptr;
     plot_circles(waypoints, config.occupancy_grid, config.min_distance_between_waypoints, circles_img);
     plot_points("Corners", waypoints, "go", config.occupancy_grid.cell_size());
-    plot_vehicle_position(config.initial_position, config.radius, config.occupancy_grid.cell_size());
+    plot_vehicle_configuration(config.initial_position, config.radius, config.occupancy_grid.cell_size());
 
     plt::legend();
     plt::show();
 
     delete[] grid_img;
     delete[] circles_img;
+}
+
+void plot_trajectory(
+    const track_analysis_input &config,
+    const racer::vehicle_model::kinematic_bicycle_model::trajectory &trajectory)
+{
+    plt::title("Trajectory");
+    plt::grid(true);
+    plt::xlim(0, config.occupancy_grid.cols());
+    plt::ylim(0, config.occupancy_grid.rows());
+    plt::subplot(1, 1, 1);
+
+    unsigned char *grid_img = nullptr;
+    plot_grid(config.occupancy_grid, grid_img);
+    plot_points("Check points", config.checkpoints, "bx", config.occupancy_grid.cell_size());
+
+    plot_vehicle_configuration(config.initial_position, config.radius, config.occupancy_grid.cell_size());
+    plot_trajectory("Found trajectory", trajectory, config.occupancy_grid.cell_size());
+
+    plt::legend();
+    plt::show();
+
+    delete[] grid_img;
 }
 
 #endif
