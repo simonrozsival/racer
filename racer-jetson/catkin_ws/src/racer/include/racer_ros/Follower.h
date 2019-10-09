@@ -13,58 +13,65 @@
 
 #include "racer/following_strategies/following_strategy.h"
 #include "racer/occupancy_grid.h"
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/action.h"
+#include "racer/trajectory.h"
+#include "racer/vehicle_model/kinematic_model.h"
 
-using namespace racer::vehicle_model::kinematic_bicycle_model;
+using namespace racer::vehicle_model;
 
-namespace racer_ros {
+namespace racer_ros
+{
 
-  class Follower {
-    public:
-      std::string map_frame_id;
+class Follower
+{
+public:
+  std::string map_frame_id;
 
-      Follower(std::shared_ptr<racer::following_strategies::following_strategy> strategy)
-        : strategy_{strategy},
+  Follower(std::shared_ptr<racer::following_strategies::following_strategy> strategy)
+      : strategy_{strategy},
         next_waypoint_{0},
         stop_{0, 0},
         state_{}
-      {
-      }
+  {
+  }
 
-      bool is_initialized() const;
+  bool is_initialized() const;
 
-      void state_observed(const racer_msgs::State::ConstPtr& state);
-      void map_observed(const nav_msgs::OccupancyGrid::ConstPtr& map);
-      void trajectory_observed(const racer_msgs::Trajectory::ConstPtr& trajectory);
-      void waypoints_observed(const racer_msgs::Waypoints::ConstPtr& waypoints);
+  void state_observed(const racer_msgs::State::ConstPtr &state);
+  void map_observed(const nav_msgs::OccupancyGrid::ConstPtr &map);
+  void trajectory_observed(const racer_msgs::Trajectory::ConstPtr &trajectory);
+  void waypoints_observed(const racer_msgs::Waypoints::ConstPtr &waypoints);
 
-      action select_driving_command() const;
-      action stop() const;
+  racer::action select_driving_command() const;
+  racer::action stop() const;
 
-      const int next_waypoint() const {  return next_waypoint_; }
+  const int next_waypoint() const { return next_waypoint_; }
 
-      const state last_known_state() const {
-        return state_;
-      }
+  const kinematic::state last_known_state() const
+  {
+    return state_;
+  }
 
-      const trajectory reference_trajectory() const {
-        return reference_trajectory_;
-      }
+  const trajectory<kinematic::state> reference_trajectory() const
+  {
+    return reference_trajectory_;
+  }
 
-      const racer::occupancy_grid map() const {
-        return map_;
-      }
+  const racer::occupancy_grid map() const
+  {
+    return map_;
+  }
 
-    private:
-      const std::shared_ptr<racer::following_strategies::following_strategy> strategy_;
-      const action stop_;
-      int next_waypoint_;
+private:
+  const std::shared_ptr<racer::following_strategies::following_strategy> strategy_;
+  const action stop_;
+  int next_waypoint_;
 
-      racer::occupancy_grid map_;
-      trajectory reference_trajectory_;
-      state state_;
-  };
+  racer::occupancy_grid map_;
+  racer::trajectory<kinematic::state> reference_trajectory_;
+  kinematic::state state_;
+};
 
-}
+} // namespace racer_ros
 
 #endif

@@ -3,25 +3,20 @@
 #include <vector>
 #include <tf/transform_datatypes.h>
 
-#include "racer/math/primitives.h"
 #include "racer/circuit.h"
 #include "racer/astar/astar.h"
 
-using namespace racer::vehicle_model::kinematic_bicycle_model;
+using namespace racer;
+using namespace racer::vehicle_model;
 using namespace racer::astar::sehs;
 
 namespace racer_ros
 {
 
-bool Planner::is_initialized() const
-{
-  return discretization_.is_ready();
-}
-
 std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
-    const racer::occupancy_grid &grid,
-    const racer::vehicle_model::kinematic_bicycle_model::state &state,
-    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> &available_actions,
+    const occupancy_grid &grid,
+    const kinematic::state &state,
+    const std::list<action> &available_actions,
     const std::vector<racer::math::point> &waypoints,
     const int next_waypoint,
     const double waypoint_radius) const
@@ -46,11 +41,11 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
       discretization_,
       circuit);
 
-  const auto solution = racer::astar::search<discrete_state, racer::vehicle_model::kinematic_bicycle_model::state, trajectory>(
+  const auto result = racer::astar::search<discrete_state, kinematic::state>(
       std::move(problem),
       maximum_number_of_expanded_nodes_);
 
-  if (solution.empty())
+  if (!result.was_successful())
   {
     return nullptr;
   }
@@ -60,7 +55,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
   trajectory->header.frame_id = map_frame_;
 
   double prev_heading_angle = initial_heading_angle;
-  for (const auto &step : solution.steps())
+  for (const auto &step : result.found_trajectory.steps())
   {
     racer_msgs::TrajectoryState state;
 
@@ -69,20 +64,20 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     // by the actual index of the first waypoint
     state.next_waypoint.data = next_waypoint + step.passed_waypoints();
 
-    state.pose.position.x = step.step().position().x();
-    state.pose.position.y = step.step().position().y();
+    state.pose.position.x = step.state().position().x();
+    state.pose.position.y = step.state().position().y();
     state.pose.position.z = 0;
 
-    state.pose.orientation = tf::createQuaternionMsgFromYaw(step.step().position().heading_angle());
+    state.pose.orientation = tf::createQuaternionMsgFromYaw(step.state().position().heading_angle());
 
-    state.velocity.linear.x = cos(step.step().position().heading_angle()) * step.step().speed();
-    state.velocity.linear.y = sin(step.step().position().heading_angle()) * step.step().speed();
+    state.velocity.linear.x = cos(step.state().position().heading_angle()) * step.state().speed();
+    state.velocity.linear.y = sin(step.state().position().heading_angle()) * step.state().speed();
 
-    state.velocity.angular.z = (prev_heading_angle - step.step().position().heading_angle()) / time_step_s_;
+    state.velocity.angular.z = (prev_heading_angle - step.state().position().heading_angle()) / time_step_s_;
 
     trajectory->trajectory.push_back(state);
 
-    prev_heading_angle = step.step().position().heading_angle();
+    prev_heading_angle = step.state().position().heading_angle();
   }
 
   return trajectory;

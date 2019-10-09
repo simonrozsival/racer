@@ -4,7 +4,7 @@
 #include "standalone-experiments/input.h"
 #include "standalone-experiments/plot.h"
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/track_analysis.h"
 #include "racer/sehs/space_exploration.h"
 
@@ -57,8 +57,7 @@ int main(int argc, char *argv[])
 
   // This requires Linux or WSL+Xserver
   std::cout << "Show interactive plot" << std::endl;
-  std::list<racer::math::vector> raw_waypoints_list{raw_waypoints.begin(), raw_waypoints.end()};
-  plot_track_analysis(*config, circles, raw_waypoints_list, waypoints);
+  plot_track_analysis(*config, circles, raw_waypoints, waypoints);
 
   std::cout << "Done." << std::endl;
   return 0;

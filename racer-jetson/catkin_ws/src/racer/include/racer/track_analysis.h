@@ -7,7 +7,7 @@
 #include <utility>
 #include <algorithm>
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/occupancy_grid.h"
 
 using namespace racer::math;
@@ -26,7 +26,7 @@ public:
     {
     }
 
-    const std::vector<point> find_pivot_points(const std::list<circle> circle_path) const
+    const std::vector<point> find_pivot_points(const std::vector<circle> &circle_path) const
     {
         std::vector<point> pivot_points;
 
@@ -65,7 +65,7 @@ public:
         return pivot_points;
     }
 
-    std::list<point> find_corners(std::vector<point> pivot_points, double max_angle)
+    std::vector<point> find_corners(std::vector<point> pivot_points, double max_angle)
     {
         const auto sharp_turns = remove_insignificant_turns(pivot_points, max_angle);
         return merge_close(sharp_turns, min_distance_between_waypoints_);
@@ -119,7 +119,7 @@ private:
         return remaining;
     }
 
-    const std::list<point> merge_close(const std::vector<point> &points, double d_min) const
+    const std::vector<point> merge_close(const std::vector<point> &points, double d_min) const
     {
         std::vector<bool> used(points.size(), true); // all points are used at the beginning
 
@@ -155,7 +155,7 @@ private:
             }
         } while (max_close > 0);
 
-        std::list<point> remaining;
+        std::vector<point> remaining;
         for (std::size_t i = 0; i < points.size(); ++i)
         {
             if (used[i])

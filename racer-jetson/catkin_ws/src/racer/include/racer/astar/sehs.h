@@ -4,10 +4,9 @@
 #include <vector>
 #include <list>
 
-#include "./discretized_astar_problem.h"
-#include "../sehs/space_exploration.h"
+#include "racer/astar/discretized_astar_problem.h"
 
-namespace racer::astar::sehs
+namespace racer::astar::sehs::kinematic
 {
 
 struct discrete_state
@@ -40,33 +39,22 @@ struct discrete_state
     }
 };
 
-struct discretization : public racer::astar::discretization<discrete_state>
+struct discretization : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
 {
 private:
     std::vector<racer::math::circle> circles_;
     const double speed_;
     const racer::math::angle heading_;
 
-    double vehicle_radius_;
-    int number_of_expanded_points_;
-    bool is_initialized_;
-
 public:
-    discretization(double vehicle_radius, int number_of_expanded_points, double heading, double speed)
-        : speed_(speed),
-          heading_(heading),
-          vehicle_radius_(vehicle_radius),
-          number_of_expanded_points_(number_of_expanded_points),
-          is_initialized_(false)
+    discretization(const std::vector<racer::math::circle> &circles, double heading, double speed)
+        : circles_{circles},
+          speed_(speed),
+          heading_(heading)
     {
     }
 
-    bool is_ready() const override
-    {
-        return is_initialized_;
-    }
-
-    discrete_state discretize(const state &state) const override
+    discrete_state discretize(const racer::vehicle_model::kinematic::state &state) const override
     {
         int closest_circle = 0;
         double min_distance_sq;
@@ -85,35 +73,16 @@ public:
             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
             (int)floor(state.speed() / speed_)};
     }
-
-    void explore_grid(
-        const racer::occupancy_grid &grid,
-        const racer::vehicle_configuration &initial_position,
-        const std::list<racer::math::point> &waypoints)
-    {
-
-        circles_.clear();
-
-        racer::sehs::space_exploration exploration(grid, vehicle_radius_, 2 * vehicle_radius_, number_of_expanded_points_);
-        const auto circle_path = exploration.explore_grid(initial_position, waypoints);
-
-        for (const auto circle : circle_path)
-        {
-            circles_.push_back(circle);
-        }
-
-        is_initialized_ = true;
-    }
 };
 
-} // namespace racer::astar::sehs
+} // namespace racer::astar::sehs::kinematic
 
 namespace std
 {
 template <>
-struct hash<std::pair<racer::astar::sehs::discrete_state, size_t>>
+struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>
 {
-    size_t operator()(const std::pair<racer::astar::sehs::discrete_state, size_t> &obj) const
+    size_t operator()(const std::pair<racer::astar::sehs::kinematic::discrete_state, size_t> &obj) const
     {
         size_t seed = 0;
 

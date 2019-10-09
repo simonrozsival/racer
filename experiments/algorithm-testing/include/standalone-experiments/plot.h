@@ -12,9 +12,12 @@
 
 #include "standalone-experiments/input.h"
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/vehicle_configuration.h"
+#include "racer/trajectory.h"
+#include "racer/vehicle_model/kinematic_model.h"
 
+using namespace racer::vehicle_model;
 namespace plt = matplotlibcpp;
 
 void plot_vehicle_configuration(const racer::vehicle_configuration &position, const double length, const double cell_size)
@@ -30,7 +33,7 @@ void plot_vehicle_configuration(const racer::vehicle_configuration &position, co
     plt::quiver(x, y, u, v);
 }
 
-void plot_path_of_circles(const std::string &name, const std::list<racer::math::circle> &circles, const std::string &format, const double cell_size)
+void plot_path_of_circles(const std::string &name, const std::vector<racer::math::circle> &circles, const std::string &format, const double cell_size)
 {
     std::vector<double> circles_x, circles_y;
     for (const auto &circle : circles)
@@ -41,7 +44,7 @@ void plot_path_of_circles(const std::string &name, const std::list<racer::math::
     plt::plot(circles_x, circles_y, format, {{"label", name}});
 }
 
-void plot_circles(const std::list<racer::math::point> &points, const racer::occupancy_grid &occupancy_grid, const double radius, unsigned char *img)
+void plot_circles(const std::vector<racer::math::point> &points, const racer::occupancy_grid &occupancy_grid, const double radius, unsigned char *img)
 {
     img = new unsigned char[occupancy_grid.cols() * occupancy_grid.rows() * 4];
     const auto raw_grid = occupancy_grid.raw_data();
@@ -71,7 +74,7 @@ void plot_circles(const std::list<racer::math::point> &points, const racer::occu
     plt::imshow(img, occupancy_grid.rows(), occupancy_grid.cols(), 4);
 }
 
-void plot_points(const std::string &name, const std::list<racer::math::point> &points, const std::string &format, const double cell_size)
+void plot_points(const std::string &name, const std::vector<racer::math::point> &points, const std::string &format, const double cell_size)
 {
     std::vector<double> points_x, points_y;
     for (const auto &point : points)
@@ -83,12 +86,12 @@ void plot_points(const std::string &name, const std::list<racer::math::point> &p
     plt::plot(points_x, points_y, format, {{"label", name}, {"markersize", std::to_string(size)}});
 }
 
-void plot_trajectory(const std::string &name, const racer::vehicle_model::kinematic_bicycle_model::trajectory trajectory, const double cell_size)
+void plot_trajectory(const std::string &name, const racer::trajectory<kinematic::state> trajectory, const double cell_size)
 {
-    std::list<racer::math::point> points;
+    std::vector<racer::math::point> points;
     for (const auto &step : trajectory.steps())
     {
-        points.push_back(step.step().position());
+        points.push_back(step.state().position());
     }
 
     plot_points(name, points, "k.", cell_size);
@@ -111,9 +114,9 @@ void plot_grid(const racer::occupancy_grid &occupancy_grid, unsigned char *img)
 
 void plot_track_analysis(
     const track_analysis_input &config,
-    const std::list<racer::math::circle> &circles,
-    const std::list<racer::math::point> &raw_waypoints,
-    const std::list<racer::math::point> &waypoints)
+    const std::vector<racer::math::circle> &circles,
+    const std::vector<racer::math::point> &raw_waypoints,
+    const std::vector<racer::math::point> &waypoints)
 {
     // plt::title("Corner Detection");
     plt::grid(true);
@@ -142,7 +145,7 @@ void plot_track_analysis(
 
 void plot_trajectory(
     const track_analysis_input &config,
-    const racer::vehicle_model::kinematic_bicycle_model::trajectory &trajectory)
+    const racer::trajectory<kinematic::state> &trajectory)
 {
     plt::title("Trajectory");
     plt::grid(true);

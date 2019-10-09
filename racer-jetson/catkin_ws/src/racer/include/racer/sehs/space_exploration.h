@@ -6,7 +6,7 @@
 #include <filesystem>
 
 #include "racer/astar/astar.h"
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/circuit.h"
 
 namespace std
@@ -91,12 +91,12 @@ public:
     {
     }
 
-    const std::list<racer::math::circle> explore_grid(
+    const std::vector<racer::math::circle> explore_grid(
         const racer::vehicle_configuration &initial_position,
-        const std::list<racer::math::point> &waypoints)
+        const std::vector<racer::math::point> &waypoints)
     {
 
-        std::list<racer::math::circle> path;
+        std::vector<racer::math::circle> path;
 
         path.push_back(generate_circle(initial_position.location()));
         double initial_heading_angle = initial_position.heading_angle();
@@ -109,7 +109,7 @@ public:
 
             if (to_next_waypoint.size() == 0)
             {
-                return std::list<racer::math::circle>(); // there is no path
+                return {}; // there is no path
             }
 
             // append the path to the next waypoint
@@ -211,13 +211,12 @@ private:
         return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
     }
 
-    const std::list<racer::math::circle> optimize_path(const std::list<racer::math::circle> original) const
+    const std::vector<racer::math::circle> optimize_path(std::vector<racer::math::circle> &circles) const
     {
-        std::vector<racer::math::circle> circles{original.begin(), original.end()};
-        std::vector<bool> can_be_optimized(original.size(), true);
+        std::vector<bool> can_be_optimized(circles.size(), true);
 
-        bool can_optimize = true;
-        while (can_optimize)
+        bool can_optimize;
+        do
         {
             can_optimize = false;
             for (std::size_t i = 1; i < can_be_optimized.size() - 1; ++i)
@@ -234,10 +233,9 @@ private:
                     }
                 }
             }
-        }
+        } while (can_optimize);
 
-        std::list<racer::math::circle> optimized_path{circles.begin(), circles.end()};
-        return optimized_path;
+        return circles;
     }
 };
 } // namespace racer::sehs

@@ -1,8 +1,7 @@
 #ifndef vehicle_configuration_H_
 #define vehicle_configuration_H_
 
-#include "racer/math/base_integrator.h"
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 
 namespace racer
 {
@@ -60,13 +59,6 @@ public:
 
     const racer::math::vector &location() const { return location_; }
     const double &heading_angle() const { return heading_angle_; }
-
-    vehicle_configuration integrate(const std::unique_ptr<racer::math::base_integrator> &integrator) const
-    {
-        return vehicle_configuration(
-            {integrator->integrate(location_.x()), integrator->integrate(location_.y())},
-            integrator->integrate(heading_angle_));
-    }
 };
 
 } // namespace racer

@@ -14,17 +14,23 @@
 #include <racer_msgs/Trajectory.h>
 #include <racer_msgs/Waypoints.h>
 
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
-#include "racer/vehicle_model/base_vehicle_model.h"
+#include "racer/action.h"
+#include "racer/trajectory.h"
+
+#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle_model/base_model.h"
 #include "racer/occupancy_grid.h"
 #include "racer/following_strategies/geometric_following_strategy.h"
-#include "racer/math/euler_method_integrator.h"
 #include "racer_ros/Follower.h"
+
+using namespace racer::vehicle_model;
 
 std::shared_ptr<racer::following_strategies::pid> pid;
 
-void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
-  if (!pid) {
+void pid_config_callback(racer::PIDConfig &config, uint32_t level)
+{
+  if (!pid)
+  {
     ROS_ERROR("Cannot handle dynamic reconfiguration because the initialization of this node hasn't finished yet.");
     return;
   }
@@ -33,7 +39,8 @@ void pid_config_callback(racer::PIDConfig &config, uint32_t level) {
   ROS_INFO("PID was reconfigured.");
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
   ros::init(argc, argv, "geometric_following_node");
   ros::NodeHandle node("~");
 
@@ -64,23 +71,23 @@ int main(int argc, char* argv[]) {
   pid = std::make_shared<racer::following_strategies::pid>(kp, ki, kd, error_tolerance);
   ROS_DEBUG("PID was initialized (kp=%f, ki=%f, kd=%f)", kp, ki, kd);
 
-  double min_lookahead, lookahead_coef;
+  double min_lookahead, lookahead_coefficient;
   node.param<double>("min_lookahead", min_lookahead, 1.0);
-  node.param<double>("speed_lookahead_coef", lookahead_coef, 2.0);
-  racer::following_strategies::pure_pursuit pure_pursuit { wheelbase, min_lookahead, lookahead_coef };
-  ROS_DEBUG("Pure pursuit was initialized (min lookahead=%fm, lookahead velocity coef=%f)", min_lookahead, lookahead_coef);
+  node.param<double>("speed_lookahead_coefficient", lookahead_coefficient, 2.0);
+  racer::following_strategies::pure_pursuit<kinematic::state> pure_pursuit{wheelbase, min_lookahead, lookahead_coefficient};
+  ROS_DEBUG("Pure pursuit was initialized (min lookahead=%fm, lookahead velocity coefficient=%f)", min_lookahead, lookahead_coefficient);
 
   dynamic_reconfigure::Server<racer::PIDConfig> server;
-  dynamic_reconfigure::Server<racer::PIDConfig>::CallbackType f;  
+  dynamic_reconfigure::Server<racer::PIDConfig>::CallbackType f;
   f = boost::bind(&pid_config_callback, _1, _2);
   server.setCallback(f);
   ROS_DEBUG("dynamic reconfigure for PID was set up");
 
-  auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy>(max_steering_angle, pid, pure_pursuit);
+  auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy<kinematic::state>>(max_steering_angle, pid, pure_pursuit);
   ROS_DEBUG("Geometric following strategy was initialized");
 
   racer_ros::Follower follower(std::move(following_strategy));
-  
+
   ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower::trajectory_observed, &follower);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower::waypoints_observed, &follower);
 
@@ -92,11 +99,14 @@ int main(int argc, char* argv[]) {
 
   ros::Rate rate(frequency);
 
-  while (ros::ok()) {
-    if (follower.is_initialized()) {
+  while (ros::ok())
+  {
+    if (follower.is_initialized())
+    {
       auto action = follower.select_driving_command();
 
-      if (!action.is_valid()) {
+      if (!action.is_valid())
+      {
         action = follower.stop();
         ROS_DEBUG("following node: STOP!");
       }
@@ -110,12 +120,13 @@ int main(int argc, char* argv[]) {
 
       command_pub.publish(msg);
 
-      if (visualization_pub.getNumSubscribers() > 0) {
+      if (visualization_pub.getNumSubscribers() > 0)
+      {
         auto pursuied_point = pure_pursuit.find_reference_position(
-          follower.last_known_state(),
-          follower.next_waypoint(),
-          follower.reference_trajectory()
-        ).location();
+                                              follower.last_known_state(),
+                                              follower.next_waypoint(),
+                                              follower.reference_trajectory())
+                                  .location();
 
         visualization_msgs::Marker marker;
         marker.header.frame_id = follower.map_frame_id;
@@ -125,7 +136,7 @@ int main(int argc, char* argv[]) {
         marker.id = 0;
         marker.type = visualization_msgs::Marker::SPHERE;
         marker.action = visualization_msgs::Marker::ADD;
-    
+
         marker.pose.position.x = pursuied_point.x();
         marker.pose.position.y = pursuied_point.y();
         marker.pose.position.z = 0;
@@ -142,10 +153,12 @@ int main(int argc, char* argv[]) {
 
         visualization_pub.publish(marker);
       }
-  
-      ros::spinOnce();      
+
+      ros::spinOnce();
       rate.sleep();
-    } else {
+    }
+    else
+    {
       ROS_DEBUG("following node: not initialized yet");
 
       ros::spinOnce();
