@@ -5,7 +5,7 @@
 
 #include "standalone-experiments/input.h"
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/track_analysis.h"
 #include "racer/sehs/space_exploration.h"
 
@@ -41,14 +41,14 @@ int main(int argc, char *argv[])
     std::cout << "--------------------" << std::endl;
     std::cout << "circuit name, neighbor circles, number of circles, path length, computation time in ms" << std::endl;
 
-    std::vector<std::list<racer::math::circle>> paths_of_circles;
+    std::vector<std::vector<racer::math::circle>> paths_of_circles;
     for (std::size_t i = 0; i < configs.size(); ++i)
     {
         const auto config = configs[i];
         for (int neighbor_circles = 4; neighbor_circles < 16; ++neighbor_circles)
         {
             std::list<long long> ms;
-            std::list<racer::math::circle> path;
+            std::vector<racer::math::circle> path;
 
             for (std::size_t i = 0; i < repetitions; ++i)
             {

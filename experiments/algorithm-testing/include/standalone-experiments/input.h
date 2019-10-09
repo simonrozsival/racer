@@ -7,12 +7,16 @@
 
 #include "parse_pgm.h"
 
+#include "racer/math.h"
+#include "racer/occupancy_grid.h"
+#include "racer/vehicle_configuration.h"
+
 class track_analysis_input
 {
 public:
   const std::string name;
   const racer::vehicle_configuration initial_position;
-  const std::list<racer::math::point> checkpoints;
+  const std::vector<racer::math::point> checkpoints;
   const racer::occupancy_grid occupancy_grid;
   const double radius;
   const int neighbor_circles;
@@ -22,7 +26,7 @@ public:
   track_analysis_input(
       std::string name,
       racer::vehicle_configuration initial_position,
-      std::list<racer::math::point> checkpoints,
+      std::vector<racer::math::point> checkpoints,
       racer::occupancy_grid occupancy_grid,
       double radius,
       int neighbor_circles,
@@ -95,7 +99,7 @@ public:
 
     // load checkpoints
     double x, y;
-    std::list<racer::math::point> checkpoints;
+    std::vector<racer::math::point> checkpoints;
     while (ss >> x)
     {
       ss >> y;

@@ -10,7 +10,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <racer_msgs/State.h>
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/vehicle_configuration.h"
 
 // params

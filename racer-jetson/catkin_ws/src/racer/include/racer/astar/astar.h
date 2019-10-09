@@ -7,6 +7,9 @@
 #include <queue>
 #include <unordered_set>
 
+#include "racer/action.h"
+#include "racer/trajectory.h"
+
 namespace racer::astar
 {
 
@@ -69,7 +72,7 @@ struct search_node
     }
 };
 
-template <typename TKey, typename TState, typename TTrajectory>
+template <typename TKey, typename TState>
 class base_search_problem
 {
 public:
@@ -82,8 +85,7 @@ public:
     virtual const bool is_goal(size_t passed_waypoints) const = 0;
     virtual const bool passes_waypoint(const std::list<TState> &examined_state, size_t passed_waypoints) const = 0;
     virtual const double estimate_cost_to_go(const TState &state, std::size_t passed_waypoints) const = 0;
-    virtual const TTrajectory reconstruct_trajectory(const search_node<TKey, TState> &node) const = 0;
-    virtual const TTrajectory no_solution() const = 0;
+    virtual const trajectory<TState> reconstruct_trajectory(const search_node<TKey, TState> &node) const = 0;
 
     const TState initial_state;
     const TKey initial_key;
@@ -145,12 +147,51 @@ public:
     }
 };
 
-template <typename TKey, typename TState, typename TTrajectory>
-const TTrajectory search(std::unique_ptr<base_search_problem<TKey, TState, TTrajectory>> problem, std::size_t maximum_number_of_expanded_nodes)
+template <typename TState>
+struct search_result
+{
+    const racer::trajectory<TState> found_trajectory;
+    const std::size_t number_of_opened_nodes;
+    const std::size_t number_of_expanded_nodes;
+    const double final_cost;
+
+    search_result(
+        std::size_t number_of_opened_nodes,
+        std::size_t number_of_expanded_nodes)
+        : found_trajectory{},
+          number_of_opened_nodes{number_of_opened_nodes},
+          number_of_expanded_nodes{number_of_expanded_nodes},
+          final_cost{0}
+    {
+    }
+
+    search_result(
+        racer::trajectory<TState> found_trajectory,
+        std::size_t number_of_opened_nodes,
+        std::size_t number_of_expanded_nodes,
+        double final_cost)
+        : found_trajectory{found_trajectory},
+          number_of_opened_nodes{number_of_opened_nodes},
+          number_of_expanded_nodes{number_of_expanded_nodes},
+          final_cost{final_cost}
+    {
+    }
+
+    bool was_successful() const
+    {
+        return found_trajectory.is_valid();
+    }
+};
+
+template <typename TKey, typename TState>
+const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TState>> problem, std::size_t maximum_number_of_expanded_nodes)
 {
     open_set<TKey, TState> opened;
     closed_set<TKey> closed;
-    std::list<std::shared_ptr<search_node<TKey, TState>>> expanded_nodes; // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
+
+    // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
+    std::list<std::shared_ptr<search_node<TKey, TState>>> expanded_nodes;
+    std::size_t opened_nodes{0};
 
     std::list<TState> initial_state;
     initial_state.push_back(problem->initial_state);
@@ -177,10 +218,11 @@ const TTrajectory search(std::unique_ptr<base_search_problem<TKey, TState, TTraj
 
         if (problem->is_goal(expanded_node->passed_waypoints))
         {
-            const auto result = problem->reconstruct_trajectory(*expanded_node);
-            std::cout << "found solution after exploring " << expanded_nodes.size() << " nodes" << std::endl;
-            std::cout << "the cost to goal is: " << expanded_node->cost_to_come << std::endl;
-            return result;
+            return {
+                problem->reconstruct_trajectory(*expanded_node),
+                opened_nodes,
+                expanded_nodes.size(),
+                expanded_node->cost_to_come};
         }
 
         closed.add(expanded_node->key, expanded_node->passed_waypoints);
@@ -208,15 +250,14 @@ const TTrajectory search(std::unique_ptr<base_search_problem<TKey, TState, TTraj
                     cost_estimate,
                     passed_waypoints);
 
+            ++opened_nodes;
             opened.push(node);
         }
     }
 
-    // no result - empty list
-    std::cout << "did not find any solution after expanding " << expanded_nodes.size() << " nodes" << std::endl;
+    return {opened_nodes, expanded_nodes.size()};
+};
 
-    return problem->no_solution();
-}
 } // namespace racer::astar
 
 #endif

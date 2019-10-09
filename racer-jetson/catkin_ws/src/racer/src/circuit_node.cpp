@@ -5,11 +5,11 @@
 #include <mutex>
 #include <sstream>
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/sehs/space_exploration.h"
 #include "racer/track_analysis.h"
 #include "racer/occupancy_grid.h"
-#include "racer/vehicle_model/base_vehicle_model.h"
+#include "racer/vehicle_model/base_model.h"
 
 #include "racer_ros/utils.h"
 

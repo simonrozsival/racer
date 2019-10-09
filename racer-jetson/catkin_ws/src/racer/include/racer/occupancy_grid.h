@@ -9,9 +9,8 @@
 #include <limits>
 #include <cmath>
 
-#include "racer/math/primitives.h"
+#include "racer/math.h"
 #include "racer/vehicle_model/vehicle.h"
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
 
 namespace racer
 {
@@ -108,6 +107,11 @@ public:
         return val;
     }
 
+    inline bool collides(racer::math::point point) const
+    {
+        return collides(point.x(), point.y());
+    }
+
     inline bool collides(double x, double y) const
     {
         return is_dangerous(value_at(x, y));
@@ -155,7 +159,7 @@ private:
     std::size_t size_;
     racer::math::point origin_;
 
-    std::size_t index_of(std::size_t x, std::size_t y) const
+    inline std::size_t index_of(std::size_t x, std::size_t y) const
     {
         return y * width_ + x;
     }

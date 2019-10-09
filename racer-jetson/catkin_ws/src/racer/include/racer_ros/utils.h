@@ -1,8 +1,7 @@
 #ifndef UTILS_H_
 #define UTILS_H_
 
-#include <iostream>
-
+#include<iostream>
 #include <tf/transform_datatypes.h>
 
 #include "nav_msgs/Odometry.h"
@@ -11,18 +10,18 @@
 #include "geometry_msgs/Twist.h"
 #include "racer_msgs/Trajectory.h"
 
+#include "racer/trajectory.h"
 #include "racer/occupancy_grid.h"
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/vehicle_model/kinematic_model.h"
 
-using namespace racer;
+using namespace racer::vehicle_model;
 
 namespace racer_ros {
 
     racer::occupancy_grid msg_to_grid(const nav_msgs::OccupancyGrid& map) {
         // convert signed bytes (which are expected to be in the range 0-100) to unsigned bytes
-        std::vector<uint8_t> data { map.data.begin(), map.data.end() };
         return racer::occupancy_grid(
-            data,
+            { map.data.begin(), map.data.end() },
             map.info.width,
             map.info.height,
             map.info.resolution,
@@ -30,31 +29,31 @@ namespace racer_ros {
         );
     }
 
-    racer::vehicle_model::kinematic_bicycle_model::state pose_and_twist_to_state(
-        const geometry_msgs::Pose& pose, const geometry_msgs::Twist& twist
+    kinematic::state pose_and_twist_to_state(
+        const geometry_msgs::Pose& pose,
+        const geometry_msgs::Twist& twist
     ) {
-        racer::vehicle_configuration initial_postition(
+        racer::vehicle_configuration configuration(
             { pose.position.x, pose.position.y },
             tf::getYaw(pose.orientation)
         );
 
-        return racer::vehicle_model::kinematic_bicycle_model::state(
-            initial_postition,
+        return {
+            configuration,
             sqrt(pow(twist.linear.x, 2) + pow(twist.linear.y, 2)),
             0 // we assume the steering angle is always zero in the beginning
-        );
+        };
     }
 
-    racer::vehicle_model::kinematic_bicycle_model::trajectory msg_to_trajectory(
-        const racer_msgs::Trajectory& msg) {
-        std::list<racer::vehicle_model::kinematic_bicycle_model::trajectory_step> steps;
+    racer::trajectory<kinematic::state> msg_to_trajectory(const racer_msgs::Trajectory& msg) {
+        std::list<trajectory_step<kinematic::state>> steps;
         for (const auto& step : msg.trajectory) {
             steps.emplace_back(
                 pose_and_twist_to_state(step.pose, step.velocity),
                 step.next_waypoint.data);
         }
 
-        return racer::vehicle_model::kinematic_bicycle_model::trajectory(steps);
+        return {steps};
     }
 }
 

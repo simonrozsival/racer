@@ -3,24 +3,26 @@
 
 #include <iostream>
 
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
+#include "racer/action.h"
+#include "racer/trajectory.h"
 #include "racer/occupancy_grid.h"
 
-using namespace racer::vehicle_model::kinematic_bicycle_model;
+namespace racer::following_strategies
+{
 
-namespace racer::following_strategies {
+template <typename TState>
+class following_strategy
+{
+public:
+    virtual racer::action select_action(
+        const TState &current_state,
+        const std::size_t passed_waypoints,
+        const racer::trajectory<TState> &reference_trajectory,
+        const racer::occupancy_grid &map) const = 0;
 
-    class following_strategy {
-    public:
-        virtual action select_action(
-            const state& current_state,
-            const std::size_t passed_waypoints,
-            const trajectory& reference_trajectory,
-            const racer::occupancy_grid& map) const = 0;
+    virtual void reset() = 0;
+};
 
-        virtual void reset() = 0;
-    };
-
-}
+} // namespace racer::following_strategies
 
 #endif

@@ -15,28 +15,31 @@
 #include <dynamic_reconfigure/server.h>
 #include <racer/DWAConfig.h>
 
-#include "racer/vehicle_model/kinematic_bicycle_model.h"
-#include "racer/vehicle_model/base_vehicle_model.h"
+#include "racer/action.h"
+#include "racer/trajectory.h"
+
+#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle_model/base_model.h"
 #include "racer/following_strategies/dwa.h"
-#include "racer/math/euler_method_integrator.h"
 #include "racer_ros/Follower.h"
 
-std::shared_ptr<racer::following_strategies::dwa> dwa;
-racer::following_strategies::trajectory_error_calculator error_calculator;
+using racer::vehicle_model;
+
+std::shared_ptr<racer::following_strategies::dwa<kinematic::state>> dwa;
+racer::following_strategies::trajectory_error_calculator<kinematic::state> error_calculator;
 
 visualization_msgs::MarkerArray prepare_visualization(
     const racer_ros::Follower &follower,
-    const racer::vehicle_model::kinematic_bicycle_model::action &selected_action,
-    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> &all_actions);
+    const racer::action &selected_action,
+    const std::list<racer::action> &all_actions);
 
 void spin(
     const int frequency,
     const racer_ros::Follower &follower,
-    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> actions,
+    const std::list<racer::action> actions,
     const ros::Publisher command_pub,
     const ros::Publisher visualization_pub)
 {
-
   ros::Rate rate(frequency);
 
   while (ros::ok())
@@ -104,7 +107,7 @@ void setup_dynamic_reconfigure()
 
 void create_visualization_line(
     int id,
-    const std::list<racer::vehicle_model::kinematic_bicycle_model::state> &trajectory,
+    const std::list<racer::state> &trajectory,
     double score,
     visualization_msgs::Marker &line)
 {
@@ -135,8 +138,8 @@ void create_visualization_line(
 
 visualization_msgs::MarkerArray prepare_visualization(
     const racer_ros::Follower &follower,
-    const racer::vehicle_model::kinematic_bicycle_model::action &selected_action,
-    const std::list<racer::vehicle_model::kinematic_bicycle_model::action> &all_actions)
+    const racer::action &selected_action,
+    const std::list<racer::action> &all_actions)
 {
 
   visualization_msgs::MarkerArray msg;
@@ -228,13 +231,11 @@ int main(int argc, char *argv[])
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  std::shared_ptr<racer::vehicle_model::kinematic_bicycle_model::model> model =
-      std::make_shared<racer::vehicle_model::kinematic_bicycle_model::model>(std::make_unique<racer::math::euler_method>(integration_step_s), vehicle);
-
-  const int lookahead = int(ceil(prediction_horizon_s / integration_step_s));
+  auto model = std::make_shared<racer::vehicle_model::kinematic_model>(vehicle);
+  const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
-  auto actions = racer::vehicle_model::kinematic_bicycle_model::action::create_actions_including_reverse(9, 15);
+  auto actions = racer::action::create_actions_including_reverse(9, 15);
 
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  racer::following_strategies::trajectory_error_calculator error_calculator = {
+  racer::following_strategies::trajectory_error_calculator<kinematic::state> error_calculator = {
       position_weight,
       heading_weight,
       velocity_weight,
@@ -251,7 +252,7 @@ int main(int argc, char *argv[])
       vehicle.radius() * 5};
 
   dwa =
-      std::make_shared<racer::following_strategies::dwa>(
+      std::make_shared<racer::following_strategies::dwa<kinematic::state>>(
           lookahead,
           actions,
           model,
