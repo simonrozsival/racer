@@ -2,7 +2,6 @@
 #define TRACK_ANALYSIS_H_
 
 #include <vector>
-#include <list>
 #include <set>
 #include <utility>
 #include <algorithm>
@@ -18,15 +17,12 @@ namespace racer
 class track_analysis
 {
 public:
-    track_analysis(
-        const occupancy_grid &grid,
-        const double min_distance_between_waypoints)
-        : grid_(grid),
-          min_distance_between_waypoints_(min_distance_between_waypoints)
+    track_analysis(const double min_distance_between_waypoints)
+        : min_distance_between_waypoints_(min_distance_between_waypoints)
     {
     }
 
-    const std::vector<point> find_pivot_points(const std::vector<circle> &circle_path) const
+    const std::vector<point> find_pivot_points(const std::vector<circle> &circle_path, const racer::occupancy_grid &grid) const
     {
         std::vector<point> pivot_points;
 
@@ -36,7 +32,7 @@ public:
         // first iteration
         for (const auto &next_step : circle_path)
         {
-            if (!are_directly_visible(last_circle->center(), next_step.center()))
+            if (!are_directly_visible(last_circle->center(), next_step.center(), grid))
             {
                 pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
@@ -53,7 +49,7 @@ public:
                 break;
             }
 
-            if (!are_directly_visible(last_circle->center(), next_step.center()))
+            if (!are_directly_visible(last_circle->center(), next_step.center(), grid))
             {
                 pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
@@ -72,20 +68,19 @@ public:
     }
 
 private:
-    const occupancy_grid &grid_;
     const double min_distance_between_waypoints_;
 
-    bool are_directly_visible(const point &a, const point &b) const
+    bool are_directly_visible(const point &a, const point &b, const racer::occupancy_grid &grid) const
     {
-        double cell_size_sq = grid_.cell_size() * grid_.cell_size();
+        double cell_size_sq = grid.cell_size() * grid.cell_size();
         double distance = (a - b).length();
-        auto step = (b - a) * (grid_.cell_size() / distance);
+        auto step = (b - a) * (grid.cell_size() / distance);
 
         auto pt = a;
         while (pt.distance_sq(b) >= cell_size_sq)
         {
             pt += step;
-            if (grid_.collides(pt.x(), pt.y()))
+            if (grid.collides(pt.x(), pt.y()))
             {
                 return false;
             }

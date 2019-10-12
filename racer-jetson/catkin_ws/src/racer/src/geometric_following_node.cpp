@@ -1,6 +1,8 @@
-#include "ros/ros.h"
-#include <cmath>
+#include <ros/ros.h>
 #include <tf/transform_datatypes.h>
+
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Path.h>

@@ -1,7 +1,7 @@
 #ifndef PLANNER_H_
 #define PLANNER_H_
 
-#include <list>
+#include <vector>
 
 #include "nav_msgs/OccupancyGrid.h"
 #include "nav_msgs/Odometry.h"
@@ -30,7 +30,7 @@ class Planner
 {
 public:
   Planner(
-      const vehicle &vehicle,
+      vehicle &&vehicle,
       std::unique_ptr<racer::astar::discretization<discrete_state>> discretization,
       const double time_step_s,
       const std::string map_frame_id)
@@ -45,7 +45,7 @@ public:
   std::unique_ptr<racer_msgs::Trajectory> plan(
       const occupancy_grid &grid,
       const kinematic::state &initial_state,
-      const std::list<action> &available_actions,
+      const std::vector<action> &available_actions,
       const std::vector<racer::math::point> &waypoints,
       const int next_waypoint,
       const double waypoint_radius) const;

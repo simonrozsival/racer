@@ -1,7 +1,10 @@
 #include <stdexcept>
 
 #include <ros/ros.h>
+
+#define _USE_MATH_DEFINES
 #include <cmath>
+
 #include <tf/transform_datatypes.h>
 
 #include <nav_msgs/Odometry.h>
@@ -31,12 +34,12 @@ racer::following_strategies::trajectory_error_calculator<kinematic::state> error
 visualization_msgs::MarkerArray prepare_visualization(
     const racer_ros::Follower &follower,
     const racer::action &selected_action,
-    const std::list<racer::action> &all_actions);
+    const std::vector<racer::action> &all_actions);
 
 void spin(
     const int frequency,
     const racer_ros::Follower &follower,
-    const std::list<racer::action> actions,
+    const std::vector<racer::action> actions,
     const ros::Publisher command_pub,
     const ros::Publisher visualization_pub)
 {
@@ -107,7 +110,7 @@ void setup_dynamic_reconfigure()
 
 void create_visualization_line(
     int id,
-    const std::list<racer::state> &trajectory,
+    const std::vector<racer::state> &trajectory,
     double score,
     visualization_msgs::Marker &line)
 {
@@ -139,7 +142,7 @@ void create_visualization_line(
 visualization_msgs::MarkerArray prepare_visualization(
     const racer_ros::Follower &follower,
     const racer::action &selected_action,
-    const std::list<racer::action> &all_actions)
+    const std::vector<racer::action> &all_actions)
 {
 
   visualization_msgs::MarkerArray msg;
@@ -209,29 +212,13 @@ int main(int argc, char *argv[])
   node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
-  double max_speed, max_reversing_speed, acceleration;
-
-  node.param<double>("max_speed", max_speed, 3.0);
-  node.param<double>("max_reversing_speed", max_reversing_speed, -1.5);
-  node.param<double>("acceleration", acceleration, 3.0);
-
-  racer::vehicle_model::vehicle vehicle(
-      0.155,               // cog_offset
-      0.31,                // wheelbase
-      0.35,                // safe width
-      0.55,                // safe length
-      2.0 / 3.0 * M_PI,    // steering speed (rad/s)
-      1.0 / 6.0 * M_PI,    // max steering angle (rad)
-      max_speed,           // speed (ms^-1)
-      max_reversing_speed, // speed (ms^-1)
-      acceleration         // acceleration (ms^-2)
-  );
-
   double integration_step_s, prediction_horizon_s;
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  auto model = std::make_shared<racer::vehicle_model::kinematic_model>(vehicle);
+  auto vehicle = racer::vehicle_model::vehicle::rc_beast();
+  const double radius = vehicle.radius();
+  auto model = std::make_unique<racer::vehicle_model::kinematic_model>(std::move(vehicle));
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
@@ -249,13 +236,13 @@ int main(int argc, char *argv[])
       velocity_weight,
       1.0,
       distance_to_obstacle_weight,
-      vehicle.radius() * 5};
+      radius * 5};
 
   dwa =
       std::make_shared<racer::following_strategies::dwa<kinematic::state>>(
           lookahead,
           actions,
-          model,
+          std::move(model),
           error_calculator);
 
   ROS_DEBUG("DWA following strategy was initialized");

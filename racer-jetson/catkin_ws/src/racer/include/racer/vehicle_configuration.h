@@ -33,21 +33,14 @@ public:
     vehicle_configuration &operator=(const vehicle_configuration &copy_from) = default;
 
     vehicle_configuration(vehicle_configuration &&pos) = default;
-    vehicle_configuration &operator=(vehicle_configuration &&pos)
-    {
-        pos.is_valid_ = false;
-        location_ = std::move(pos.location_);
-        heading_angle_ = std::move(pos.heading_angle_);
-        is_valid_ = true;
-        return *this;
-    }
+    vehicle_configuration &operator=(vehicle_configuration &&pos) = default;
 
-    bool operator==(const vehicle_configuration &other) const
+    inline bool operator==(const vehicle_configuration &other) const
     {
         return location_ == other.location_ && heading_angle_ == other.heading_angle_;
     }
 
-    bool is_valid() const
+    inline bool is_valid() const
     {
         return is_valid_;
     }
@@ -57,8 +50,8 @@ public:
         return vehicle_configuration(location_ + other.location_, heading_angle_ + other.heading_angle_);
     }
 
-    const racer::math::vector &location() const { return location_; }
-    const double &heading_angle() const { return heading_angle_; }
+    inline const racer::math::vector &location() const { return location_; }
+    inline const double &heading_angle() const { return heading_angle_; }
 };
 
 } // namespace racer

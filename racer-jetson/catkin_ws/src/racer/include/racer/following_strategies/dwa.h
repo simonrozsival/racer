@@ -2,6 +2,8 @@
 #define DWA_H_
 
 #include <iostream>
+
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include <costmap_2d/cost_values.h>
@@ -49,15 +51,15 @@ public:
     trajectory_error_calculator &operator=(const trajectory_error_calculator &other) = default;
 
     double calculate_error(
-        const std::list<TState> &attempt,
+        const std::vector<TState> &attempt,
         const trajectory &reference,
         const occupancy_grid &map) const
     {
 
         double error = 0;
 
-        std::list<TState>::const_iterator first_it = attempt.begin();
-        std::list<trajectory_step<TState>>::const_iterator second_it = reference.steps().begin();
+        std::vector<TState>::const_iterator first_it = attempt.begin();
+        std::vector<trajectory_step<TState>>::const_iterator second_it = reference.steps().begin();
 
         std::size_t step = 0;
         std::size_t steps = std::min(attempt.size(), reference.steps().size());
@@ -115,14 +117,16 @@ class dwa : public following_strategy<TState>
 {
 public:
     dwa(
-        int steps,
-        const std::list<racer::action> available_actions,
-        const std::shared_ptr<racer::vehicle_model::base_model<TState>> model,
-        const trajectory_error_calculator<TState> &trajectory_error_calculator)
-        : steps_(steps),
-          available_actions_(available_actions),
-          model_(model),
-          trajectory_error_calculator_(trajectory_error_calculator)
+        const int steps,
+        const std::vector<racer::action> available_actions,
+        const std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model,
+        const trajectory_error_calculator<TState> &trajectory_error_calculator,
+        const double time_step_s_)
+        : steps_{steps},
+          available_actions_{available_actions},
+          model_{model},
+          trajectory_error_calculator_{trajectory_error_calculator},
+          time_step_s_{time_step_s_}
     {
     }
 
@@ -166,20 +170,20 @@ public:
         trajectory_error_calculator_ = error_calculator;
     }
 
-    std::list<TState> unfold(
+    std::vector<TState> unfold(
         const TState &origin,
         const racer::action &action,
         const racer::occupancy_grid &grid) const
     {
 
-        std::list<TState> next_states{};
+        std::vector<TState> next_states{};
 
         next_states.push_back(origin);
         TState last_state = origin;
 
         for (int i = 0; i < steps_; ++i)
         {
-            last_state = model_->predict_next_state(last_state, action);
+            last_state = model_->predict_next_state(last_state, action, time_step_s_);
             if (!last_state.is_valid())
             {
                 break;
@@ -200,10 +204,10 @@ public:
 
 private:
     int steps_;
-    std::list<action> available_actions_;
-    std::shared_ptr<racer::vehicle_model::base_model<TState>> model_;
-
+    std::vector<action> available_actions_;
+    std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model_;
     trajectory_error_calculator<TState> trajectory_error_calculator_;
+    double time_step_s_;
 };
 
 } // namespace racer::following_strategies

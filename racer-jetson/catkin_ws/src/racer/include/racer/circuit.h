@@ -25,7 +25,7 @@ public:
         vehicle_configuration start,
         std::vector<racer::math::point> list_of_waypoints,
         double waypoint_radius,
-        const occupancy_grid &grid)
+        const occupancy_grid grid)
         : number_of_waypoints(list_of_waypoints.size()),
           start_configuration(start),
           grid(grid),
@@ -35,17 +35,20 @@ public:
         double remaining_distance = 0;
         remaining_distances_.reserve(waypoints.size());
 
-        std::list<double> distances;
+        std::vector<double> distances;
         for (size_t n = waypoints.size() - 1; n > 0; --n)
         {
-            distances.push_front(remaining_distance);
+            distances.push_back(remaining_distance);
             remaining_distance += (waypoints[n - 1]).distance(waypoints[n]);
         }
 
-        distances.push_front(remaining_distance);
+        distances.push_back(remaining_distance);
 
-        std::copy(std::begin(distances), std::end(distances), std::back_inserter(remaining_distances_));
+        std::copy(std::rend(distances), std::rbegin(distances), std::back_inserter(remaining_distances_));
     }
+
+    circuit(const circuit &other) = delete;
+    circuit &operator=(const circuit &other) = delete;
 
     bool collides(const racer::math::point &position) const
     {

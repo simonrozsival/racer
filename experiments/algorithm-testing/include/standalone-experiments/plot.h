@@ -3,7 +3,6 @@
 
 #include <iostream>
 #include <vector>
-#include <list>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wregister"

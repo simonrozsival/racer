@@ -14,6 +14,8 @@ template <typename TState>
 class following_strategy
 {
 public:
+    virtual ~following_strategy() = default;
+
     virtual racer::action select_action(
         const TState &current_state,
         const std::size_t passed_waypoints,

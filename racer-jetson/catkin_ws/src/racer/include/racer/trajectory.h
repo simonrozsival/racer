@@ -2,7 +2,7 @@
 #define TRAJECTORY_H_
 
 #include <iostream>
-#include <list>
+#include <vector>
 
 namespace racer
 {
@@ -39,14 +39,14 @@ template <typename State>
 struct trajectory
 {
 private:
-    std::list<trajectory_step<State>> steps_;
+    std::vector<trajectory_step<State>> steps_;
 
 public:
     trajectory() : steps_{}
     {
     }
 
-    trajectory(const std::list<trajectory_step<State>> steps)
+    trajectory(const std::vector<trajectory_step<State>> steps)
         : steps_(steps)
     {
     }
@@ -60,11 +60,11 @@ public:
     trajectory find_reference_subtrajectory(const State &current_state, std::size_t passed_waypoints) const
     {
         const auto reference_state = find_reference_state(current_state, passed_waypoints);
-        std::list<trajectory_step<State>> sublist{reference_state, steps_.end()};
+        std::vector<trajectory_step<State>> sublist{reference_state, steps_.end()};
         return {sublist};
     }
 
-    const std::list<trajectory_step<State>> &steps() const { return steps_; }
+    const std::vector<trajectory_step<State>> &steps() const { return steps_; }
     bool empty() const { return steps_.empty(); }
     bool is_valid() const { return !steps_.empty(); }
 

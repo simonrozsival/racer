@@ -29,6 +29,7 @@
 #ifndef __GridMapLogOdds_h_
 #define __GridMapLogOdds_h_
 
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 /**
@@ -37,7 +38,6 @@
 class LogOddsCell
 {
 public:
-
   /*
   void setOccupied()
   {
@@ -49,7 +49,6 @@ public:
     logOddsVal -= 0.4f;
   };
   */
-
 
   /**
    * Sets the cell value to val.
@@ -95,11 +94,8 @@ public:
   //protected:
 
 public:
-
   float logOddsVal; ///< The log odds representation of occupancy probability.
   int updateIndex;
-
-
 };
 
 /**
@@ -108,7 +104,6 @@ public:
 class GridMapLogOddsFunctions
 {
 public:
-
   /**
    * Constructor, sets parameters like free and occupied log odds ratios.
    */
@@ -132,9 +127,10 @@ public:
    * Update cell as occupied
    * @param cell The cell.
    */
-  void updateSetOccupied(LogOddsCell& cell) const
+  void updateSetOccupied(LogOddsCell &cell) const
   {
-    if (cell.logOddsVal < 50.0f){
+    if (cell.logOddsVal < 50.0f)
+    {
       cell.logOddsVal += logOddsOccupied;
     }
   }
@@ -143,14 +139,13 @@ public:
    * Update cell as free
    * @param cell The cell.
    */
-  void updateSetFree(LogOddsCell& cell) const
+  void updateSetFree(LogOddsCell &cell) const
   {
 
     cell.logOddsVal += logOddsFree;
-
   }
 
-  void updateUnsetFree(LogOddsCell& cell) const
+  void updateUnsetFree(LogOddsCell &cell) const
   {
     cell.logOddsVal -= logOddsFree;
   }
@@ -160,7 +155,7 @@ public:
    * @param cell The cell.
    * @return The probability
    */
-  float getGridProbability(const LogOddsCell& cell) const
+  float getGridProbability(const LogOddsCell &cell) const
   {
     float odds = exp(cell.logOddsVal);
     return odds / (odds + 1.0f);
@@ -195,7 +190,6 @@ public:
   }
 
 protected:
-
   float probToLogOdds(float prob)
   {
     float odds = prob / (1.0f - prob);
@@ -204,9 +198,6 @@ protected:
 
   float logOddsOccupied; /// < The log odds representation of probability used for updating cells as occupied
   float logOddsFree;     /// < The log odds representation of probability used for updating cells as free
-
-
 };
-
 
 #endif
