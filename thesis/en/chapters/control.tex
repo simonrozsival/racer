@@ -90,7 +90,7 @@ Finally, we can define an error between a state trajectory $\hat{x}=\left\langle
 There are several algorithms which will allow us to track the reference trajectory based only on the geometry of the vehicle and the error between the current state and the desired state. We will use two algorithms, a \gls{PID} controller to regulate the target velocity of the vehicle and a \textit{Pure Pursuit} controller to control the steering angle.
 
 An advantage of the geometric controller is its simplicity and very straightforward implementation. On the other hand, we must also consider how to avoid collisions with obstacles.
-
+ 
 \subsection{Proportional Integral Derivative (PID)}
 
 \gls*{PID} is a classical controller used in many different areas for regulating the output of some system based on reference values. The name stands for Proportional, Integral, and Derivative terms, which are multiplied by predefined gains $k_p,k_i,k_d\in\mathbb{R}$ and combined into an output value which will be directly used as the control input for an actuator.

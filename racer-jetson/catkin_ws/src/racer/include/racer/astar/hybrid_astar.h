@@ -35,25 +35,26 @@ struct discrete_state
     }
 };
 
-struct discretization : public racer::astar::discretization<discrete_state>
+struct discretization
+    : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
 {
 private:
-    const double x_, y_, speed_;
+    const double x_, y_, motor_rpm_;
     const racer::math::angle heading_;
 
 public:
-    discretization(double x, double y, racer::math::angle heading, double speed)
-        : x_(x), y_(y), heading_(heading), speed_(speed)
+    discretization(double x, double y, racer::math::angle heading, double motor_rpm)
+        : x_(x), y_(y), heading_(heading), motor_rpm_(motor_rpm)
     {
     }
 
-    discrete_state discretize(const state &state) const
+    discrete_state operator()(const racer::vehicle_model::kinematic::state &state) const override
     {
         return {
             (int)floor(state.position().x() / x_),
             (int)floor(state.position().y() / y_),
-            (int)floor(racer::math::angle(state.position().heading_angle()) / heading_),
-            (int)floor(state.speed() / speed_)};
+            (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
+            (int)floor(state.motor_rpm() / motor_rpm_)};
     }
 };
 
@@ -62,9 +63,9 @@ public:
 namespace std
 {
 template <>
-struct hash<std::pair<racer::astar::hybrid_racer::astar::discrete_state, size_t>>
+struct hash<std::pair<racer::astar::hybrid_astar::discrete_state, size_t>>
 {
-    size_t operator()(const std::pair<racer::astar::hybrid_racer::astar::discrete_state, size_t> &obj) const
+    size_t operator()(const std::pair<racer::astar::hybrid_astar::discrete_state, size_t> &obj) const
     {
         size_t seed = 0;
 

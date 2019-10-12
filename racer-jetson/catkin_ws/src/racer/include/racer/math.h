@@ -1,8 +1,9 @@
-#ifndef PRIMITIVES_H_
-#define PRIMITIVES_H_
+#pragma once
 
+#define _USE_MATH_DEFINES
 #include <cmath>
-#include <list>
+
+#include <vector>
 #include <algorithm>
 
 namespace racer::math
@@ -152,7 +153,7 @@ struct rectangle
     }
 
 private:
-    std::list<vector> edges() const
+    std::vector<vector> edges() const
     {
         return {B - A, C - B, D - C, A - D};
     }
@@ -184,36 +185,70 @@ private:
 
 struct angle
 {
-    const double radians;
+private:
+    double radians_;
 
+public:
     angle(double radians)
-        : radians(to_small_angle(radians))
+        : radians_{radians}
     {
     }
+
+    angle(const angle &other) = default;
+    angle &operator=(const angle &other) = default;
+
+    angle(angle &&other) = default;
+    angle &operator=(angle &&other) = default;
 
     operator double() const
     {
-        return radians;
+        return radians_;
     }
 
-    bool operator==(const angle &other) const
+    inline angle operator*(const double scale) const
     {
-        return radians == other.radians;
+        return radians_ * scale;
     }
 
-    bool operator<(const angle &other) const
+    inline bool operator==(const angle &other) const
     {
-        return radians < other.radians;
+        return radians_ == other.radians_;
     }
 
-private:
-    static double to_small_angle(double angle)
+    inline bool operator<(const angle &other) const
     {
-        while (angle < 0)
-            angle += 2 * M_PI;
-        while (angle >= 2 * M_PI)
-            angle -= 2 * M_PI;
-        return angle;
+        return radians_ < other.radians_;
+    }
+
+    inline angle distance_to(const angle other) const
+    {
+        return std::min(radians_ - other.radians_, 2 * M_PI - (radians_ - other.radians_));
+    }
+
+    inline angle to_angle_around_zero() const
+    {
+        return radians_ > M_PI
+                   ? radians_ - 2 * M_PI
+                   : radians_;
+    }
+
+    inline double to_degrees() const
+    {
+        return radians_ / M_PI * 180.0;
+    }
+
+    static angle from_degrees(const double deg)
+    {
+        return angle(deg / 180.0 * M_PI);
+    }
+
+    static angle to_small_angle(double radians)
+    {
+        while (radians < 0)
+            radians += 2.0 * M_PI;
+        while (radians >= 2.0 * M_PI)
+            radians -= 2.0 * M_PI;
+        return {radians};
     }
 };
 
@@ -241,9 +276,9 @@ public:
     circle(circle &&other) = default;
     circle &operator=(circle &&other) = default;
 
-    const std::list<racer::math::point> points_on_circumference(double starting_angle, double arc_angle, size_t number_of_points) const
+    const std::vector<racer::math::point> points_on_circumference(double starting_angle, double arc_angle, size_t number_of_points) const
     {
-        std::list<racer::math::point> points;
+        std::vector<racer::math::point> points;
         racer::math::angle step = arc_angle / (double)number_of_points;
 
         for (double angle = starting_angle; angle < starting_angle + arc_angle; angle += step)
@@ -287,6 +322,10 @@ public:
         return dist_sq <= std::pow(radius_, 2) || dist_sq <= std::pow(other.radius_, 2);
     }
 };
-} // namespace racer::math
 
-#endif
+constexpr double sign(double x)
+{
+    return (0 < x) - (x < 0);
+}
+
+} // namespace racer::math

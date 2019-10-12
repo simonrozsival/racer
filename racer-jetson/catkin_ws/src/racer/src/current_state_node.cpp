@@ -1,4 +1,6 @@
 #include <iostream>
+
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include <ros/ros.h>
@@ -27,37 +29,45 @@ uint32_t msg_seq;
 
 bool is_initialized;
 
-void command_callback(const geometry_msgs::Twist::ConstPtr& command) {
+void command_callback(const geometry_msgs::Twist::ConstPtr &command)
+{
   const double target_steering_angle_percent = command->angular.z;
 
   current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
 }
 
-double fix_angle(double angle) {
-  while (angle < 0) angle += 2 * M_PI;
-  while (angle > 2 * M_PI) angle -= 2 * M_PI;
+double fix_angle(double angle)
+{
+  while (angle < 0)
+    angle += 2 * M_PI;
+  while (angle > 2 * M_PI)
+    angle -= 2 * M_PI;
   return angle;
 }
 
-double angle_difference(double alpha, double beta) {
+double angle_difference(double alpha, double beta)
+{
   alpha = fix_angle(alpha);
   beta = fix_angle(beta);
 
   return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
 }
 
-double get_current_speed(const racer::vehicle_configuration current_position) {
+double get_current_speed(const racer::vehicle_configuration current_position)
+{
   double now = ros::Time().now().toSec();
   double current_speed = 0;
 
-  if (prev_position) {
+  if (prev_position)
+  {
     racer::math::vector delta = current_position.location() - prev_position->location();
     double direction = angle_difference(delta.angle(), prev_position->heading_angle()) < (M_PI / 2) ? 1.0 : -1.0;
     double elapsed_time = now - prev_position_time;
 
     current_speed = direction * delta.length() / elapsed_time;
 
-    if (std::abs(current_speed) < 1e-3) {
+    if (std::abs(current_speed) < 1e-3)
+    {
       current_speed = 0;
     }
   }
@@ -68,17 +78,18 @@ double get_current_speed(const racer::vehicle_configuration current_position) {
   return current_speed;
 }
 
-racer::vehicle_configuration get_current_position(const tf::Transform& transform) {
+racer::vehicle_configuration get_current_position(const tf::Transform &transform)
+{
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
-  return { origin.x(), origin.y(), rotation };
+  return {origin.x(), origin.y(), rotation};
 }
 
 void publish_state(
-  const ros::Publisher& state_pub,
-  const racer::vehicle_configuration& position,
-  const double current_speed)
+    const ros::Publisher &state_pub,
+    const racer::vehicle_configuration &position,
+    const double current_speed)
 {
   racer_msgs::State state;
   state.header.seq = msg_seq++;
@@ -94,33 +105,43 @@ void publish_state(
   state_pub.publish(state);
 }
 
-void spin(const int frequency, const ros::Publisher& state_pub) {
+void spin(const int frequency, const ros::Publisher &state_pub)
+{
   ros::Rate rate(frequency);
   tf::TransformListener tf_listener;
   ros::Duration speed_averaging_interval(1.0 / double(frequency));
   std::string err;
 
-  while (ros::ok()) {
-    if (is_initialized) {
-      try {
+  while (ros::ok())
+  {
+    if (is_initialized)
+    {
+      try
+      {
         tf::StampedTransform odom_to_base_link, map_to_odom;
         tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), odom_to_base_link);
         tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
-        if (odom_to_base_link.stamp_ != prev_transform_stamp) {
+        if (odom_to_base_link.stamp_ != prev_transform_stamp)
+        {
           const auto position = get_current_position(map_to_odom * odom_to_base_link);
           const auto current_speed = get_current_speed(position);
           publish_state(state_pub, position, current_speed);
           prev_transform_stamp = odom_to_base_link.stamp_;
         }
-
-      } catch (tf::TransformException ex) {
+      }
+      catch (tf::TransformException ex)
+      {
         ROS_ERROR("'current_state' node: %s.", ex.what());
       }
-    } else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time(0), &err)) {
+    }
+    else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time(0), &err))
+    {
       is_initialized = true;
       ROS_INFO("'current_state' node: INITIALIZED.");
-    } else {
+    }
+    else
+    {
       ROS_INFO("'current_state' node: Still not initialized (%s).", err.c_str());
       err = "";
       ros::Duration(1.0).sleep();
@@ -131,7 +152,8 @@ void spin(const int frequency, const ros::Publisher& state_pub) {
   }
 }
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[])
+{
   ros::init(argc, argv, "current_state");
   ros::NodeHandle node("~");
 

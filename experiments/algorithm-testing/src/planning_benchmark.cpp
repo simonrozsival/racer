@@ -1,8 +1,10 @@
 #include <iostream>
 #include <chrono>
 #include <numeric>
-#include <cmath>
 #include <vector>
+
+#define _USE_MATH_DEFINES
+#include <cmath>
 
 #include "standalone-experiments/input.h"
 #include "standalone-experiments/plot.h"
@@ -47,27 +49,17 @@ int main(int argc, char *argv[])
         configs.push_back(config);
     }
 
-    const std::size_t repetitions = 5;
+    const std::size_t repetitions = 100;
 
     // Step 1
     std::cout << "1. SEHS" << std::endl;
     std::cout << "--------------------" << std::endl;
 
-    std::map<std::string, std::chrono::milliseconds> space_exploration_benchmark_results;
+    std::map<std::string, std::pair<bool, std::chrono::milliseconds>> space_exploration_benchmark_results;
 
     const double time_step_s = 1.0 / 25.0;
-    racer::vehicle_model::vehicle vehicle(
-        0.155,               // cog_offset
-        0.31,                // wheelbase
-        0.35,                // safe width
-        0.55,                // safe length
-        2.0 / 3.0 * M_PI,    // steering speed (rad/s)
-        24.0 / 180.0 * M_PI, // max steering angle (rad)
-        200.0,               // speed (ms^-1)
-        -3.0,                // reversing speed (ms^-1)
-        3.0                  // acceleration (ms^-2)
-    );
-    auto transition_model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle, time_step_s);
+    auto vehicle = racer::vehicle_model::vehicle::rc_beast();
+    auto transition_model = std::make_shared<racer::vehicle_model::kinematic::model>(std::move(vehicle));
 
     std::cout << "circuit name, from waypoint, to waypoint, found solution, open nodes, closed nodes, time to finish, computation time in ms" << std::endl;
 
@@ -75,35 +67,25 @@ int main(int argc, char *argv[])
     {
         const auto config = configs[i];
         const auto inflated_grid = config->occupancy_grid.inflate(vehicle.radius() / config->occupancy_grid.cell_size());
-
-        const auto start_disc = std::chrono::steady_clock::now();
-
-        racer::sehs::space_exploration exploration(config->occupancy_grid, vehicle.radius(), 2 * vehicle.radius(), config->neighbor_circles);
-        const auto circle_path = exploration.explore_grid(config->initial_position, config->checkpoints);
-
-        const auto end_disc = std::chrono::steady_clock::now();
-        const auto dt = std::chrono::duration_cast<std::chrono::milliseconds>(end_disc - start_disc);
-        space_exploration_benchmark_results[config->name] = dt;
+        const auto exploration = racer::sehs::space_exploration{vehicle.radius(), 2 * vehicle.radius(), config->neighbor_circles};
+        const auto circle_path = exploration.explore_grid(config->occupancy_grid, config->initial_position, config->checkpoints);
 
         auto discretization = std::make_shared<racer::astar::sehs::kinematic::discretization>(
             circle_path,
             M_PI / 12.0,
             0.25);
 
-        const racer::vehicle_model::kinematic::state state(
-            config->initial_position, 0, 0);
+        const auto state = racer::vehicle_model::kinematic::state{config->initial_position};
 
         const double max_angle = M_PI * (4.0 / 5.0);
-        racer::track_analysis analysis(config->occupancy_grid, config->min_distance_between_waypoints);
-        const auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path), max_angle);
+        racer::track_analysis analysis(config->min_distance_between_waypoints);
+        const auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path, inflated_grid), max_angle);
 
         for (std::size_t i = 0; i < repetitions; ++i)
         {
             const auto start = std::chrono::steady_clock::now();
 
-            auto discrete_initial_state = discretization->discretize(state);
-
-            racer::circuit circuit(
+            auto circuit = std::make_unique<racer::circuit>(
                 config->initial_position,
                 waypoints,
                 5 * vehicle.radius(),
@@ -112,13 +94,11 @@ int main(int argc, char *argv[])
             auto initial_state{state};
             auto problem = std::make_unique<search_problem>(
                 initial_state,
-                discrete_initial_state,
                 time_step_s,
-                vehicle,
                 racer::action::create_actions(5, 9),
                 discretization,
                 transition_model,
-                circuit);
+                std::move(circuit));
 
             const auto result = racer::astar::search<
                 racer::astar::sehs::kinematic::discrete_state,
@@ -127,8 +107,12 @@ int main(int argc, char *argv[])
             const auto end = std::chrono::steady_clock::now();
             const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
 
-            std::cout << config->name << ", " << (result.was_successful() ? "yes" : "no") << "," << result.number_of_opened_nodes << ", " << result.number_of_expanded_nodes << ", " << result.final_cost << ", " << t.count() << std::endl;
+            // print the csv outcome
+            std::cout << config->name << ", " << (result.was_successful() ? "yes" : "no") << ", " << result.number_of_opened_nodes << ", " << result.number_of_expanded_nodes << ", " << result.final_cost << ", " << t.count() << std::endl;
 
+            // only plot the result after all of the previous repetitions
+            // are done - the found trajectory should be always the same
+            // and we repeat the process only to get good runtime averages
             if (i == repetitions - 1 && result.was_successful())
             {
                 plot_trajectory(*config, result.found_trajectory);
@@ -137,11 +121,12 @@ int main(int argc, char *argv[])
     }
 
     std::cout << "space exploration benchmark" << std::endl;
-    std::cout << "circuit name, space exploration time in ms" << std::endl;
+    std::cout << "circuit name, successful, space exploration time in ms" << std::endl;
 
-    for (auto res : space_exploration_benchmark_results)
+    for (auto benchmark : space_exploration_benchmark_results)
     {
-        std::cout << res.first << ", " << res.second.count() << std::endl;
+        auto outcome = benchmark.second;
+        std::cout << benchmark.first << ", " << (outcome.first ? "yes" : "no") << ", " << outcome.second.count() << std::endl;
     }
 
     // // Hybrid A*

@@ -2,7 +2,6 @@
 #define SEHS_H_
 
 #include <vector>
-#include <list>
 
 #include "racer/astar/discretized_astar_problem.h"
 
@@ -39,22 +38,23 @@ struct discrete_state
     }
 };
 
-struct discretization : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
+struct discretization
+    : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
 {
 private:
     std::vector<racer::math::circle> circles_;
-    const double speed_;
+    const double motor_rpm_;
     const racer::math::angle heading_;
 
 public:
-    discretization(const std::vector<racer::math::circle> &circles, double heading, double speed)
+    discretization(const std::vector<racer::math::circle> &circles, double heading, double motor_rpm)
         : circles_{circles},
-          speed_(speed),
+          motor_rpm_(motor_rpm),
           heading_(heading)
     {
     }
 
-    discrete_state discretize(const racer::vehicle_model::kinematic::state &state) const override
+    discrete_state operator()(const racer::vehicle_model::kinematic::state &state) const override
     {
         int closest_circle = 0;
         double min_distance_sq;
@@ -71,7 +71,7 @@ public:
         return {
             closest_circle,
             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
-            (int)floor(state.speed() / speed_)};
+            (int)floor(state.motor_rpm() / motor_rpm_)};
     }
 };
 

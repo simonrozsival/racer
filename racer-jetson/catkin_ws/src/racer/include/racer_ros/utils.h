@@ -46,7 +46,7 @@ namespace racer_ros {
     }
 
     racer::trajectory<kinematic::state> msg_to_trajectory(const racer_msgs::Trajectory& msg) {
-        std::list<trajectory_step<kinematic::state>> steps;
+        std::vector<trajectory_step<kinematic::state>> steps;
         for (const auto& step : msg.trajectory) {
             steps.emplace_back(
                 pose_and_twist_to_state(step.pose, step.velocity),

@@ -29,7 +29,7 @@ int branching_factor;
 double min_distance_between_waypoints;
 double waypoint_radius, vehicle_radius;
 int lookahead;
-std::list<racer::math::point> check_points;
+std::vector<racer::math::point> check_points;
 
 // state variables
 racer::vehicle_configuration position;
@@ -70,17 +70,17 @@ void load_circuit()
   ROS_DEBUG("Analyzing the circuit...");
 
   racer::sehs::space_exploration space_exploration(
-      grid, vehicle_radius, 10 * vehicle_radius, branching_factor);
+      vehicle_radius, 10 * vehicle_radius, branching_factor);
   racer::track_analysis analysis(
       grid, min_distance_between_waypoints);
 
-  std::list<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
+  std::vector<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
   final_check_points.push_back(position.location()); // back to the start
 
   ROS_DEBUG("start track analysis/space exploration");
-  const auto path = space_exploration.explore_grid(position, final_check_points);
+  const auto path = space_exploration.explore_grid(grid, position, final_check_points);
   const auto pivot_points = analysis.find_pivot_points(path);
-  const std::list<racer::math::point> apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
+  const std::vector<racer::math::point> apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
   ROS_DEBUG("finished track analysis/space exploration");
 
   if (apexes.size() == 0)

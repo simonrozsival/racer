@@ -1299,10 +1299,7 @@ With the knowledge of how long it takes to adjust the steering angle of the fron
 \begin{equation}
 \begin{aligned}
 \Delta \delta&=\min\left\{\abs{\delta-\delta_t}, 2\pi-\abs{\delta-\delta_t}\right\}\\
-\dot{\delta}&=\begin{cases}
-\nicefrac{\Delta \delta}{t(\delta, \delta_t)} & \text{when }\delta \neq \delta_t\\
-0 & \text{otherwise.}
-\end{cases}
+\dot{\delta}&=\nicefrac{\sign{} \Delta \delta}{t(\delta, \delta_t)}.
 \end{aligned}
 \end{equation}
 

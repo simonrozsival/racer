@@ -1,6 +1,8 @@
 #include <iostream>
 #include <chrono>
 #include <numeric>
+
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "standalone-experiments/input.h"
@@ -47,15 +49,15 @@ int main(int argc, char *argv[])
         const auto config = configs[i];
         for (int neighbor_circles = 4; neighbor_circles < 16; ++neighbor_circles)
         {
-            std::list<long long> ms;
+            std::vector<long long> ms;
             std::vector<racer::math::circle> path;
 
             for (std::size_t i = 0; i < repetitions; ++i)
             {
                 const auto start = std::chrono::steady_clock::now();
 
-                racer::sehs::space_exploration se(config->occupancy_grid, config->radius, 10 * config->radius, neighbor_circles);
-                const auto circles = se.explore_grid(config->initial_position, config->checkpoints);
+                racer::sehs::space_exploration se(config->radius, 10 * config->radius, neighbor_circles);
+                const auto circles = se.explore_grid(config->occupancy_grid, config->initial_position, config->checkpoints);
 
                 const auto end = std::chrono::steady_clock::now();
                 const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
@@ -104,12 +106,12 @@ int main(int argc, char *argv[])
     {
         const auto config = configs[i];
 
-        std::list<long long> ms;
+        std::vector<long long> ms;
         for (std::size_t j = 0; j < repetitions; ++j)
         {
             const auto start = std::chrono::steady_clock::now();
-            racer::track_analysis analysis(config->occupancy_grid, config->min_distance_between_waypoints);
-            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i]);
+            racer::track_analysis analysis(config->min_distance_between_waypoints);
+            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i], config->occupancy_grid);
 
             const auto end = std::chrono::steady_clock::now();
             const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);

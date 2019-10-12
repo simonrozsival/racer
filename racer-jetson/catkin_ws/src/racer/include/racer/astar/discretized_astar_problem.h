@@ -4,8 +4,7 @@
 #include <iostream>
 
 #include "astar.h"
-#include "racer/vehicle_model/vehicle.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle_model/base_model.h"
 #include "racer/circuit.h"
 
 using namespace racer::vehicle_model;
@@ -17,7 +16,8 @@ template <typename TDiscreteState, typename TState>
 class discretization
 {
 public:
-    virtual TDiscreteState discretize(const TState &state) const = 0;
+    virtual ~discretization() = default;
+    virtual TDiscreteState operator()(const TState &state) const = 0;
 };
 
 template <typename TDiscreteState, typename TState>
@@ -26,62 +26,57 @@ class discretized_search_problem : public racer::astar::base_search_problem<TDis
 public:
     discretized_search_problem(
         TState initial_state,
-        TDiscreteState discrete_state,
         double time_step_s,
-        const racer::vehicle_model::vehicle &vehicle,
-        const std::list<action> &available_actions,
-        std::shared_ptr<discretization<TDiscreteState, TState>> discretization,
-        std::shared_ptr<racer::vehicle_model::base_model<TState>> model,
-        const racer::circuit &circuit)
-        : racer::astar::base_search_problem<TDiscreteState, TState>(initial_state, discrete_state),
+        const std::vector<action> &available_actions,
+        std::shared_ptr<discretization<TDiscreteState, TState>> discretize,
+        std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model,
+        std::unique_ptr<racer::circuit> circuit)
+        : initial_state_{initial_state},
           time_step_s_(time_step_s),
-          transition_(model),
-          vehicle_(vehicle),
+          vehicle_model_(model),
           available_actions_(available_actions),
-          discretization_(discretization),
-          circuit_(circuit)
+          discretize_(discretize),
+          circuit_(std::move(circuit))
     {
     }
 
 public:
-    std::list<racer::astar::neighbor_transition<TDiscreteState, TState>> valid_neighbors(const TState &examined_state) const override
+    std::vector<racer::astar::neighbor_transition<TDiscreteState, TState>> valid_neighbors(
+        const search_node<TDiscreteState, TState> &node) const override
     {
-        std::list<racer::astar::neighbor_transition<TDiscreteState, TState>> transitions;
-        const auto discretized_examined_state = discretization_->discretize(examined_state);
+        std::vector<racer::astar::neighbor_transition<TDiscreteState, TState>> transitions;
 
         for (const auto &action : available_actions_)
         {
             int steps = 0;
-            TState prediction = examined_state;
+            TState prediction = node.final_state();
             TDiscreteState discretized_prediction;
-            std::list<TState> states;
+            std::vector<TState> states;
 
             bool skip = false;
-            bool left_initial_cell_or_stopped = false;
+            bool left_cell_or_stopped = false;
 
-            while (!left_initial_cell_or_stopped)
+            do
             {
                 ++steps;
 
-                auto next_prediction = transition_->predict_next_state(prediction, action);
+                auto next_prediction = vehicle_model_->predict_next_state(prediction, action, time_step_s_);
                 if (collides(next_prediction))
                 {
                     skip = true;
                     break;
                 }
 
-                discretized_prediction = discretization_->discretize(next_prediction);
+                discretized_prediction = discretize(next_prediction);
+                left_cell_or_stopped = discretized_prediction != node.key || prediction == next_prediction;
 
-                left_initial_cell_or_stopped =
-                    discretized_prediction != discretized_examined_state || prediction == next_prediction;
-
-                if (prediction != examined_state)
+                if (prediction != node.final_state())
                 {
                     states.push_back(std::move(prediction));
                 }
 
                 prediction = std::move(next_prediction);
-            }
+            } while (!left_cell_or_stopped);
 
             if (skip || !prediction.is_valid())
             {
@@ -89,37 +84,39 @@ public:
             }
 
             states.push_back(std::move(prediction));
-            transitions.emplace_back(racer::astar::neighbor_transition<TDiscreteState, TState>(
-                std::move(discretized_prediction), std::move(states), steps * time_step_s_));
+            transitions.emplace_back(
+                std::move(discretized_prediction),
+                std::move(states),
+                steps * time_step_s_);
         }
 
         return transitions;
     }
 
-    const bool is_goal(size_t passed_waypoints) const override
+    inline const bool is_goal(std::size_t passed_waypoints) const override
     {
-        return passed_waypoints == circuit_.number_of_waypoints;
+        return passed_waypoints == circuit_->number_of_waypoints;
     }
 
-    const bool passes_waypoint(const std::list<TState> &examined_states, size_t passed_waypoints) const override
+    const bool passes_waypoint(const std::vector<TState> &examined_states, std::size_t passed_waypoints) const override
     {
         return std::any_of(
             examined_states.cbegin(),
             examined_states.cend(),
             [passed_waypoints, this](const TState &examined_state) {
-                return circuit_.passes_waypoint(examined_state.position(), passed_waypoints);
+                return circuit_->passes_waypoint(examined_state.position(), passed_waypoints);
             });
     }
 
-    const double estimate_cost_to_go(const TState &examined_state, size_t passed_waypoints) const override
+    inline const double estimate_cost_to_go(const TState &examined_state, size_t passed_waypoints) const override
     {
-        auto dist = circuit_.distance_to_waypoint(examined_state.position(), passed_waypoints) + circuit_.remaining_distance_estimate(passed_waypoints);
-        return dist / vehicle_.max_speed;
+        auto dist = circuit_->distance_to_waypoint(examined_state.position(), passed_waypoints) + circuit_->remaining_distance_estimate(passed_waypoints);
+        return dist / vehicle_model_->maximum_theoretical_speed();
     }
 
     const racer::trajectory<TState> reconstruct_trajectory(const search_node<TDiscreteState, TState> &node) const override
     {
-        std::list<racer::trajectory_step<TState>> steps;
+        std::vector<racer::trajectory_step<TState>> steps;
 
         prepend_states(steps, node);
 
@@ -133,26 +130,43 @@ public:
         return {steps};
     }
 
+    std::unique_ptr<search_node<TDiscreteState, TState>> initial_search_node() const override
+    {
+        return search_node<TDiscreteState, TState>::for_initial_state(
+            discretize(initial_state_), initial_state_);
+    }
+
 private:
+    const TState initial_state_;
     double time_step_s_;
-    const std::shared_ptr<racer::vehicle_model::base_model<TState>> transition_;
-    const racer::vehicle_model::vehicle vehicle_;
-    const std::list<action> available_actions_;
-    const std::shared_ptr<discretization<TDiscreteState, TState>> discretization_;
-    const racer::circuit circuit_;
+    const std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> vehicle_model_;
+    const std::vector<action> available_actions_;
+    const std::shared_ptr<discretization<TDiscreteState, TState>> discretize_;
+    const std::unique_ptr<racer::circuit> circuit_;
 
 private:
     inline bool collides(const TState &examined_state) const
     {
-        return circuit_.collides(examined_state.position());
+        return circuit_->collides(examined_state.position());
     }
 
-    void prepend_states(std::list<trajectory_step<TState>> &path, const search_node<TDiscreteState, TState> &node) const
+    void prepend_states(std::vector<trajectory_step<TState>> &path, const search_node<TDiscreteState, TState> &node) const
     {
-        for (auto it = node.states.crbegin(); it != node.states.crend(); ++it)
-        {
-            path.emplace_front(*it, node.passed_waypoints);
-        }
+        std::vector<trajectory_step<TState>> steps;
+        std::transform(
+            node.states.begin(),
+            node.states.end(),
+            steps.begin(),
+            [node](TState state) -> trajectory_step<TState> {
+                return {state, node.passed_waypoints};
+            });
+
+        path.insert(path.begin(), steps.begin(), steps.end());
+    }
+
+    inline TDiscreteState discretize(const TState &state) const
+    {
+        return (*discretize_)(state);
     }
 };
 } // namespace racer::astar

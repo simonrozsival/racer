@@ -100,17 +100,7 @@ int main(int argc, char *argv[])
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
-  racer::vehicle_model::vehicle vehicle(
-      0.155,               // cog_offset
-      0.31,                // wheelbase
-      0.55,                // safe width
-      0.75,                // safe length
-      2.0 / 3.0 * M_PI,    // steering speed (rad/s)
-      24.0 / 180.0 * M_PI, // max steering angle (rad)
-      6.0,                 // speed (ms^-1)
-      -3.0,                // reversing speed (ms^-1)
-      3.0                  // acceleration (ms^-2)
-  );
+  auto vehicle = racer::vehicle_model::vehicle::rc_beast();
 
   const auto actions_with_reverse = racer::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
   const auto actions_just_forward = racer::action::create_actions(5, 9);                   // fewer throttle options, more steering options
@@ -134,7 +124,7 @@ int main(int argc, char *argv[])
       const auto path_of_circles = exploration.explore_grid(last_known_position, next_waypoints);
       auto discretization = std::make_unique<racer::astar::sehs::discretization>(path_of_circles, M_PI / 12.0, 0.25);
       planner = std::make_unique<racer_ros::Planner>(
-          vehicle,
+          std::move(vehicle),
           std::move(discretization),
           time_step_s,
           map_frame_id)

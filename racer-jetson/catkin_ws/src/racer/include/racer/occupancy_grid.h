@@ -2,11 +2,12 @@
 #define OCCUPANCY_GRID_H_
 
 #include <vector>
-#include <list>
 #include <iostream>
 #include <algorithm>
 #include <vector>
 #include <limits>
+
+#define _USE_MATH_DEFINES
 #include <cmath>
 
 #include "racer/math.h"
@@ -52,7 +53,6 @@ public:
     occupancy_grid inflate(int r) const
     {
         std::vector<uint8_t> inflated{data_.begin(), data_.end()}; // start with a copy
-        inflated.reserve(size_);
         const int r2 = r * r;
 
         for (std::size_t i{0}; i < width_; ++i)

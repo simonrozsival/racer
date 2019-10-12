@@ -32,9 +32,9 @@ public:
     const double &target_steering_angle() const { return target_steering_angle_; }
     const bool is_valid() const { return is_valid_; }
 
-    static const std::list<action> create_actions(const int throttle_levels, const int steering_levels)
+    static const std::vector<action> create_actions(const int throttle_levels, const int steering_levels)
     {
-        std::list<action> actions;
+        std::vector<action> actions;
 
         const double steering_step = 2.0 / double(steering_levels - 1);
         const double throttle_step = 1.0 / std::max(1.0, double(throttle_levels - 1));
@@ -50,9 +50,9 @@ public:
         return actions;
     }
 
-    static std::list<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels)
+    static std::vector<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels)
     {
-        std::list<action> actions;
+        std::vector<action> actions;
 
         const double steering_step = 2.0 / double(steering_levels - 1);
         const double throttle_step = 2.0 / double(throttle_levels - 1);
