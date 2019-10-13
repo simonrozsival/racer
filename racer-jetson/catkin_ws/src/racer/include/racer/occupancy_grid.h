@@ -11,7 +11,6 @@
 #include <cmath>
 
 #include "racer/math.h"
-#include "racer/vehicle_model/vehicle.h"
 
 namespace racer
 {
@@ -19,16 +18,6 @@ namespace racer
 class occupancy_grid
 {
 public:
-    occupancy_grid()
-        : cell_size_{0},
-          data_{},
-          width_{0},
-          height_{0},
-          size_{0},
-          origin_{}
-    {
-    }
-
     occupancy_grid(
         const std::vector<uint8_t> data,
         const uint32_t width,
@@ -36,6 +25,7 @@ public:
         const double cell_size,
         const racer::math::point origin)
         : cell_size_(cell_size),
+          cell_size_sq_(cell_size * cell_size),
           data_(data),
           width_(width),
           height_(height),
@@ -44,13 +34,13 @@ public:
     {
     }
 
-    occupancy_grid(const occupancy_grid &grid) = default;
-    occupancy_grid &operator=(const occupancy_grid &grid) = default;
+    occupancy_grid(const occupancy_grid &grid) = delete;
+    occupancy_grid &operator=(const occupancy_grid &grid) = delete;
 
-    occupancy_grid(occupancy_grid &&grid) = default;
-    occupancy_grid &operator=(occupancy_grid &&grid) = default;
+    occupancy_grid(occupancy_grid &&grid) = delete;
+    occupancy_grid &operator=(occupancy_grid &&grid) = delete;
 
-    occupancy_grid inflate(int r) const
+    std::unique_ptr<occupancy_grid> inflate(int r) const
     {
         std::vector<uint8_t> inflated{data_.begin(), data_.end()}; // start with a copy
         const int r2 = r * r;
@@ -69,7 +59,8 @@ public:
                 {
                     for (int dy{-r}; dy <= r; ++dy)
                     {
-                        if ((dx < 0 && i < static_cast<std::size_t>(std::abs(dx))) || (dy < 0 && j < static_cast<std::size_t>(std::abs(dy))) || (dx > 0 && width_ <= i + static_cast<std::size_t>(std::abs(dx))) || (dy > 0 && height_ <= j + static_cast<std::size_t>(std::abs(dy))) || (dx == 0 && dy == 0))
+                        bool is_out_of_bounds = (dx < 0 && i < static_cast<std::size_t>(std::abs(dx))) || (dy < 0 && j < static_cast<std::size_t>(std::abs(dy))) || (dx > 0 && width_ <= i + static_cast<std::size_t>(std::abs(dx))) || (dy > 0 && height_ <= j + static_cast<std::size_t>(std::abs(dy))) || (dx == 0 && dy == 0);
+                        if (is_out_of_bounds)
                         {
                             continue;
                         }
@@ -86,12 +77,12 @@ public:
             }
         }
 
-        return {
+        return std::make_unique<occupancy_grid>(
             inflated,
             width_,
             height_,
             cell_size_,
-            origin_};
+            origin_);
     }
 
     inline uint8_t value_at(double x, double y) const
@@ -136,14 +127,29 @@ public:
         return min_so_far;
     }
 
+    bool are_directly_visible(
+        const racer::math::point &a,
+        const racer::math::point &b) const
+    {
+        double distance = (a - b).length();
+        auto step = (b - a) * (cell_size_ / distance);
+
+        auto pt = a;
+        while (pt.distance_sq(b) >= cell_size_sq_)
+        {
+            pt += step;
+            if (collides(pt))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     static constexpr uint8_t max_value()
     {
         return std::numeric_limits<uint8_t>::max();
-    }
-
-    bool is_valid() const
-    {
-        return size_ > 0;
     }
 
     std::vector<uint8_t> raw_data() const { return data_; }
@@ -152,7 +158,7 @@ public:
     double cell_size() const { return cell_size_; }
 
 private:
-    double cell_size_;
+    double cell_size_, cell_size_sq_;
     std::vector<uint8_t> data_;
     uint32_t width_;
     uint32_t height_;

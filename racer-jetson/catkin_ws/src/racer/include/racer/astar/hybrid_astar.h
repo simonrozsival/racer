@@ -1,7 +1,7 @@
 #ifndef HYBRID_ASTAR_H_
 #define HYBRID_ASTAR_H_
 
-#include "./discretized_astar_problem.h"
+#include "./discretized_search_problem.h"
 
 namespace racer::astar::hybrid_astar
 {

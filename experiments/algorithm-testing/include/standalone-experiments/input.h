@@ -17,7 +17,7 @@ public:
   const std::string name;
   const racer::vehicle_configuration initial_position;
   const std::vector<racer::math::point> checkpoints;
-  const racer::occupancy_grid occupancy_grid;
+  const std::shared_ptr<racer::occupancy_grid> occupancy_grid;
   const double radius;
   const int neighbor_circles;
   const double min_distance_between_waypoints;
@@ -27,7 +27,7 @@ public:
       std::string name,
       racer::vehicle_configuration initial_position,
       std::vector<racer::math::point> checkpoints,
-      racer::occupancy_grid occupancy_grid,
+      std::shared_ptr<racer::occupancy_grid> occupancy_grid,
       double radius,
       int neighbor_circles,
       double min_distance_between_waypoints) : name(name),
@@ -48,10 +48,6 @@ public:
       std::cerr << "Cannot open circuit definition file '" << std::filesystem::absolute(input_file_name) << "'." << std::endl;
       return nullptr;
     }
-    else
-    {
-      std::cout << "Loading configuration from file '" << std::filesystem::absolute(input_file_name) << "'." << std::endl;
-    }
 
     // load occupancy grid
     std::string pgm_file_name;
@@ -67,15 +63,12 @@ public:
 
     ss >> occupancy_grid_resolution;
 
-    std::cout << "Loading occupancy grid from file '" << pgm_file_path << "' with the resolution of " << occupancy_grid_resolution << "m." << std::endl;
     auto occupancy_grid = load_occupancy_grid_from_pgm(pgm_file_path, occupancy_grid_resolution);
-    if (!occupancy_grid.is_valid())
+    if (!occupancy_grid)
     {
       std::cerr << "Cannot load occupancy grid from file '" << pgm_file_path << "'." << std::endl;
       return nullptr;
     }
-
-    std::cout << "Load config: " << std::endl;
 
     // load space exploration params
     double radius, min_distance_between_waypoints;
@@ -84,18 +77,12 @@ public:
     ss >> neighbor_circles;
     ss >> min_distance_between_waypoints;
 
-    std::cout << "radius: " << radius << std::endl;
-    std::cout << "neighbor_circles: " << neighbor_circles << std::endl;
-    std::cout << "min_distance_between_waypoints: " << min_distance_between_waypoints << std::endl;
-
     // load initial position
     double ix, iy, itheta;
     ss >> ix;
     ss >> iy;
     ss >> itheta;
     racer::vehicle_configuration initial_position(ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
-
-    std::cout << "initial position: [" << initial_position.location().x() << ", " << initial_position.location().y() << "], theta: " << initial_position.heading_angle() << std::endl;
 
     // load checkpoints
     double x, y;
@@ -104,13 +91,9 @@ public:
     {
       ss >> y;
       checkpoints.emplace_back(x * occupancy_grid_resolution, y * occupancy_grid_resolution);
-      std::cout << "checkpoint: [" << checkpoints.back().x() << ", " << checkpoints.back().y() << "]" << std::endl;
     }
 
     checkpoints.emplace_back(initial_position.location().x(), initial_position.location().y());
-
-    std::cout << "Config loaded." << std::endl
-              << std::endl;
 
     // put it all together
     return std::make_unique<track_analysis_input>(
@@ -121,6 +104,25 @@ public:
         radius,
         neighbor_circles,
         min_distance_between_waypoints);
+  }
+
+  static std::optional<std::vector<std::shared_ptr<track_analysis_input>>> load(int number_of_configs, char *config_file_names[])
+  {
+    std::vector<std::shared_ptr<track_analysis_input>> configs;
+    for (int i = 0; i < number_of_configs; ++i)
+    {
+      auto input_file_name = std::filesystem::path{config_file_names[i]};
+      const std::shared_ptr<track_analysis_input> config = load(input_file_name);
+      if (!config)
+      {
+        std::cerr << "Loading configuration from '" << input_file_name << "' failed." << std::endl;
+        return {};
+      }
+
+      configs.push_back(config);
+    }
+
+    return configs;
   }
 };
 

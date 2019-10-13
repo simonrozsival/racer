@@ -3,8 +3,6 @@
 
 #include <vector>
 
-#include "racer/occupancy_grid.h"
-
 namespace racer
 {
 
@@ -12,9 +10,9 @@ class circuit
 {
 public:
     const size_t number_of_waypoints;
-    const vehicle_configuration start_configuration;
-    const occupancy_grid &grid;
     const std::vector<racer::math::point> waypoints;
+    const std::shared_ptr<occupancy_grid> grid;
+    const double waypoint_radius;
 
 private:
     const double waypoint_radius_sq_;
@@ -22,43 +20,37 @@ private:
 
 public:
     circuit(
-        vehicle_configuration start,
-        std::vector<racer::math::point> list_of_waypoints,
-        double waypoint_radius,
-        const occupancy_grid grid)
+        const std::vector<racer::math::point> list_of_waypoints,
+        const double waypoint_radius,
+        const std::shared_ptr<occupancy_grid> grid)
         : number_of_waypoints(list_of_waypoints.size()),
-          start_configuration(start),
-          grid(grid),
-          waypoints(std::vector<racer::math::point>{list_of_waypoints.begin(), list_of_waypoints.end()}),
+          waypoints(list_of_waypoints),
+          grid{grid},
+          waypoint_radius(waypoint_radius),
           waypoint_radius_sq_(waypoint_radius * waypoint_radius)
     {
         double remaining_distance = 0;
-        remaining_distances_.reserve(waypoints.size());
 
-        std::vector<double> distances;
         for (size_t n = waypoints.size() - 1; n > 0; --n)
         {
-            distances.push_back(remaining_distance);
+            remaining_distances_.push_back(remaining_distance);
             remaining_distance += (waypoints[n - 1]).distance(waypoints[n]);
         }
 
-        distances.push_back(remaining_distance);
-
-        std::copy(std::rend(distances), std::rbegin(distances), std::back_inserter(remaining_distances_));
+        remaining_distances_.push_back(remaining_distance);
+        std::reverse(remaining_distances_.begin(), remaining_distances_.end());
     }
 
     circuit(const circuit &other) = delete;
     circuit &operator=(const circuit &other) = delete;
 
-    bool collides(const racer::math::point &position) const
-    {
-        return grid.collides(position.x(), position.y());
-    }
+    circuit(circuit &&other) = delete;
+    circuit &operator=(circuit &&other) = delete;
 
     bool passes_waypoint(const racer::math::point &position, std::size_t waypoint_index) const
     {
         // I assume that waypoint_index is always in the bounds
-        return distance_to_waypoint_sq(position, waypoint_index) < waypoint_radius_sq_;
+        return distance_to_waypoint_sq(position, waypoint_index) < waypoint_radius_sq_ && grid->are_directly_visible(position, waypoints[waypoint_index]);
     }
 
     double distance_to_waypoint_sq(const math::vector &position, std::size_t n) const
@@ -76,7 +68,7 @@ public:
 
     double remaining_distance_estimate(std::size_t n) const
     {
-        if (n >= waypoints.size())
+        if (n >= remaining_distances_.size())
             return 0;
 
         return remaining_distances_[n];

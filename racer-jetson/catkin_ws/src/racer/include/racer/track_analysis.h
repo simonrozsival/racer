@@ -5,9 +5,13 @@
 #include <set>
 #include <utility>
 #include <algorithm>
+#include <optional>
 
 #include "racer/math.h"
+#include "racer/circuit.h"
+#include "racer/vehicle_configuration.h"
 #include "racer/occupancy_grid.h"
+#include "racer/sehs/space_exploration.h"
 
 using namespace racer::math;
 
@@ -22,7 +26,9 @@ public:
     {
     }
 
-    const std::vector<point> find_pivot_points(const std::vector<circle> &circle_path, const racer::occupancy_grid &grid) const
+    const std::vector<point> find_pivot_points(
+        const std::vector<circle> &circle_path,
+        const std::shared_ptr<racer::occupancy_grid> grid) const
     {
         std::vector<point> pivot_points;
 
@@ -32,7 +38,7 @@ public:
         // first iteration
         for (const auto &next_step : circle_path)
         {
-            if (!are_directly_visible(last_circle->center(), next_step.center(), grid))
+            if (!grid->are_directly_visible(last_circle->center(), next_step.center()))
             {
                 pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
@@ -49,7 +55,7 @@ public:
                 break;
             }
 
-            if (!are_directly_visible(last_circle->center(), next_step.center(), grid))
+            if (!grid->are_directly_visible(last_circle->center(), next_step.center()))
             {
                 pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);
@@ -69,25 +75,6 @@ public:
 
 private:
     const double min_distance_between_waypoints_;
-
-    bool are_directly_visible(const point &a, const point &b, const racer::occupancy_grid &grid) const
-    {
-        double cell_size_sq = grid.cell_size() * grid.cell_size();
-        double distance = (a - b).length();
-        auto step = (b - a) * (grid.cell_size() / distance);
-
-        auto pt = a;
-        while (pt.distance_sq(b) >= cell_size_sq)
-        {
-            pt += step;
-            if (grid.collides(pt.x(), pt.y()))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     const std::vector<point> remove_insignificant_turns(const std::vector<point> &points, double max_angle) const
     {
@@ -251,6 +238,31 @@ private:
         return j;
     }
 };
+
+std::unique_ptr<circuit> create_circuit_from_occupancy_grid(
+    const std::shared_ptr<occupancy_grid> occupancy_grid,
+    const std::vector<racer::math::point> checkpoints,
+    const vehicle_configuration &initial_position,
+    const int neighbor_circles,
+    const double min_distance_between_waypoints,
+    const double vehicle_radius)
+{
+    const double max_angle = M_PI * (4.0 / 5.0);
+
+    auto exploration = racer::sehs::space_exploration{vehicle_radius, 2 * vehicle_radius, neighbor_circles};
+    auto analysis = track_analysis{min_distance_between_waypoints};
+
+    const auto circle_path = exploration.explore_grid(occupancy_grid, initial_position, checkpoints);
+    if (circle_path.empty())
+    {
+        return {};
+    }
+
+    const auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path, occupancy_grid), max_angle);
+
+    return std::make_unique<circuit>(waypoints, 2, occupancy_grid);
+}
+
 } // namespace racer
 
 #endif

@@ -5,6 +5,8 @@
 #include <vector>
 #include <queue>
 #include <unordered_set>
+#include <chrono>
+#include <atomic>
 
 #include "racer/action.h"
 #include "racer/trajectory.h"
@@ -166,10 +168,12 @@ public:
 template <typename TState>
 struct search_result
 {
-    const racer::trajectory<TState> found_trajectory;
-    const std::size_t number_of_opened_nodes;
-    const std::size_t number_of_expanded_nodes;
-    const double final_cost;
+    racer::trajectory<TState> found_trajectory;
+    std::size_t number_of_opened_nodes;
+    std::size_t number_of_expanded_nodes;
+    double final_cost;
+
+    search_result() {}
 
     search_result(
         std::size_t number_of_opened_nodes,
@@ -193,6 +197,12 @@ struct search_result
     {
     }
 
+    search_result(const search_result &other) = default;
+    search_result &operator=(const search_result &other) = default;
+
+    search_result(search_result &&other) = default;
+    search_result &operator=(search_result &&other) = default;
+
     inline bool was_successful() const
     {
         return found_trajectory.is_valid();
@@ -200,13 +210,13 @@ struct search_result
 };
 
 template <typename TKey, typename TState>
-const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TState>> problem, std::size_t maximum_number_of_expanded_nodes)
+const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TState>> problem, const std::atomic<bool> &terminate)
 {
     open_set<TKey, TState> opened_nodes{problem->initial_search_node()};
     closed_set<TKey, TState> closed_nodes;
     std::vector<std::shared_ptr<search_node<TKey, TState>>> expanded_nodes; // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
 
-    while (!opened_nodes.is_empty() && expanded_nodes.size() < maximum_number_of_expanded_nodes)
+    while (!terminate && !opened_nodes.is_empty())
     {
         auto expanded_node = opened_nodes.dequeue();
 

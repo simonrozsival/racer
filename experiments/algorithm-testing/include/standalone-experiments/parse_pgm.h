@@ -8,14 +8,14 @@
 
 #include "racer/occupancy_grid.h"
 
-racer::occupancy_grid load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size)
+std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(
+    std::filesystem::path file_name, double cell_size, bool print_map = false)
 {
     std::ifstream file(file_name, std::ifstream::in);
     std::vector<uint8_t> data;
 
     const int one_m_cells = std::ceil(1 / cell_size);
 
-    std::cout << "Reading PGM file..." << std::endl;
     if (file.is_open())
     {
         std::string magic;
@@ -56,22 +56,22 @@ racer::occupancy_grid load_occupancy_grid_from_pgm(std::filesystem::path file_na
 
                 const std::size_t index = i * rows + j;
                 data[index] = 255 - cell;
-                if (i % one_m_cells == 0 && j % one_m_cells == 0)
+                if (print_map && i % one_m_cells == 0 && j % one_m_cells == 0)
                     std::cout << (data[index] > 50 ? "##" : "  ");
             }
 
-            if (i % one_m_cells == 0)
+            if (print_map && i % one_m_cells == 0)
                 std::cout << std::endl;
         }
 
         file.close();
-        std::cout << "finished parsing pgm file" << std::endl;
 
-        return {data, cols, rows, cell_size, racer::math::point(0, 0)};
+        return std::make_unique<racer::occupancy_grid>(
+            data, cols, rows, cell_size, racer::math::point(0, 0));
     }
 
     std::cerr << "cannot open pgm file" << std::endl;
-    return {};
+    return nullptr;
 }
 
 #endif

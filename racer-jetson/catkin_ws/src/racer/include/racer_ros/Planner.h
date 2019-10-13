@@ -15,7 +15,6 @@
 
 #include "racer/action.h"
 #include "racer/trajectory.h"
-#include "racer/vehicle_model/vehicle.h"
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/occupancy_grid.h"
 
@@ -43,7 +42,7 @@ public:
   }
 
   std::unique_ptr<racer_msgs::Trajectory> plan(
-      const occupancy_grid &grid,
+      std::shared_ptr<occupancy_grid> grid,
       const kinematic::state &initial_state,
       const std::vector<action> &available_actions,
       const std::vector<racer::math::point> &waypoints,

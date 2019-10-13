@@ -27,7 +27,7 @@ public:
         const TState &current_state,
         const std::size_t passed_waypoints,
         const racer::trajectory<TState> &reference_trajectory,
-        const racer::occupancy_grid &grid) const override
+        const std::shared_ptr<racer::occupancy_grid> grid) const override
     {
         auto sub_trajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
 

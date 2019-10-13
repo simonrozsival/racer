@@ -7,21 +7,23 @@
 namespace racer::vehicle_model
 {
 
-struct vehicle
+struct vehicle_chassis
 {
-    double distance_of_center_of_gravity_to_rear_axle, wheelbase;
-    double width, length;
-    double wheel_radius;
+    const double distance_of_center_of_gravity_to_rear_axle, wheelbase;
+    const double width, length;
+    const double wheel_radius;
+    const double motor_to_wheel_gear_ratio;
 
-    std::unique_ptr<steering_servo_model> steering_servo;
-    std::unique_ptr<motor_model> motor;
+    const std::unique_ptr<steering_servo_model> steering_servo;
+    const std::unique_ptr<motor_model> motor;
 
-    vehicle(
+    vehicle_chassis(
         double cog_offset,
         double wheelbase,
         double width,
         double length,
         double wheel_radius,
+        double motor_to_wheel_gear_ratio,
         std::unique_ptr<steering_servo_model> steering_servo,
         std::unique_ptr<motor_model> motor)
         : distance_of_center_of_gravity_to_rear_axle(cog_offset),
@@ -29,27 +31,29 @@ struct vehicle
           width(width),
           length(length),
           wheel_radius(wheel_radius),
+          motor_to_wheel_gear_ratio(motor_to_wheel_gear_ratio),
           steering_servo(std::move(steering_servo)),
           motor(std::move(motor))
     {
     }
 
-    vehicle(const vehicle &other) = delete;
-    vehicle &operator=(const vehicle &other) = delete;
+    vehicle_chassis(const vehicle_chassis &other) = delete;
+    vehicle_chassis &operator=(const vehicle_chassis &other) = delete;
 
-    vehicle(vehicle &&other) = default;
-    vehicle &operator=(vehicle &&other) = default;
+    vehicle_chassis(vehicle_chassis &&other) = delete;
+    vehicle_chassis &operator=(vehicle_chassis &&other) = delete;
 
-    static vehicle rc_beast()
+    static std::unique_ptr<vehicle_chassis> rc_beast()
     {
-        return {
+        return std::make_unique<vehicle_chassis>(
             0.155, // cog_offset
             0.31,  // wheelbase
             0.35,  // safe width
             0.55,  // safe length
-            0.1,   // wheel radius
+            0.05,  // wheel radius
+            9.0,   // wheel to motor ratio
             steering_servo_model::with_fitted_values(),
-            motor_model::with_fitted_values()};
+            motor_model::with_fitted_values());
     }
 
     inline double radius() const
@@ -57,11 +61,6 @@ struct vehicle
         double dx = length / 2;
         double dy = width / 2;
         return sqrt(dx * dx + dy * dy);
-    }
-
-    double maximum_theoretical_speed() const
-    {
-        return motor->max_rpm() * wheel_radius;
     }
 };
 

@@ -15,6 +15,7 @@
 #include "racer/trajectory.h"
 
 #include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/sehs/space_exploration.h"
 
 #include "racer_ros/utils.h"
@@ -23,9 +24,8 @@
 std::mutex lock;
 
 racer::vehicle_model::kinematic::state last_known_position;
-std::vector<racer::math::point> next_waypoints;
+racer::circuit circuit;
 int next_waypoint;
-double waypoint_radius;
 std::string map_frame;
 std::unique_ptr<racer_ros::Planner> planner;
 
@@ -53,7 +53,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
   planner = nullptr;
 }
 
-racer::occupancy_grid load_map()
+std::shared_ptr<racer::occupancy_grid> load_map()
 {
   // get the base map for space exploration
   while (!ros::service::waitForService("static_map", ros::Duration(3.0)))
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
-  auto vehicle = racer::vehicle_model::vehicle::rc_beast();
+  auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
 
   const auto actions_with_reverse = racer::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
   const auto actions_just_forward = racer::action::create_actions(5, 9);                   // fewer throttle options, more steering options
@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
     {
       std::lock_guard<std::mutex> guard(lock);
 
-      racer::sehs::space_exploration exploration(config->occupancy_grid, vehicle.radius(), 2 * vehicle.radius(), config->neighbor_circles);
-      const auto path_of_circles = exploration.explore_grid(last_known_position, next_waypoints);
+      racer::sehs::space_exploration exploration(vehicle.radius(), 2 * vehicle.radius(), config->neighbor_circles);
+      const auto path_of_circles = exploration.explore_grid(map, last_known_position, next_waypoints);
       auto discretization = std::make_unique<racer::astar::sehs::discretization>(path_of_circles, M_PI / 12.0, 0.25);
       planner = std::make_unique<racer_ros::Planner>(
           std::move(vehicle),
@@ -143,12 +143,11 @@ int main(int argc, char *argv[])
 
       std::lock_guard<std::mutex> guard(lock);
       const auto trajectory = planner.plan(
-          last_known_map,
+          map,
           last_known_position,
           found_trajectory_last_time ? actions_just_forward : actions_with_reverse,
-          next_waypoints,
-          next_waypoint,
-          waypoint_radius);
+          circuit,
+          next_waypoint);
 
       found_trajectory_last_time = bool(trajectory);
 
