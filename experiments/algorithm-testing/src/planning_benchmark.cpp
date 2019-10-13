@@ -67,8 +67,8 @@ public:
 
         return std::make_unique<sehs_discretization>(
             circle_path,
-            24, // heading discretization bins
-            20, // motor RPM discretization bins
+            36, // heading discretization bins
+            30, // motor RPM discretization bins
             vehicle.motor->max_rpm());
     }
 };
@@ -140,7 +140,7 @@ void run_benchmark_for(
         return;
     }
 
-    const double time_step_s = 1.0 / 25.0;
+    const double time_step_s = 1.0 / 12.5;
     const auto vehicle_model = std::make_shared<model>(std::move(vehicle));
     const auto initial_state = state{config.initial_position};
     const auto actions = racer::action::create_actions_including_reverse(9, 9);
@@ -161,7 +161,7 @@ void run_benchmark_for(
         // only plot the result after all of the previous repetitions
         // are done - the found trajectory should be always the same
         // and we repeat the process only to get good runtime averages
-        if (i == repetitions - 1 && measurement.result.was_successful())
+        if (false && i == repetitions - 1 && measurement.result.was_successful())
         {
             plot_trajectory(
                 config,

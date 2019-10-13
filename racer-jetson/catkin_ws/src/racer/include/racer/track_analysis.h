@@ -242,7 +242,7 @@ private:
 std::unique_ptr<circuit> create_circuit_from_occupancy_grid(
     const std::shared_ptr<occupancy_grid> occupancy_grid,
     const std::vector<racer::math::point> checkpoints,
-    const vehicle_configuration &initial_position,
+    const vehicle_configuration &initial_configuration,
     const int neighbor_circles,
     const double min_distance_between_waypoints,
     const double vehicle_radius)
@@ -252,13 +252,14 @@ std::unique_ptr<circuit> create_circuit_from_occupancy_grid(
     auto exploration = racer::sehs::space_exploration{vehicle_radius, 2 * vehicle_radius, neighbor_circles};
     auto analysis = track_analysis{min_distance_between_waypoints};
 
-    const auto circle_path = exploration.explore_grid(occupancy_grid, initial_position, checkpoints);
+    const auto circle_path = exploration.explore_grid(occupancy_grid, initial_configuration, checkpoints);
     if (circle_path.empty())
     {
         return {};
     }
 
-    const auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path, occupancy_grid), max_angle);
+    auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path, occupancy_grid), max_angle);
+    waypoints.push_back(initial_configuration.location());
 
     return std::make_unique<circuit>(waypoints, 2, occupancy_grid);
 }
