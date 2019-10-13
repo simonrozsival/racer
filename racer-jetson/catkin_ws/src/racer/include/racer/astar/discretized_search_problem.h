@@ -149,10 +149,13 @@ private:
     double prepend_states(std::vector<trajectory_step<TState>> &path, const search_node<TDiscreteState, TState> &node, double timestamp) const
     {
         std::vector<trajectory_step<TState>> steps;
+        timestamp -= node.states.size() * time_step_s_;
+
+        double temporary_timestamp = timestamp;
         for (const auto &state : node.states)
         {
-            steps.emplace_back(state, node.passed_waypoints, timestamp);
-            timestamp -= time_step_s_;
+            steps.emplace_back(state, node.passed_waypoints, temporary_timestamp);
+            temporary_timestamp += time_step_s_;
         }
 
         path.insert(path.begin(), steps.begin(), steps.end());

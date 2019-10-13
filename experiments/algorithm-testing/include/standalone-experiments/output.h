@@ -44,8 +44,8 @@ void print_result(
               << (measurement.result.was_successful() ? "yes" : "no") << ", "
               << measurement.result.number_of_opened_nodes << ", "
               << measurement.result.number_of_expanded_nodes << ", "
-              << measurement.result.final_cost << ", "
-              << measurement.result.found_trajectory.total_distance() << ", "
+              << (measurement.result.was_successful() ? measurement.result.final_cost : 0) << ", "
+              << (measurement.result.was_successful() ? measurement.result.found_trajectory.total_distance() : 0) << ", "
               << measurement.computation_time.count() << std::endl;
 }
 

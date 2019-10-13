@@ -26,7 +26,7 @@ planning_benchmark:
 		-std=c++17 \
 		-pthread \
 		-Wall \
-		-O3 \
+		-g \
 		-I./include \
 		-I../../racer-jetson/catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \
