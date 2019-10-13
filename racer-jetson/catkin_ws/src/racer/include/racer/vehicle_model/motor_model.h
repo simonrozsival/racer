@@ -75,7 +75,8 @@ public:
     {
         const double normalized_drive_torque = drive_torque(normalize_rpm(state), action.throttle());
         const double normalized_load_torque = load_torque(normalize_rpm(state), action.target_steering_angle());
-        const double normalized_rpm_change_rate = (normalized_drive_torque - normalized_load_torque) / x_[5];
+        const double normalized_rpm_change_rate = (normalized_drive_torque - normalized_load_torque) / x_[1];
+
         return double(state) + normalized_rpm_change_rate * max_rpm_ * dt;
     }
 
@@ -99,7 +100,7 @@ private:
 
     constexpr double load_torque(const double current_rpm, const double steering_angle) const
     {
-        return std::pow(current_rpm, x_[1]) * std::pow(x_[2] + x_[3] * std::abs(steering_angle), x_[4]);
+        return std::pow(current_rpm, x_[2]) * std::pow(x_[3] + x_[4] * std::abs(steering_angle), x_[5]);
     }
 };
 

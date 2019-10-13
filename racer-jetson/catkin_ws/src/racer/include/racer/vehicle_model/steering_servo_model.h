@@ -47,8 +47,9 @@ public:
     {
         const angle target_angle = target_steering_angle(action);
         const double angle_distance = current_steering_angle.distance_to(target_angle);
-        const double angle_change_rate = direction_of_change(current_steering_angle, target_angle) * angle_distance / time_to_adjust(current_steering_angle, target_angle);
-        return current_steering_angle + angle_change_rate * dt;
+        const double angle_change_rate = angle_distance / time_to_adjust(current_steering_angle, target_angle);
+        angle ret = current_steering_angle + angle_change_rate * dt;
+        return ret;
     }
 
 private:
@@ -66,15 +67,11 @@ private:
     angle target_steering_angle(const racer::action &action) const
     {
         const double target_steering_angle_percentage = action.target_steering_angle();
-        return target_steering_angle_percentage > 0
-                   ? max_steering_angle_right_ * target_steering_angle_percentage
-                   : max_steering_angle_left_ * target_steering_angle_percentage;
-    }
-
-    double direction_of_change(const angle angle_from, const angle angle_to) const
-    {
-        const double delta = angle_to.to_angle_around_zero() - angle_from.to_angle_around_zero();
-        return racer::math::sign(delta);
+        const angle left_or_right =
+            target_steering_angle_percentage > 0
+                ? max_steering_angle_right_
+                : max_steering_angle_left_;
+        return left_or_right * std::abs(target_steering_angle_percentage);
     }
 };
 

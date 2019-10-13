@@ -3,21 +3,25 @@
 
 #include <vector>
 
-#include "racer/astar/discretized_astar_problem.h"
+#include "racer/astar/discretized_search_problem.h"
 
 namespace racer::astar::sehs::kinematic
 {
 
 struct discrete_state
 {
-    int circle, heading, speed;
+private:
+    int circle_, heading_, rpm_;
 
-    discrete_state() : circle(0), heading(0), speed(0)
+    friend class std::hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>;
+
+public:
+    discrete_state() : circle_{0}, heading_{0}, rpm_{0}
     {
     }
 
-    discrete_state(int circle, int heading, int speed)
-        : circle(circle), heading(heading), speed(speed)
+    discrete_state(int circle, int heading, int rpm)
+        : circle_{circle}, heading_{heading}, rpm_{rpm}
     {
     }
 
@@ -29,7 +33,7 @@ struct discrete_state
 
     bool operator==(const discrete_state &other) const
     {
-        return circle == other.circle && heading == other.heading && speed == other.speed;
+        return circle_ == other.circle_ && heading_ == other.heading_ && rpm_ == other.rpm_;
     }
 
     bool operator!=(const discrete_state &other) const
@@ -47,10 +51,14 @@ private:
     const racer::math::angle heading_;
 
 public:
-    discretization(const std::vector<racer::math::circle> &circles, double heading, double motor_rpm)
+    discretization(
+        const std::vector<racer::math::circle> &circles,
+        std::size_t heading_bins,
+        std::size_t rpm_bins,
+        racer::vehicle_model::rpm max_rpm)
         : circles_{circles},
-          motor_rpm_(motor_rpm),
-          heading_(heading)
+          motor_rpm_{max_rpm / double(rpm_bins)},
+          heading_{2 * M_PI / double(heading_bins)}
     {
     }
 
@@ -86,9 +94,9 @@ struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>
     {
         size_t seed = 0;
 
-        racer::math::hash_combine(seed, obj.first.circle);
-        racer::math::hash_combine(seed, obj.first.heading);
-        racer::math::hash_combine(seed, obj.first.speed);
+        racer::math::hash_combine(seed, obj.first.circle_);
+        racer::math::hash_combine(seed, obj.first.heading_);
+        racer::math::hash_combine(seed, obj.first.rpm_);
         racer::math::hash_combine(seed, obj.second);
 
         return seed;

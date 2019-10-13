@@ -53,7 +53,7 @@ public:
     double calculate_error(
         const std::vector<TState> &attempt,
         const trajectory &reference,
-        const occupancy_grid &map) const
+        const std::shared_ptr<racer::occupancy_grid> map) const
     {
 
         double error = 0;
@@ -104,10 +104,10 @@ private:
                    : speed_ratio / velocity_undershooting_overshooting_ratio_;
     }
 
-    double obstacle_proximity_error(const TState &a, const occupancy_grid &grid) const
+    double obstacle_proximity_error(const TState &a, const std::shared_ptr<racer::occupancy_grid> grid) const
     {
-        const auto value_at = grid.value_at(a.position().x(), a.position().y());
-        const double val = double(value_at) / double(grid.max_value());
+        const auto value_at = grid->value_at(a.position().x(), a.position().y());
+        const double val = double(value_at) / double(grid->max_value());
         return val;
     }
 };
@@ -134,7 +134,7 @@ public:
         const TState &current_state,
         const std::size_t passed_waypoints,
         const racer::trajectory &reference_trajectory,
-        const racer::occupancy_grid &map) const override
+        const std::shared_ptr<racer::occupancy_grid> map) const override
     {
 
         const auto &reference_subtrajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
@@ -173,7 +173,7 @@ public:
     std::vector<TState> unfold(
         const TState &origin,
         const racer::action &action,
-        const racer::occupancy_grid &grid) const
+        const std::shared_ptr<racer::occupancy_grid> grid) const
     {
 
         std::vector<TState> next_states{};

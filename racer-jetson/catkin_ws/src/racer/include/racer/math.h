@@ -222,7 +222,7 @@ public:
 
     inline angle distance_to(const angle other) const
     {
-        return std::min(radians_ - other.radians_, 2 * M_PI - (radians_ - other.radians_));
+        return std::min(other.radians_ - radians_, 2 * M_PI - (other.radians_ - radians_));
     }
 
     inline angle to_angle_around_zero() const
@@ -240,15 +240,6 @@ public:
     static angle from_degrees(const double deg)
     {
         return angle(deg / 180.0 * M_PI);
-    }
-
-    static angle to_small_angle(double radians)
-    {
-        while (radians < 0)
-            radians += 2.0 * M_PI;
-        while (radians >= 2.0 * M_PI)
-            radians -= 2.0 * M_PI;
-        return {radians};
     }
 };
 

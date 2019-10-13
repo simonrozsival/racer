@@ -14,28 +14,22 @@ namespace racer_ros
 {
 
 std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
-    const occupancy_grid &grid,
+    std::shared_ptr<occupancy_grid> grid,
     const kinematic::state &state,
     const std::vector<action> &available_actions,
-    const std::vector<racer::math::point> &waypoints,
-    const int next_waypoint,
-    const double waypoint_radius) const
+    const racer::circuit circuit,
+    const int next_waypoint) const
 {
 
   const double initial_heading_angle = state.position().heading_angle();
-  auto circuit = std::make_unique<racer::circuit>(
-      state.position(),
-      waypoints,
-      waypoint_radius,
-      grid);
-
   auto problem = std::make_unique<racer::astar::discretized_search_problem<discrete_state>>(
       state,
       time_step_s_,
       model_,
       available_actions,
       discretization_,
-      std::move(circuit));
+      circuit,
+      grid);
 
   const auto result = racer::astar::search<discrete_state, kinematic::state>(
       std::move(problem),

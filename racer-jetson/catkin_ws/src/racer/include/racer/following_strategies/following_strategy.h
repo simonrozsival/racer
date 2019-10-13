@@ -20,7 +20,7 @@ public:
         const TState &current_state,
         const std::size_t passed_waypoints,
         const racer::trajectory<TState> &reference_trajectory,
-        const racer::occupancy_grid &map) const = 0;
+        const std::shared_ptr<racer::occupancy_grid> map) const = 0;
 
     virtual void reset() = 0;
 };

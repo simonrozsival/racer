@@ -21,6 +21,7 @@
 #include "racer/action.h"
 #include "racer/trajectory.h"
 
+#include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/vehicle_model/base_model.h"
 #include "racer/following_strategies/dwa.h"
@@ -216,7 +217,7 @@ int main(int argc, char *argv[])
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  auto vehicle = racer::vehicle_model::vehicle::rc_beast();
+  auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
   const double radius = vehicle.radius();
   auto model = std::make_unique<racer::vehicle_model::kinematic_model>(std::move(vehicle));
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));

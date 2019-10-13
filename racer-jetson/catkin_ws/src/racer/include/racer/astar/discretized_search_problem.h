@@ -6,6 +6,7 @@
 #include "astar.h"
 #include "racer/vehicle_model/base_model.h"
 #include "racer/circuit.h"
+#include "racer/occupancy_grid.h"
 
 using namespace racer::vehicle_model;
 
@@ -30,13 +31,13 @@ public:
         const std::vector<action> &available_actions,
         std::shared_ptr<discretization<TDiscreteState, TState>> discretize,
         std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model,
-        std::unique_ptr<racer::circuit> circuit)
+        std::shared_ptr<racer::circuit> circuit)
         : initial_state_{initial_state},
           time_step_s_(time_step_s),
           vehicle_model_(model),
           available_actions_(available_actions),
           discretize_(discretize),
-          circuit_(std::move(circuit))
+          circuit_{circuit}
     {
     }
 
@@ -60,30 +61,25 @@ public:
             {
                 ++steps;
 
-                auto next_prediction = vehicle_model_->predict_next_state(prediction, action, time_step_s_);
-                if (collides(next_prediction))
+                const auto next_state = vehicle_model_->predict_next_state(prediction, action, time_step_s_);
+                if (collides(next_state))
                 {
                     skip = true;
                     break;
                 }
 
-                discretized_prediction = discretize(next_prediction);
-                left_cell_or_stopped = discretized_prediction != node.key || prediction == next_prediction;
+                discretized_prediction = discretize(next_state);
+                left_cell_or_stopped = discretized_prediction != node.key || prediction == next_state;
 
-                if (prediction != node.final_state())
-                {
-                    states.push_back(std::move(prediction));
-                }
-
-                prediction = std::move(next_prediction);
+                states.push_back(next_state);
+                prediction = std::move(next_state);
             } while (!left_cell_or_stopped);
 
-            if (skip || !prediction.is_valid())
+            if (skip)
             {
                 continue;
             }
 
-            states.push_back(std::move(prediction));
             transitions.emplace_back(
                 std::move(discretized_prediction),
                 std::move(states),
@@ -118,16 +114,16 @@ public:
     {
         std::vector<racer::trajectory_step<TState>> steps;
 
-        prepend_states(steps, node);
+        double timestamp = prepend_states(steps, node, node.cost_to_come);
 
         auto parent = node.parent;
         while (auto parent_ptr = parent.lock())
         {
-            prepend_states(steps, *parent_ptr);
+            timestamp = prepend_states(steps, *parent_ptr, timestamp);
             parent = parent_ptr->parent;
         }
 
-        return {steps};
+        return {steps, time_step_s_};
     }
 
     std::unique_ptr<search_node<TDiscreteState, TState>> initial_search_node() const override
@@ -142,26 +138,25 @@ private:
     const std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> vehicle_model_;
     const std::vector<action> available_actions_;
     const std::shared_ptr<discretization<TDiscreteState, TState>> discretize_;
-    const std::unique_ptr<racer::circuit> circuit_;
+    const std::shared_ptr<racer::circuit> circuit_;
 
 private:
     inline bool collides(const TState &examined_state) const
     {
-        return circuit_->collides(examined_state.position());
+        return circuit_->grid->collides(examined_state.position());
     }
 
-    void prepend_states(std::vector<trajectory_step<TState>> &path, const search_node<TDiscreteState, TState> &node) const
+    double prepend_states(std::vector<trajectory_step<TState>> &path, const search_node<TDiscreteState, TState> &node, double timestamp) const
     {
         std::vector<trajectory_step<TState>> steps;
-        std::transform(
-            node.states.begin(),
-            node.states.end(),
-            steps.begin(),
-            [node](TState state) -> trajectory_step<TState> {
-                return {state, node.passed_waypoints};
-            });
+        for (const auto &state : node.states)
+        {
+            steps.emplace_back(state, node.passed_waypoints, timestamp);
+            timestamp -= time_step_s_;
+        }
 
         path.insert(path.begin(), steps.begin(), steps.end());
+        return timestamp;
     }
 
     inline TDiscreteState discretize(const TState &state) const

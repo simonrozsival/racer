@@ -12,7 +12,7 @@
 #include "racer/action.h"
 #include "racer/math.h"
 
-#include "racer/vehicle_model/vehicle.h"
+#include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/vehicle_model/base_model.h"
 #include "racer/vehicle_model/steering_servo_model.h"
 #include "racer/vehicle_model/motor_model.h"
@@ -76,42 +76,49 @@ public:
 
 class model : public vehicle_model<state>
 {
-private:
-    const vehicle vehicle_;
-
 public:
-    model(vehicle &&vehicle)
-        : vehicle_{std::move(vehicle)}
+    const std::unique_ptr<vehicle_chassis> chassis;
+
+    model(std::unique_ptr<vehicle_chassis> chassis)
+        : chassis{std::move(chassis)}
     {
     }
 
 public:
     state predict_next_state(const state &current, const action &input, const double dt) const override
     {
-        rpm motor_rpm = vehicle_.motor->predict_next_state(current.motor_rpm(), input, dt);
-        racer::math::angle steering_angle = vehicle_.steering_servo->predict_next_state(current.steering_angle(), input, dt);
+        rpm motor_rpm = chassis->motor->predict_next_state(current.motor_rpm(), input, dt);
+        racer::math::angle steering_angle = chassis->steering_servo->predict_next_state(current.steering_angle(), input, dt);
 
-        double v = current.motor_rpm().to_radians_per_second() * vehicle_.wheel_radius; // no slip condition
-        double slip_angle = atan((vehicle_.distance_of_center_of_gravity_to_rear_axle / vehicle_.wheelbase) * tan(steering_angle));
+        // the computed engine RPM is used immediately - not with a 1 step delay
+        // - otherwise, the car could not start moving in the very first step (with the current implementation)
+
+        double v = calculate_speed_with_no_slip_assumption(motor_rpm);
+        double slip_angle = atan((chassis->distance_of_center_of_gravity_to_rear_axle / chassis->wheelbase) * tan(steering_angle));
 
         // just some renaming to make the equations look the same as in the thesis
         // the compiler will optimize this
         double theta = current.configuration().heading_angle();
-        double delta = steering_angle;
+        double delta = current.steering_angle();
         double beta = slip_angle;
-        double L = vehicle_.wheelbase;
+        double L = chassis->wheelbase;
 
-        vehicle_configuration configration_step{
+        vehicle_configuration translation_and_rotation{
             v * cos(theta + beta) * dt,
             v * sin(theta + beta) * dt,
             v * cos(beta) * tan(delta) / L * dt};
 
-        return {current.configuration() + configration_step, motor_rpm, steering_angle};
+        return {current.configuration() + translation_and_rotation, motor_rpm, steering_angle};
     }
 
     double maximum_theoretical_speed() const override
     {
-        return vehicle_.maximum_theoretical_speed();
+        return chassis->motor->max_rpm() * chassis->wheel_radius;
+    }
+
+    double calculate_speed_with_no_slip_assumption(const rpm &motor_rpm) const
+    {
+        return (motor_rpm.to_radians_per_second() / chassis->motor_to_wheel_gear_ratio) * chassis->wheel_radius;
     }
 };
 

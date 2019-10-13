@@ -94,7 +94,7 @@ public:
     }
 
     const std::vector<racer::math::circle> explore_grid(
-        const racer::occupancy_grid &grid,
+        const std::shared_ptr<racer::occupancy_grid> grid,
         const racer::vehicle_configuration &initial_position,
         const std::vector<racer::math::point> &waypoints) const
     {
@@ -134,13 +134,13 @@ private:
     const double min_radius_, max_radius_;
     const int number_of_expanded_points_;
 
-    racer::math::circle generate_circle_around(racer::math::point point, const racer::occupancy_grid &grid) const
+    racer::math::circle generate_circle_around(racer::math::point point, const std::shared_ptr<racer::occupancy_grid> grid) const
     {
-        double radius = grid.distance_to_closest_obstacle(point, max_radius_);
+        double radius = grid->distance_to_closest_obstacle(point, max_radius_);
         return {point, radius};
     }
 
-    const std::vector<racer::math::circle> find_path(const racer::math::circle &from, double initial_heading_angle, const racer::math::point &to, const racer::occupancy_grid &grid) const
+    const std::vector<racer::math::circle> find_path(const racer::math::circle &from, double initial_heading_angle, const racer::math::point &to, const std::shared_ptr<racer::occupancy_grid> grid) const
     {
         std::priority_queue<
             std::shared_ptr<circle_node>,
@@ -178,7 +178,10 @@ private:
         return {};
     }
 
-    std::vector<std::shared_ptr<circle_node>> expand(const std::shared_ptr<circle_node> &node, const racer::math::point &goal, const racer::occupancy_grid &grid) const
+    std::vector<std::shared_ptr<circle_node>> expand(
+        const std::shared_ptr<circle_node> &node,
+        const racer::math::point &goal,
+        const std::shared_ptr<racer::occupancy_grid> grid) const
     {
         std::vector<std::shared_ptr<circle_node>> nodes;
         const double sector_angle = 2 * M_PI; // this could be changed to narrow the search direction
@@ -205,14 +208,9 @@ private:
         return nodes;
     }
 
-    racer::math::circle try_to_optimize(const racer::math::circle &a, const racer::math::circle &b, const racer::math::circle &c, const racer::occupancy_grid &grid) const
-    {
-        racer::math::point interpolated_center = a.center().interpolate_with(c.center(), a.radius(), b.radius());
-        const double radius = grid.distance_to_closest_obstacle(interpolated_center, max_radius_);
-        return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
-    }
-
-    const std::vector<racer::math::circle> optimize_path(std::vector<racer::math::circle> &circles, const racer::occupancy_grid &grid) const
+    const std::vector<racer::math::circle> optimize_path(
+        std::vector<racer::math::circle> &circles,
+        const std::shared_ptr<racer::occupancy_grid> grid) const
     {
         std::vector<bool> can_be_optimized(circles.size(), true);
 
@@ -237,6 +235,17 @@ private:
         } while (can_optimize);
 
         return circles;
+    }
+
+    racer::math::circle try_to_optimize(
+        const racer::math::circle &a,
+        const racer::math::circle &b,
+        const racer::math::circle &c,
+        const std::shared_ptr<racer::occupancy_grid> grid) const
+    {
+        racer::math::point interpolated_center = a.center().interpolate_with(c.center(), a.radius(), b.radius());
+        const double radius = grid->distance_to_closest_obstacle(interpolated_center, max_radius_);
+        return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
     }
 };
 } // namespace racer::sehs

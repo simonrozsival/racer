@@ -24,6 +24,7 @@ planning_benchmark:
 	g++ src/planning_benchmark.cpp \
 		-o bin/planning_benchmark \
 		-std=c++17 \
+		-pthread \
 		-Wall \
 		-O3 \
 		-I./include \
