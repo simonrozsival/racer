@@ -57,7 +57,7 @@ public:
         const track_analysis_input &config,
         const racer::vehicle_model::vehicle_chassis &vehicle) const override
     {
-        const auto exploration = racer::sehs::space_exploration{vehicle.radius(), 2 * vehicle.radius(), config.neighbor_circles};
+        const auto exploration = racer::sehs::space_exploration{2 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
         const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
         if (circle_path.empty())
         {
@@ -123,7 +123,7 @@ void run_benchmark_for(
             config.initial_position,
             config.neighbor_circles,
             config.min_distance_between_waypoints,
-            vehicle->radius());
+            vehicle->radius())->for_waypoint_subset(0, 3);
 
     if (!circuit)
     {
@@ -161,7 +161,7 @@ void run_benchmark_for(
         // only plot the result after all of the previous repetitions
         // are done - the found trajectory should be always the same
         // and we repeat the process only to get good runtime averages
-        if (false && i == repetitions - 1 && measurement.result.was_successful())
+        if (i == repetitions - 1 && measurement.result.was_successful())
         {
             plot_trajectory(
                 config,

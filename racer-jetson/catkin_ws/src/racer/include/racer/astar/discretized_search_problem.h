@@ -18,7 +18,7 @@ class discretization
 {
 public:
     virtual ~discretization() = default;
-    virtual TDiscreteState operator()(const TState &state) const = 0;
+    virtual TDiscreteState operator()(const TState &state) = 0;
 };
 
 template <typename TDiscreteState, typename TState>

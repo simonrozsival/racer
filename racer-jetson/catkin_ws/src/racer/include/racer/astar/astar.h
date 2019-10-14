@@ -265,7 +265,20 @@ const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TSt
         }
     }
 
-    return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
+    // return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
+
+    std::vector<trajectory_step<TState>> steps;
+    for (auto s : expanded_nodes)
+    {
+        steps.emplace_back(s->final_state(), 0, 0);
+    }
+
+    return {
+        {steps, 0.1},
+        opened_nodes.number_of_opened_nodes_since_initial_state(),
+        expanded_nodes.size(),
+        0
+    };
 };
 
 } // namespace racer::astar
