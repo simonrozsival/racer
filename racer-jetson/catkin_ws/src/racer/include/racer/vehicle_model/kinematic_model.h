@@ -77,10 +77,10 @@ public:
 class model : public vehicle_model<state>
 {
 public:
-    const std::unique_ptr<vehicle_chassis> chassis;
+    const std::shared_ptr<vehicle_chassis> chassis;
 
-    model(std::unique_ptr<vehicle_chassis> chassis)
-        : chassis{std::move(chassis)}
+    model(std::shared_ptr<vehicle_chassis> chassis)
+        : chassis{chassis}
     {
     }
 

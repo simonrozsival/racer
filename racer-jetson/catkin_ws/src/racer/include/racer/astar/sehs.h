@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "racer/kd_tree.h"
+#include "racer/nearest_neighbor.h"
 #include "racer/astar/discretized_search_problem.h"
 
 namespace racer::astar::sehs::kinematic
@@ -47,9 +47,11 @@ struct discretization
     : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
 {
 private:
-    const std::vector<racer::math::point> centers_;
     const double motor_rpm_;
     const racer::math::angle heading_;
+    const racer::nearest_neighbor::cached_linear_search nn_;
+    // const racer::nearest_neighbor::linear_search nn_;
+    // const racer::nearest_neighbor::kd_tree::tree nn_;
 
 public:
     discretization(
@@ -57,9 +59,9 @@ public:
         std::size_t heading_bins,
         std::size_t rpm_bins,
         racer::vehicle_model::rpm max_rpm)
-        : centers_{centers_of(circles)},
-          motor_rpm_{max_rpm / double(rpm_bins)},
-          heading_{2 * M_PI / double(heading_bins)}
+        : motor_rpm_{max_rpm / double(rpm_bins)},
+          heading_{2 * M_PI / double(heading_bins)},
+          nn_{centers_of(circles)}
     {
     }
 
@@ -69,7 +71,7 @@ public:
     discrete_state operator()(const racer::vehicle_model::kinematic::state &state) override
     {
         return {
-            find_closest_circle(state.position()),
+            (int)nn_.find_nearest_neighbor(state.position()),
             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
             (int)floor(state.motor_rpm() / motor_rpm_)};
     }
@@ -83,21 +85,6 @@ private:
         }
 
         return centers;
-    }
-
-    int find_closest_circle(const racer::math::point pt) const {
-        int closest_circle = 0;
-        double min_distance_sq;
-        for (std::size_t i = 0; i < centers_.size(); ++i)
-        {
-            double distance_sq = pt.distance_sq(centers_[i]);
-            if (i == 0 || distance_sq < min_distance_sq)
-            {
-                closest_circle = i;
-                min_distance_sq = distance_sq;
-            }
-        }
-        return closest_circle;
     }
 };
 

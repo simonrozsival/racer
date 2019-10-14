@@ -5,10 +5,13 @@
 #include <algorithm>
 #include <memory>
 #include <cassert>
+#include <unordered_map>
 
 #include "racer/math.h"
 
-namespace racer::kd_tree {
+namespace racer::nearest_neighbor {
+
+namespace kd_tree {
 
 using vec = std::vector<racer::math::point>;
 using point = racer::math::point;
@@ -40,7 +43,7 @@ public:
         assert(root_ != nullptr);
     }
 
-    std::size_t find_index_of_nearest_neighbor(point pt) const
+    std::size_t find_nearest_neighbor(point pt) const
     {
         return find_nearest_in_subtree(root_, pt, {root_, pt}).index;
     }
@@ -144,6 +147,65 @@ private:
 
     static inline bool by_y(const point& a, const point& b) {
         return a.y() < b.y();
+    }
+};
+
+}
+
+class linear_search {
+private:
+    const std::vector<racer::math::point> centers_;
+
+public:
+    linear_search(std::vector<racer::math::point> centers)
+        : centers_{centers}
+    {
+    }
+    
+    std::size_t find_nearest_neighbor(const racer::math::point pt) const {
+        std::size_t closest_circle = 0;
+        double min_distance_sq = pt.distance_sq(centers_[0]);
+        for (std::size_t i = 1; i < centers_.size(); ++i)
+        {
+            double distance_sq = pt.distance_sq(centers_[i]);
+            if (distance_sq < min_distance_sq)
+            {
+                closest_circle = i;
+                min_distance_sq = distance_sq;
+            }
+        }
+        return closest_circle;
+    }
+};
+
+class cached_linear_search {
+private:
+    const linear_search linear_;
+    double cell_size_;
+    mutable std::unordered_map<long, std::size_t> cache_;
+
+public:
+    cached_linear_search(std::vector<racer::math::point> centers)
+        : linear_{centers}, cell_size_{0.5}
+    {
+    }
+    
+    std::size_t find_nearest_neighbor(const racer::math::point& pt) const {
+        const auto index = index_of(pt);
+        const auto search = cache_.find(index);
+        if (search != cache_.end()) {
+            return search->second;
+        }
+
+        std::cout << "miss" << std::endl;
+        const auto result = linear_.find_nearest_neighbor(pt);
+        cache_[index] = result;
+        return result;
+    }
+
+private:
+    inline long index_of(const racer::math::point& pt) const {
+        return long(pt.x() / cell_size_) * 1000000 + long(pt.y() / cell_size_);
     }
 };
 
