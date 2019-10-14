@@ -3,6 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#include <iostream>
 #include <vector>
 #include <algorithm>
 
@@ -27,7 +28,7 @@ public:
     const double &x() const { return x_; }
     const double &y() const { return y_; }
 
-    double dot(const vector &other) const
+    inline double dot(const vector &other) const
     {
         return x_ * other.x_ + y_ * other.y_;
     }
@@ -98,7 +99,9 @@ public:
 
     inline double distance_sq(const vector &other) const
     {
-        return (*this - other).length_sq();
+        const double dx = x_ - other.x_;
+        const double dy = y_ - other.y_;
+        return dx * dx + dy * dy;
     }
 
     inline double distance(const vector &other) const
@@ -111,6 +114,10 @@ public:
         return std::atan2(y_, x_);
     }
 };
+
+std::ostream &operator<<(std::ostream &os, vector const &m) { 
+    return os << "[" << m.x() << ", " << m.y() << "]";
+}
 
 typedef vector point; // alias
 
