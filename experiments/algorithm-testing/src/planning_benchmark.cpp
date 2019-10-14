@@ -107,12 +107,12 @@ output::planning::benchmark_result measure_search(
 
 template <typename DiscreteState>
 void run_benchmark_for(
-    const std::shared_ptr<benchmarked_algorithm<DiscreteState>> algorithm,
+    std::shared_ptr<benchmarked_algorithm<DiscreteState>> algorithm,
+    std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle,
     const track_analysis_input &config,
     const std::size_t repetitions,
     const std::chrono::milliseconds time_limit)
 {
-    auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
     const int cells_in_vehicle_radius = std::ceil(vehicle->radius() / config.occupancy_grid->cell_size());
     const std::shared_ptr<racer::occupancy_grid> inflated_grid = config.occupancy_grid->inflate(cells_in_vehicle_radius);
 
@@ -123,7 +123,7 @@ void run_benchmark_for(
             config.initial_position,
             config.neighbor_circles,
             config.min_distance_between_waypoints,
-            vehicle->radius())->for_waypoint_subset(0, 3);
+            vehicle->radius()); // ->for_waypoint_subset(0, 3);
 
     if (!circuit)
     {
@@ -131,7 +131,7 @@ void run_benchmark_for(
         return;
     }
 
-    const std::shared_ptr<racer::astar::discretization<DiscreteState, state>> state_discretization =
+    std::shared_ptr<racer::astar::discretization<DiscreteState, state>> state_discretization =
         algorithm->create_discretization(config, *vehicle);
 
     if (!state_discretization)
@@ -141,9 +141,10 @@ void run_benchmark_for(
     }
 
     const double time_step_s = 1.0 / 12.5;
-    const auto vehicle_model = std::make_shared<model>(std::move(vehicle));
+    const auto vehicle_model = std::make_shared<model>(vehicle);
     const auto initial_state = state{config.initial_position};
     const auto actions = racer::action::create_actions_including_reverse(9, 9);
+
 
     for (std::size_t i = 0; i < repetitions; ++i)
     {
@@ -174,15 +175,18 @@ void run_benchmark_for(
 
 template <typename DiscreteState>
 void benchmark(
-    std::shared_ptr<benchmarked_algorithm<DiscreteState>> algorithm,
+    const std::shared_ptr<benchmarked_algorithm<DiscreteState>> algorithm,
     const std::vector<std::shared_ptr<track_analysis_input>> configs,
     const std::size_t repetitions,
     const std::chrono::milliseconds time_limit)
 {
+    std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
+        racer::vehicle_model::vehicle_chassis::rc_beast();
+
     for (std::size_t i = 0; i < configs.size(); ++i)
     {
         const auto config = configs[i];
-        run_benchmark_for<DiscreteState>(algorithm, *config, repetitions, time_limit);
+        run_benchmark_for<DiscreteState>(algorithm, vehicle, *config, repetitions, time_limit);
     }
 }
 
