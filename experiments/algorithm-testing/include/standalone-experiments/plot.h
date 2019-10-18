@@ -180,7 +180,8 @@ void plot_trajectory(
     const track_analysis_input &config,
     const racer::trajectory<kinematic::state> &trajectory,
     const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle,
-    const std::shared_ptr<racer::circuit> circuit)
+    const std::shared_ptr<racer::circuit> circuit,
+    const std::string name)
 {
     std::vector<racer::math::point> rpm_points, steering_angle_points, speed_points;
     for (const auto &step : trajectory.steps())
@@ -209,7 +210,9 @@ void plot_trajectory(
 
     plt::legend();
 
-    plt::show();
+    std::stringstream trajectory_file_name;
+    trajectory_file_name << name << "_trajectory.png";
+    plt::save(trajectory_file_name.str());
 
     // actuators state profile
     plt::subplot(2, 1, 1);
@@ -224,7 +227,10 @@ void plot_trajectory(
     plot_points("speed profile", speed_points, "r-", 1.0);
     plt::legend();
 
-    plt::show();
+    std::stringstream actuators_file_name;
+    actuators_file_name << name << "_actuators.png";
+    plt::save(actuators_file_name.str());
+
     delete[] grid_img;
     delete[] circles_img;
     delete[] waypoints_img;

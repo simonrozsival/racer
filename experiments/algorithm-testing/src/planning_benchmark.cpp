@@ -116,7 +116,7 @@ void run_benchmark_for(
     const int cells_in_vehicle_radius = std::ceil(vehicle->radius() / config.occupancy_grid->cell_size());
     const std::shared_ptr<racer::occupancy_grid> inflated_grid = config.occupancy_grid->inflate(cells_in_vehicle_radius);
 
-    const std::shared_ptr<racer::circuit> circuit =
+    std::shared_ptr<racer::circuit> circuit =
         racer::create_circuit_from_occupancy_grid(
             inflated_grid,
             config.checkpoints,
@@ -142,36 +142,65 @@ void run_benchmark_for(
 
     const double time_step_s = 1.0 / 12.5;
     const auto vehicle_model = std::make_shared<model>(vehicle);
-    const auto initial_state = state{config.initial_position};
-    const auto actions = racer::action::create_actions_including_reverse(9, 9);
+    const auto actions = racer::action::create_actions_including_reverse(5, 5);
+    
+    auto initial_state = state{config.initial_position};
 
-
-    for (std::size_t i = 0; i < repetitions; ++i)
+    for (std::size_t lookahead = 2; lookahead <= circuit->waypoints.size(); ++lookahead)
+    for (std::size_t start = 0; start < circuit->waypoints.size(); ++start)
     {
-        auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, state>>(
-            initial_state,
-            time_step_s,
-            actions,
-            state_discretization,
-            vehicle_model,
-            circuit);
-
-        const auto measurement = measure_search<DiscreteState>(std::move(problem), time_limit);
-        output::planning::print_result(algorithm->name, config.name, measurement);
-
-        // only plot the result after all of the previous repetitions
-        // are done - the found trajectory should be always the same
-        // and we repeat the process only to get good runtime averages
-        if (i == repetitions - 1 && measurement.result.was_successful())
+        const std::shared_ptr<racer::circuit> shifted_circut =
+             circuit->for_waypoint_subset(start, lookahead);
+    
+        for (std::size_t i = 0; i < repetitions; ++i)
         {
-            plot_trajectory(
-                config,
-                measurement.result.found_trajectory,
+            auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, state>>(
+                initial_state,
+                time_step_s,
+                actions,
+                state_discretization,
                 vehicle_model,
-                circuit);
+                shifted_circut);
+
+            const auto measurement = measure_search<DiscreteState>(std::move(problem), time_limit);
+
+            output::planning::print_result(
+                algorithm->name,
+                config.name,
+                actions.size(),
+                start,
+                lookahead,
+                measurement);
+
+            // only plot the result after all of the previous repetitions
+            // are done - the found trajectory will be always the same (the initial conditions
+            // are always the same and the whole search process is deterministic)
+            // and we repeat the process only to get good runtime averages
+            if (i == repetitions - 1 && measurement.result.was_successful())
+            {
+                const auto name = output::planning::experiment_name(
+                    algorithm->name, config.name, actions.size(), start, lookahead);
+                plot_trajectory(
+                    config,
+                    measurement.result.found_trajectory,
+                    vehicle_model,
+                    shifted_circut,
+                    name);
+
+                // find the first state which passes the first waypoint and use it as initial state for the next search
+                for (const auto step : measurement.result.found_trajectory.steps())
+                {
+                    if (shifted_circut->passes_waypoint(step.state().position(), 0))
+                    {
+                        initial_state = step.state();
+                        break;
+                    }
+                }
+            }
         }
     }
 }
+
 
 template <typename DiscreteState>
 void benchmark(

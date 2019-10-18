@@ -97,7 +97,7 @@ public:
 
     // put it all together
     return std::make_unique<track_analysis_input>(
-        input_file_name.filename(),
+        input_file_name.stem(),
         initial_position,
         checkpoints,
         std::move(occupancy_grid),
