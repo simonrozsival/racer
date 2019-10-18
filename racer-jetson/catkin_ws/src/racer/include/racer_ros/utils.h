@@ -21,13 +21,14 @@ namespace racer_ros
 
 std::shared_ptr<racer::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid &map)
 {
+    auto data = std::vector<uint8_t>{map.data.begin(), map.data.end()};
     // convert signed bytes (which are expected to be in the range 0-100) to unsigned bytes
     return std::make_shared<racer::occupancy_grid>(
-        {map.data.begin(), map.data.end()},
+        data,
         map.info.width,
         map.info.height,
         map.info.resolution,
-        racer::math::point(map.info.origin.position.x, map.info.origin.position.y));
+        racer::math::vector{map.info.origin.position.x, map.info.origin.position.y});
 }
 
 kinematic::state pose_and_twist_to_state(
@@ -45,18 +46,22 @@ kinematic::state pose_and_twist_to_state(
     };
 }
 
-racer::trajectory<kinematic::state> msg_to_trajectory(const racer_msgs::Trajectory &msg)
+racer::trajectory<kinematic::state> msg_to_trajectory(
+    const racer_msgs::Trajectory &msg, double time_step_s)
 {
-    std::vector<trajectory_step<kinematic::state>> steps;
+    std::vector<racer::trajectory_step<kinematic::state>> steps;
+    std:size_t t = 0;
     for (const auto &step : msg.trajectory)
     {
         steps.emplace_back(
             pose_and_twist_to_state(step.pose, step.velocity),
-            step.next_waypoint.data);
+            step.next_waypoint.data,
+            t++ * time_step_s);
     }
 
-    return {steps};
+    return {steps, time_step_s};
 }
+
 } // namespace racer_ros
 
 #endif

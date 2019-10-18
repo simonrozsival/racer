@@ -15,10 +15,10 @@ namespace racer::following_strategies
 {
 
 template <typename TState>
-class geometric_following_strategy : public following_strategy
+class geometric_following_strategy : public following_strategy<TState>
 {
 public:
-    geometric_following_strategy(double max_steering_angle, std::shared_ptr<pid> pid, const pure_pursuit &pursuit)
+    geometric_following_strategy(double max_steering_angle, std::shared_ptr<pid> pid, const pure_pursuit<TState> &pursuit)
         : max_steering_angle_(max_steering_angle), pid_(pid), pure_pursuit_(pursuit)
     {
     }
@@ -49,7 +49,7 @@ public:
 
 private:
     std::shared_ptr<pid> pid_;
-    pure_pursuit pure_pursuit_;
+    pure_pursuit<TState> pure_pursuit_;
     const double max_steering_angle_;
 
     inline double clamp(double value) const

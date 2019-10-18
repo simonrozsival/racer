@@ -27,9 +27,14 @@ public:
     rpm(rpm &&other) = default;
     rpm &operator=(rpm &&other) = default;
 
-    bool operator==(const rpm &other) const
+    inline bool operator==(const rpm &other) const
     {
-        return std::abs(rpm_ - other.rpm_) < 1e-5;
+        return *this == other.rpm_;
+    }
+
+    inline bool operator==(double other_rpm) const
+    {
+        return std::abs(rpm_ - other_rpm) < 1e-5;
     }
 
     rpm operator+(const rpm &other) const

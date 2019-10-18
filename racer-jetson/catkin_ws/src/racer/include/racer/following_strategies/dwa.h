@@ -2,6 +2,7 @@
 #define DWA_H_
 
 #include <iostream>
+#include <vector>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
@@ -21,8 +22,7 @@ public:
     trajectory_error_calculator()
         : position_error_weight_{0},
           heading_error_weight_{0},
-          velocity_error_weight_{0},
-          velocity_undershooting_overshooting_ratio_{0},
+          motor_rpm_error_weight_{0},
           max_position_error_{0},
           obstacle_proximity_error_weight_{0}
     {
@@ -31,44 +31,41 @@ public:
     trajectory_error_calculator(
         double position_error_weight,
         double heading_error_weight,
-        double velocity_error_weight,
-        double velocity_undershooting_overshooting_ratio,
+        double motor_rpm_error_weight,
         double obstacle_proximity_error_weight,
         double max_position_error)
         : position_error_weight_(position_error_weight),
           heading_error_weight_(heading_error_weight),
-          velocity_error_weight_(velocity_error_weight),
-          velocity_undershooting_overshooting_ratio_(velocity_undershooting_overshooting_ratio),
+          motor_rpm_error_weight_(motor_rpm_error_weight),
           max_position_error_(max_position_error),
           obstacle_proximity_error_weight_(obstacle_proximity_error_weight)
     {
     }
 
-    trajectory_error_calculator(trajectory_error_calculator &&other) = default;
-    trajectory_error_calculator &operator=(trajectory_error_calculator &&other) = default;
+    trajectory_error_calculator(trajectory_error_calculator<TState> &&other) = default;
+    trajectory_error_calculator<TState> &operator=(trajectory_error_calculator<TState> &&other) = default;
 
-    trajectory_error_calculator(const trajectory_error_calculator &other) = default;
-    trajectory_error_calculator &operator=(const trajectory_error_calculator &other) = default;
+    trajectory_error_calculator(const trajectory_error_calculator<TState> &other) = default;
+    trajectory_error_calculator<TState> &operator=(const trajectory_error_calculator<TState> &other) = default;
 
     double calculate_error(
         const std::vector<TState> &attempt,
-        const trajectory &reference,
+        const racer::trajectory<TState> &reference,
         const std::shared_ptr<racer::occupancy_grid> map) const
     {
-
         double error = 0;
 
-        std::vector<TState>::const_iterator first_it = attempt.begin();
-        std::vector<trajectory_step<TState>>::const_iterator second_it = reference.steps().begin();
+        auto first_it = attempt.cbegin();
+        auto second_it = reference.steps().cbegin();
 
         std::size_t step = 0;
         std::size_t steps = std::min(attempt.size(), reference.steps().size());
 
-        const double total_weight = position_error_weight_ + heading_error_weight_ + velocity_error_weight_ + obstacle_proximity_error_weight_;
+        const double total_weight = position_error_weight_ + heading_error_weight_ + motor_rpm_error_weight_ + obstacle_proximity_error_weight_;
 
-        for (; first_it != attempt.end() && second_it != reference.steps().end(); ++first_it, ++second_it)
+        for (; first_it != attempt.cend() && second_it != reference.steps().cend(); ++first_it, ++second_it)
         {
-            double step_error = position_error_weight_ * position_error(*first_it, second_it->state()) + heading_error_weight_ * heading_error(*first_it, second_it->state()) + velocity_error_weight_ * velocity_error(*first_it, second_it->state()) + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, map);
+            double step_error = position_error_weight_ * position_error(*first_it, second_it->state()) + heading_error_weight_ * heading_error(*first_it, second_it->state()) + motor_rpm_error_weight_ * motor_rpm_error(*first_it, second_it->state()) + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, map);
 
             // double weight = pow(double(steps - step++) / double(steps), 2);
             // error += weight * step_error;
@@ -79,8 +76,8 @@ public:
     }
 
 private:
-    double position_error_weight_, heading_error_weight_, velocity_error_weight_;
-    double velocity_undershooting_overshooting_ratio_, max_position_error_, obstacle_proximity_error_weight_;
+    double position_error_weight_, heading_error_weight_, motor_rpm_error_weight_;
+    double max_position_error_, obstacle_proximity_error_weight_;
 
     double position_error(const TState &a, const TState &reference) const
     {
@@ -89,19 +86,16 @@ private:
 
     double heading_error(const TState &a, const TState &reference) const
     {
-        double delta = abs(racer::math::angle(a.position().heading_angle()) - racer::math::angle(reference.position().heading_angle()));
-        return std::min(delta, 2 * M_PI - delta);
+        return a.configuration().heading_angle().distance_to(reference.configuration().heading_angle()) / (2 * M_PI);
     }
 
-    double velocity_error(const TState &a, const TState &reference) const
+    double motor_rpm_error(const TState &a, const TState &reference) const
     {
-        double speed_ratio = reference.speed() == 0
-                                 ? (a.speed() == 0 ? 0 : 1)
-                                 : a.speed() / reference.speed();
+        double speed_ratio = reference.motor_rpm() == 0.0
+                                 ? (a.motor_rpm() == 0.0 ? 0.0 : 1.0)
+                                 : a.motor_rpm() / reference.motor_rpm();
 
-        return speed_ratio <= 1
-                   ? 1 - speed_ratio
-                   : speed_ratio / velocity_undershooting_overshooting_ratio_;
+        return std::max(0.0, std::abs(1.0 - speed_ratio));
     }
 
     double obstacle_proximity_error(const TState &a, const std::shared_ptr<racer::occupancy_grid> grid) const
@@ -133,7 +127,7 @@ public:
     racer::action select_action(
         const TState &current_state,
         const std::size_t passed_waypoints,
-        const racer::trajectory &reference_trajectory,
+        const racer::trajectory<TState> &reference_trajectory,
         const std::shared_ptr<racer::occupancy_grid> map) const override
     {
 
@@ -151,7 +145,8 @@ public:
             const auto trajectory = unfold(current_state, next_action, map);
             if (!trajectory.empty())
             {
-                const double error = trajectory_error_calculator_.calculate_error(trajectory, reference_subtrajectory, map);
+                const double error = trajectory_error_calculator_.calculate_error(
+                    trajectory, reference_subtrajectory, map);
                 if (error < lowest_error)
                 {
                     lowest_error = error;
@@ -165,7 +160,7 @@ public:
 
     void reset() override {}
 
-    void reconfigure(const trajectory_error_calculator &error_calculator)
+    void reconfigure(const trajectory_error_calculator<TState> &error_calculator)
     {
         trajectory_error_calculator_ = error_calculator;
     }
@@ -191,7 +186,7 @@ public:
 
             // the obstacles in the map are inflated so it is sufficient to check
             // just the grid cell which the center of the vehicle lies in
-            if (grid.collides(last_state.position()))
+            if (grid->collides(last_state.position()))
             {
                 return {};
             }

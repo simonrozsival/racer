@@ -3,6 +3,8 @@
 
 #include <vector>
 
+#include "racer/occupancy_grid.h"
+
 namespace racer
 {
 

@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "racer/nearest_neighbor.h"
+#include "racer/vehicle_model/kinematic_model.h"
 #include "racer/astar/discretized_search_problem.h"
 
 namespace racer::astar::sehs::kinematic
