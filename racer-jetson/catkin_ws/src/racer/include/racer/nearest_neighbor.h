@@ -197,7 +197,6 @@ public:
             return search->second;
         }
 
-        std::cout << "miss" << std::endl;
         const auto result = linear_.find_nearest_neighbor(pt);
         cache_[index] = result;
         return result;

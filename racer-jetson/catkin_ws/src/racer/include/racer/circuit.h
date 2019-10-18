@@ -76,8 +76,6 @@ public:
 
     std::unique_ptr<circuit> for_waypoint_subset(std::size_t from, std::size_t n)
     {
-        assert(n < waypoints.size());
-
         std::vector<racer::math::point> waypoints_subset;
         for (std::size_t i = 0; i < n; ++i)
         {

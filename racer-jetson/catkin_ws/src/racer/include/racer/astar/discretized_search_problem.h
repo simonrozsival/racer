@@ -29,9 +29,9 @@ public:
         TState initial_state,
         double time_step_s,
         const std::vector<action> &available_actions,
-        std::shared_ptr<discretization<TDiscreteState, TState>> discretize,
-        std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model,
-        std::shared_ptr<racer::circuit> circuit)
+        const std::shared_ptr<discretization<TDiscreteState, TState>> discretize,
+        const std::shared_ptr<racer::vehicle_model::vehicle_model<TState>> model,
+        const std::shared_ptr<racer::circuit> circuit)
         : initial_state_{initial_state},
           time_step_s_(time_step_s),
           vehicle_model_(model),

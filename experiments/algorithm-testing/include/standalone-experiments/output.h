@@ -30,16 +30,33 @@ struct benchmark_result
 
 void print_csv_header()
 {
-    std::cout << "algorithm, circuit name, finished within time limit, found solution, open nodes, closed nodes, time to finish, travelled distance, computation time in ms" << std::endl;
+    std::cout << "algorithm, "
+              << "circuit name, "
+              << "number of actions, "
+              << "from waypoint, "
+              << "lookahead, "
+              << "finished within time limit, "
+              << "found solution, "
+              << "open nodes, "
+              << "closed nodes, "
+              << "time to finish, "
+              << "travelled distance, "
+              << "computation time in ms" << std::endl;
 }
 
 void print_result(
     const std::string &algorithm,
     const std::string &circuit_name,
+    const std::size_t number_of_actions,
+    const std::size_t from,
+    const std::size_t lookahead,
     const benchmark_result &measurement)
 {
     std::cout << algorithm << ", "
               << circuit_name << ", "
+              << number_of_actions << ", "
+              << from << ", "
+              << lookahead << ", "
               << (!measurement.exceeded_time_limit ? "yes" : "no") << ", "
               << (measurement.result.was_successful() ? "yes" : "no") << ", "
               << measurement.result.number_of_opened_nodes << ", "
@@ -47,6 +64,24 @@ void print_result(
               << (measurement.result.was_successful() ? measurement.result.final_cost : 0) << ", "
               << (measurement.result.was_successful() ? measurement.result.found_trajectory.total_distance() : 0) << ", "
               << measurement.computation_time.count() << std::endl;
+}
+
+std::string experiment_name(
+    const std::string algorithm,
+    const std::string circuit_name,
+    const std::size_t number_of_actions,
+    const std::size_t from,
+    const std::size_t lookahead)
+{
+    std::stringstream file_name;
+
+    file_name << algorithm << "_"
+              << circuit_name << "_"
+              << "a-" << number_of_actions << "_"
+              << "f-" << from << "_"
+              << "l-" << lookahead;
+    
+    return file_name.str();
 }
 
 } // namespace output::planning
