@@ -11,6 +11,7 @@
 #include "racer/astar/astar.h"
 #include "racer/math.h"
 #include "racer/circuit.h"
+#include "racer/vehicle_configuration.h"
 
 namespace std
 {

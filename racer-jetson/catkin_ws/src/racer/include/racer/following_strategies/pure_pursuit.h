@@ -30,7 +30,7 @@ public:
         current_state, passed_waypoints, trajectory);
 
     auto diff = reference.location() - calculate_rear_axle_center(current_state);
-    double alpha = diff.angle() - current_state.position().heading_angle();
+    double alpha = diff.angle() - current_state.configuration().heading_angle();
 
     return atan(2 * wheelbase_ * sin(alpha) / calculate_lookahead(current_state));
   }
@@ -44,22 +44,23 @@ public:
 
     if (sub_trajectory.steps().empty())
     {
-      return current_state.position();
+      return current_state.configuration();
     }
 
     auto rear_axle_center = calculate_rear_axle_center(current_state.configuration());
 
-    const double lookahead = calculate_lookahead(current_state.speed());
+    const double lookahead = calculate_lookahead(current_state);
     const double lookahead_sq = lookahead * lookahead;
     auto reference_step = sub_trajectory.steps().begin();
-    while (reference_step != sub_trajectory.steps().end() && reference_step->state().position().distance_sq(rear_axle_center) < lookahead_sq)
+    while (reference_step != sub_trajectory.steps().end()
+      && reference_step->state().position().distance_sq(rear_axle_center) < lookahead_sq)
     {
       ++reference_step;
     }
 
     return reference_step == sub_trajectory.steps().end()
-               ? sub_trajectory.steps().back().state().position()
-               : reference_step->state().position();
+               ? sub_trajectory.steps().back().state().configuration()
+               : reference_step->state().configuration();
   }
 
 private:
@@ -67,15 +68,15 @@ private:
   const double min_lookahead_;
   const double lookahead_coefficient_;
 
-  auto calculate_lookahead(const double speed) const
+  inline double calculate_lookahead(const TState& state) const
   {
-    return std::max(min_lookahead_, speed * lookahead_coefficient_);
+    return std::max(min_lookahead_, double(state.motor_rpm() * lookahead_coefficient_));
   }
 
-  auto calculate_rear_axle_center(const racer::vehicle_configuration &configuration) const
+  inline racer::math::point calculate_rear_axle_center(const TState &state) const
   {
-    auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(configuration.heading_angle());
-    return configuration.location() + rear_wheel_offset;
+    auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(state.configuration().heading_angle());
+    return state.position() + rear_wheel_offset;
   }
 };
 

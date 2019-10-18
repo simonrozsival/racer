@@ -115,9 +115,9 @@ public:
     }
 };
 
-std::ostream &operator<<(std::ostream &os, vector const &m) { 
-    return os << "[" << m.x() << ", " << m.y() << "]";
-}
+// std::ostream &operator<<(std::ostream &os, vector const &m) { 
+//     return os << "[" << m.x() << ", " << m.y() << "]";
+// }
 
 typedef vector point; // alias
 

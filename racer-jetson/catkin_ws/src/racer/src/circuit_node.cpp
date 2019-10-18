@@ -32,8 +32,8 @@ int lookahead;
 std::vector<racer::math::point> check_points;
 
 // state variables
-racer::vehicle_configuration position;
-racer::occupancy_grid grid;
+racer::vehicle_configuration configuration;
+std::shared_ptr<racer::occupancy_grid> grid;
 std::string frame_id;
 std::vector<racer::math::circle> waypoints;
 
@@ -44,7 +44,7 @@ void load_circuit();
 
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
-  if (grid.is_valid())
+  if (grid)
   {
     throw std::runtime_error("There is already an existing map.");
   }
@@ -57,12 +57,12 @@ void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
 
 void load_circuit()
 {
-  if (!position.is_valid())
+  if (!configuration.is_valid())
   {
     return;
   }
 
-  if (!grid.is_valid())
+  if (!grid)
   {
     return;
   }
@@ -71,15 +71,14 @@ void load_circuit()
 
   racer::sehs::space_exploration space_exploration(
       vehicle_radius, 10 * vehicle_radius, branching_factor);
-  racer::track_analysis analysis(
-      grid, min_distance_between_waypoints);
+  racer::track_analysis analysis(min_distance_between_waypoints);
 
   std::vector<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
-  final_check_points.push_back(position.location()); // back to the start
+  final_check_points.push_back(configuration.location()); // back to the start
 
   ROS_DEBUG("start track analysis/space exploration");
-  const auto path = space_exploration.explore_grid(grid, position, final_check_points);
-  const auto pivot_points = analysis.find_pivot_points(path);
+  const auto path = space_exploration.explore_grid(grid, configuration, final_check_points);
+  const auto pivot_points = analysis.find_pivot_points(path, grid);
   const std::vector<racer::math::point> apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
   ROS_DEBUG("finished track analysis/space exploration");
 
@@ -107,12 +106,12 @@ void load_circuit()
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
   bool try_init = false;
-  if (!position.is_valid())
+  if (!configuration.is_valid())
   {
     try_init = true;
   }
 
-  position = {state->x, state->y, state->heading_angle};
+  configuration = {state->x, state->y, state->heading_angle};
 
   if (try_init)
   {
@@ -127,7 +126,7 @@ void state_update(const racer_msgs::State::ConstPtr &state)
   std::lock_guard<std::mutex> guard(state_lock);
 
   const auto wp = waypoints[next_waypoint];
-  if (wp.contains(position.location()))
+  if (wp.contains(configuration.location()))
   {
     next_waypoint = (next_waypoint + 1) % waypoints.size();
     std::cout << "PASSED A WAYPOINT, next waypoint: " << next_waypoint << std::endl;
@@ -218,8 +217,8 @@ int main(int argc, char *argv[])
           marker.type = visualization_msgs::Marker::SPHERE;
           marker.action = visualization_msgs::Marker::ADD;
 
-          marker.pose.position.x = wp.center.x();
-          marker.pose.position.y = wp.center.y();
+          marker.pose.position.x = wp.center().x();
+          marker.pose.position.y = wp.center().y();
           marker.pose.position.z = 0;
 
           marker.scale.x = 2 * wp.radius();

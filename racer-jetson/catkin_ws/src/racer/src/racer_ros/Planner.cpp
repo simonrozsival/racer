@@ -6,23 +6,21 @@
 #include "racer/circuit.h"
 #include "racer/astar/astar.h"
 
-using namespace racer;
-using namespace racer::vehicle_model;
 using namespace racer::astar::sehs;
 
 namespace racer_ros
 {
 
-std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
-    std::shared_ptr<occupancy_grid> grid,
-    const kinematic::state &state,
-    const std::vector<action> &available_actions,
-    const racer::circuit circuit,
+template <typename State, typename DiscreteState>
+std::unique_ptr<racer_msgs::Trajectory> Planner<State, DiscreteState>::plan(
+    std::shared_ptr<racer::occupancy_grid> grid,
+    const State &state,
+    const std::vector<racer::action> &available_actions,
+    const std::shared_ptr<racer::circuit> circuit,
     const int next_waypoint) const
 {
-
-  const double initial_heading_angle = state.position().heading_angle();
-  auto problem = std::make_unique<racer::astar::discretized_search_problem<discrete_state>>(
+  const double initial_heading_angle = state.configuration().heading_angle();
+  auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, State>>(
       state,
       time_step_s_,
       model_,
@@ -31,7 +29,7 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
       circuit,
       grid);
 
-  const auto result = racer::astar::search<discrete_state, kinematic::state>(
+  const auto result = racer::astar::search<DiscreteState, State>(
       std::move(problem),
       maximum_number_of_expanded_nodes_);
 
@@ -58,16 +56,16 @@ std::unique_ptr<racer_msgs::Trajectory> Planner::plan(
     state.pose.position.y = step.state().position().y();
     state.pose.position.z = 0;
 
-    state.pose.orientation = tf::createQuaternionMsgFromYaw(step.state().position().heading_angle());
+    state.pose.orientation = tf::createQuaternionMsgFromYaw(step.state().configuration().heading_angle());
 
-    state.velocity.linear.x = cos(step.state().position().heading_angle()) * step.state().speed();
-    state.velocity.linear.y = sin(step.state().position().heading_angle()) * step.state().speed();
+    state.velocity.linear.x = cos(step.state().configuration().heading_angle()) * step.state().speed();
+    state.velocity.linear.y = sin(step.state().configuration().heading_angle()) * step.state().speed();
 
-    state.velocity.angular.z = (prev_heading_angle - step.state().position().heading_angle()) / time_step_s_;
+    state.velocity.angular.z = (prev_heading_angle - step.state().configuration().heading_angle()) / time_step_s_;
 
     trajectory->trajectory.push_back(state);
 
-    prev_heading_angle = step.state().position().heading_angle();
+    prev_heading_angle = step.state().configuration().heading_angle();
   }
 
   return trajectory;

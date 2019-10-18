@@ -10,7 +10,7 @@ struct vehicle_configuration
 {
 private:
     racer::math::point location_;
-    double heading_angle_;
+    racer::math::angle heading_angle_;
     bool is_valid_;
 
 public:
@@ -50,8 +50,8 @@ public:
         return vehicle_configuration(location_ + other.location_, heading_angle_ + other.heading_angle_);
     }
 
-    inline const racer::math::vector &location() const { return location_; }
-    inline const double &heading_angle() const { return heading_angle_; }
+    inline const racer::math::point &location() const { return location_; }
+    inline const racer::math::angle &heading_angle() const { return heading_angle_; }
 };
 
 } // namespace racer

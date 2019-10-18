@@ -88,16 +88,17 @@ int main(int argc, char *argv[])
   auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy<kinematic::state>>(max_steering_angle, pid, pure_pursuit);
   ROS_DEBUG("Geometric following strategy was initialized");
 
-  racer_ros::Follower follower(std::move(following_strategy));
+  int frequency; // Hz
+  node.param<int>("frequency", frequency, 30);
 
-  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower::trajectory_observed, &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower::waypoints_observed, &follower);
+  racer_ros::Follower<racer::vehicle_model::kinematic::state> follower(std::move(following_strategy), 1.0 / double(frequency));
+
+  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower<kinematic::state>::trajectory_observed, &follower);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower<kinematic::state>::waypoints_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::Marker>(visualization_topic, 1, true);
 
-  int frequency; // Hz
-  node.param<int>("frequency", frequency, 30);
 
   ros::Rate rate(frequency);
 

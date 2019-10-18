@@ -22,15 +22,19 @@ using namespace racer::vehicle_model;
 namespace racer_ros
 {
 
+template <typename State>
 class Follower
 {
 public:
   std::string map_frame_id;
 
-  Follower(std::shared_ptr<racer::following_strategies::following_strategy> strategy)
+  Follower(
+    std::shared_ptr<racer::following_strategies::following_strategy<State>> strategy,
+    const double time_step_s)
       : strategy_{strategy},
-        next_waypoint_{0},
         stop_{0, 0},
+        time_step_s_{time_step_s},
+        next_waypoint_{0},
         state_{}
   {
   }
@@ -47,29 +51,30 @@ public:
 
   const int next_waypoint() const { return next_waypoint_; }
 
-  const kinematic::state last_known_state() const
+  const State& last_known_state() const
   {
     return state_;
   }
 
-  const trajectory<kinematic::state> reference_trajectory() const
+  const racer::trajectory<State>& reference_trajectory() const
   {
     return reference_trajectory_;
   }
 
-  const racer::occupancy_grid map() const
+  const std::shared_ptr<racer::occupancy_grid> map() const
   {
     return map_;
   }
 
 private:
-  const std::shared_ptr<racer::following_strategies::following_strategy> strategy_;
-  const action stop_;
-  int next_waypoint_;
+  const std::shared_ptr<racer::following_strategies::following_strategy<State>> strategy_;
+  const racer::action stop_;
+  const double time_step_s_;
 
-  racer::occupancy_grid map_;
-  racer::trajectory<kinematic::state> reference_trajectory_;
-  kinematic::state state_;
+  int next_waypoint_;
+  std::shared_ptr<racer::occupancy_grid> map_;
+  racer::trajectory<State> reference_trajectory_;
+  State state_;
 };
 
 } // namespace racer_ros

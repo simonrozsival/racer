@@ -17,17 +17,26 @@
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/sehs/space_exploration.h"
+#include "racer/astar/sehs.h"
+#include "racer/track_analysis.h"
 
 #include "racer_ros/utils.h"
 #include "racer_ros/Planner.h"
 
 std::mutex lock;
 
-racer::vehicle_model::kinematic::state last_known_position;
-racer::circuit circuit;
+using State = racer::vehicle_model::kinematic::state;
+using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
+
+State last_known_position;
+std::shared_ptr<racer::circuit> circuit;
+
 int next_waypoint;
+double waypoint_radius;
+std::vector<racer::math::point> next_waypoints;
+
 std::string map_frame;
-std::unique_ptr<racer_ros::Planner> planner;
+std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
@@ -53,7 +62,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
   planner = nullptr;
 }
 
-std::shared_ptr<racer::occupancy_grid> load_map()
+std::shared_ptr<racer::occupancy_grid> load_map(ros::NodeHandle& node)
 {
   // get the base map for space exploration
   while (!ros::service::waitForService("static_map", ros::Duration(3.0)))
@@ -94,13 +103,13 @@ int main(int argc, char *argv[])
   int frequency;
   node.param<int>("frequency", frequency, 1);
 
-  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
-  auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
+  std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
+  auto model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
   const auto actions_with_reverse = racer::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
   const auto actions_just_forward = racer::action::create_actions(5, 9);                   // fewer throttle options, more steering options
@@ -112,7 +121,7 @@ int main(int argc, char *argv[])
   bool found_trajectory_last_time = true;
 
   // blocks until map is ready
-  const auto map = load_map();
+  const auto map = load_map(node);
 
   while (ros::ok())
   {
@@ -120,14 +129,25 @@ int main(int argc, char *argv[])
     {
       std::lock_guard<std::mutex> guard(lock);
 
-      racer::sehs::space_exploration exploration(vehicle.radius(), 2 * vehicle.radius(), config->neighbor_circles);
-      const auto path_of_circles = exploration.explore_grid(map, last_known_position, next_waypoints);
-      auto discretization = std::make_unique<racer::astar::sehs::discretization>(path_of_circles, M_PI / 12.0, 0.25);
-      planner = std::make_unique<racer_ros::Planner>(
-          std::move(vehicle),
+      racer::sehs::space_exploration exploration(vehicle->radius(), 2 * vehicle->radius(), 13);
+      const auto path_of_circles = exploration.explore_grid(map, last_known_position.configuration(), next_waypoints);
+      if (path_of_circles.empty())
+      {
+        rate.sleep();
+        continue;
+      }
+
+      racer::track_analysis analysis{vehicle->radius() * 20};
+      auto waypoints = analysis.find_corners(analysis.find_pivot_points(path_of_circles, map), 4.0 / 5.0 * M_PI);
+      circuit = std::make_unique<racer::circuit>(waypoints, waypoint_radius, map);
+
+      auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
+        path_of_circles, 24, 10, vehicle->motor->max_rpm());
+      planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(
+          model,
           std::move(discretization),
           time_step_s,
-          map_frame_id)
+          map_frame_id);
     }
 
     if (planner && last_known_position.is_valid() && !next_waypoints.empty())
@@ -142,7 +162,7 @@ int main(int argc, char *argv[])
       }
 
       std::lock_guard<std::mutex> guard(lock);
-      const auto trajectory = planner.plan(
+      const auto trajectory = planner->plan(
           map,
           last_known_position,
           found_trajectory_last_time ? actions_just_forward : actions_with_reverse,
