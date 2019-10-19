@@ -25,7 +25,7 @@
 #include "racer/following_strategies/geometric_following_strategy.h"
 #include "racer_ros/Follower.h"
 
-using namespace racer::vehicle_model;
+using State = racer::vehicle_model::kinematic::state;
 
 std::shared_ptr<racer::following_strategies::pid> pid;
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
   double min_lookahead, lookahead_coefficient;
   node.param<double>("min_lookahead", min_lookahead, 1.0);
   node.param<double>("speed_lookahead_coefficient", lookahead_coefficient, 2.0);
-  racer::following_strategies::pure_pursuit<kinematic::state> pure_pursuit{wheelbase, min_lookahead, lookahead_coefficient};
+  racer::following_strategies::pure_pursuit<State> pure_pursuit{wheelbase, min_lookahead, lookahead_coefficient};
   ROS_DEBUG("Pure pursuit was initialized (min lookahead=%fm, lookahead velocity coefficient=%f)", min_lookahead, lookahead_coefficient);
 
   dynamic_reconfigure::Server<racer::PIDConfig> server;
@@ -85,16 +85,16 @@ int main(int argc, char *argv[])
   server.setCallback(f);
   ROS_DEBUG("dynamic reconfigure for PID was set up");
 
-  auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy<kinematic::state>>(max_steering_angle, pid, pure_pursuit);
+  auto following_strategy = std::make_unique<racer::following_strategies::geometric_following_strategy<State>>(max_steering_angle, pid, pure_pursuit);
   ROS_DEBUG("Geometric following strategy was initialized");
 
   int frequency; // Hz
   node.param<int>("frequency", frequency, 30);
 
-  racer_ros::Follower<racer::vehicle_model::kinematic::state> follower(std::move(following_strategy), 1.0 / double(frequency));
+  racer_ros::Follower<State> follower(std::move(following_strategy), 1.0 / double(frequency));
 
-  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower<kinematic::state>::trajectory_observed, &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower<kinematic::state>::waypoints_observed, &follower);
+  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::Follower<State>::trajectory_observed, &follower);
+  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower<State>::waypoints_observed, &follower);
 
   ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::Marker>(visualization_topic, 1, true);

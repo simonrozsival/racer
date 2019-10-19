@@ -113,11 +113,11 @@ public:
     {
         return std::atan2(y_, x_);
     }
-};
 
-// std::ostream &operator<<(std::ostream &os, vector const &m) { 
-//     return os << "[" << m.x() << ", " << m.y() << "]";
-// }
+    friend std::ostream &operator<<(std::ostream &os, const vector &m) { 
+        return os << "[" << m.x_ << ", " << m.y_ << "]";
+    }
+};
 
 typedef vector point; // alias
 

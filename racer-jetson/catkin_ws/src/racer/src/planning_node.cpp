@@ -139,7 +139,7 @@ int main(int argc, char *argv[])
 
       racer::track_analysis analysis{vehicle->radius() * 20};
       auto waypoints = analysis.find_corners(analysis.find_pivot_points(path_of_circles, map), 4.0 / 5.0 * M_PI);
-      circuit = std::make_unique<racer::circuit>(waypoints, waypoint_radius, map);
+      circuit = std::make_shared<racer::circuit>(waypoints, waypoint_radius, map);
 
       auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
         path_of_circles, 24, 10, vehicle->motor->max_rpm());

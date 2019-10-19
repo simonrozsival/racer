@@ -120,6 +120,11 @@ public:
     {
         return (motor_rpm.to_radians_per_second() / chassis->motor_to_wheel_gear_ratio) * chassis->wheel_radius;
     }
+
+    double speed_in_state(const state& state) const
+    {
+        return calculate_speed_with_no_slip_assumption(state.motor_rpm());
+    }
 };
 
 } // namespace racer::vehicle_model::kinematic

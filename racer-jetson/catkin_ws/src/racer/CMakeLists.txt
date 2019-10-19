@@ -70,9 +70,9 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-add_executable(dwa_following_node src/racer_ros/Follower.cpp src/dwa_following_node.cpp)
-add_executable(geometric_following_node src/racer_ros/Follower.cpp src/geometric_following_node.cpp)
-add_executable(planning_node src/racer_ros/Planner.cpp src/planning_node.cpp)
+add_executable(dwa_following_node src/dwa_following_node.cpp)
+add_executable(geometric_following_node src/geometric_following_node.cpp)
+add_executable(planning_node src/planning_node.cpp)
 add_executable(circuit_node src/circuit_node.cpp)
 add_executable(current_state_node src/current_state_node.cpp)
 
