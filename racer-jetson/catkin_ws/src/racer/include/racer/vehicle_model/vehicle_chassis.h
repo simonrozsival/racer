@@ -48,8 +48,8 @@ struct vehicle_chassis
         return std::make_unique<vehicle_chassis>(
             0.155, // cog_offset
             0.31,  // wheelbase
-            0.35,  // safe width
-            0.55,  // safe length
+            0.30,  // safe width
+            0.45,  // safe length
             0.05,  // wheel radius
             9.0,   // wheel to motor ratio
             steering_servo_model::with_fitted_values(),
@@ -58,8 +58,8 @@ struct vehicle_chassis
 
     inline double radius() const
     {
-        double dx = length / 2;
-        double dy = width / 2;
+        double dx = length / 2.0;
+        double dy = width / 2.0;
         return sqrt(dx * dx + dy * dy);
     }
 };

@@ -63,7 +63,7 @@ public:
 
     ss >> occupancy_grid_resolution;
 
-    auto occupancy_grid = load_occupancy_grid_from_pgm(pgm_file_path, occupancy_grid_resolution);
+    auto occupancy_grid = load_occupancy_grid_from_pgm(pgm_file_path, occupancy_grid_resolution, true);
     if (!occupancy_grid)
     {
       std::cerr << "Cannot load occupancy grid from file '" << pgm_file_path << "'." << std::endl;

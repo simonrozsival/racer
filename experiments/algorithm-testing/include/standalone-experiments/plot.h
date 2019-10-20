@@ -127,7 +127,7 @@ void plot_trajectory(const racer::trajectory<kinematic::state> trajectory, const
     {
         states.push_back(step.state().position());
 
-        if (step.timestamp() > 1 && step.timestamp() - std::floor(step.timestamp()) < trajectory.time_step())
+        if (step.timestamp() >= 1 && step.timestamp() - std::floor(step.timestamp()) < trajectory.time_step())
         {
             every_second.push_back(states.back());
         }
@@ -197,7 +197,7 @@ void plot_trajectory(
         steering_angle_points.emplace_back(step.timestamp(), step.state().steering_angle());
         speed_points.emplace_back(step.timestamp(), vehicle->calculate_speed_with_no_slip_assumption(step.state().motor_rpm()));
 
-        if (step.timestamp() > 1 && step.timestamp() - std::floor(step.timestamp()) < trajectory.time_step())
+        if (step.timestamp() >= 1 && step.timestamp() - std::floor(step.timestamp()) < trajectory.time_step())
         {
             every_second_speed.push_back(speed_points.back());
         }
@@ -217,14 +217,14 @@ void plot_trajectory(
     plot_circles(circuit->waypoints, circuit->grid, circuit->waypoint_radius, circles_img);
     plot_waypoints(circuit, waypoints_img);
 
-    plot_vehicle_configuration(trajectory.steps().back().state().configuration(), "green", config.occupancy_grid->cell_size());
-    plot_vehicle_configuration(initial_configuration, "blue", config.occupancy_grid->cell_size());
+    plot_vehicle_configuration(trajectory.steps().back().state().configuration(), "red", config.occupancy_grid->cell_size());
+    plot_vehicle_configuration(initial_configuration, "green", config.occupancy_grid->cell_size());
     plot_trajectory(trajectory, config.occupancy_grid->cell_size());
 
     plt::legend();
 
     std::stringstream trajectory_file_name;
-    trajectory_file_name << name << "_trajectory.png";
+    trajectory_file_name << name << "_trajectory.eps";
     plt::save(trajectory_file_name.str());
 
     // actuators state profile
@@ -242,7 +242,7 @@ void plot_trajectory(
     plt::legend();
 
     std::stringstream actuators_file_name;
-    actuators_file_name << name << "_actuators.png";
+    actuators_file_name << name << "_actuators.eps";
     plt::save(actuators_file_name.str());
 
     delete[] grid_img;
