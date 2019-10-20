@@ -32,14 +32,19 @@ public:
     const double &target_steering_angle() const { return target_steering_angle_; }
     const bool is_valid() const { return is_valid_; }
 
-    static const std::vector<action> create_actions(const int throttle_levels, const int steering_levels)
+    static const std::vector<action> create_actions(const std::size_t throttle_levels, const std::size_t steering_levels)
     {
         std::vector<action> actions;
 
-        const double steering_step = 2.0 / double(steering_levels - 1);
-        const double throttle_step = 1.0 / std::max(1.0, double(throttle_levels - 1));
+        if (throttle_levels < 3 || steering_levels < 3)
+        {
+            throw std::runtime_error("There have to be at least 3 throttle levels and 3 steering levels.");
+        }
 
-        for (double throttle = 1; throttle > 0; throttle -= throttle_step)
+        const double steering_step = 2.0 / double(steering_levels - 1);
+        const double throttle_step = 1.0 / std::max(1.0, double(throttle_levels - 2));
+
+        for (double throttle = 1; throttle >= 0; throttle -= throttle_step)
         {
             for (double steering = -1; steering <= 1; steering += steering_step)
             {
@@ -47,22 +52,10 @@ public:
             }
         }
 
-        return actions;
-    }
-
-    static std::vector<action> create_actions_including_reverse(const int throttle_levels, const int steering_levels)
-    {
-        std::vector<action> actions;
-
-        const double steering_step = 2.0 / double(steering_levels - 1);
-        const double throttle_step = 2.0 / double(throttle_levels - 1);
-
-        for (double throttle = 1; throttle >= -1; throttle -= throttle_step)
+        // braking
+        for (double steering = -1; steering <= 1; steering += steering_step)
         {
-            for (double steering = -1; steering <= 1; steering += steering_step)
-            {
-                actions.emplace_back(throttle, steering);
-            }
+            actions.emplace_back(-1, steering);
         }
 
         return actions;

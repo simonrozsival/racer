@@ -35,10 +35,12 @@ class tree
 {
 private:
     const std::unique_ptr<node> root_;
+    const std::size_t size_;
 
 public:
     tree(vec points)
-        : root_{build_subtree(points, 0, (long)(points.size() - 1), splitting_axis::x)}
+        : root_{build_subtree(points, 0, (long)(points.size() - 1), splitting_axis::x)},
+          size_{points.size()}
     {
         assert(root_ != nullptr);
     }
@@ -47,6 +49,8 @@ public:
     {
         return find_nearest_in_subtree(root_, pt, {root_, pt}).index;
     }
+
+    std::size_t size() const { return size_; }
 
 private:
     // assumption: all the points in `data` are distinct
@@ -176,6 +180,8 @@ public:
         }
         return closest_circle;
     }
+
+    std::size_t size() const { return centers_.size(); }
 };
 
 class cached_linear_search {
@@ -201,6 +207,8 @@ public:
         cache_[index] = result;
         return result;
     }
+
+    std::size_t size() const { return linear_.size(); }
 
 private:
     inline long index_of(const racer::math::point& pt) const {

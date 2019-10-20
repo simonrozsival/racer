@@ -40,10 +40,11 @@ public:
     occupancy_grid(occupancy_grid &&grid) = delete;
     occupancy_grid &operator=(occupancy_grid &&grid) = delete;
 
-    std::unique_ptr<occupancy_grid> inflate(int r) const
+    std::unique_ptr<occupancy_grid> inflate(double radius) const
     {
         std::vector<uint8_t> inflated{data_.begin(), data_.end()}; // start with a copy
-        const int r2 = r * r;
+        const int r = static_cast<int>(std::ceil(radius / cell_size_));
+        const int r2 = r * r;   
 
         for (std::size_t i{0}; i < width_; ++i)
         {

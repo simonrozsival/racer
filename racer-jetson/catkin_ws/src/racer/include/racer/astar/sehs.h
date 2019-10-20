@@ -50,17 +50,17 @@ struct discretization
 private:
     const double motor_rpm_;
     const racer::math::angle heading_;
-    const racer::nearest_neighbor::cached_linear_search nn_;
-    // const racer::nearest_neighbor::linear_search nn_;
+    // const racer::nearest_neighbor::cached_linear_search nn_;
+    const racer::nearest_neighbor::linear_search nn_;
     // const racer::nearest_neighbor::kd_tree::tree nn_;
 
 public:
     discretization(
         const std::vector<racer::math::circle> &circles,
-        std::size_t heading_bins,
+        racer::math::angle heading,
         double motor_rpm)
         : motor_rpm_{motor_rpm},
-          heading_{2 * M_PI / double(heading_bins)},
+          heading_{heading},
           nn_{centers_of(circles)}
     {
     }
@@ -74,6 +74,13 @@ public:
             (int)nn_.find_nearest_neighbor(state.position()),
             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
             (int)floor(state.motor_rpm() / motor_rpm_)};
+    }
+
+    std::string description() const override
+    {
+        std::stringstream s;
+        s << "c-" << nn_.size() << "-rpm-" << motor_rpm_ << "-theta-" << heading_.to_degrees();
+        return s.str();
     }
 
 private:
