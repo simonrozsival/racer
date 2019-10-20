@@ -14,13 +14,16 @@ std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(
     std::ifstream file(file_name, std::ifstream::in);
     std::vector<uint8_t> data;
 
-    const int one_m_cells = std::ceil(1 / cell_size);
-
     if (file.is_open())
     {
         std::string magic;
         getline(file, magic);
         bool binary_format = magic.compare("P5") == 0;
+
+        if (print_map)
+        {
+            std::cout << "is binary: " << binary_format << std::endl;
+        }
 
         if (file.peek() == (int)'#')
         {
@@ -54,17 +57,31 @@ std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(
                     cell = (uint8_t)ascii_value;
                 }
 
-                const std::size_t index = i * rows + j;
+                const std::size_t index = i * cols + j;
                 data[index] = 255 - cell;
-                if (print_map && i % one_m_cells == 0 && j % one_m_cells == 0)
-                    std::cout << (data[index] > 50 ? "##" : "  ");
             }
-
-            if (print_map && i % one_m_cells == 0)
-                std::cout << std::endl;
         }
 
         file.close();
+
+        if (print_map)
+        {
+            std::cout << "cols: " << cols << std::endl;
+            std::cout << "rows: " << rows << std::endl;
+            std::cout << "cell_size: " << cell_size << std::endl;
+
+            std::size_t step = (cols / 60) + 1; // display the map using at most 60 cols
+
+            for (std::size_t i = 0; i < rows; i += step)
+            {
+                for (std::size_t j = 0; j < cols; j += step)
+                {
+                    std::size_t index = i * cols + j;
+                    std::cout << (data[index] > 50 ? "##" : "  ");
+                }
+                std::cout << std::endl;
+            }
+        }
 
         return std::make_unique<racer::occupancy_grid>(
             data, cols, rows, cell_size, racer::math::point(0, 0));

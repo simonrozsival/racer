@@ -37,9 +37,15 @@ int main(int argc, char *argv[])
   // Step 1
   std::cout << "RUN space exploration" << std::endl;
   const auto se_start = std::chrono::steady_clock::now();
-  racer::sehs::space_exploration se(config->radius, 10 * config->radius, config->neighbor_circles);
+  racer::sehs::space_exploration se(config->radius, 5.0 * config->radius, config->neighbor_circles);
   const auto circles = se.explore_grid(config->occupancy_grid, config->initial_position, config->checkpoints);
   stop_stopwatch("space exploration", se_start);
+
+  if (circles.empty())
+  {
+    std::cout << "Space exploration failed, cannot proceed to track analysis." << std::endl;
+    return 3;
+  }
 
   // Step 2
   std::cout << "RUN find pivot points" << std::endl;
