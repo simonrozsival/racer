@@ -58,9 +58,8 @@ public:
     discretization(
         const std::vector<racer::math::circle> &circles,
         std::size_t heading_bins,
-        std::size_t rpm_bins,
-        racer::vehicle_model::rpm max_rpm)
-        : motor_rpm_{max_rpm / double(rpm_bins)},
+        double motor_rpm)
+        : motor_rpm_{motor_rpm},
           heading_{2 * M_PI / double(heading_bins)},
           nn_{centers_of(circles)}
     {

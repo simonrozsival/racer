@@ -1,7 +1,8 @@
 #ifndef HYBRID_ASTAR_H_
 #define HYBRID_ASTAR_H_
 
-#include "./discretized_search_problem.h"
+#include "racer/astar/discretized_search_problem.h"
+#include "racer/vehicle_model/kinematic_model.h"
 
 namespace racer::astar::hybrid_astar
 {
@@ -44,11 +45,11 @@ private:
 
 public:
     discretization(double x, double y, racer::math::angle heading, double motor_rpm)
-        : x_(x), y_(y), heading_(heading), motor_rpm_(motor_rpm)
+        : x_(x), y_(y), motor_rpm_(motor_rpm), heading_(heading)
     {
     }
 
-    discrete_state operator()(const racer::vehicle_model::kinematic::state &state) const override
+    discrete_state operator()(const racer::vehicle_model::kinematic::state &state) override
     {
         return {
             (int)floor(state.position().x() / x_),
