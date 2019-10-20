@@ -79,7 +79,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
 
   // Discretization based on Space Exploration
   auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
-    path_of_circles, 24, 10, vehicle->motor->max_rpm());
+    path_of_circles, 24, vehicle->motor->max_rpm() / 10.0);
 
   // Planner for the next waypoint
   planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(
