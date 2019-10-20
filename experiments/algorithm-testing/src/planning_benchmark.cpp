@@ -19,8 +19,10 @@
 #include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/track_analysis.h"
-#include "racer/astar/sehs.h"
 #include "racer/sehs/space_exploration.h"
+
+#include "racer/astar/sehs.h"
+#include "racer/astar/hybrid_astar.h"
 
 using state = racer::vehicle_model::kinematic::state;
 using trajectory = racer::trajectory<state>;
@@ -29,6 +31,9 @@ using search_result = racer::astar::search_result<state>;
 
 using sehs_discrete_state = racer::astar::sehs::kinematic::discrete_state;
 using sehs_discretization = racer::astar::sehs::kinematic::discretization;
+
+using hybrid_astar_discrete_state = racer::astar::hybrid_astar::discrete_state;
+using hybrid_astar_discretization = racer::astar::hybrid_astar::discretization;
 
 template <typename DiscreteState>
 class benchmarked_algorithm
@@ -68,8 +73,26 @@ public:
         return std::make_unique<sehs_discretization>(
             circle_path,
             36, // heading discretization bins
-            30, // motor RPM discretization bins
-            vehicle.motor->max_rpm());
+            vehicle.motor->max_rpm() / double(30));
+    }
+};
+
+class hybrid_astar_benchmarked_algorithm : public benchmarked_algorithm<hybrid_astar_discrete_state>
+{
+public:
+    hybrid_astar_benchmarked_algorithm() : benchmarked_algorithm("hybrid_astar")
+    {
+    }
+
+    std::unique_ptr<racer::astar::discretization<hybrid_astar_discrete_state, state>> create_discretization(
+        const track_analysis_input &config,
+        const racer::vehicle_model::vehicle_chassis &vehicle) const override
+    {
+        return std::make_unique<hybrid_astar_discretization>(
+            1.0,
+            1.0,
+            36, // heading discretization bins
+            vehicle.motor->max_rpm() / double(30)); // motor RPM discretization bins
     }
 };
 
@@ -238,8 +261,9 @@ int main(int argc, char *argv[])
     }
 
     auto sehs = std::make_unique<sehs_benchmarked_algorithm>();
+    auto hybrid_astar = std::make_unique<hybrid_astar_benchmarked_algorithm>();
 
     output::planning::print_csv_header();
     benchmark<sehs_discrete_state>(std::move(sehs), *maybe_configs, repetitions, time_limit);
-    //TODO: benchmark_hybrid_astar(*maybe_configs, repetitions, time_limit);
+    benchmark<hybrid_astar_discrete_state>(std::move(hybrid_astar), *maybe_configs, repetitions, time_limit);
 }
