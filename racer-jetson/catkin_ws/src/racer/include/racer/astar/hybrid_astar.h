@@ -57,6 +57,13 @@ public:
             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
             (int)floor(state.motor_rpm() / motor_rpm_)};
     }
+
+    std::string description() const override
+    {
+        std::stringstream s;
+        s << "x-" << x_ << "_y-" << x_ << "-rpm-" << motor_rpm_ << "-theta-" << heading_.to_degrees();
+        return s.str();
+    }
 };
 
 } // namespace racer::astar::hybrid_astar

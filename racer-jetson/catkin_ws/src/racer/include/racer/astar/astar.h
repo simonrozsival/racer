@@ -210,7 +210,9 @@ struct search_result
 };
 
 template <typename TKey, typename TState>
-const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TState>> problem, const std::atomic<bool> &terminate)
+const search_result<TState> search(
+    std::shared_ptr<base_search_problem<TKey, TState>> problem,
+    const std::atomic<bool> &terminate)
 {
     open_set<TKey, TState> opened_nodes{problem->initial_search_node()};
     closed_set<TKey, TState> closed_nodes;
@@ -265,20 +267,22 @@ const search_result<TState> search(std::unique_ptr<base_search_problem<TKey, TSt
         }
     }
 
-    // return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
+    return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
 
-    std::vector<trajectory_step<TState>> steps;
-    for (auto s : expanded_nodes)
-    {
-        steps.emplace_back(s->final_state(), 0, 0);
-    }
+    // for debugging purposes - show all the expanded states:
+    //
+    // std::vector<trajectory_step<TState>> steps;
+    // for (auto s : expanded_nodes)
+    // {
+    //     steps.emplace_back(s->final_state(), 0, 0);
+    // }
 
-    return {
-        {steps, 0.1},
-        opened_nodes.number_of_opened_nodes_since_initial_state(),
-        expanded_nodes.size(),
-        0
-    };
+    // return {
+    //     {steps, 0.1},
+    //     opened_nodes.number_of_opened_nodes_since_initial_state(),
+    //     expanded_nodes.size(),
+    //     0
+    // };
 };
 
 } // namespace racer::astar

@@ -19,6 +19,7 @@ class discretization
 public:
     virtual ~discretization() = default;
     virtual TDiscreteState operator()(const TState &state) = 0;
+    virtual std::string description() const = 0;
 };
 
 template <typename TDiscreteState, typename TState>

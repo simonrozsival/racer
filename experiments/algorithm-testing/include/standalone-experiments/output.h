@@ -41,7 +41,12 @@ void print_csv_header()
               << "closed nodes, "
               << "time to finish, "
               << "travelled distance, "
-              << "computation time in ms" << std::endl;
+              << "time step, "
+              << "discretization, "
+              << "success rate, "
+              << "number of repetitions, "
+              << "average computation time in ms, "
+              << "computation time variance" << std::endl;
 }
 
 void print_result(
@@ -50,20 +55,62 @@ void print_result(
     const std::size_t number_of_actions,
     const std::size_t from,
     const std::size_t lookahead,
-    const benchmark_result &measurement)
+    const double time_step_s,
+    const std::string discretization,
+    const benchmark_result &measurement_sample,
+    const double success_rate,
+    const std::size_t number_of_repetitions,
+    const double average_computation_time,
+    const double computation_time_variance)
 {
     std::cout << algorithm << ", "
               << circuit_name << ", "
               << number_of_actions << ", "
               << from << ", "
               << lookahead << ", "
-              << (!measurement.exceeded_time_limit ? "yes" : "no") << ", "
-              << (measurement.result.was_successful() ? "yes" : "no") << ", "
-              << measurement.result.number_of_opened_nodes << ", "
-              << measurement.result.number_of_expanded_nodes << ", "
-              << (measurement.result.was_successful() ? measurement.result.final_cost : 0) << ", "
-              << (measurement.result.was_successful() ? measurement.result.found_trajectory.total_distance() : 0) << ", "
-              << measurement.computation_time.count() << std::endl;
+              << (!measurement_sample.exceeded_time_limit ? "yes" : "no") << ", "
+              << (measurement_sample.result.was_successful() ? "yes" : "no") << ", "
+              << measurement_sample.result.number_of_opened_nodes << ", "
+              << measurement_sample.result.number_of_expanded_nodes << ", "
+              << (measurement_sample.result.was_successful() ? measurement_sample.result.final_cost : 0) << ", "
+              << (measurement_sample.result.was_successful() ? measurement_sample.result.found_trajectory.total_distance() : 0) << ", "
+              << time_step_s << ", "
+              << discretization << ", "
+              << success_rate << ", "
+              << number_of_repetitions << ", "
+              << average_computation_time << ", "
+              << computation_time_variance << std::endl;
+}
+
+void print_unsuccessful_result(
+    const std::string &algorithm,
+    const std::string &circuit_name,
+    const std::size_t number_of_actions,
+    const std::size_t from,
+    const std::size_t lookahead,
+    const double time_step_s,
+    const std::string discretization,
+    const benchmark_result &measurement_sample,
+    const std::size_t number_of_repetitions,
+    const double time_limit)
+{
+    std::cout << algorithm << ", "
+              << circuit_name << ", "
+              << number_of_actions << ", "
+              << from << ", "
+              << lookahead << ", "
+              << "no" << ", "
+              << "no" << ", "
+              << measurement_sample.result.number_of_opened_nodes << ", "
+              << measurement_sample.result.number_of_expanded_nodes << ", "
+              << "0, "
+              << "0, "
+              << time_step_s << ", "
+              << discretization << ", "
+              << "0, "
+              << number_of_repetitions << ", "
+              << time_limit << ", "
+              << "0" << std::endl;
 }
 
 std::string experiment_name(
@@ -71,7 +118,9 @@ std::string experiment_name(
     const std::string circuit_name,
     const std::size_t number_of_actions,
     const std::size_t from,
-    const std::size_t lookahead)
+    const std::size_t lookahead,
+    const double time_step_s,
+    const std::string discretization)
 {
     std::stringstream file_name;
 
@@ -79,7 +128,9 @@ std::string experiment_name(
               << circuit_name << "_"
               << "a-" << number_of_actions << "_"
               << "f-" << from << "_"
-              << "l-" << lookahead;
+              << "l-" << lookahead << "_"
+              << "t-" << time_step_s << "_"
+              << "d-" << discretization;
     
     return file_name.str();
 }
