@@ -1,5 +1,4 @@
-#ifndef DRIVING_LOGIC_H_
-#define DRIVING_LOGIC_H_
+#pragma once
 
 #include <ros.h>
 #include <geometry_msgs/Twist.h>
@@ -51,5 +50,3 @@ void select_inputs(int* steering_pwm, int* throttle_pwm) {
     }
   }
 }
-
-#endif

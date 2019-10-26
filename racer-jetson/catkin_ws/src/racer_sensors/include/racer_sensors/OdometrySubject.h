@@ -1,5 +1,4 @@
-#ifndef ODOMETRY_SUBJECT_H_
-#define ODOMETRY_SUBJECT_H_
+#pragma once
 
 #include <iostream>
 #include <mutex>
@@ -45,5 +44,3 @@ class OdometrySubject {
         const ros::Publisher& odometry_topic_;
         tf::TransformBroadcaster& transform_broadcaster_;
 };
-
-#endif

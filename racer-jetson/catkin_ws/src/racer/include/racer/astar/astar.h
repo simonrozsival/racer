@@ -1,5 +1,4 @@
-#ifndef ASTAR_H_
-#define ASTAR_H_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -286,5 +285,3 @@ const search_result<TState> search(
 };
 
 } // namespace racer::astar
-
-#endif

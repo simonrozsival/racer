@@ -1,5 +1,4 @@
-#ifndef OCCUPANCY_GRID_H_
-#define OCCUPANCY_GRID_H_
+#pragma once
 
 #include <vector>
 #include <iostream>
@@ -198,5 +197,3 @@ private:
 };
 
 } // namespace racer
-
-#endif

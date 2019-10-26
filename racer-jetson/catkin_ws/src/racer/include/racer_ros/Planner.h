@@ -1,5 +1,4 @@
-#ifndef PLANNER_H_
-#define PLANNER_H_
+#pragma once
 
 #include <vector>
 
@@ -108,5 +107,3 @@ private:
 };
 
 } // namespace racer_ros
-
-#endif

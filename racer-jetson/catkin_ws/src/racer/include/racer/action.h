@@ -1,5 +1,4 @@
-#ifndef ACTION_H_
-#define ACTION_H_
+#pragma once
 
 #include <iostream>
 
@@ -63,5 +62,3 @@ public:
 };
 
 } // namespace racer
-
-#endif

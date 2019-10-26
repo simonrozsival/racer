@@ -1,5 +1,4 @@
-#ifndef VEHICLE_STATE_H_
-#define VEHICLE_STATE_H_
+#pragma once
 
 struct VehicleState {
     double x;
@@ -9,5 +8,3 @@ struct VehicleState {
     double vy;
     double angular_velocity;
 };
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef FOLLOWING_STRATEGY_H_
-#define FOLLOWING_STRATEGY_H_
+#pragma once
 
 #include <iostream>
 
@@ -26,5 +25,3 @@ public:
 };
 
 } // namespace racer::following_strategies
-
-#endif

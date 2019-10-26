@@ -1,5 +1,4 @@
-#ifndef HYBRID_ASTAR_H_
-#define HYBRID_ASTAR_H_
+#pragma once
 
 #include "racer/astar/discretized_search_problem.h"
 #include "racer/vehicle_model/kinematic_model.h"
@@ -86,6 +85,5 @@ struct hash<std::pair<racer::astar::hybrid_astar::discrete_state, size_t>>
         return seed;
     }
 };
-} // namespace std
 
-#endif
+} // namespace std

@@ -1,5 +1,4 @@
-#ifndef HYBRID_ASTAR_PROBLEM_H_
-#define HYBRID_ASTAR_PROBLEM_H_
+#pragma once
 
 #include <iostream>
 
@@ -169,5 +168,3 @@ private:
     }
 };
 } // namespace racer::astar
-
-#endif

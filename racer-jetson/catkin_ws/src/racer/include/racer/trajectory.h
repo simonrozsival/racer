@@ -1,5 +1,4 @@
-#ifndef TRAJECTORY_H_
-#define TRAJECTORY_H_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -121,5 +120,3 @@ private:
 };
 
 } // namespace racer
-
-#endif

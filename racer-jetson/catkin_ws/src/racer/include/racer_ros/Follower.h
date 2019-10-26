@@ -1,5 +1,4 @@
-#ifndef AGENT_H_
-#define AGENT_H_
+#pragma once
 
 #include <iostream>
 #include <ros/ros.h>
@@ -122,5 +121,3 @@ private:
 };
 
 } // namespace racer_ros
-
-#endif

@@ -1,5 +1,4 @@
-#ifndef INPUT_H_
-#define INPUT_H_
+#pragma once
 
 #include <iostream>
 #include <fstream>
@@ -125,5 +124,3 @@ public:
     return configs;
   }
 };
-
-#endif

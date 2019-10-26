@@ -1,5 +1,4 @@
-#ifndef TRACK_ANALYSIS_H_
-#define TRACK_ANALYSIS_H_
+#pragma once
 
 #include <vector>
 #include <set>
@@ -266,5 +265,3 @@ std::unique_ptr<circuit> create_circuit_from_occupancy_grid(
 }
 
 } // namespace racer
-
-#endif

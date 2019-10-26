@@ -1,5 +1,4 @@
-#ifndef DWA_H_
-#define DWA_H_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -206,5 +205,3 @@ private:
 };
 
 } // namespace racer::following_strategies
-
-#endif

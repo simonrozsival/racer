@@ -1,5 +1,4 @@
-#ifndef vehicle_configuration_H_
-#define vehicle_configuration_H_
+#pragma once
 
 #include "racer/math.h"
 
@@ -55,5 +54,3 @@ public:
 };
 
 } // namespace racer
-
-#endif

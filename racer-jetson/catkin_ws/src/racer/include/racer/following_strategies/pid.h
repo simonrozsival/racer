@@ -1,5 +1,4 @@
-#ifndef PID_H_
-#define PID_H_
+#pragma once
 
 #include <cstdlib>
 
@@ -50,5 +49,3 @@ namespace racer::following_strategies {
     };
 
 }
-
-#endif
