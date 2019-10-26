@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
-  auto actions = racer::action::create_actions_including_reverse(9, 15);
+  auto actions = racer::action::create_actions(9, 15);
 
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);

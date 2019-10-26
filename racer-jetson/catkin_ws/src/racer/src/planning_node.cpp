@@ -135,11 +135,9 @@ int main(int argc, char *argv[])
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
-  const auto actions_with_reverse = racer::action::create_actions_including_reverse(9, 5); // more throttle options, fewer steering options
-  const auto actions_just_forward = racer::action::create_actions(5, 9);                   // fewer throttle options, more steering options
+  const auto actions = racer::action::create_actions(5, 9);
 
   ros::Rate rate(frequency);
-  bool found_trajectory_last_time = true;
 
   // blocks until map is ready
   occupancy_grid = load_map(node);
@@ -148,26 +146,15 @@ int main(int argc, char *argv[])
   {
     if (planner && last_known_position.is_valid() && !next_waypoints.empty())
     {
-      if (found_trajectory_last_time)
-      {
-        ROS_INFO("planning trajecotry just by going forward...");
-      }
-      else
-      {
-        ROS_INFO("planning trajectory with the possibility of going in reverse...");
-      }
-
       std::lock_guard<std::mutex> guard(lock);
       const auto trajectory = planner->plan(
           occupancy_grid,
           last_known_position,
-          found_trajectory_last_time ? actions_just_forward : actions_with_reverse,
+          actions,
           circuit,
           next_waypoint);
 
-      found_trajectory_last_time = bool(trajectory);
-
-      if (!found_trajectory_last_time)
+      if (!trajectory)
       {
         ROS_INFO("no plan found, stick to old plan");
       }
