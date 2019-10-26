@@ -1,5 +1,4 @@
-#ifndef PLOT_H_
-#define PLOT_H_
+#pragma once
 
 #include <iostream>
 #include <vector>
@@ -249,5 +248,3 @@ void plot_trajectory(
     delete[] circles_img;
     delete[] waypoints_img;
 }
-
-#endif

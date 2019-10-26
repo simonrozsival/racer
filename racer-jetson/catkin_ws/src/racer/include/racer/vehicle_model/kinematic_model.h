@@ -1,5 +1,4 @@
-#ifndef KINEMATIC_MODEL_H_
-#define KINEMATIC_MODEL_H_
+#pragma once
 
 #include <iostream>
 #include <algorithm>
@@ -128,5 +127,3 @@ public:
 };
 
 } // namespace racer::vehicle_model::kinematic
-
-#endif

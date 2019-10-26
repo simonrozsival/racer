@@ -1,5 +1,4 @@
-#ifndef SEHS_H_
-#define SEHS_H_
+#pragma once
 
 #include <vector>
 
@@ -114,6 +113,5 @@ struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>
         return seed;
     }
 };
-} // namespace std
 
-#endif
+} // namespace std

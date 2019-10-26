@@ -1,5 +1,4 @@
-#ifndef PURE_PURSUIT_H_
-#define PURE_PURSUIT_H_
+#pragma once
 
 #include <iostream>
 
@@ -81,5 +80,3 @@ private:
 };
 
 } // namespace racer::following_strategies
-
-#endif

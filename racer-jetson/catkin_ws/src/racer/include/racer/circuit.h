@@ -1,5 +1,4 @@
-#ifndef CIRCUIT_H_
-#define CIRCUIT_H_
+#pragma once
 
 #include <vector>
 
@@ -96,5 +95,3 @@ public:
 };
 
 } // namespace racer
-
-#endif

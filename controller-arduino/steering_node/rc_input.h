@@ -1,5 +1,4 @@
-#ifndef RC_INPUT_H_
-#define RC_INPUT_H_
+#pragma once
 
 /*
  * Code was inspired by https://github.com/xkam1x/Arduino-PWM-Reader/blob/master/PWM.cpp
@@ -65,5 +64,3 @@ void detach_rc_input_interrupts() {
   detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_STEERING));
   detachInterrupt(digitalPinToInterrupt(PIN_RC_INPUT_THROTTLE));
 }
-
-#endif

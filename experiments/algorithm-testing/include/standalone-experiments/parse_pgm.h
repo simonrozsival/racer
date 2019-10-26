@@ -1,5 +1,4 @@
-#ifndef TRACK_H_
-#define TRACK_H_
+#pragma once
 
 #include <iostream>
 #include <filesystem>
@@ -90,5 +89,3 @@ std::unique_ptr<racer::occupancy_grid> load_occupancy_grid_from_pgm(
     std::cerr << "cannot open pgm file" << std::endl;
     return nullptr;
 }
-
-#endif

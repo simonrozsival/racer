@@ -1,5 +1,4 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+#pragma once
 
 #include <iostream>
 #include <tf/transform_datatypes.h>
@@ -63,5 +62,3 @@ racer::trajectory<kinematic::state> msg_to_trajectory(
 }
 
 } // namespace racer_ros
-
-#endif

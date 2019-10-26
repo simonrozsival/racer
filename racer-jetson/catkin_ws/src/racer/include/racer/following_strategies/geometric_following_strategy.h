@@ -1,5 +1,4 @@
-#ifndef GEOMETRIC_FOLLOWING_STRATEGY_H_
-#define GEOMETRIC_FOLLOWING_STRATEGY_H_
+#pragma once
 
 #include <iostream>
 #include <algorithm>
@@ -59,5 +58,3 @@ private:
 };
 
 } // namespace racer::following_strategies
-
-#endif

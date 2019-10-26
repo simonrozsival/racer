@@ -1,5 +1,4 @@
-#ifndef SPACE_EXPLORATION_H_
-#define SPACE_EXPLORATION_H_
+#pragma once
 
 #include <vector>
 #include <filesystem>
@@ -250,5 +249,3 @@ private:
     }
 };
 } // namespace racer::sehs
-
-#endif

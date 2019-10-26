@@ -1,5 +1,4 @@
-#ifndef VEHICLE_H_
-#define VEHICLE_H_
+#pragma once
 
 #include "racer/vehicle_model/motor_model.h"
 #include "racer/vehicle_model/steering_servo_model.h"
@@ -65,5 +64,3 @@ struct vehicle_chassis
 };
 
 } // namespace racer::vehicle_model
-
-#endif

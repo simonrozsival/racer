@@ -1,5 +1,4 @@
-#ifndef BASE_MODEL_H_
-#define BASE_MODEL_H_
+#pragma once
 
 #include <iostream>
 
@@ -26,5 +25,3 @@ public:
 };
 
 } // namespace racer::vehicle_model
-
-#endif

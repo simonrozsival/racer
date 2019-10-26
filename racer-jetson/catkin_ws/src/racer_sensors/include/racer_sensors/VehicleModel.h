@@ -1,5 +1,4 @@
-#ifndef VEHICLE_MODEL_H_
-#define VEHICLE_MODEL_H_
+#pragma once
 
 #include <string>
 #include <ros/ros.h>
@@ -22,5 +21,3 @@ class VehicleModel
       const double steering_angle,
       const double elapsed_time) const;
 };
-
-#endif

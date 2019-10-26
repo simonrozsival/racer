@@ -1,5 +1,4 @@
-#ifndef UTILS_H_
-#define UTILS_H_
+#pragma once
 
 #define DUTY_CYCLE_MS 20
 
@@ -20,4 +19,3 @@ double fmap(double value, double in_min, double in_max, double out_min, double o
   return (value - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
-#endif
