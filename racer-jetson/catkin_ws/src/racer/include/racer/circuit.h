@@ -86,6 +86,13 @@ public:
 
         return std::make_unique<circuit>(waypoints_subset, waypoint_radius, grid);
     }
+
+    racer::math::angle aligned_angle_at(std::size_t waypoint_index) const
+    {
+        std::size_t before = (waypoint_index - 1) % number_of_waypoints;
+        std::size_t after = (waypoint_index + 1) % number_of_waypoints;
+        return (waypoints[after] - waypoints[before]).angle();
+    }
 };
 
 } // namespace racer

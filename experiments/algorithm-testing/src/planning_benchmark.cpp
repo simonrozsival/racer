@@ -111,20 +111,20 @@ void run_benchmark_for(
     const std::size_t lookahead,
     const double time_step_s,
     const std::size_t repetitions,
-    const std::chrono::milliseconds time_limit)
+    const std::chrono::milliseconds time_limit,
+    const bool plot)
 {
     const auto vehicle_model = std::make_shared<model>(vehicle);    
     auto initial_state = state{config.initial_position};
 
     for (std::size_t start = 0; start < circuit->waypoints.size(); ++start)
     {
-        const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start, lookahead);
+        initial_state = {{circuit->waypoints[start], circuit->aligned_angle_at(start)}};
+
+        const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
         std::unique_ptr<output::planning::benchmark_result> measurement_sample;
         std::vector<double> measurement_times;
         measurement_times.reserve(repetitions);
-
-        const auto experiment_name = output::planning::experiment_name(
-                algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
 
         auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
             initial_state,
@@ -134,25 +134,26 @@ void run_benchmark_for(
             vehicle_model,
             shifted_circut);
 
+        bool unsuccessful = false;
+
         for (std::size_t i = 0; i < repetitions; ++i)
         {
             const auto measurement = measure_search<DiscreteState>(problem, time_limit);
-            if (measurement.result.was_successful())
+            if (!measurement_sample)
             {
-                measurement_times.push_back(measurement.computation_time.count());
-                if (!measurement_sample)
-                {
-                    measurement_sample = std::make_unique<output::planning::benchmark_result>(measurement);
-                }
-            }
-            else if (i == repetitions - 1 && !measurement_sample)
-            {
-                // all of the measurements were unsuccessful, save at least this one
                 measurement_sample = std::make_unique<output::planning::benchmark_result>(measurement);
             }
+
+            if (measurement.exceeded_time_limit)
+            {
+                unsuccessful = true;
+                break;
+            }
+
+            measurement_times.push_back(measurement.computation_time.count());
         }
 
-        if (measurement_times.empty())
+        if (unsuccessful)
         {
             output::planning::print_unsuccessful_result(
                 algorithm,
@@ -188,43 +189,43 @@ void run_benchmark_for(
             mean,
             variance);
 
-        plot_trajectory(
-            config,
-            initial_state.configuration(),
-            measurement_sample->result.found_trajectory,
-            vehicle_model,
-            shifted_circut,
-            experiment_name);
-
-        // find the first state which passes the first waypoint and use it as initial state for the next search
-        for (const auto step : measurement_sample->result.found_trajectory.steps())
+        if (plot)
         {
-            if (shifted_circut->passes_waypoint(step.state().position(), 0))
-            {
-                initial_state = step.state();
-                break;
-            }
+            const auto experiment_name = output::planning::experiment_name(
+                algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
+
+            plot_trajectory(
+                config,
+                initial_state.configuration(),
+                measurement_sample->result.found_trajectory,
+                vehicle_model,
+                shifted_circut,
+                experiment_name);
         }
     }
 }
 
 void benchmark(
     const std::vector<std::shared_ptr<track_analysis_input>> configs,
-    
-        const std::size_t repetitions,
-    const std::chrono::milliseconds time_limit)
+    const std::size_t repetitions,
+    const std::chrono::milliseconds time_limit,
+    const bool plot)
 {
     std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
         racer::vehicle_model::vehicle_chassis::rc_beast();
 
-    const std::vector<std::size_t> heading_angles{ 12, 24, 36, 48, 60, 72 };
-    const std::vector<std::size_t> motor_rpms{ 10, 20, 30, 40, 50, 60, 70 };
-    const std::vector<double> cell_sizes{ 0.25, 0.5, 1.0, 1.5, 2.0, 2.5, 5.0 };
-    const std::vector<double> frequencies{ 10.0, 15.0, 20.0, 25.0, 50.0 };
-    const std::vector<std::size_t> lookaheads{ 2, 3, 4, 5 };
-    const std::vector<std::size_t> throttle_levels_options{ 3, 5, 7, 9, 11 };
-    const std::vector<std::size_t> steering_levels_options{ 3, 5, 7, 9, 11 };
-
+    const std::vector<std::size_t> heading_angles{ 24 };
+    const std::vector<std::size_t> motor_rpms{ 50 };
+    const std::vector<double> cell_size_coefficients{ 3, 4 };
+    const std::vector<double> frequencies{ 10.0 };
+    // const std::vector<std::vector<racer::action>> actions_options
+    // {
+    //     racer::action::create_actions(3, 3),
+    //     racer::action::create_actions(3, 5),
+    //     racer::action::create_actions(5, 5),
+    //     racer::action::create_actions(5, 7),
+    //     racer::action::create_actions(9, 9)
+    // };
 
     for (const auto &config : configs)
     {
@@ -244,21 +245,26 @@ void benchmark(
             return;
         }
 
+        // const std::vector<std::size_t> lookaheads{ 2, 3, 4, 5, circuit->waypoints.size() };
+
         for (const auto heading_angle_bins : heading_angles)
         for (const auto motor_rpm_bins : motor_rpms)
         for (const auto frequency : frequencies)
-        for (const auto lookahead : lookaheads)
-        for (const auto throttle_levels : throttle_levels_options)
-        for (const auto steering_levels : steering_levels_options)
+        // for (const auto actions : actions_options)
+        // for (auto lookahead : lookaheads)
         {
-            const double time_step_s = 1.0 / frequency;
-            const auto actions = racer::action::create_actions(throttle_levels, steering_levels);
+            const std::size_t lookahead = 3;
+            const std::size_t throttle_levels = 3;
+            const std::size_t steering_angle_levels = 5;
 
-            for (const auto cell_size : cell_sizes)
+            const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);            
+            const double time_step_s = 1.0 / frequency;
+            
+            for (const auto cell_size_coefficient : cell_size_coefficients)
             {
                 auto hybrid_astar = create_hybrid_astar_discretization(
                     *vehicle,
-                    cell_size,
+                    cell_size_coefficient * vehicle->radius(),
                     heading_angle_bins,
                     motor_rpm_bins);
                 run_benchmark_for<hybrid_astar_discrete_state>(
@@ -271,7 +277,8 @@ void benchmark(
                     lookahead,
                     time_step_s,
                     repetitions,
-                    time_limit);
+                    time_limit,
+                    plot);
             }
 
             auto sehs = create_sehs_discretization(
@@ -289,7 +296,8 @@ void benchmark(
                 lookahead,
                 time_step_s,
                 repetitions,
-                time_limit);
+                time_limit,
+                plot);
         }
     }
 }
@@ -305,6 +313,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
+    const auto plot = false;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
@@ -313,5 +322,5 @@ int main(int argc, char *argv[])
     }
 
     output::planning::print_csv_header();
-    benchmark(*maybe_configs, repetitions, time_limit);
+    benchmark(*maybe_configs, repetitions, time_limit, plot);
 }

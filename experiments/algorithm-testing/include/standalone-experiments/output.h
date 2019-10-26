@@ -1,6 +1,7 @@
 #pragma once
 
 #include <iostream>
+#include <algorithm>
 
 #include "racer/astar/astar.h"
 #include "racer/vehicle_model/kinematic_model.h"
@@ -14,6 +15,7 @@ using search_result = racer::astar::search_result<state>;
 struct benchmark_result
 {
     const search_result result;
+    double time_to_last_but_one_waypoint;
     const std::chrono::milliseconds computation_time;
     const bool exceeded_time_limit;
 
@@ -22,9 +24,32 @@ struct benchmark_result
         std::chrono::milliseconds computation_time,
         bool exceeded_time_limit)
         : result{result},
+          time_to_last_but_one_waypoint{find_time_to_last_but_one_waypoint(result)},
           computation_time{computation_time},
           exceeded_time_limit{exceeded_time_limit}
     {
+    }
+
+private:
+    double find_time_to_last_but_one_waypoint(const search_result result) const
+    {
+        if (!result.was_successful()) return 0;
+
+        // what is the number of waypoints
+        const auto step_it = std::max_element(
+            std::begin(result.found_trajectory.steps()),
+            std::end(result.found_trajectory.steps()),
+            [](racer::trajectory_step<state> a, racer::trajectory_step<state> b) { return a.passed_waypoints() < b.passed_waypoints(); });
+
+        const std::size_t number_of_waypoints = step_it->passed_waypoints();
+        
+        // find the first step, which passes n-1 waypoint
+        const auto first_step_passing_desired_waypoint = std::find_if(
+            std::begin(result.found_trajectory.steps()),
+            std::end(result.found_trajectory.steps()),
+            [=](racer::trajectory_step<state> step) { return step.passed_waypoints() == number_of_waypoints - 1; });
+
+        return first_step_passing_desired_waypoint->timestamp();
     }
 };
 
@@ -40,6 +65,7 @@ void print_csv_header()
               << "open nodes, "
               << "closed nodes, "
               << "time to finish, "
+              << "time to last but one waypoint, "
               << "travelled distance, "
               << "time step, "
               << "discretization, "
@@ -73,6 +99,7 @@ void print_result(
               << measurement_sample.result.number_of_opened_nodes << ", "
               << measurement_sample.result.number_of_expanded_nodes << ", "
               << (measurement_sample.result.was_successful() ? measurement_sample.result.final_cost : 0) << ", "
+              << (measurement_sample.result.was_successful() ? measurement_sample.time_to_last_but_one_waypoint : 0) << ", "
               << (measurement_sample.result.was_successful() ? measurement_sample.result.found_trajectory.total_distance() : 0) << ", "
               << time_step_s << ", "
               << discretization << ", "
@@ -99,17 +126,18 @@ void print_unsuccessful_result(
               << number_of_actions << ", "
               << from << ", "
               << lookahead << ", "
-              << "no" << ", "
+              << (!measurement_sample.exceeded_time_limit ? "yes" : "no") << ", "
               << "no" << ", "
               << measurement_sample.result.number_of_opened_nodes << ", "
               << measurement_sample.result.number_of_expanded_nodes << ", "
+              << "0, "
               << "0, "
               << "0, "
               << time_step_s << ", "
               << discretization << ", "
               << "0, "
               << number_of_repetitions << ", "
-              << time_limit << ", "
+              << measurement_sample.computation_time.count() << ", "
               << "0" << std::endl;
 }
 
