@@ -9,7 +9,7 @@
 namespace racer::following_strategies
 {
 
-template <typename TState>
+template <typename State>
 class pure_pursuit
 {
 public:
@@ -22,8 +22,8 @@ public:
   }
 
   racer::math::angle select_steering_angle(
-      const TState &current_state, int passed_waypoints,
-      const racer::trajectory<TState> &trajectory) const
+      const State &current_state, int passed_waypoints,
+      const racer::trajectory<State> &trajectory) const
   {
     const auto reference = find_reference_position(
         current_state, passed_waypoints, trajectory);
@@ -35,9 +35,9 @@ public:
   }
 
   racer::vehicle_configuration find_reference_position(
-      const TState &current_state,
+      const State &current_state,
       int passed_waypoints,
-      const trajectory<TState> &trajectory) const
+      const trajectory<State> &trajectory) const
   {
     auto sub_trajectory = trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
 
@@ -67,12 +67,12 @@ private:
   const double min_lookahead_;
   const double lookahead_coefficient_;
 
-  inline double calculate_lookahead(const TState& state) const
+  inline double calculate_lookahead(const State& state) const
   {
     return std::max(min_lookahead_, double(state.motor_rpm() * lookahead_coefficient_));
   }
 
-  inline racer::math::point calculate_rear_axle_center(const TState &state) const
+  inline racer::math::point calculate_rear_axle_center(const State &state) const
   {
     auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(state.configuration().heading_angle());
     return state.position() + rear_wheel_offset;
