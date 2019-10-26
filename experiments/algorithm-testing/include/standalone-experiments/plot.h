@@ -77,6 +77,18 @@ void plot_circles(const std::vector<racer::math::point> &points, const std::shar
     plt::imshow(img, occupancy_grid->rows(), occupancy_grid->cols(), 4);
 }
 
+void plot_points(const std::string &name, const std::vector<racer::math::point> &points, const std::string &format, const double cell_size)
+{
+    std::vector<double> points_x, points_y;
+    for (const auto &point : points)
+    {
+        points_x.push_back(point.x() / cell_size);
+        points_y.push_back(point.y() / cell_size);
+    }
+
+    plt::plot(points_x, points_y, format, {{"label", name}});   
+}
+
 void plot_waypoints(const std::shared_ptr<racer::circuit> circuit, unsigned char *img)
 {
     img = new unsigned char[circuit->grid->cols() * circuit->grid->rows() * 4];
@@ -105,19 +117,7 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit, unsigned char
     }
 
     plt::imshow(img, circuit->grid->rows(), circuit->grid->cols(), 4);
-}
-
-void plot_points(const std::string &name, const std::vector<racer::math::point> &points, const std::string &format, const double cell_size)
-{
-    std::vector<double> points_x, points_y;
-    for (const auto &point : points)
-    {
-        points_x.push_back(point.x() / cell_size);
-        points_y.push_back(point.y() / cell_size);
-    }
-
-    plt::plot(points_x, points_y, format, {{"label", name}});
-    
+    plot_points("Centers of waypoints", circuit->waypoints, "b+", circuit->grid->cell_size());
 }
 
 void plot_trajectory(const racer::trajectory<kinematic::state> trajectory, const double cell_size)
