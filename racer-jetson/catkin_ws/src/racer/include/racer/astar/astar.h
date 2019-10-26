@@ -13,42 +13,42 @@
 namespace racer::astar
 {
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 struct neighbor_transition
 {
     neighbor_transition(
         TKey key,
-        std::vector<TState> states,
+        std::vector<State> states,
         const double cost)
         : key(std::move(key)), states(std::move(states)), cost(cost)
     {
     }
 
     TKey key;
-    std::vector<TState> states;
+    std::vector<State> states;
 
     const double cost;
 
-    const TState &final_state() const
+    const State &final_state() const
     {
         return states.back();
     }
 };
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 struct search_node
 {
     const TKey key;
-    const std::vector<TState> states;
+    const std::vector<State> states;
     const double cost_to_come;
     const double cost_estimate;
     const std::size_t passed_waypoints;
-    const std::weak_ptr<search_node<TKey, TState>> parent;
+    const std::weak_ptr<search_node<TKey, State>> parent;
 
     search_node(
         TKey key,
-        std::vector<TState> states,
-        std::weak_ptr<search_node<TKey, TState>> parent,
+        std::vector<State> states,
+        std::weak_ptr<search_node<TKey, State>> parent,
         double cost_to_come,
         double cost_estimate,
         std::size_t passed_waypoints)
@@ -61,10 +61,10 @@ struct search_node
     {
     }
 
-    static auto for_initial_state(TKey key, TState state)
+    static auto for_initial_state(TKey key, State state)
     {
-        return std::make_unique<search_node<TKey, TState>>(
-            key, std::vector<TState>{state}, std::weak_ptr<search_node<TKey, TState>>(), 0, 0, 0);
+        return std::make_unique<search_node<TKey, State>>(
+            key, std::vector<State>{state}, std::weak_ptr<search_node<TKey, State>>(), 0, 0, 0);
     }
 
     constexpr double estimated_cost_to_go() const
@@ -72,35 +72,35 @@ struct search_node
         return cost_estimate - cost_to_come;
     }
 
-    inline TState final_state() const
+    inline State final_state() const
     {
         return states.back();
     }
 };
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 class base_search_problem
 {
 public:
     virtual ~base_search_problem() = default;
-    virtual std::vector<neighbor_transition<TKey, TState>> valid_neighbors(const search_node<TKey, TState> &node) const = 0;
+    virtual std::vector<neighbor_transition<TKey, State>> valid_neighbors(const search_node<TKey, State> &node) const = 0;
     virtual const bool is_goal(std::size_t passed_waypoints) const = 0;
-    virtual const bool passes_waypoint(const std::vector<TState> &examined_state, size_t passed_waypoints) const = 0;
-    virtual const double estimate_cost_to_go(const TState &state, std::size_t passed_waypoints) const = 0;
-    virtual const trajectory<TState> reconstruct_trajectory(const search_node<TKey, TState> &node) const = 0;
-    virtual std::unique_ptr<search_node<TKey, TState>> initial_search_node() const = 0;
+    virtual const bool passes_waypoint(const std::vector<State> &examined_state, size_t passed_waypoints) const = 0;
+    virtual const double estimate_cost_to_go(const State &state, std::size_t passed_waypoints) const = 0;
+    virtual const trajectory<State> reconstruct_trajectory(const search_node<TKey, State> &node) const = 0;
+    virtual std::unique_ptr<search_node<TKey, State>> initial_search_node() const = 0;
 };
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 struct search_node_comparator
 {
-    bool operator()(const std::shared_ptr<search_node<TKey, TState>> &a, const std::shared_ptr<search_node<TKey, TState>> &b) const
+    bool operator()(const std::shared_ptr<search_node<TKey, State>> &a, const std::shared_ptr<search_node<TKey, State>> &b) const
     {
         return a->cost_estimate > b->cost_estimate;
     }
 };
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 class closed_set
 {
 private:
@@ -112,29 +112,29 @@ public:
         return data_.find(std::pair<TKey, size_t>(key, passed_waypoints)) != data_.end();
     }
 
-    bool contains(const search_node<TKey, TState> &node) const
+    bool contains(const search_node<TKey, State> &node) const
     {
         return contains(node.key, node.passed_waypoints);
     }
 
-    void add(const search_node<TKey, TState> &node)
+    void add(const search_node<TKey, State> &node)
     {
         data_.insert(std::pair<TKey, size_t>(node.key, node.passed_waypoints));
     }
 };
 
-template <typename TKey, typename TState>
+template <typename TKey, typename State>
 class open_set
 {
 private:
     std::priority_queue<
-        std::shared_ptr<search_node<TKey, TState>>, std::vector<std::shared_ptr<search_node<TKey, TState>>>,
-        search_node_comparator<TKey, TState>>
+        std::shared_ptr<search_node<TKey, State>>, std::vector<std::shared_ptr<search_node<TKey, State>>>,
+        search_node_comparator<TKey, State>>
         data_;
     std::size_t number_of_opened_nodes_;
 
 public:
-    open_set(std::unique_ptr<search_node<TKey, TState>> initial_node)
+    open_set(std::unique_ptr<search_node<TKey, State>> initial_node)
         : number_of_opened_nodes_{0}
     {
         push(std::move(initial_node));
@@ -145,13 +145,13 @@ public:
         return data_.size() == 0;
     }
 
-    void push(std::unique_ptr<search_node<TKey, TState>> node)
+    void push(std::unique_ptr<search_node<TKey, State>> node)
     {
         ++number_of_opened_nodes_;
         data_.push(std::move(node));
     }
 
-    std::shared_ptr<search_node<TKey, TState>> dequeue()
+    std::shared_ptr<search_node<TKey, State>> dequeue()
     {
         auto node = data_.top();
         data_.pop();
@@ -164,10 +164,10 @@ public:
     }
 };
 
-template <typename TState>
+template <typename State>
 struct search_result
 {
-    racer::trajectory<TState> found_trajectory;
+    racer::trajectory<State> found_trajectory;
     std::size_t number_of_opened_nodes;
     std::size_t number_of_expanded_nodes;
     double final_cost;
@@ -185,7 +185,7 @@ struct search_result
     }
 
     search_result(
-        racer::trajectory<TState> found_trajectory,
+        racer::trajectory<State> found_trajectory,
         std::size_t number_of_opened_nodes,
         std::size_t number_of_expanded_nodes,
         double final_cost)
@@ -208,14 +208,14 @@ struct search_result
     }
 };
 
-template <typename TKey, typename TState>
-const search_result<TState> search(
-    std::shared_ptr<base_search_problem<TKey, TState>> problem,
+template <typename TKey, typename State>
+const search_result<State> search(
+    std::shared_ptr<base_search_problem<TKey, State>> problem,
     const std::atomic<bool> &terminate)
 {
-    open_set<TKey, TState> opened_nodes{problem->initial_search_node()};
-    closed_set<TKey, TState> closed_nodes;
-    std::vector<std::shared_ptr<search_node<TKey, TState>>> expanded_nodes; // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
+    open_set<TKey, State> opened_nodes{problem->initial_search_node()};
+    closed_set<TKey, State> closed_nodes;
+    std::vector<std::shared_ptr<search_node<TKey, State>>> expanded_nodes; // we must remember the whole graph so that we can reconstruct the final path from the weak pointers
 
     while (!terminate && !opened_nodes.is_empty())
     {
@@ -256,7 +256,7 @@ const search_result<TState> search(
             auto cost_to_come = expanded_node->cost_to_come + neighbor.cost;
 
             opened_nodes.push(
-                std::make_unique<search_node<TKey, TState>>(
+                std::make_unique<search_node<TKey, State>>(
                     neighbor.key,
                     neighbor.states,
                     expanded_node,
@@ -270,7 +270,7 @@ const search_result<TState> search(
 
     // for debugging purposes - show all the expanded states:
     //
-    // std::vector<trajectory_step<TState>> steps;
+    // std::vector<trajectory_step<State>> steps;
     // for (auto s : expanded_nodes)
     // {
     //     steps.emplace_back(s->final_state(), 0, 0);

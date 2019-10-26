@@ -13,19 +13,19 @@
 namespace racer::following_strategies
 {
 
-template <typename TState>
-class geometric_following_strategy : public following_strategy<TState>
+template <typename State>
+class geometric_following_strategy : public following_strategy<State>
 {
 public:
-    geometric_following_strategy(double max_steering_angle, std::shared_ptr<pid> pid, const pure_pursuit<TState> &pursuit)
+    geometric_following_strategy(double max_steering_angle, std::shared_ptr<pid> pid, const pure_pursuit<State> &pursuit)
         : max_steering_angle_(max_steering_angle), pid_(pid), pure_pursuit_(pursuit)
     {
     }
 
     racer::action select_action(
-        const TState &current_state,
+        const State &current_state,
         const std::size_t passed_waypoints,
-        const racer::trajectory<TState> &reference_trajectory,
+        const racer::trajectory<State> &reference_trajectory,
         const std::shared_ptr<racer::occupancy_grid> grid) const override
     {
         auto sub_trajectory = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
@@ -48,7 +48,7 @@ public:
 
 private:
     std::shared_ptr<pid> pid_;
-    pure_pursuit<TState> pure_pursuit_;
+    pure_pursuit<State> pure_pursuit_;
     const double max_steering_angle_;
 
     inline double clamp(double value) const
