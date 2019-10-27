@@ -1,0 +1,11 @@
+algorithm, circuit name, number of actions, from waypoint, lookahead, finished within time limit, found solution, open nodes, closed nodes, time to finish, time to last but one waypoint, travelled distance, time step, discretization, success rate, number of repetitions, average computation time in ms, computation time variance
+hybrid_astar, porto, 15, 0, 7, yes, yes, 117595, 13773, 5.63333, 4.46667, 28.1591, 0.0333333, x-1.08167_y-1.08167-rpm-307-theta-15, 1, 1, 194, 0
+sehs, porto, 15, 0, 7, yes, yes, 161604, 18831, 5.53333, 4.36667, 27.809, 0.0333333, c-49-rpm-307-theta-15, 1, 1, 314, 0
+hybrid_astar, simple, 15, 0, 7, no, no, 551236, 63158, 0, 0, 0, 0.0333333, x-1.08167_y-1.08167-rpm-307-theta-15, 0, 1, 1004, 0
+sehs, simple, 15, 0, 7, yes, yes, 185739, 20926, 11.7333, 10.2667, 70.6305, 0.0333333, c-101-rpm-307-theta-15, 1, 1, 394, 0
+hybrid_astar, tornado, 15, 0, 8, yes, yes, 244662, 28727, 11.3, 10.4, 61.5235, 0.0333333, x-1.08167_y-1.08167-rpm-307-theta-15, 1, 1, 412, 0
+sehs, tornado, 15, 0, 8, yes, yes, 123701, 14266, 10.9, 10.0333, 58.5838, 0.0333333, c-86-rpm-307-theta-15, 1, 1, 252, 0
+hybrid_astar, u, 15, 0, 9, no, no, 541185, 61990, 0, 0, 0, 0.0333333, x-1.08167_y-1.08167-rpm-307-theta-15, 0, 1, 1054, 0
+sehs, u, 15, 0, 9, no, no, 441965, 51085, 0, 0, 0, 0.0333333, c-95-rpm-307-theta-15, 0, 1, 1037, 0
+hybrid_astar, zurich, 15, 0, 11, no, no, 560762, 65628, 0, 0, 0, 0.0333333, x-1.08167_y-1.08167-rpm-307-theta-15, 0, 1, 1046, 0
+sehs, zurich, 15, 0, 11, no, no, 409178, 48483, 0, 0, 0, 0.0333333, c-177-rpm-307-theta-15, 0, 1, 1024, 0
