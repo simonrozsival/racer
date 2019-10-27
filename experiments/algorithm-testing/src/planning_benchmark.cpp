@@ -41,7 +41,7 @@ std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>> create
     const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
-    const auto exploration = racer::sehs::space_exploration{2 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
+    const auto exploration = racer::sehs::space_exploration{1 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
     const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
     if (circle_path.empty())
     {
@@ -118,7 +118,7 @@ void run_benchmark_for(
 {
     const auto initial_state = state{initial_config};
 
-    const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
+    const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start, lookahead);
     auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
         initial_state,
         time_step_s,
@@ -192,10 +192,11 @@ void run_benchmark_for(
         const auto experiment_name = output::planning::experiment_name(
             algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
 
-        plot_trajectory(
+        plot_planning_result(
             config,
             initial_config,
             measurement_sample->result.found_trajectory,
+            measurement_sample->result.positions_of_expanded_nodes,
             vehicle_model,
             shifted_circut,
             experiment_name);
@@ -305,7 +306,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = true;
+    const auto plot = false;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
