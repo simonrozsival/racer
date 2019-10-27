@@ -169,17 +169,17 @@ struct search_result
 {
     racer::trajectory<State> found_trajectory;
     std::size_t number_of_opened_nodes;
-    std::size_t number_of_expanded_nodes;
+    std::vector<racer::math::point> positions_of_expanded_nodes;
     double final_cost;
 
     search_result() {}
 
     search_result(
         std::size_t number_of_opened_nodes,
-        std::size_t number_of_expanded_nodes)
+        std::vector<racer::math::point> positions_of_expanded_nodes)
         : found_trajectory{},
           number_of_opened_nodes{number_of_opened_nodes},
-          number_of_expanded_nodes{number_of_expanded_nodes},
+          positions_of_expanded_nodes{positions_of_expanded_nodes},
           final_cost{0}
     {
     }
@@ -187,11 +187,11 @@ struct search_result
     search_result(
         racer::trajectory<State> found_trajectory,
         std::size_t number_of_opened_nodes,
-        std::size_t number_of_expanded_nodes,
+        std::vector<racer::math::point> positions_of_expanded_nodes,
         double final_cost)
         : found_trajectory{found_trajectory},
           number_of_opened_nodes{number_of_opened_nodes},
-          number_of_expanded_nodes{number_of_expanded_nodes},
+          positions_of_expanded_nodes{positions_of_expanded_nodes},
           final_cost{final_cost}
     {
     }
@@ -232,10 +232,17 @@ const search_result<State> search(
 
         if (problem->is_goal(expanded_node->passed_waypoints))
         {
+            std::vector<racer::math::point> points_of_expanded_nodes;
+            points_of_expanded_nodes.reserve(expanded_nodes.size());
+            for (const auto node : expanded_nodes)
+            {
+                points_of_expanded_nodes.push_back(node->final_state().position());
+            }
+
             return {
                 problem->reconstruct_trajectory(*expanded_node),
                 opened_nodes.number_of_opened_nodes_since_initial_state(),
-                expanded_nodes.size(),
+                points_of_expanded_nodes,
                 expanded_node->cost_to_come};
         }
 
@@ -266,7 +273,14 @@ const search_result<State> search(
         }
     }
 
-    return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
+    std::vector<racer::math::point> points_of_expanded_nodes;
+    points_of_expanded_nodes.reserve(expanded_nodes.size());
+    for (const auto node : expanded_nodes)
+    {
+        points_of_expanded_nodes.push_back(node->final_state().position());
+    }
+
+    return {opened_nodes.number_of_opened_nodes_since_initial_state(), points_of_expanded_nodes};
 
     // for debugging purposes - show all the expanded states:
     //
