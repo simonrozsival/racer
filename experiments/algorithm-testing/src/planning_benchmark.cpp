@@ -41,7 +41,7 @@ std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>> create
     const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
-    const auto exploration = racer::sehs::space_exploration{1 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
+    const auto exploration = racer::sehs::space_exploration{2 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
     const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
     if (circle_path.empty())
     {
@@ -249,28 +249,28 @@ void test_full_circuit_search(
 
             const double time_step_s = 1.0 / frequency;
             
-            for (const auto cell_size_coefficient : cell_size_coefficients)
-            {
-                auto hybrid_astar = create_hybrid_astar_discretization(
-                    *vehicle,
-                    cell_size_coefficient * vehicle->radius(),
-                    heading_angle_bins,
-                    motor_rpm_bins);
-                run_benchmark_for<hybrid_astar_discrete_state>(
-                    "hybrid_astar",
-                    vehicle_model,
-                    *config,
-                    circuit,
-                    std::move(hybrid_astar),
-                    actions,
-                    config->initial_position,
-                    start,
-                    lookahead,
-                    time_step_s,
-                    repetitions,
-                    time_limit,
-                    plot);
-            }
+            // for (const auto cell_size_coefficient : cell_size_coefficients)
+            // {
+            //     auto hybrid_astar = create_hybrid_astar_discretization(
+            //         *vehicle,
+            //         cell_size_coefficient * vehicle->radius(),
+            //         heading_angle_bins,
+            //         motor_rpm_bins);
+            //     run_benchmark_for<hybrid_astar_discrete_state>(
+            //         "hybrid_astar",
+            //         vehicle_model,
+            //         *config,
+            //         circuit,
+            //         std::move(hybrid_astar),
+            //         actions,
+            //         config->initial_position,
+            //         start,
+            //         lookahead,
+            //         time_step_s,
+            //         repetitions,
+            //         time_limit,
+            //         plot);
+            // }
 
             auto sehs = create_sehs_discretization(
                 *config,
