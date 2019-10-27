@@ -103,79 +103,56 @@ output::planning::benchmark_result measure_search(
 template <typename DiscreteState>
 void run_benchmark_for(
     const std::string algorithm,
-    const std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle,
+    const std::shared_ptr<model> vehicle_model,
     const track_analysis_input &config,
     const std::shared_ptr<racer::circuit> circuit,
     const std::shared_ptr<racer::astar::discretization<DiscreteState, state>> state_discretization,
     const std::vector<racer::action> actions,
+    const racer::vehicle_configuration initial_config,
+    const std::size_t start,
     const std::size_t lookahead,
     const double time_step_s,
     const std::size_t repetitions,
     const std::chrono::milliseconds time_limit,
     const bool plot)
 {
-    const auto vehicle_model = std::make_shared<model>(vehicle);    
-    auto initial_state = state{config.initial_position};
+    const auto initial_state = state{initial_config};
 
-    for (std::size_t start = 0; start < circuit->waypoints.size(); ++start)
+    const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
+    auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
+        initial_state,
+        time_step_s,
+        actions,
+        state_discretization,
+        vehicle_model,
+        shifted_circut);
+
+    std::vector<double> measurement_times;
+    measurement_times.reserve(repetitions);
+
+    std::unique_ptr<output::planning::benchmark_result> measurement_sample;
+    bool unsuccessful = false;
+
+    for (std::size_t i = 0; i < repetitions; ++i)
     {
-        initial_state = {{circuit->waypoints[start], circuit->aligned_angle_at(start)}};
-
-        const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
-        std::unique_ptr<output::planning::benchmark_result> measurement_sample;
-        std::vector<double> measurement_times;
-        measurement_times.reserve(repetitions);
-
-        auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
-            initial_state,
-            time_step_s,
-            actions,
-            state_discretization,
-            vehicle_model,
-            shifted_circut);
-
-        bool unsuccessful = false;
-
-        for (std::size_t i = 0; i < repetitions; ++i)
+        const auto measurement = measure_search<DiscreteState>(problem, time_limit);
+        if (!measurement_sample)
         {
-            const auto measurement = measure_search<DiscreteState>(problem, time_limit);
-            if (!measurement_sample)
-            {
-                measurement_sample = std::make_unique<output::planning::benchmark_result>(measurement);
-            }
-
-            if (measurement.exceeded_time_limit)
-            {
-                unsuccessful = true;
-                break;
-            }
-
-            measurement_times.push_back(measurement.computation_time.count());
+            measurement_sample = std::make_unique<output::planning::benchmark_result>(measurement);
         }
 
-        if (unsuccessful)
+        if (measurement.exceeded_time_limit)
         {
-            output::planning::print_unsuccessful_result(
-                algorithm,
-                config.name,
-                actions.size(),
-                start,
-                lookahead,
-                time_step_s,
-                state_discretization->description(),
-                *measurement_sample,
-                repetitions,
-                time_limit.count());
-            continue;
+            unsuccessful = true;
+            break;
         }
 
-        const auto total = std::accumulate(measurement_times.cbegin(), measurement_times.cend(), 0.0);
-        const auto mean = total / double(measurement_times.size());
+        measurement_times.push_back(measurement.computation_time.count());
+    }
 
-        const auto sum_of_squares = std::inner_product(measurement_times.cbegin(), measurement_times.cend(), measurement_times.cbegin(), 0.0);
-        const auto variance = sum_of_squares / double(measurement_times.size()) - mean * mean;
-        
-        output::planning::print_result(
+    if (unsuccessful)
+    {
+        output::planning::print_unsuccessful_result(
             algorithm,
             config.name,
             actions.size(),
@@ -184,28 +161,48 @@ void run_benchmark_for(
             time_step_s,
             state_discretization->description(),
             *measurement_sample,
-            double(measurement_times.size()) / double(repetitions),
             repetitions,
-            mean,
-            variance);
+            time_limit.count());
 
-        if (plot)
-        {
-            const auto experiment_name = output::planning::experiment_name(
-                algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
+        return;
+    }
 
-            plot_trajectory(
-                config,
-                initial_state.configuration(),
-                measurement_sample->result.found_trajectory,
-                vehicle_model,
-                shifted_circut,
-                experiment_name);
-        }
+    const auto total = std::accumulate(measurement_times.cbegin(), measurement_times.cend(), 0.0);
+    const auto mean = total / double(measurement_times.size());
+
+    const auto sum_of_squares = std::inner_product(measurement_times.cbegin(), measurement_times.cend(), measurement_times.cbegin(), 0.0);
+    const auto variance = sum_of_squares / double(measurement_times.size()) - mean * mean;
+    
+    output::planning::print_result(
+        algorithm,
+        config.name,
+        actions.size(),
+        start,
+        lookahead,
+        time_step_s,
+        state_discretization->description(),
+        *measurement_sample,
+        double(measurement_times.size()) / double(repetitions),
+        repetitions,
+        mean,
+        variance);
+
+    if (plot && measurement_sample->result.was_successful())
+    {
+        const auto experiment_name = output::planning::experiment_name(
+            algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
+
+        plot_trajectory(
+            config,
+            initial_config,
+            measurement_sample->result.found_trajectory,
+            vehicle_model,
+            shifted_circut,
+            experiment_name);
     }
 }
 
-void benchmark(
+void test_full_circuit_search(
     const std::vector<std::shared_ptr<track_analysis_input>> configs,
     const std::size_t repetitions,
     const std::chrono::milliseconds time_limit,
@@ -213,19 +210,12 @@ void benchmark(
 {
     std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
         racer::vehicle_model::vehicle_chassis::rc_beast();
+    const auto vehicle_model = std::make_shared<model>(vehicle);
 
     const std::vector<std::size_t> heading_angles{ 24 };
     const std::vector<std::size_t> motor_rpms{ 50 };
-    const std::vector<double> cell_size_coefficients{ 3, 4 };
-    const std::vector<double> frequencies{ 10.0 };
-    // const std::vector<std::vector<racer::action>> actions_options
-    // {
-    //     racer::action::create_actions(3, 3),
-    //     racer::action::create_actions(3, 5),
-    //     racer::action::create_actions(5, 5),
-    //     racer::action::create_actions(5, 7),
-    //     racer::action::create_actions(9, 9)
-    // };
+    const std::vector<double> cell_size_coefficients{ 4 };
+    const std::vector<double> frequencies{ 25.0 };
 
     for (const auto &config : configs)
     {
@@ -245,19 +235,17 @@ void benchmark(
             return;
         }
 
-        // const std::vector<std::size_t> lookaheads{ 2, 3, 4, 5, circuit->waypoints.size() };
-
         for (const auto heading_angle_bins : heading_angles)
         for (const auto motor_rpm_bins : motor_rpms)
         for (const auto frequency : frequencies)
-        // for (const auto actions : actions_options)
-        // for (auto lookahead : lookaheads)
         {
-            const std::size_t lookahead = 3;
+            const std::size_t start = 0;
+            const std::size_t lookahead = circuit->waypoints.size();
+
             const std::size_t throttle_levels = 3;
             const std::size_t steering_angle_levels = 5;
-
             const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);            
+
             const double time_step_s = 1.0 / frequency;
             
             for (const auto cell_size_coefficient : cell_size_coefficients)
@@ -269,11 +257,13 @@ void benchmark(
                     motor_rpm_bins);
                 run_benchmark_for<hybrid_astar_discrete_state>(
                     "hybrid_astar",
-                    vehicle,
+                    vehicle_model,
                     *config,
                     circuit,
                     std::move(hybrid_astar),
                     actions,
+                    config->initial_position,
+                    start,
                     lookahead,
                     time_step_s,
                     repetitions,
@@ -288,11 +278,13 @@ void benchmark(
                 motor_rpm_bins);
             run_benchmark_for<sehs_discrete_state>(
                 "sehs",
-                vehicle,
+                vehicle_model,
                 *config,
                 circuit,
                 std::move(sehs),
                 actions,
+                config->initial_position,
+                start,
                 lookahead,
                 time_step_s,
                 repetitions,
@@ -313,7 +305,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = false;
+    const auto plot = true;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
@@ -322,5 +314,5 @@ int main(int argc, char *argv[])
     }
 
     output::planning::print_csv_header();
-    benchmark(*maybe_configs, repetitions, time_limit, plot);
+    test_full_circuit_search(*maybe_configs, repetitions, time_limit, plot);
 }
