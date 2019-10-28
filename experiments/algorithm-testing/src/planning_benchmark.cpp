@@ -18,7 +18,6 @@
 #include "racer/trajectory.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer/vehicle_model/kinematic_model.h"
-#include "racer/track_analysis.h"
 #include "racer/sehs/space_exploration.h"
 
 #include "racer/astar/sehs.h"
@@ -222,7 +221,7 @@ void test_full_circuit_search(
     {
         // prepare circuit
         const std::shared_ptr<racer::circuit> circuit =
-            racer::create_circuit_from_occupancy_grid(
+            racer::circuit::from_occupancy_grid(
                 config->occupancy_grid,
                 config->checkpoints,
                 config->initial_position,
