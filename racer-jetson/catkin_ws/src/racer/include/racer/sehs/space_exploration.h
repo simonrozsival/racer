@@ -100,6 +100,12 @@ public:
     {
         std::vector<racer::math::circle> path;
 
+        if (!all_waypoints_are_accessible(grid, waypoints))
+        {
+            std::cerr << "At least one waypoint lies in a cell occupied by an obstacle. Space exploration fails." << std::endl;
+            return {};
+        }
+
         path.push_back(generate_circle_around(initial_position.location(), grid));
         double initial_heading_angle = initial_position.heading_angle();
 
@@ -246,6 +252,21 @@ private:
         racer::math::point interpolated_center = a.center().interpolate_with(c.center(), a.radius(), b.radius());
         const double radius = grid->distance_to_closest_obstacle(interpolated_center, max_radius_);
         return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
+    }
+
+    bool all_waypoints_are_accessible(
+        const std::shared_ptr<racer::occupancy_grid> grid,
+        const std::vector<racer::math::point> &waypoints) const
+    {
+        for (auto wp : waypoints)
+        {
+            if (grid->collides(wp))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 };
 } // namespace racer::sehs
