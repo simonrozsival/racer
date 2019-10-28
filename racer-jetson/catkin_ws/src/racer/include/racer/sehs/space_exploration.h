@@ -113,7 +113,6 @@ public:
 
         while (goal_it != waypoints.cend())
         {
-            std::cout << "from " << path.back().center() << " to " << *goal_it << std::endl;
             auto to_next_waypoint = find_path(path.back(), initial_heading_angle, *goal_it, grid);
 
             if (to_next_waypoint.size() == 0)
