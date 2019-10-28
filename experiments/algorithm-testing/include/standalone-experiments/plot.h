@@ -86,7 +86,7 @@ void plot_points(const std::string &name, const std::vector<racer::math::point> 
     }
 
     keywords["label"] = name;
-    plt::plot(points_x, points_y, format, keywords);   
+    plt::plot(points_x, points_y, format, keywords);
 }
 
 void plot_waypoints(const std::shared_ptr<racer::circuit> circuit, unsigned char *img)
@@ -192,17 +192,14 @@ void plot_trajectory(
     const std::shared_ptr<racer::circuit> circuit,
     const std::string name)
 {
-    std::vector<racer::math::point> rpm_points, steering_angle_points, speed_points, every_second_speed;
+    std::vector<racer::math::point> rpm_points, steering_angle_points, speed_points, throttle, steering;
     for (const auto &step : trajectory.steps())
     {
         rpm_points.emplace_back(step.timestamp(), step.state().motor_rpm() / vehicle->chassis->motor->max_rpm());
         steering_angle_points.emplace_back(step.timestamp(), step.state().steering_angle());
         speed_points.emplace_back(step.timestamp(), vehicle->calculate_speed_with_no_slip_assumption(step.state().motor_rpm()));
-
-        if (step.timestamp() >= 1 && step.timestamp() - std::floor(step.timestamp()) < trajectory.time_step())
-        {
-            every_second_speed.push_back(speed_points.back());
-        }
+        throttle.emplace_back(step.timestamp(), step.previous_action().throttle());
+        steering.emplace_back(step.timestamp(), step.previous_action().target_steering_angle());
     }
 
     plt::title(config.name);
@@ -232,20 +229,24 @@ void plot_trajectory(
     // plt::show();
 
     // actuators state profile
-    plt::subplot(2, 1, 1);
-    plt::xlabel("time [s]");
+    plt::subplot(3, 1, 1);
+    plt::ylim(-1.1, 1.1);
 
+    plot_points("Throttle level", throttle, "r-", 1.0);
+    plot_points("Steering input", steering, "b-", 1.0);
+    plt::legend();
+
+    plt::subplot(3, 1, 2);
     plot_points("Motor RPM (normalized)", rpm_points, "r-", 1.0);
     plot_points("Steering angle (normalized)", steering_angle_points, "b-", 1.0);
     plt::legend();
 
     // speed profile
-    plt::subplot(2, 1, 2);
+    plt::subplot(3, 1, 3);
     plt::ylabel("speed [m/s]");
     plt::xlabel("time [s]");
 
     plot_points("Speed profile", speed_points, "r-", 1.0);
-    plot_points("Seconds marks", every_second_speed, "k*", 1.0);
     plt::legend();
 
     std::stringstream actuators_file_name;

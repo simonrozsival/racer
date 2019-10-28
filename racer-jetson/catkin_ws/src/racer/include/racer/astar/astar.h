@@ -19,13 +19,18 @@ struct neighbor_transition
     neighbor_transition(
         TKey key,
         std::vector<State> states,
+        racer::action previous_action,
         const double cost)
-        : key(std::move(key)), states(std::move(states)), cost(cost)
+        : key{key},
+          states{states},
+          previous_action{previous_action},
+          cost{cost}
     {
     }
 
-    TKey key;
-    std::vector<State> states;
+    const TKey key;
+    const std::vector<State> states;
+    const racer::action previous_action;
 
     const double cost;
 
@@ -40,6 +45,7 @@ struct search_node
 {
     const TKey key;
     const std::vector<State> states;
+    const racer::action previous_action;
     const double cost_to_come;
     const double cost_estimate;
     const std::size_t passed_waypoints;
@@ -48,23 +54,25 @@ struct search_node
     search_node(
         TKey key,
         std::vector<State> states,
+        racer::action previous_action,
         std::weak_ptr<search_node<TKey, State>> parent,
         double cost_to_come,
         double cost_estimate,
         std::size_t passed_waypoints)
-        : key(std::move(key)),
-          states(std::move(states)),
-          cost_to_come(cost_to_come),
-          cost_estimate(cost_estimate),
-          passed_waypoints(passed_waypoints),
-          parent(parent)
+        : key{key},
+          states{states},
+          previous_action{previous_action},
+          cost_to_come{cost_to_come},
+          cost_estimate{cost_estimate},
+          passed_waypoints{passed_waypoints},
+          parent{parent}
     {
     }
 
     static auto for_initial_state(TKey key, State state)
     {
         return std::make_unique<search_node<TKey, State>>(
-            key, std::vector<State>{state}, std::weak_ptr<search_node<TKey, State>>(), 0, 0, 0);
+            key, std::vector<State>{state}, action{0, 0}, std::weak_ptr<search_node<TKey, State>>(), 0, 0, 0);
     }
 
     constexpr double estimated_cost_to_go() const
@@ -266,6 +274,7 @@ const search_result<State> search(
                 std::make_unique<search_node<TKey, State>>(
                     neighbor.key,
                     neighbor.states,
+                    neighbor.previous_action,
                     expanded_node,
                     cost_to_come,
                     cost_to_come + problem->estimate_cost_to_go(neighbor.final_state(), passed_waypoints),
