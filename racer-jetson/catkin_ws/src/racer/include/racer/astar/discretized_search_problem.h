@@ -47,7 +47,7 @@ public:
     {
         std::vector<racer::astar::neighbor_transition<DiscreteState, State>> transitions;
 
-        for (const auto &action : available_actions_)
+        for (const auto action : available_actions_)
         {
             int steps = 0;
             State prediction = node.final_state();
@@ -83,6 +83,7 @@ public:
             transitions.emplace_back(
                 std::move(discretized_prediction),
                 std::move(states),
+                action,
                 steps * time_step_s_);
         }
 
@@ -154,7 +155,7 @@ private:
         double temporary_timestamp = timestamp;
         for (const auto &state : node.states)
         {
-            steps.emplace_back(state, node.passed_waypoints, temporary_timestamp);
+            steps.emplace_back(state, node.previous_action, node.passed_waypoints, temporary_timestamp);
             temporary_timestamp += time_step_s_;
         }
 

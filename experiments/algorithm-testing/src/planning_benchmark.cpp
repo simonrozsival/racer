@@ -40,7 +40,7 @@ std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>> create
     const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
-    const auto exploration = racer::sehs::space_exploration{2 * vehicle.radius(), 4 * vehicle.radius(), config.neighbor_circles};
+    const auto exploration = racer::sehs::space_exploration{1.0 * vehicle.radius(), 4.0 * vehicle.radius(), config.neighbor_circles};
     const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
     if (circle_path.empty())
     {
@@ -171,7 +171,7 @@ void run_benchmark_for(
 
     const auto sum_of_squares = std::inner_product(measurement_times.cbegin(), measurement_times.cend(), measurement_times.cbegin(), 0.0);
     const auto variance = sum_of_squares / double(measurement_times.size()) - mean * mean;
-    
+
     output::planning::print_result(
         algorithm,
         config.name,
@@ -212,10 +212,10 @@ void test_full_circuit_search(
         racer::vehicle_model::vehicle_chassis::rc_beast();
     const auto vehicle_model = std::make_shared<model>(vehicle);
 
-    const std::vector<std::size_t> heading_angles{ 24 };
-    const std::vector<std::size_t> motor_rpms{ 50 };
-    const std::vector<double> cell_size_coefficients{ 4 };
-    const std::vector<double> frequencies{ 25.0 };
+    const std::vector<std::size_t> heading_angles{24};
+    const std::vector<std::size_t> motor_rpms{50};
+    const std::vector<double> cell_size_coefficients{4};
+    const std::vector<double> frequencies{25.0};
 
     for (const auto &config : configs)
     {
@@ -236,61 +236,61 @@ void test_full_circuit_search(
         }
 
         for (const auto heading_angle_bins : heading_angles)
-        for (const auto motor_rpm_bins : motor_rpms)
-        for (const auto frequency : frequencies)
-        {
-            const std::size_t start = 0;
-            const std::size_t lookahead = circuit->waypoints.size();
+            for (const auto motor_rpm_bins : motor_rpms)
+                for (const auto frequency : frequencies)
+                {
+                    const std::size_t start = 0;
+                    const std::size_t lookahead = circuit->waypoints.size();
 
-            const std::size_t throttle_levels = 3;
-            const std::size_t steering_angle_levels = 5;
-            const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);            
+                    const std::size_t throttle_levels = 15;
+                    const std::size_t steering_angle_levels = 15;
+                    const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 
-            const double time_step_s = 1.0 / frequency;
-            
-            // for (const auto cell_size_coefficient : cell_size_coefficients)
-            // {
-            //     auto hybrid_astar = create_hybrid_astar_discretization(
-            //         *vehicle,
-            //         cell_size_coefficient * vehicle->radius(),
-            //         heading_angle_bins,
-            //         motor_rpm_bins);
-            //     run_benchmark_for<hybrid_astar_discrete_state>(
-            //         "hybrid_astar",
-            //         vehicle_model,
-            //         *config,
-            //         circuit,
-            //         std::move(hybrid_astar),
-            //         actions,
-            //         config->initial_position,
-            //         start,
-            //         lookahead,
-            //         time_step_s,
-            //         repetitions,
-            //         time_limit,
-            //         plot);
-            // }
+                    const double time_step_s = 1.0 / frequency;
 
-            auto sehs = create_sehs_discretization(
-                *config,
-                *vehicle,
-                heading_angle_bins,
-                motor_rpm_bins);
-            run_benchmark_for<sehs_discrete_state>(
-                "sehs",
-                vehicle_model,
-                *config,
-                circuit,
-                std::move(sehs),
-                actions,
-                config->initial_position,
-                start,
-                lookahead,
-                time_step_s,
-                repetitions,
-                time_limit,
-                plot);
-        }
+                    for (const auto cell_size_coefficient : cell_size_coefficients)
+                    {
+                        auto hybrid_astar = create_hybrid_astar_discretization(
+                            *vehicle,
+                            cell_size_coefficient * vehicle->radius(),
+                            heading_angle_bins,
+                            motor_rpm_bins);
+                        run_benchmark_for<hybrid_astar_discrete_state>(
+                            "hybrid_astar",
+                            vehicle_model,
+                            *config,
+                            circuit,
+                            std::move(hybrid_astar),
+                            actions,
+                            config->initial_position,
+                            start,
+                            lookahead,
+                            time_step_s,
+                            repetitions,
+                            time_limit,
+                            plot);
+                    }
+
+                    auto sehs = create_sehs_discretization(
+                        *config,
+                        *vehicle,
+                        heading_angle_bins,
+                        motor_rpm_bins);
+                    run_benchmark_for<sehs_discrete_state>(
+                        "sehs",
+                        vehicle_model,
+                        *config,
+                        circuit,
+                        std::move(sehs),
+                        actions,
+                        config->initial_position,
+                        start,
+                        lookahead,
+                        time_step_s,
+                        repetitions,
+                        time_limit,
+                        plot);
+                }
     }
 }
 
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = false;
+    const auto plot = true;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
@@ -313,6 +313,6 @@ int main(int argc, char *argv[])
         return 2;
     }
 
-    output::planning::print_csv_header();
+    // output::planning::print_csv_header();
     test_full_circuit_search(*maybe_configs, repetitions, time_limit, plot);
 }
