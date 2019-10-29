@@ -360,7 +360,7 @@ The idea of \textit{the first method} is to calculate a list of tiles relative t
 	\caption{These figures compare two approaches to collision checking. The second approach requires fewer operations whenever we need to test a collision and therefore we chose the ``obstacle inflation'' method.}
 \end{figure}
 
-\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required, which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
+\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle from the width and length of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required, which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
 
 The obvious advantage of the first method is its higher accuracy. The second method could be insufficient for tasks such as perpendicular parking between two cars, where the whole space between the two cars could be filled with the inflated obstacles. In principle, we could fix this by ``inflating'' the occupancy grid for different heading angles and mark the footprints of rotated rectangles directly into the occupancy grid. The problem we had with this approach is an increased cost of pre-processing before the planning algorithm can start. The footprints of the vehicle can be pre-calculated ahead of time and they do not take any extra computation at runtime.
 
@@ -895,7 +895,7 @@ The path of circles can be further optimized to find a shorter path between the 
 The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $d_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
 
 \paragraph{State Space Discretization}
-We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}\in \mathbb{R}^k$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $d_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
+We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}, \vec{c_i}\in\mathbb{R}^2$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $d_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
 
 \begin{equation*}
 \begin{aligned}
@@ -903,6 +903,8 @@ i(\vec{x})&=\argmin_{j\in \left\{1, 2, \ldots, k\right\}} \norm{\vec{x}-\vec{c_j
 d_{x,y}(\vec{x})&=c_{i(x)}.
 \end{aligned}
 \end{equation*}
+
+Determining which center of a circle $\vec{c_i}$ is closest to a point $\vec{x}$ is an instance of a nearest-neighbor problem, which we already discussed when we described the RRT algorithm. It turned out that simple linear search is more efficient than a space-partitioning data structure when we ran the algorithm. This is most likely due to the fact that the number of circles $k$ was usually low and that the array of all waypoints can be loaded into the cache of a processor and it does not require any expensive branching operations, unlike a search in a tree.
 
 The path of circles does not give us any information which could be used to discretize the heading angle of the vehicle $\theta$ or any other additional state variables. For these state variables, we have to use the same uniform cell discretization as in \textit{Hybrid A*}.
 
@@ -923,10 +925,11 @@ h(\vec{x})&=\dfrac{m(\vec{x})}{v_{max}}.
 The \gls*{SEHS} algorithm is a simple yet efficient way of searching a state space for a car-like vehicle. It promises significantly faster convergence towards a solution than \textit{Hybrid A*}, but the implementation itself is very similar. The main difference is in the discretization of the state space, which is much denser when the desired path is near obstacles and less dense when there are no obstacles around. We will implement both \textit{Hybrid A*} and \gls*{SEHS} and compare the results of these two algorithms.
 
 \section{Track Segmentation}
+\label{sec:track_segmentation}
 
 A natural way of splitting the track into smaller segments is to find the corners of the track. We can then plan the trajectory for the very next turn in front of the vehicle and for one or two  consecutive ones, and imitate the behavior of a human racing driver, as we described it in Section~\ref{sec:racing_line}. To prevent long segments for long straight stretches, we can set a limit for the length of a segment and split long segments into multiple shorter ones.
 
-Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.\todo{Actually test this.}
+Another benefit of splitting the track into smaller segments and planning the trajectory just for a fixed number of them is that the total length of the track does not affect the performance of the algorithm anymore. The length of the segments is limited and so the actual time it will take to calculate a trajectory for the next $n$ segments on real hardware should be similar for different parts of the track. We will have to test this hypothesis experimentally.
 
 In this section we will describe an algorithm we chose to find points close to corners of a racing circuit. We will use this algorithm just once before a race starts.
 
@@ -1156,6 +1159,7 @@ The vehicle we will be modeling has two actuators which influence the motion of 
 The dynamic model can give us more accurate predictions at the handling limits of the vehicle. As a trade-off, the dynamic model is more complex and harder to implement correctly. We must identify many parameters of the vehicle, such as the properties of the tires and the characteristics of the power train. The dynamic model also requires more arithmetic operations to predict the next state after some period $\Delta t$ which can make planning with this model slower.
 
 \subsection{Actuators Model}
+\label{sec:actuators_model}
 
 In this section, we will describe the behavior of the actuators of our vehicle and we will propose a mathematical model of the state of these actuators. The model is tailored to the experimental vehicle which we used and which is described in more detail in Chapter~\ref{chapter:hardware}.
 
@@ -1305,7 +1309,15 @@ With the knowledge of how long it takes to adjust the steering angle of the fron
 
 \subsubsection{DC Motor Model}
 
-We need to be able to model the angular velocity of the motor shaft. The motor is directly connected to the wheels. Therefore, if we can predict the velocity at which the motor shaft rotates, we can predict how fast the wheels will turn. This, of course, does not give us all the information to determine the longitudinal velocity of the vehicle, because the wheels might skid when the friction forces between the tires and the road surface are exceeded.
+We need to be able to model the angular velocity of the motor shaft. The motor is directly connected to the wheels. Therefore, if we can predict the velocity at which the motor shaft rotates, we can predict how fast the wheels will turn. If the motor spins at angular velocity of $\omega$, then the angular velocity of the wheels $\omega_w$ will be equal to
+
+\[
+\omega_w = G\omega,
+\]
+
+where $G$ is a combined gear ratio of the gearbox and the differential. For a vehicle with multiple gears, this relationship would be a function of the selected gear. Because our experimental vehicle will have a single fixed gear, which is typical for electric cars, our gear ratio $G$ will be constant.
+
+This, of course, does not give us all the information to determine the longitudinal velocity of the vehicle, because the wheels might skid when the friction forces between the tires and the road surface are exceeded.
 
 Our goal is to create a model of the engine RPM as a function of the previous \gls{RPM} and the control inputs. We measured the RPM of the motor shaft using a Hall effect encoder while we were manually controlling the vehicle on dry asphalt at a temperature of around \SI{15}{\degreeCelsius}. We also recorded the throttle and steering angle inputs from the remote control. We use the collected data to identify the parameters of our model and to validate the accuracy of the model.
 
@@ -1325,9 +1337,23 @@ T_{load}&=\omega^{x_2} \left(x_3 + x_4|\delta_t|\right)^{x_5} \\
 \end{aligned}
 \end{equation}
 
-The parameters $x_i\in\mathbb{R}$ are obtained using a numerical optimization algorithm which minimizes mean squared error between the predicted RPM and RPM measured using the experimental vehicle. The parameter $x_1$ replaces $T_{stall}$ and $x_6$ replaces the moment of inertia of the power train. Nevertheless, the values assigned to these parameters by the optimization algorithm must not be interpreted as the values of these two properties.
+By integrating the $\dot{\omega}$ numerically over a time period $\Delta t$, we will obtain the change in the RPM of the vehicle. The parameters $x_i\in\mathbb{R}$ are obtained using a numerical optimization algorithm which minimizes mean squared error between the predicted RPM and RPM measured using the experimental vehicle. The parameter $x_1$ replaces $T_{stall}$ and $x_6$ replaces the moment of inertia of the power train. Nevertheless, the values assigned to these parameters by the optimization algorithm must not be interpreted as the values of these two properties.
 
-By integrating the $\dot{\omega}$ numerically over a time period $\Delta t$, we will obtain the change in the RPM of the vehicle. The performance of our model with fitted parameters is shown in Figure~\ref{fig:motor_rpm_model} for a time period of almost two minutes. The \gls*{RPM} shown in this figure is relative to the maximum \gls*{RPM} of the motor, which we identified to be \SI{15500}{RPM}.
+An example prediction of our model with the fitted parameters as stated in Table~\ref{table:motor_model_params} is shown in Figure~\ref{fig:motor_rpm_model} for a time period of almost two minutes. The \gls*{RPM} shown in this figure is relative to the maximum \gls*{RPM} of the motor which we identified to be \SI{15500}{RPM}.
+
+\begin{table}[h]
+	\centering
+	\begin{tabular}{l | l}
+		$x_1$ & \num{7.33016701e+02} \\
+		$x_2$ & \num{8.58626896e+02} \\
+		$x_3$ & \num{7.40739969e-01} \\
+		$x_4$ & \num{7.68248846e+01} \\
+		$x_5$ & \num{2.05190302e+02} \\
+		$x_6$ & \num{1.16584276e+00} \\
+	\end{tabular}
+	\caption{Fitted parameters of the DC motor model.}
+	\label{table:motor_model_params}
+\end{table}
 
 We also tried training a neural network with three input neurons and one output neuron to predict $\dot{\omega}$ or $\omega$ directly. We experimented with supervised learning and with reinforcement learning using neuro-evolution (NEAT) but we were not able to obtain a neural network with better estimates of $\omega$ than the predictions from the model described in (\ref{eq:motor_model}).
 
