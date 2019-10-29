@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = true;
+    const auto plot = false;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
