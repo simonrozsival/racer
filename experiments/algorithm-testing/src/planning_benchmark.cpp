@@ -242,8 +242,8 @@ void test_full_circuit_search(
                     const std::size_t start = 0;
                     const std::size_t lookahead = circuit->waypoints.size();
 
-                    const std::size_t throttle_levels = 15;
-                    const std::size_t steering_angle_levels = 15;
+                    const std::size_t throttle_levels = 3;
+                    const std::size_t steering_angle_levels = 5;
                     const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 
                     const double time_step_s = 1.0 / frequency;
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = false;
+    const auto plot = true;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)

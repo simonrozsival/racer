@@ -133,10 +133,11 @@ void plot_trajectory(const racer::trajectory<kinematic::state> trajectory, const
         }
     }
 
-    double width = radius / cell_size;
+    // double width = radius / cell_size;
 
     plot_points("Seconds marks", every_second, "k*", cell_size, {{"zorder", "11"}});
-    plot_points("Trajectory", states, "r-", cell_size, {{"zorder", "9"}, {"linewidth", std::to_string(width)}});
+    // plot_points("Trajectory", states, "r-", cell_size, {{"zorder", "9"}, {"linewidth", std::to_string(width)}});
+    plot_points("Trajectory", states, "r-", cell_size, {{"zorder", "9"}});
 }
 
 void plot_grid(const std::shared_ptr<racer::occupancy_grid> occupancy_grid, unsigned char *img)
@@ -247,7 +248,6 @@ void plot_trajectory(
     plt::xlabel("time [s]");
 
     plot_points("Speed profile", speed_points, "r-", 1.0);
-    plt::legend();
 
     std::stringstream actuators_file_name;
     actuators_file_name << name << "_actuators.pdf";
