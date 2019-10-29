@@ -34,7 +34,27 @@ We used chassis, steering servo, \gls{DC} motor, \gls{ESC}, and a ratio transmit
 	\caption{Photos of the experimental vehicle.}
 \end{figure}
 
-The chassis has the same geometry as a common passenger car with two fixed rear wheels and two front wheels with Ackermann steering geometry. All of the wheels are driven by the \gls*{DC} motor through a fixed gearbox. The wheels on both front and rear axes can move independently thanks to two differentials, one on each axis. The differentials are necessary for smooth travel during turns, when the outer wheel spins faster than the inner wheel. Photos of the vehicle are shown in Figure~\ref{fig:chassis}.
+The chassis has the same geometry as a common passenger car with two fixed rear wheels and two front wheels with Ackermann steering geometry. All of the wheels are driven by the \gls*{DC} motor through a fixed gearbox. The wheels on both front and rear axes can move independently thanks to two differentials, one on each axis. The differentials are necessary for smooth travel during turns, when the outer wheel spins faster than the inner wheel. Photos of the vehicle are shown in Figure~\ref{fig:chassis} and the our measurements of the chassis are stated in Table~\ref{table:dimensions}.
+
+\begin{table}
+	\centering
+	\begin{tabular}{l c r}
+		\toprule
+		Property name & Symbol & Measured value \\
+		\midrule
+		
+		Wheelbase & $L$ & \SI{0.31}{\meter} \\
+		Center of gravity offset & $l_r, l_f$ & \SI{0.155}{\meter} \\
+		Width & $W$ & \SI{0.3}{\meter} \\
+		Length & $H$ & \SI{0.45}{\meter} \\
+		Wheel radius & $r_w$ & \SI{0.05}{\meter} \\
+		Gear ratio (motor to wheels) & $G$ & \num{9} \\
+		Reachable steering angles & $\delta$ & $\left[\ang{-21.16}, \ang{26.57}\right]$ \\
+		\bottomrule
+	\end{tabular}
+	\caption{Properties of the chassis of the experimental vehicle.}
+	\label{table:dimensions}
+\end{table}
 
 The steering servo and the \gls*{ESC}, which controls the speed of the \gls*{DC} motor, both have a 3-pin connector which was originally connected to a radio receiver. Two of the pins connect to a \gls*{DC} power supply and the third connects to a signal wire. The signal is originally created by an radio transmitter which generates a \gls{PWM} signal. The \gls*{PWM} signal consists of pattern resembling a square wave, where the voltage measured on the signal wire is high (\SI{5}{\volt}) for some period of time and then the voltage drops to low (\SI{0}{\volt}) for the rest of the period. The pulse of high voltage lasts between \SI{1}{\milli\second} and \SI{2}{\milli\second} and the period of the signal is \SI{20}{\milli\second} as it is shown in Figure~\ref{fig:pwm}. We can therefore connect these connectors to a computer which generates appropriate signals to steer the vehicle. The \SI{20}{\milli\second} period of one \gls*{PWM} cycle gives us an upper limit of \SI{50}{\hertz} at which we can change the commands for the vehicle.
 
