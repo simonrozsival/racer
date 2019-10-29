@@ -40,7 +40,7 @@ std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>> create
     const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
-    const auto exploration = racer::sehs::space_exploration{1.0 * vehicle.radius(), 4.0 * vehicle.radius(), config.neighbor_circles};
+    const auto exploration = racer::sehs::space_exploration{2.0 * vehicle.radius(), 4.0 * vehicle.radius(), config.neighbor_circles};
     const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
     if (circle_path.empty())
     {
@@ -242,7 +242,7 @@ void test_full_circuit_search(
                     const std::size_t start = 0;
                     const std::size_t lookahead = circuit->waypoints.size();
 
-                    const std::size_t throttle_levels = 3;
+                    const std::size_t throttle_levels = 5;
                     const std::size_t steering_angle_levels = 5;
                     const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = true;
+    const auto plot = false;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)
