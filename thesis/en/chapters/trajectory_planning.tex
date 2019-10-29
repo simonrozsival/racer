@@ -1482,15 +1482,12 @@ If we knew the longitudinal forces of the wheels $F_{xr}$ and $F_{xf}$, we could
 
 \begin{equation*}
 \begin{aligned}
-F_{aero}&=\dfrac{1}{2} \rho CA v^2=c_\alpha v^2 \\
-F_{roll}&\approx c_r|v| \\
-F_{load}&=F_{areo}+F_{roll} \\
 F_{traction}&=F_{xr}+F_{xf}\cos\delta-F_{yf}\sin\delta \\
 \dot{v}&=\dfrac{1}{m}\left(F_{traction}-F_{load}\right).
 \end{aligned}
 \end{equation*}
 
-where $m\in\mathbb{R}_+$ is the mass of the vehicle, $A\in\mathbb{R}_+$ is the cross-sectional area of the vehicle, and $c_r, c_\alpha\in\mathbb{R}$ are the rolling resistance and aerodynamic drag coefficients.
+where $m\in\mathbb{R}_+$ is the mass of the vehicle and $F_{load}$ is a longitudinal load force on the vehicle, consisting of an aerodynamic drag force and rolling resistance.
 
 The vehicle moves in the direction of the slip angle $\beta$ and it rotates around its $z$ axis at the angular velocity $\dot{\theta}$. With the knowledge of the lateral forces $F_{yf}$ and $F_{yr}$ we can model the behavior of these state variables:
 
