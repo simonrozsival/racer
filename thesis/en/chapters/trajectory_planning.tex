@@ -1476,9 +1476,7 @@ The kinematic model does not require any extra state variables on top of the con
 
 \subsection{Dynamic Bicycle Model}
 
-Forces are the cause of linear and angular acceleration of every rigid body. The dynamic bicycle model models the forces between the tires of the vehicle and the road surface and describes the resulting accelerations. We will only focus on a two-dimensional case and we will ignore any forces in the axis perpendicular to the road and any changes in roll or pitch of the vehicle.
-
-We will model two types of forces: the longitudinal forces $F_x$, which cause the motion forward or backward, and lateral forces $F_y$, which allow the vehicle to turn and which cause rotation of the vehicle. Different forces act on the front and rear tires. We will distinguish these forces with an additional $f$ or $r$ subscript. An overview of all of the forces and other important variables is shown in Figure~\ref{fig:dynamic_bicycle}.
+Forces are the cause of linear and angular acceleration of every rigid body. The dynamic bicycle model models the forces between the tires of the vehicle and the road surface and describes the resulting accelerations. To describe the translation and rotation of the vehicle on a two dimensional plane, we need to know the values of two forces: the longitudinal forces $F_x$, which cause the motion forward or backward, and lateral forces $F_y$, which allow the vehicle to turn and which cause rotation of the vehicle. An overview of all of the forces and other important variables is shown in Figure~\ref{fig:dynamic_bicycle}.
 
 If we knew the longitudinal forces of the wheels $F_{xr}$ and $F_{xf}$, we could determine the total traction force acting at the center of gravity of the vehicle and the subsequent acceleration $\dot{v}$ of the vehicle:
 
@@ -1604,82 +1602,14 @@ The change of the coordinates center of gravity of the vehicle in the two dimens
 
 \subsubsection{Tire Model}
 
-In the previous section, we assumed that we know the longitudinal and lateral forces $F_{xf}, F_{xr}, F_{yf}$, and $F_{yr}$. In this section, we will show how to calculate these forces. The tire is the interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. We calculate the lateral and longitudinal components of this force separately. The lateral component acts in the direction perpendicular to the orientation of the wheel, the longitudinal component is oriented with respect to the orientation of the tire.
+A tire is an interface between the road and the vehicle. The engine produces torque which is transferred to the wheels through the drive train and this torque is translated into a force at the contact patch between the tires and the road. This force is what puts the vehicle into motion, and what allows the vehicle to turn by changing the steering angle. 
 
-For the sake of simplicity, our tire model is based on a linear tire model \cite[Chapter~13]{rajamani}. There are several other more advanced tire models, such as Brush, Fiala, Dugoff, or Pacejka models \cite{rajamani, pacejka}, which give more precise results, especially for large slip angles. These models are not practical for us as they have many parameters which need to be experimentally identified.
+There are several mathematical tire models, such as Brush, Fiala, Dugoff, or Pacejka models \cite{rajamani, pacejka}, which describe how to calculate the tire forces $F_x$ and $F_y$. The problem with these models is that they require a knowledge of many parameters, which must be obtained through experimental measurements of the properties of the actual vehicle.
 
-\paragraph{Lateral Forces}
+This turned out to be a problem for us. Even though some students performed identification of the Pacejka magic formula parameters for a similar RC car model \cite{rc_identification, rc_identification_2}, we were not able to perform the measurements and obtain good quality tire model for our custom experimental vehicle. We are therefore unable to utilize the properties of the dynamic bicycle model to describe our experimental vehicle.
 
-Tire side slip angles are the angles between the direction in which the wheels are pointing and in which the vehicle is moving. These angles will be different for front and rear wheels because the rear wheel is fixed while the front wheel can be steered:
+\subsection{Discussion}
 
-\begin{equation*}
-\begin{aligned}
-\alpha_f=\delta - \arctan \left(\dfrac{l_f \dot{\theta}}{v}+\tan\beta\right) \\
-\alpha_r=\arctan \left(\dfrac{l_r \dot{\theta}}{v}-\tan\beta\right).
-\end{aligned}
-\end{equation*}
+We are now able to describe the movement of the vehicle based on the throttle level and target steering angle inputs. The models of the steering servo and of the DC motor were obtained empirically by measuring the responses of the hardware to the control inputs. Especially the model of the DC motor is interesting, because it predicts the RPM of the motor not only based on the throttle level, but also on the angle of the wheels. This reflects how the vehicle loses its kinetic energy during cornering.
 
-When the vehicle is not moving, and $v=0$, then the slip angles are also equal to zero. From the slip angle, we can calculate the lateral force acting on each of the virtual wheels based on a linear model expressed by the equation:
-
-\begin{equation*}
-F_{yi}=\begin{cases}
-C_a \alpha_i & \alpha_i < \alpha_{max} \\
-C_a \alpha_{max} & \text{otherwise.}
-\end{cases}
-\end{equation*}
-
-where the index $i\in\left\{f,r\right\}$ represents the front or rear tire and $C_a$ is a constant called \textit{cornering stiffness}, which must be determined experimentally.
-
-We will assume that the slip angles $\alpha_f$ and $\alpha_r$ are small and our vehicle does not drift. In the opposite case, our linear tire model would not be able to correctly predict the behavior of the vehicle.
-
-\paragraph{Longitudinal Forces}
-
-The slip ratio, also referred to as longitudinal slip, is the difference between the peripheral velocity of a point at the circumference of the wheel and the velocity at which the vehicle travels during the same time. If the wheels are rolling perfectly, then these velocities will be the same and there will be no slip. When the wheel spins while accelerating it will move at a higher speed than the vehicle and the slip ratio will be positive. The relationship is expressed by the following equation:
-
-\begin{equation*}
-\begin{aligned}
-\omega_w&=(GR)\omega \\
-s&=\begin{cases}
-\dfrac{v - r\omega_w}{v} & \text{if } v > r\omega_w, \\
-\dfrac{r\omega_w - v}{r\omega_w} & \text{otherwise.}
-\end{cases}
-\end{aligned}
-\end{equation*}
-
-where $(GR)\in\mathbb{R}$ is a combined gear ratio of the gearbox and the differential between the motor and the wheels. If the wheels are rolling against the surface, and the slip ratio is zero, then there is no friction force between the tires and the surface and therefore there will be no acceleration as a result. When the wheels are spinning slightly faster and the slip ratio is positive, there will be friction force acting against the direction of the wheel rotation and this force will cause the vehicle to accelerate. We call this force traction force. At a certain slip ratio, the wheels will spin too fast and the vehicle will lose its traction.
-
-Maximum traction force at a wheel is depends on the weight of the vehicle W and the distribution of weight between the front and rear axles. Acceleration and deceleration influence weight distribution between the wheels. The weight distribution in turn affects the maximum traction force that can be exerted by the wheels. We will omit weight transfer for the sake of simplicity, and we divide the weight on each of the axles proportionally to the distance from the center of gravity.
-
-The maximum traction force of a virtual tire depends on the weight of the vehicle and on the weight distribution between the front and rear wheels:
-\begin{equation*}
-F_{max,i}=\mu W_i=\mu \dfrac{l_i}{l_f+l_r} mg,
-\end{equation*}
-
-where $i\in\left\{f,r\right\}$ represents values related to the front or the rear axle and $\mu$ is a friction coefficient between the tires and the road surface. We model the relationship between the slip ratio and the amount of force with a simple linear model expressed with the following equation:
-
-\begin{equation*}
-F_{xi}=\begin{cases}
-C_t s_i &	s_i < s_{max} \\
-F_{max,i} & \text{otherwise,}
-\end{cases}
-\end{equation*}
-
-where $C_t$ is a traction constant which corresponds to the slope of the slip ratio line.
-
-\subsubsection{Parameters}
-
-\todo[inline]{Describe how to identify the parameters.}
-
-Parameters to measure: $m, I_z$.
-
-Parameters to identify: $c_\alpha, c_r, C_a, C_t, \mu$.
-
-Source: \cite{rc_identification}, \cite{rc_identification_2}.
-
-\subsubsection{State Variables}
-
-The dynamic bicycle model requires several extra state variables when compared to the kinematic model. The final state space $X$ would therefore have 2 extra continuous dimensions for the yaw rate $\dot{\theta}$ and the current slip angle $\beta$:
-
-\begin{equation*}
-X=\left\{\left(x,y,\theta,\dot{\theta},v,\beta,\omega,\delta\right)\mid x,y,v,\omega,\dot{\theta}\in\mathbb{R}; \theta,\delta,\beta\in\left[0, 2\pi\right)\right\}.
-\end{equation*}
+Due to our inability to precisely measure the parameters of tire models, we have to use a simplified kinematic model with a no-slip assumption for our experiments. The planner might be too optimistic find trajectories which are too aggressive and the vehicle will not be able to follow them precisely. We would be improve the trajectories found by our planner if we obtained the dynamic model in the future or if we were able to try our algorithm on a different vehicle for which we knew the parameters of a tire model. On the other hand, the dynamic model has two additional dimensions of the state space (the slip angle $\beta$ and the yaw rate $\dot{\theta}$), which will make the computation task harder.
