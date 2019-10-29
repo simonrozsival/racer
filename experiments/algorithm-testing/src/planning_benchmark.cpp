@@ -242,7 +242,7 @@ void test_full_circuit_search(
                     const std::size_t start = 0;
                     const std::size_t lookahead = circuit->waypoints.size();
 
-                    const std::size_t throttle_levels = 5;
+                    const std::size_t throttle_levels = 3;
                     const std::size_t steering_angle_levels = 5;
                     const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 
