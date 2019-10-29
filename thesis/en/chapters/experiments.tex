@@ -20,56 +20,6 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 
 \begin{figure}[!tbp]%
 	\centering
-	\begin{subfigure}[t]{\textwidth}
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-trajectory}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-actuators}
-		\end{subfigure}
-		\caption{Solution found by Hybrid A*}
-		\label{fig:eight-hybrid_astar}
-	\end{subfigure}
-	
-	\vspace{0.75cm}
-	
-	\begin{subfigure}[t]{\textwidth}
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-trajectory}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-actuators}
-		\end{subfigure}
-		\caption{Solution found by SEHS}
-		\label{fig:eight-sehs}
-	\end{subfigure}
-
-	\vspace{0.75cm}
-
-	\begin{subfigure}[t]{\textwidth}
-		\centering
-		\begin{tabular}{l r r r r r}%
-			\toprule
-			Algorithm & Opened & Expanded & Search time & Distance & Lap time \\
-			\midrule
-			Hybrid A* & \bftab \num{188160} & \bftab \num{22173} & \bftab \SI{328.57}{\milli\second} & \SI{40.26}{\meter} & \SI{7.24}{\second} \\
-			SEHS & \num{298325} & \num{36008} & \SI{563.19}{\milli\second} & \bftab \SI{37.77}{\meter} & \bftab \SI{6.88}{\second} \\
-			\bottomrule
-		\end{tabular}
-		\caption{Comparison of the solutions and computation requirements.}
-		\label{table:eight}
-	\end{subfigure}
-
-	\vspace{0.75cm}
-
-	\caption{Track ``Eight''}
-\end{figure}
-
-
-\begin{figure}[!tbp]%
-	\centering
 
 	\begin{subfigure}[t]{\textwidth}
 		\begin{subfigure}[t]{0.45\textwidth}
@@ -217,6 +167,55 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 
 	\caption{Track ``Simple''}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A*}
+		\label{fig:eight-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS}
+		\label{fig:eight-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{l r r r r r}%
+			\toprule
+			Algorithm & Opened & Expanded & Search time & Distance & Lap time \\
+			\midrule
+			Hybrid A* & \bftab \num{188160} & \bftab \num{22173} & \bftab \SI{328.57}{\milli\second} & \SI{40.26}{\meter} & \SI{7.24}{\second} \\
+			SEHS & \num{298325} & \num{36008} & \SI{563.19}{\milli\second} & \bftab \SI{37.77}{\meter} & \bftab \SI{6.88}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Comparison of the solutions and computation requirements.}
+		\label{table:eight}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Track ``Eight''}
 \end{figure}
 
 \begin{figure}[!tbp]%
