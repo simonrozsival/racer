@@ -12,13 +12,25 @@ The parameters of the vehicle chassis and the vehicle model we used are equal to
 
 Both Hybrid A* and \gls*{SEHS} require specification of state space and time discretization parameters. We found that both algorithms performed well with time step $\Delta t=\SI{0.04}{\second}$ (\SI{25}{\hertz}), the heading angle values divided into \num{24} sectors of a circle, and the range of possible values of motor \gls*{RPM} divided into \num{50} sub-ranges. Additionally, the Hybrid A* algorithm splits the $x$ and $y$ coordinates were split into squares with side lengths of $4r$, where $r$ is the radius of the vehicle. The SEHS algorithm discretizes the $xy$ plane by finding a path of circles in the Space Exploration step. We require the radii of the circles to be between $r$ a $4r$
 
-The actions available to the planner were a cross product of 5 throttle levels (\num{-1}, \num{0}, \num{0.33}, \num{0.66}, \num{1}) and 5 target steering angles (\num{-1}, \num{-0.5}, \num{0}, \num{0.5}, \num{1}). This limits the possible maneuvers of the vehicle, but it allows the planner to run reasonably fast.
+The actions available to the planner were a cross product of 3 throttle levels (\num{-1}, \num{0}, \num{1}) and 5 target steering angles (\num{-1}, \num{-0.5}, \num{0}, \num{0.5}, \num{1}). This limits the possible maneuvers of the vehicle, but it allows the planner to run reasonably fast.
 
-For each circuit, we first perform track segmentation, as described in Section~\ref{sec:track_segmentation}, to detect corners which we use as waypoints. We also perform the Space Exploration step of the SEHS algorithm. We then let both algorithms find the near time-optimal trajectory from the initial configuration defined for each circuit to the last waypoint. We measure the number of search nodes the algorithm opens during search, the number of search nodes which are expanded, and also the time it takes to find the solution on a testing computer. Because both of the algorithms are deterministic, they always find the same solution for the same problem and they always open and expand the same number of search nodes. The execution times differ slightly and so we repeat the measurement 100 times and calculate the mean execution time.
+Circuits are represented by an occupancy grid bitmap with a resolution of \SI{0.05}{\meter} per grid cell. For each circuit, we first perform track segmentation, as described in Section~\ref{sec:track_segmentation}, to detect corners which we use as waypoints. We also perform the Space Exploration step of the SEHS algorithm. We then let both algorithms find the near time-optimal trajectory from the initial configuration defined for each circuit to the last waypoint. We measure the number of search nodes the algorithm opens during search, the number of search nodes which are expanded, and also the time it takes to find the solution on a testing computer. Because both of the algorithms are deterministic, they always find the same solution for the same problem and they always open and expand the same number of search nodes. The execution times differ slightly and so we repeat the measurement 100 times and calculate the mean execution time.
 
 The computer we used for measurement uses an Intel Core i5-7200U CPU running at the base clock of \SI{2.71}{\giga\hertz} and 16 GB of DDR4 RAM at the base clock of \SI{2133}{\mega\hertz}. The source code was written in C++ and compiled using GCC 9.2 with the \texttt{-O3} optimization flag.
 
 \subsection{Results}
+
+The results of our experiments are shown in Figure~\ref{fig:porto},~\ref{fig:tornado},~\ref{fig:simple},~\ref{fig:u}, and~\ref{fig:zurich}.
+
+Each figure shows the trajectory as a red curve from the initial configuration (marked with a green arrow) to a final configuration which passes the last waypoint (marked with a red waypoint). The black stars along the trajectory are a visual aid which marks the position of the vehicle every 1 second. The waypoints found by the track segmentation algorithm are marked as blue circles.
+
+The trajectory is plotted over a map of the circuit with white parts showing the road and gray parts the boundaries of the track. As we mentioned earlier, the occupancy grids for the circuits all have resolution of \SI{0.05}{\meter}. Every \num{20} grid cells correspond to \SI{1}{\meter} in real world. Therefore for example the circuit in Figure~\ref{fig:zurich} represents an area of \SI{25}{\meter} $\times$ \SI{25}{\meter}.
+
+Each trajectory is accompanied by three charts, showing the control inputs for the vehicle, the normalized state of the actuators, and the speed profile of the trajectory.
+
+\todo[inline]{Add commentary for the results.}
+
+\todo[inline]{I want to measure this on the Nvidia JETSON next week and replace the measurements done on my laptop.}
 
 \begin{figure}[!tbp]%
 	\centering
@@ -68,6 +80,7 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 	
 	\caption{Track ``Porto''}
+	\label{fig:porto}
 \end{figure}
 
 
@@ -119,6 +132,7 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 	
 	\caption{Track ``Tornado''}
+	\label{fig:tornado}
 \end{figure}
 
 \begin{figure}[!tbp]%
@@ -169,56 +183,58 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 
 	\caption{Track ``Simple''}
+	\label{fig:simple}
 \end{figure}
 
-\begin{figure}[!tbp]%
-	\centering
-	\begin{subfigure}[t]{\textwidth}
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-trajectory}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-actuators}
-		\end{subfigure}
-		\caption{Solution found by Hybrid A*}
-		\label{fig:eight-hybrid_astar}
-	\end{subfigure}
-	
-	\vspace{0.75cm}
-	
-	\begin{subfigure}[t]{\textwidth}
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-trajectory}
-		\end{subfigure}
-		\hfill
-		\begin{subfigure}[t]{0.45\textwidth}
-			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-actuators}
-		\end{subfigure}
-		\caption{Solution found by SEHS}
-		\label{fig:eight-sehs}
-	\end{subfigure}
-	
-	\vspace{0.75cm}
-	
-	\begin{subfigure}[t]{\textwidth}
-		\centering
-		\begin{tabular}{l r r r r r}%
-			\toprule
-			Algorithm & Opened & Expanded & Search time & Distance & Lap time \\
-			\midrule
-			Hybrid A* & \bftab \num{188160} & \bftab \num{22173} & \bftab \SI{328.57}{\milli\second} & \SI{40.26}{\meter} & \SI{7.24}{\second} \\
-			SEHS & \num{298325} & \num{36008} & \SI{563.19}{\milli\second} & \bftab \SI{37.77}{\meter} & \bftab \SI{6.88}{\second} \\
-			\bottomrule
-		\end{tabular}
-		\caption{Comparison of the solutions and computation requirements.}
-		\label{table:eight}
-	\end{subfigure}
-	
-	\vspace{0.75cm}
-	
-	\caption{Track ``Eight''}
-\end{figure}
+%\begin{figure}[!tbp]%
+%	\centering
+%	\begin{subfigure}[t]{\textwidth}
+%		\begin{subfigure}[t]{0.45\textwidth}
+%			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-trajectory}
+%		\end{subfigure}
+%		\hfill
+%		\begin{subfigure}[t]{0.45\textwidth}
+%			\includegraphics[width=\textwidth]{../img/experiments/eight-hybrid_astar-actuators}
+%		\end{subfigure}
+%		\caption{Solution found by Hybrid A*}
+%		\label{fig:eight-hybrid_astar}
+%	\end{subfigure}
+%	
+%	\vspace{0.75cm}
+%	
+%	\begin{subfigure}[t]{\textwidth}
+%		\begin{subfigure}[t]{0.45\textwidth}
+%			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-trajectory}
+%		\end{subfigure}
+%		\hfill
+%		\begin{subfigure}[t]{0.45\textwidth}
+%			\includegraphics[width=\textwidth]{../img/experiments/eight-sehs-actuators}
+%		\end{subfigure}
+%		\caption{Solution found by SEHS}
+%		\label{fig:eight-sehs}
+%	\end{subfigure}
+%	
+%	\vspace{0.75cm}
+%	
+%	\begin{subfigure}[t]{\textwidth}
+%		\centering
+%		\begin{tabular}{l r r r r r}%
+%			\toprule
+%			Algorithm & Opened & Expanded & Search time & Distance & Lap time \\
+%			\midrule
+%			Hybrid A* & \bftab \num{188160} & \bftab \num{22173} & \bftab \SI{328.57}{\milli\second} & \SI{40.26}{\meter} & \SI{7.24}{\second} \\
+%			SEHS & \num{298325} & \num{36008} & \SI{563.19}{\milli\second} & \bftab \SI{37.77}{\meter} & \bftab \SI{6.88}{\second} \\
+%			\bottomrule
+%		\end{tabular}
+%		\caption{Comparison of the solutions and computation requirements.}
+%		\label{table:eight}
+%	\end{subfigure}
+%	
+%	\vspace{0.75cm}
+%	
+%	\caption{Track ``Eight''}
+%   \label{fig:eight}
+%\end{figure}
 
 \begin{figure}[!tbp]%
 	\centering
@@ -268,6 +284,7 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 	
 	\caption{Track ``U''}
+	\label{fig:u}
 \end{figure}
 
 \begin{figure}[!tbp]%
@@ -307,8 +324,8 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 			\toprule
 			Algorithm & Opened & Expanded & Search time & Distance & Lap time \\
 			\midrule
-			Hybrid A* & \num{5934391} & \num{715557} & \SI{13579.90}{\milli\second} & \textbf{\SI{121.58}{\meter}} & \textbf{\SI{20.16}{\second}} \\
-			SEHS & \textbf{\num{1585340}} & \textbf{\num{590288}} & \textbf{\SI{4078.63}{\milli\second}} & \SI{121.61}{\meter} & \SI{20.32}{\second} \\
+			Hybrid A* & \num{5934391} & \num{715557} & \SI{13579.90}{\milli\second} & \bftab \SI{121.58}{\meter} & \bftab \SI{20.16}{\second} \\
+			SEHS & \bftab \num{1585340} & \bftab \num{590288} & \bftab \SI{4078.63}{\milli\second} & \SI{121.61}{\meter} & \SI{20.32}{\second} \\
 			\bottomrule
 		\end{tabular}
 		\caption{Comparison of the solutions and computation requirements.}
@@ -318,9 +335,14 @@ The computer we used for measurement uses an Intel Core i5-7200U CPU running at 
 	\vspace{0.75cm}
 
 	\caption{Track ``Zurich''}
+	\label{fig:zurich}
 \end{figure}
 
 \section{Limited Lookahead Test}
+
+In this test, we try to compare the performance of the algorithms for a shorter part of the track. For each track, we iterate over the corners we detected using the track segmentation algorithm and we use these corners as initial positions for the search algorithm and let it find a near-time optimal trajectory for the next two and three waypoints.
+
+We want to determine if the algorithms are fast enough to find the following trajectories fast as the car is driving along the circuit. The setup for this test is the same as for the previous test.
 
 \todo[inline]{This part is still not finished.}
 
