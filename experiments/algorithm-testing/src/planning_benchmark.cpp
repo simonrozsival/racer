@@ -191,11 +191,10 @@ void run_benchmark_for(
         const auto experiment_name = output::planning::experiment_name(
             algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
 
-        plot_planning_result(
+        plot_trajectory(
             config,
             initial_config,
             measurement_sample->result.found_trajectory,
-            measurement_sample->result.positions_of_expanded_nodes,
             vehicle_model,
             shifted_circut,
             experiment_name);
@@ -242,7 +241,7 @@ void test_full_circuit_search(
                     const std::size_t start = 0;
                     const std::size_t lookahead = circuit->waypoints.size();
 
-                    const std::size_t throttle_levels = 3;
+                    const std::size_t throttle_levels = 5;
                     const std::size_t steering_angle_levels = 5;
                     const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 
@@ -305,7 +304,7 @@ int main(int argc, char *argv[])
     const std::size_t repetitions = static_cast<std::size_t>(atoi(argv[1]));
     const long long milliseconds = static_cast<long long>(atoi(argv[2]));
     const auto time_limit = std::chrono::milliseconds{milliseconds};
-    const auto plot = false;
+    const auto plot = true;
 
     const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
     if (!maybe_configs)

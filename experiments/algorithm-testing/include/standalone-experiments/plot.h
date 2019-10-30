@@ -223,11 +223,11 @@ void plot_trajectory(
 
     // plt::legend();
 
-    // std::stringstream trajectory_file_name;
-    // trajectory_file_name << name << "_trajectory.pdf";
-    // plt::save(trajectory_file_name.str());
+    std::stringstream trajectory_file_name;
+    trajectory_file_name << name << "_trajectory.pdf";
+    plt::save(trajectory_file_name.str());
 
-    plt::show();
+    // plt::show();
 
     // actuators state profile
     plt::subplot(3, 1, 1);
@@ -249,33 +249,13 @@ void plot_trajectory(
 
     plot_points("Speed profile", speed_points, "r-", 1.0);
 
-    // std::stringstream actuators_file_name;
-    // actuators_file_name << name << "_actuators.pdf";
-    // plt::save(actuators_file_name.str());
+    std::stringstream actuators_file_name;
+    actuators_file_name << name << "_actuators.pdf";
+    plt::save(actuators_file_name.str());
 
-    plt::show();
+    // plt::show();
 
     delete[] grid_img;
     delete[] circles_img;
     delete[] waypoints_img;
-}
-
-void plot_planning_result(
-    const track_analysis_input &config,
-    const racer::vehicle_configuration initial_configuration,
-    const racer::trajectory<kinematic::state> &trajectory,
-    const std::vector<racer::math::point> expanded_nodes_positions,
-    const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle,
-    const std::shared_ptr<racer::circuit> circuit,
-    const std::string name)
-{
-    // plot_points("Expanded nodes", expanded_nodes_positions, "y.", config.occupancy_grid->cell_size(), {{"alpha", "0.03"}, {"zorder", "5"}});
-
-    plot_trajectory(
-        config,
-        initial_configuration,
-        trajectory,
-        vehicle,
-        circuit,
-        name);
 }
