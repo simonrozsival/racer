@@ -43,7 +43,7 @@ public:
     {
         std::vector<uint8_t> inflated{data_.begin(), data_.end()}; // start with a copy
         const int r = static_cast<int>(std::ceil(radius / cell_size_));
-        const int r2 = r * r;   
+        const int r2 = r * r;
 
         for (std::size_t i{0}; i < width_; ++i)
         {
@@ -156,6 +156,7 @@ public:
     int rows() const { return height_; }
     int cols() const { return width_; }
     double cell_size() const { return cell_size_; }
+    racer::math::point origin() const { return origin_; }
 
 private:
     double cell_size_, cell_size_sq_;

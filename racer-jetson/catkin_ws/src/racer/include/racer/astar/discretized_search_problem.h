@@ -4,6 +4,7 @@
 
 #include "astar.h"
 #include "racer/vehicle_model/base_model.h"
+#include "racer/track/collision_detection.h"
 #include "racer/circuit.h"
 #include "racer/occupancy_grid.h"
 
@@ -31,13 +32,15 @@ public:
         const std::vector<action> &available_actions,
         const std::shared_ptr<discretization<DiscreteState, State>> discretize,
         const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
-        const std::shared_ptr<racer::circuit> circuit)
+        const std::shared_ptr<racer::circuit> circuit,
+        const std::shared_ptr<racer::track::collision_detection> detector)
         : initial_state_{initial_state},
           time_step_s_(time_step_s),
           vehicle_model_(model),
           available_actions_(available_actions),
           discretize_(discretize),
-          circuit_{circuit}
+          circuit_{circuit},
+          collision_detector_{detector}
     {
     }
 
@@ -62,7 +65,7 @@ public:
                 ++steps;
 
                 const auto next_state = vehicle_model_->predict_next_state(prediction, action, time_step_s_);
-                if (collides(next_state))
+                if (collision_detector_->collides(next_state.configuration()))
                 {
                     skip = true;
                     break;
@@ -140,13 +143,9 @@ private:
     const std::vector<action> available_actions_;
     const std::shared_ptr<discretization<DiscreteState, State>> discretize_;
     const std::shared_ptr<racer::circuit> circuit_;
+    const std::shared_ptr<racer::track::collision_detection> collision_detector_;
 
 private:
-    inline bool collides(const State &examined_state) const
-    {
-        return circuit_->grid->collides(examined_state.position());
-    }
-
     double prepend_states(std::vector<trajectory_step<State>> &path, const search_node<DiscreteState, State> &node, double timestamp) const
     {
         std::vector<trajectory_step<State>> steps;

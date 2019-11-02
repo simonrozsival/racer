@@ -7,7 +7,6 @@
 #include <optional>
 
 #include "racer/math.h"
-#include "racer/circuit.h"
 #include "racer/vehicle_configuration.h"
 #include "racer/occupancy_grid.h"
 

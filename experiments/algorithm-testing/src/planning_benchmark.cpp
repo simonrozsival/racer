@@ -105,6 +105,7 @@ void run_benchmark_for(
     const std::shared_ptr<model> vehicle_model,
     const track_analysis_input &config,
     const std::shared_ptr<racer::circuit> circuit,
+    const std::shared_ptr<racer::track::collision_detection> collision_detector,
     const std::shared_ptr<racer::astar::discretization<DiscreteState, state>> state_discretization,
     const std::vector<racer::action> actions,
     const racer::vehicle_configuration initial_config,
@@ -124,7 +125,8 @@ void run_benchmark_for(
         actions,
         state_discretization,
         vehicle_model,
-        shifted_circut);
+        shifted_circut,
+        collision_detector);
 
     std::vector<double> measurement_times;
     measurement_times.reserve(repetitions);
@@ -166,10 +168,10 @@ void run_benchmark_for(
         return;
     }
 
-    const auto total = std::accumulate(measurement_times.cbegin(), measurement_times.cend(), 0.0);
+    const auto total = std::accumulate(std::begin(measurement_times), std::end(measurement_times), 0.0);
     const auto mean = total / double(measurement_times.size());
 
-    const auto sum_of_squares = std::inner_product(measurement_times.cbegin(), measurement_times.cend(), measurement_times.cbegin(), 0.0);
+    const auto sum_of_squares = std::inner_product(std::begin(measurement_times), std::end(measurement_times), std::begin(measurement_times), 0.0);
     const auto variance = sum_of_squares / double(measurement_times.size()) - mean * mean;
 
     output::planning::print_result(
@@ -228,6 +230,9 @@ void test_full_circuit_search(
                 config->min_distance_between_waypoints,
                 vehicle->radius());
 
+        const auto collision_detector =
+            std::make_shared<racer::track::collision_detection>(config->occupancy_grid, vehicle, 36);
+
         if (!circuit)
         {
             std::cerr << "Track analysis failed for " << config->name << " and it cannot be used for benchmarking (for vehicle radius of " << vehicle->radius() << "m)." << std::endl;
@@ -259,6 +264,7 @@ void test_full_circuit_search(
                             vehicle_model,
                             *config,
                             circuit,
+                            collision_detector,
                             std::move(hybrid_astar),
                             actions,
                             config->initial_position,
@@ -280,6 +286,7 @@ void test_full_circuit_search(
                         vehicle_model,
                         *config,
                         circuit,
+                        collision_detector,
                         std::move(sehs),
                         actions,
                         config->initial_position,
