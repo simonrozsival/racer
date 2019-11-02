@@ -16,8 +16,8 @@ private:
     double x_, y_;
 
 public:
-    vector() : x_{0}, y_{0} {}
-    vector(double x, double y) : x_{x}, y_{y} {}
+    constexpr vector() : x_{0}, y_{0} {}
+    constexpr vector(double x, double y) : x_{x}, y_{y} {}
 
     vector(vector &&vec) = default;
     vector &operator=(vector &&vec) = default;
@@ -25,8 +25,8 @@ public:
     vector(const vector &vec) = default;
     vector &operator=(const vector &vec) = default;
 
-    const double &x() const { return x_; }
-    const double &y() const { return y_; }
+    double x() const { return x_; }
+    double y() const { return y_; }
 
     inline double dot(const vector &other) const
     {
@@ -80,6 +80,11 @@ public:
         return vector(scale * x_, scale * y_);
     }
 
+    inline bool operator<(const vector &other) const
+    {
+        return x_ < other.x_ && y_ < other.y_;
+    }
+
     vector interpolate_with(const vector &other, const double weight, const double weight_other) const
     {
         const double wa = weight / (weight + weight_other);
@@ -114,7 +119,8 @@ public:
         return std::atan2(y_, x_);
     }
 
-    friend std::ostream &operator<<(std::ostream &os, const vector &m) { 
+    friend std::ostream &operator<<(std::ostream &os, const vector &m)
+    {
         return os << "[" << m.x_ << ", " << m.y_ << "]";
     }
 };
@@ -124,18 +130,19 @@ typedef vector point; // alias
 struct rectangle
 {
     const point A, B, C, D;
+
     rectangle(point a, point b, point c, point d)
-        : A(a), B(b), C(c), D(d)
+        : A{a}, B{b}, C{c}, D{d}
     {
     }
 
     rectangle rotate(double radians) const
     {
-        return rectangle(
+        return {
             A.rotate(radians),
             B.rotate(radians),
             C.rotate(radians),
-            D.rotate(radians));
+            D.rotate(radians)};
     }
 
     bool intersects(const rectangle &other) const
@@ -239,6 +246,16 @@ public:
                    : radians_;
     }
 
+    inline angle to_normal_angle() const
+    {
+        double r = radians_;
+        while (r < 0)
+            r += 2 * M_PI;
+        while (r >= 2 * M_PI)
+            r -= 2 * M_PI;
+        return r;
+    }
+
     inline double to_degrees() const
     {
         return radians_ / M_PI * 180.0;
@@ -289,8 +306,8 @@ public:
         return points;
     }
 
-    const racer::math::point &center() const { return center_; }
-    const double &radius() const { return radius_; }
+    const racer::math::point center() const { return center_; }
+    const double radius() const { return radius_; }
 
     bool overlaps_with(const circle &other) const
     {
