@@ -25,6 +25,7 @@ public:
 
     const std::vector<point> find_pivot_points(
         const std::vector<circle> &circle_path,
+        const std::vector<point> &checkpoints,
         const std::shared_ptr<racer::occupancy_grid> grid) const
     {
         std::vector<point> pivot_points;
@@ -35,7 +36,9 @@ public:
         // first iteration
         for (const auto &next_step : circle_path)
         {
-            if (!grid->are_directly_visible(last_circle->center(), next_step.center()))
+            bool are_directly_visible = grid->are_directly_visible(last_circle->center(), next_step.center());
+            bool contains_checkpoint = std::any_of(std::begin(checkpoints), std::end(checkpoints), [&](point c) { return next_step.contains(c); });
+            if (!are_directly_visible || contains_checkpoint)
             {
                 pivot_points.push_back(prev_circle->center());
                 last_circle = std::move(prev_circle);

@@ -107,7 +107,7 @@ private:
     final_check_points.push_back(current_configuration.location()); // back to the start
 
     const auto path = space_exploration.explore_grid(grid_, current_configuration, final_check_points);
-    const auto pivot_points = analysis.find_pivot_points(path, grid_);
+    const auto pivot_points = analysis.find_pivot_points(path, final_check_points, grid_);
     const auto apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
 
     if (apexes.size() == 0)
