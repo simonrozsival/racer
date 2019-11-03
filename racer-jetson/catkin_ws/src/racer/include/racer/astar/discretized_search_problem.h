@@ -132,8 +132,7 @@ public:
 
     std::unique_ptr<search_node<DiscreteState, State>> initial_search_node() const override
     {
-        return search_node<DiscreteState, State>::for_initial_state(
-            discretize(initial_state_), initial_state_);
+        return search_node<DiscreteState, State>::for_initial_state(discretize(initial_state_), initial_state_);
     }
 
 private:

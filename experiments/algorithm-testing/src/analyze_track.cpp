@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
   std::cout << "RUN find pivot points" << std::endl;
   const auto find_pivot_points_start = std::chrono::steady_clock::now();
   racer::track_analysis analysis(config->min_distance_between_waypoints);
-  const auto raw_waypoints = analysis.find_pivot_points(circles, config->occupancy_grid);
+  const auto raw_waypoints = analysis.find_pivot_points(circles, config->checkpoints, config->occupancy_grid);
   stop_stopwatch("find pivot points", find_pivot_points_start);
 
   // Step 3

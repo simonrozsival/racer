@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
         {
             const auto start = std::chrono::steady_clock::now();
             racer::track_analysis analysis(config->min_distance_between_waypoints);
-            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i], config->occupancy_grid);
+            const auto pivot_points = analysis.find_pivot_points(paths_of_circles[i], config->checkpoints, config->occupancy_grid);
 
             const auto end = std::chrono::steady_clock::now();
             const auto t = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
