@@ -7,6 +7,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
+#include "racer/occupancy_grid.h"
 #include "racer/astar/astar.h"
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
