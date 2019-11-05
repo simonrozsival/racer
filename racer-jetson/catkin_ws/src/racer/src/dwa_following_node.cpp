@@ -45,12 +45,14 @@ void spin(
     const ros::Publisher command_pub,
     const ros::Publisher visualization_pub)
 {
+  std::cout << "Spin" << std::endl;
   ros::Rate rate(frequency);
 
   while (ros::ok())
   {
     if (follower.is_initialized())
     {
+      std::cout << "initialized!" << std::endl;
       auto action = follower.select_driving_command();
       if (!action.is_valid())
       {
@@ -222,7 +224,7 @@ int main(int argc, char *argv[])
   std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
     racer::vehicle_model::vehicle_chassis::rc_beast();
 
-  auto model = std::make_unique<racer::vehicle_model::kinematic::model>(std::move(vehicle));
+  auto model = std::make_unique<racer::vehicle_model::kinematic::model>(vehicle);
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
