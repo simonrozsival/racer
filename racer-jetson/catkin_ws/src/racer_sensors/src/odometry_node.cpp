@@ -42,19 +42,21 @@ int main(int argc, char **argv)
   tf::TransformBroadcaster odom_broadcaster;
 
   OdometrySubject odometry_subject(
-    gear_ratio, model, odometry_frame, base_link, odom_broadcaster, odometry_pub);  
+      gear_ratio, model, odometry_frame, base_link, odom_broadcaster, odometry_pub);
 
   ros::Subscriber steering_sub = nh.subscribe<geometry_msgs::Twist>(
-    driving_topic, 1, &OdometrySubject::process_steering_command, &odometry_subject);
+      driving_topic, 1, &OdometrySubject::process_steering_command, &odometry_subject);
 
   ros::Subscriber wheel_encoders_sub = nh.subscribe<std_msgs::Float64>(
-    wheel_encoders_topic, 1, &OdometrySubject::process_wheel_odometry, &odometry_subject);
+      wheel_encoders_topic, 1, &OdometrySubject::process_wheel_odometry, &odometry_subject);
 
   ros::Rate loop_rate(40);
 
-  while (ros::ok()) {
+  while (ros::ok())
+  {
     odometry_subject.publish_odometry();
-    if(publish_tf) {
+    if (publish_tf)
+    {
       odometry_subject.publish_tf();
     }
 
