@@ -18,7 +18,6 @@ class collision_detection
 
 private:
     std::shared_ptr<occupancy_grid> original_grid_;
-    std::shared_ptr<occupancy_grid> inflated_grid_inner_radius_;
     std::shared_ptr<occupancy_grid> inflated_grid_outer_radius_;
 
     std::vector<footprint> footprints_;
@@ -30,11 +29,7 @@ public:
         const std::size_t precision)
         : original_grid_{grid}
     {
-        auto inner_radius = std::min(chassis->width, chassis->length) / 2;
-        auto outer_radius = chassis->radius();
-
-        inflated_grid_inner_radius_ = grid->inflate(inner_radius);
-        inflated_grid_outer_radius_ = grid->inflate(outer_radius);
+        inflated_grid_outer_radius_ = grid->inflate(chassis->radius());
 
         const double step = 2 * M_PI / double(precision);
         for (double angle = 0; angle < 2 * M_PI; angle += step)
@@ -46,7 +41,7 @@ public:
 
     bool collides(const racer::vehicle_configuration &configuration) const
     {
-        return maybe_collides(configuration) && (definitely_collides(configuration) || checked_precisely_if_collides(configuration));
+        return maybe_collides(configuration) && definitely_collides(configuration);
     }
 
 private:
@@ -56,11 +51,6 @@ private:
     }
 
     bool definitely_collides(const racer::vehicle_configuration &configuration) const
-    {
-        return inflated_grid_inner_radius_->collides(configuration.location());
-    }
-
-    bool checked_precisely_if_collides(const racer::vehicle_configuration &configuration) const
     {
         auto fp = footprint_for(configuration.heading_angle());
         return std::any_of(
@@ -80,7 +70,7 @@ private:
     static footprint calculate_footprint_of(double angle, std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, double cell_size)
     {
         std::list<racer::math::point> cells;
-
+oval
         double a = chassis->wheelbase + cell_size / 2;
         double b = chassis->width + cell_size / 2;
 
