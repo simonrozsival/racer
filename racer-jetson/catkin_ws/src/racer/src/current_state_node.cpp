@@ -17,68 +17,53 @@
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
-double max_steering_angle;
+double shaft_to_motor_ratio;
 
-// current state
-std::unique_ptr<racer::vehicle_configuration> prev_position;
-double prev_position_time;
-ros::Time prev_transform_stamp;
+// motor
+double last_rpm_update_time = 0;
+double revolutions = 0;
+double current_motor_rpm = 0;
 
-double current_target_steering_angle;
+// servo
+double last_servo_update_time = 0;
+racer::math::angle current_steering_angle = 0;
+auto servo = racer::vehicle_model::steering_servo_model::with_fitted_values();
+
 uint32_t msg_seq;
-
 bool is_initialized;
 
 void command_callback(const geometry_msgs::Twist::ConstPtr &command)
 {
-  const double target_steering_angle_percent = command->angular.z;
+  const auto t = command.header.stamp.toSec();
 
-  current_target_steering_angle = target_steering_angle_percent * max_steering_angle;
-}
-
-double fix_angle(double angle)
-{
-  while (angle < 0)
-    angle += 2 * M_PI;
-  while (angle > 2 * M_PI)
-    angle -= 2 * M_PI;
-  return angle;
-}
-
-double angle_difference(double alpha, double beta)
-{
-  alpha = fix_angle(alpha);
-  beta = fix_angle(beta);
-
-  return std::min(fix_angle(alpha - beta), fix_angle(beta - alpha));
-}
-
-double get_current_speed(const racer::vehicle_configuration current_position)
-{
-  double now = ros::Time().now().toSec();
-  double current_speed = 0;
-
-  if (prev_position)
+  if (last_servo_update_time > 0)
   {
-    racer::math::vector delta = current_position.location() - prev_position->location();
-    double direction = angle_difference(delta.angle(), prev_position->heading_angle()) < (M_PI / 2) ? 1.0 : -1.0;
-    double elapsed_time = now - prev_position_time;
-
-    current_speed = direction * delta.length() / elapsed_time;
-
-    if (std::abs(current_speed) < 1e-3)
-    {
-      current_speed = 0;
-    }
+    const auto dt = t - last_servo_update_time;
+    racer::action action{command->linear.x, command->angular.z};
+    current_steering_angle = servo->predict_next_state(current_steering_angle, action, dt);
   }
 
-  prev_position_time = now;
-  prev_position = std::make_unique<racer::vehicle_configuration>(current_position);
-
-  return current_speed;
+  last_servo_update_time = t;
 }
 
-racer::vehicle_configuration get_current_position(const tf::Transform &transform)
+void wheel_encoder_callback(const std_msgs::Float64::ConstPtr &revolutions)
+{
+  const double revs = revolutions->data * shaft_to_motor_ratio;
+  const double t = ros::Time::now().toSec();
+
+  if (last_rpm_update_time > 0)
+  {
+    const auto dt = t - last_rpm_update_time;
+    const auto drevs = revs - revolutions;
+    const auto revs_per_second = drevs / dt;
+    current_motor_rpm = revs_per_second * 60;
+  }
+
+  revolutions = revs;
+  last_rpm_update_time = t;
+}
+
+racer::vehicle_configuration get_current_configuration(const tf::Transform &transform)
 {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
@@ -88,19 +73,20 @@ racer::vehicle_configuration get_current_position(const tf::Transform &transform
 
 void publish_state(
     const ros::Publisher &state_pub,
-    const racer::vehicle_configuration &position,
-    const double current_speed)
+    const racer::vehicle_configuration &configuration,
+    const double current_rpm,
+    const double current_steering_angle)
 {
   racer_msgs::State state;
   state.header.seq = msg_seq++;
   state.header.frame_id = odom_frame_id;
   state.header.stamp = ros::Time::now();
 
-  state.x = position.location().x();
-  state.y = position.location().y();
-  state.heading_angle = position.heading_angle();
-  state.speed = current_speed;
-  state.steering_angle = current_target_steering_angle;
+  state.x = configuration.location().x();
+  state.y = configuration.location().y();
+  state.heading_angle = configuration.heading_angle();
+  state.motor_rpm = current_motor_rpm;
+  state.steering_angle = current_steering_angle;
 
   state_pub.publish(state);
 }
@@ -122,13 +108,8 @@ void spin(const int frequency, const ros::Publisher &state_pub)
         tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), odom_to_base_link);
         tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
-        if (odom_to_base_link.stamp_ != prev_transform_stamp)
-        {
-          const auto position = get_current_position(map_to_odom * odom_to_base_link);
-          const auto current_speed = get_current_speed(position);
-          publish_state(state_pub, position, current_speed);
-          prev_transform_stamp = odom_to_base_link.stamp_;
-        }
+        const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
+        publish_state(state_pub, configuration, current_rpm, current_steering_angle);
       }
       catch (tf::TransformException ex)
       {
@@ -158,16 +139,17 @@ int main(int argc, char *argv[])
   ros::NodeHandle node("~");
 
   // load parameters
-  std::string odom_topic, command_topic, state_topic;
+  std::string odom_topic, command_topic, wheel_encoder_topic, state_topic;
 
   node.param<std::string>("command_topic", command_topic, "/racer/commands");
+  node.param<std::string>("wheel_encoder_topic", wheel_encoder_topic, "/racer/wheel_encoders");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
   node.param<std::string>("odom_frame_id", odom_frame_id, "odom");
   node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
-  node.param<double>("max_steering_angle", max_steering_angle, 24.0 / 180.0 * M_PI);
+  node.param<double>("shaft_to_motor_ratio", shaft_to_motor_ratio, 3.0);
 
   int frequency;
   node.param<int>("frequency", frequency, 30);
@@ -178,6 +160,7 @@ int main(int argc, char *argv[])
 
   // set up pubsub
   ros::Subscriber command_sub = node.subscribe<geometry_msgs::Twist>(command_topic, 1, command_callback);
+  ros::Subscriber wheel_encoder_sub = node.subscribe<std_msgs::Float64>(wheel_encoder_topic, 1, wheel_encoder_callback);
   ros::Publisher state_pub = node.advertise<racer_msgs::State>(state_topic, 1, false);
 
   spin(frequency, state_pub);
