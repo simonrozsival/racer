@@ -11,7 +11,7 @@
 
 #include "standalone-experiments/input.h"
 #include "standalone-experiments/output.h"
-#include "standalone-experiments/plot.h"
+// #include "standalone-experiments/plot.h"
 
 #include "racer/math.h"
 #include "racer/action.h"
@@ -190,13 +190,13 @@ void run_benchmark_for(
         const auto experiment_name = output::planning::experiment_name(
             algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
 
-        plot_trajectory(
-            config,
-            initial_config,
-            measurement_sample->result.found_trajectory,
-            vehicle_model,
-            shifted_circut,
-            experiment_name);
+//plot_trajectory(
+//            config,
+//            initial_config,
+//            measurement_sample->result.found_trajectory,
+//            vehicle_model,
+//            shifted_circut,
+//            experiment_name);
     }
 }
 
@@ -244,7 +244,7 @@ void test_full_circuit_search(
                     const std::size_t lookahead = 3;
                     const auto initial_configuration = racer::vehicle_configuration{circuit->waypoints[start], circuit->aligned_angle_at(start)};
 
-                    const std::size_t throttle_levels = 5;
+                    const std::size_t throttle_levels = 3;
                     const std::size_t steering_angle_levels = 5;
                     const auto actions = racer::action::create_actions(throttle_levels, steering_angle_levels);
 

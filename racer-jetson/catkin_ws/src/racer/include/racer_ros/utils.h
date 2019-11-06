@@ -54,6 +54,7 @@ racer::trajectory<kinematic::state> msg_to_trajectory(
     {
         steps.emplace_back(
             pose_and_twist_to_state(step.pose, step.velocity),
+            racer::action(0, 0),
             step.next_waypoint.data,
             t++ * time_step_s);
     }
