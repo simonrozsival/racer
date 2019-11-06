@@ -52,7 +52,7 @@ void state_update(const racer_msgs::State::ConstPtr &state)
   std::lock_guard<std::mutex> guard(lock);
 
   racer::vehicle_configuration position{state->x, state->y, state->heading_angle};
-  last_known_state = {position, state->speed, state->steering_angle};
+  last_known_state = {position, state->motor_rpm, state->steering_angle};
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
