@@ -10,10 +10,14 @@
 
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <std_msgs/Float64.h>
 #include <racer_msgs/State.h>
 
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
+#include "racer/vehicle_model/motor_model.h"
+#include "racer/vehicle_model/steering_servo_model.h"
+#include "racer/vehicle_model/kinematic_model.h"
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
@@ -32,23 +36,23 @@ auto servo = racer::vehicle_model::steering_servo_model::with_fitted_values();
 uint32_t msg_seq;
 bool is_initialized;
 
-void command_callback(const geometry_msgs::Twist::ConstPtr &command)
+void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
 {
-  const auto t = command.header.stamp.toSec();
+  const auto t = ros::Time::now().toSec();
 
   if (last_servo_update_time > 0)
   {
     const auto dt = t - last_servo_update_time;
-    racer::action action{command->linear.x, command->angular.z};
+    racer::action action{msg->linear.x, msg->angular.z};
     current_steering_angle = servo->predict_next_state(current_steering_angle, action, dt);
   }
 
   last_servo_update_time = t;
 }
 
-void wheel_encoder_callback(const std_msgs::Float64::ConstPtr &revolutions)
+void wheel_encoder_callback(const std_msgs::Float64::ConstPtr &msg)
 {
-  const double revs = revolutions->data * shaft_to_motor_ratio;
+  const double revs = msg->data * shaft_to_motor_ratio;
   const double t = ros::Time::now().toSec();
 
   if (last_rpm_update_time > 0)
@@ -109,7 +113,7 @@ void spin(const int frequency, const ros::Publisher &state_pub)
         tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
         const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
-        publish_state(state_pub, configuration, current_rpm, current_steering_angle);
+        publish_state(state_pub, configuration, current_motor_rpm, current_steering_angle);
       }
       catch (tf::TransformException ex)
       {
@@ -149,7 +153,7 @@ int main(int argc, char *argv[])
   node.param<std::string>("odom_frame_id", odom_frame_id, "odom");
   node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
-  node.param<double>("shaft_to_motor_ratio", shaft_to_motor_ratio, 3.0);
+  node.param<double>("shaft_to_motor_ratio", shaft_to_motor_ratio, 3.4);
 
   int frequency;
   node.param<int>("frequency", frequency, 30);

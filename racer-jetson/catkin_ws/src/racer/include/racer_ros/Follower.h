@@ -48,7 +48,7 @@ public:
   void state_observed(const racer_msgs::State::ConstPtr &state)
   {
     racer::vehicle_configuration position = {state->x, state->y, state->heading_angle};
-    state_ = {position, state->speed, state->steering_angle};
+    state_ = {position, state->motor_rpm, state->steering_angle};
   }
 
   void map_observed(const nav_msgs::OccupancyGrid::ConstPtr &map)

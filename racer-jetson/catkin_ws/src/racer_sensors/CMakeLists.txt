@@ -42,6 +42,7 @@ catkin_package(
 # Your package locations should be listed before other locations
 include_directories(
   include
+  ../racer/include
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -53,7 +54,7 @@ include_directories(
 # Declare a C++ executable
 # With catkin_make all packages are built within a single CMake context
 # The recommended prefix ensures that target names across packages don't collide
-add_executable(odometry_node src/odometry_node.cpp src/OdometrySubject.cpp src/VehicleModel.cpp)
+add_executable(odometry_node src/odometry_node.cpp src/odometry_subject.cpp)
 add_executable(fix_imu src/fix_imu.cpp)
 
 # Add cmake target dependencies of the executable
