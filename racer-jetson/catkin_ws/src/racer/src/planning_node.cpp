@@ -19,6 +19,7 @@
 #include "racer/sehs/space_exploration.h"
 #include "racer/astar/sehs.h"
 #include "racer/track_analysis.h"
+#include "racer/track/collision_detection.h"
 
 #include "racer_ros/utils.h"
 #include "racer_ros/Planner.h"
@@ -31,6 +32,7 @@ using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
 State last_known_state;
 std::shared_ptr<racer::occupancy_grid> occupancy_grid;
 std::shared_ptr<racer::circuit> circuit;
+std::shared_ptr<racer::track::collision_detection> collision_detector;
 
 int next_waypoint;
 double waypoint_radius;
@@ -50,7 +52,7 @@ void state_update(const racer_msgs::State::ConstPtr &state)
   std::lock_guard<std::mutex> guard(lock);
 
   racer::vehicle_configuration position{state->x, state->y, state->heading_angle};
-  last_known_state = {position, state->motor_rpm, state->steering_angle};
+  last_known_state = {position, state->speed, state->steering_angle};
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
@@ -66,6 +68,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
     next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 
+  collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
   circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
 
   // Space Exploration
@@ -148,10 +151,10 @@ int main(int argc, char *argv[])
     {
       std::lock_guard<std::mutex> guard(lock);
       const auto trajectory = planner->plan(
-          occupancy_grid,
           last_known_state,
           actions,
           circuit,
+          collision_detector,
           next_waypoint);
 
       if (!trajectory)

@@ -14,4 +14,6 @@
     <param name="imu_output_topic" value="/imu_data" />
     <param name="covariance" value="0.001" />
   </node>
+
+  <node pkg="tf" type="static_transform_publisher" name="base_link_2_imu" args="0 0 0 0 0 0 base_link imu 20" />
 </launch>
