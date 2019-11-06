@@ -14,8 +14,8 @@
 #include "racer/action.h"
 #include "racer/trajectory.h"
 #include "racer/vehicle_model/kinematic_model.h"
-#include "racer/occupancy_grid.h"
 #include "racer/vehicle_configuration.h"
+#include "racer/track/collision_detection.h"
 
 #include "racer/astar/discretized_search_problem.h"
 #include "racer/astar/sehs.h"
@@ -41,10 +41,10 @@ public:
   }
 
   std::unique_ptr<racer_msgs::Trajectory> plan(
-      std::shared_ptr<racer::occupancy_grid> grid,
       const State &initial_state,
       const std::vector<racer::action> &available_actions,
       const std::shared_ptr<racer::circuit> circuit,
+      const std::shared_ptr<racer::track::collision_detection> collision_detector,
       const int next_waypoint) const
   {
     auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, State>>(
@@ -53,7 +53,8 @@ public:
         available_actions,
         discretization_,
         model_,
-        circuit);
+        circuit,
+        collision_detector);
 
     const auto result = racer::astar::search<DiscreteState, State>(
         std::move(problem),
