@@ -29,7 +29,8 @@ public:
         const std::size_t precision)
         : original_grid_{grid}
     {
-        inflated_grid_outer_radius_ = grid->inflate(chassis->radius());
+        auto outer_radius = chassis->radius();
+        inflated_grid_outer_radius_ = grid->inflate(outer_radius);
 
         const double step = 2 * M_PI / double(precision);
         for (double angle = 0; angle < 2 * M_PI; angle += step)
