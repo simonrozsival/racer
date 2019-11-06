@@ -71,7 +71,7 @@ private:
     static footprint calculate_footprint_of(double angle, std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, double cell_size)
     {
         std::list<racer::math::point> cells;
-oval
+
         double a = chassis->wheelbase + cell_size / 2;
         double b = chassis->width + cell_size / 2;
 
