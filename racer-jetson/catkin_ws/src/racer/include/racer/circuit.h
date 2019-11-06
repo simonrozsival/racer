@@ -115,9 +115,7 @@ public:
         }
 
         auto waypoints = analysis.find_corners(analysis.find_pivot_points(circle_path, checkpoints, occupancy_grid), max_angle);
-        waypoints.push_back(initial_configuration.location());
-
-        return std::make_unique<circuit>(waypoints, 2, occupancy_grid);
+        return std::make_unique<circuit>(waypoints, min_distance_between_waypoints, occupancy_grid);
     }
 };
 

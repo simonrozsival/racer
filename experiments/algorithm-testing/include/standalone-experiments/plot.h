@@ -8,7 +8,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wregister"
-#include "matplotlib-cpp/matplotlibcpp.h"
+#include "matplotlibcpp/matplotlibcpp.h"
 #pragma GCC diagnostic pop
 
 #include "standalone-experiments/input.h"

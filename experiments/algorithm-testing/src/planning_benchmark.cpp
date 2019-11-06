@@ -40,18 +40,15 @@ std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>> create
     const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
-    const auto exploration = racer::sehs::space_exploration{2.0 * vehicle.radius(), 4.0 * vehicle.radius(), config.neighbor_circles};
+    const auto exploration = racer::sehs::space_exploration{vehicle.radius(), 4.0 * vehicle.radius(), config.neighbor_circles};
     const auto circle_path = exploration.explore_grid(config.occupancy_grid, config.initial_position, config.checkpoints);
-    if (circle_path.empty())
-    {
-        std::cout << config.name << ": space exploration failed. Planning cannot proceed." << std::endl;
-        return nullptr;
-    }
-
-    return std::make_unique<sehs_discretization>(
-        circle_path,
-        2 * M_PI / double(heading_angle_bins),
-        vehicle.motor->max_rpm() / double(motor_rpm_bins));
+    
+    return circle_path.empty()
+        ? nullptr
+        : std::make_unique<sehs_discretization>(
+            circle_path,
+            2 * M_PI / double(heading_angle_bins),
+            vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
 
 std::unique_ptr<racer::astar::discretization<hybrid_astar_discrete_state, state>> create_hybrid_astar_discretization(
@@ -118,7 +115,7 @@ void run_benchmark_for(
 {
     const auto initial_state = state{initial_config};
 
-    const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start, lookahead);
+    const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
     auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
         initial_state,
         time_step_s,
@@ -214,7 +211,7 @@ void test_full_circuit_search(
     const auto vehicle_model = std::make_shared<model>(vehicle);
 
     const std::vector<std::size_t> heading_angles{24};
-    const std::vector<std::size_t> motor_rpms{50};
+    const std::vector<std::size_t> motor_rpms{30};
     const std::vector<double> cell_size_coefficients{4};
     const std::vector<double> frequencies{25.0};
 
@@ -239,12 +236,13 @@ void test_full_circuit_search(
             return;
         }
 
+        for (std::size_t start = 0; start < circuit->waypoints.size(); ++start)
         for (const auto heading_angle_bins : heading_angles)
             for (const auto motor_rpm_bins : motor_rpms)
                 for (const auto frequency : frequencies)
                 {
-                    const std::size_t start = 0;
-                    const std::size_t lookahead = circuit->waypoints.size();
+                    const std::size_t lookahead = 3;
+                    const auto initial_configuration = racer::vehicle_configuration{circuit->waypoints[start], circuit->aligned_angle_at(start)};
 
                     const std::size_t throttle_levels = 5;
                     const std::size_t steering_angle_levels = 5;
@@ -267,7 +265,7 @@ void test_full_circuit_search(
                             collision_detector,
                             std::move(hybrid_astar),
                             actions,
-                            config->initial_position,
+                            initial_configuration,
                             start,
                             lookahead,
                             time_step_s,
@@ -281,6 +279,13 @@ void test_full_circuit_search(
                         *vehicle,
                         heading_angle_bins,
                         motor_rpm_bins);
+
+                    if (!sehs)
+                    {
+                        std::cerr << "SE failed and HS will be skipped." << std::endl;
+                        continue;
+                    }
+
                     run_benchmark_for<sehs_discrete_state>(
                         "sehs",
                         vehicle_model,
@@ -289,7 +294,7 @@ void test_full_circuit_search(
                         collision_detector,
                         std::move(sehs),
                         actions,
-                        config->initial_position,
+                        initial_configuration,
                         start,
                         lookahead,
                         time_step_s,
