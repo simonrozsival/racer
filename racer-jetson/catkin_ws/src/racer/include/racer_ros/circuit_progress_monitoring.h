@@ -107,12 +107,25 @@ private:
     final_check_points.push_back(current_configuration.location()); // back to the start
 
     const auto path = space_exploration.explore_grid(grid_, current_configuration, final_check_points);
-    const auto pivot_points = analysis.find_pivot_points(path, final_check_points, grid_);
-    const auto apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
-
-    if (apexes.size() == 0)
+    if (path.empty())
     {
-      ROS_DEBUG("cannot find apexes - there might not be enough room for the careful algorithm to fit ghe car through");
+      ROS_ERROR("cannot find path of circles - there might not be enough room for the careful algorithm to fit the car through");
+      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+      return;
+    }
+
+    const auto pivot_points = analysis.find_pivot_points(path, final_check_points, grid_);
+    if (pivot_points.empty())
+    {
+      ROS_ERROR("cannot find pivot points");
+      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+      return;
+    }
+
+    const auto apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
+    if (apexes.empty())
+    {
+      ROS_ERROR("cannot find any corners of the track");
       ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
       return;
     }
