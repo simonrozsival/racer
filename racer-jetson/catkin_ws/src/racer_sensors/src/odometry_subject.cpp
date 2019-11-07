@@ -112,7 +112,7 @@ void odometry_subject::publish_state_estimate(
 
     //set the velocity
     odom.child_frame_id = base_link_;
-    odom.twist.twist.linear.x = current_rpm_; // vehicle_model_->calculate_speed_with_no_slip_assumption(current_rpm_);
+    odom.twist.twist.linear.x = vehicle_model_->calculate_speed_with_no_slip_assumption(current_rpm_);
     odom.twist.twist.linear.y = 0;
     odom.twist.twist.angular.z = angular_velocity;
 
