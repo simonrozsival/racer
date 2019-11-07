@@ -57,7 +57,7 @@ void odometry_subject::process_wheel_odometry(const std_msgs::Float64::ConstPtr 
     last_motor_update_time_ = t;
 }
 
-void odometry_subject::publish_odometry()
+void odometry_subject::publish_odometry(bool publish_tf)
 {
     std::lock_guard<std::mutex> guard(lock_);
 
@@ -72,26 +72,26 @@ void odometry_subject::publish_odometry()
     configuration_ = prediction.configuration();
 
     last_update_time_ = ros::Time::now().toSec();
-}
 
-void odometry_subject::publish_tf()
-{
-    //since all odometry is 6DOF we'll need a quaternion created from yaw$
-    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(configuration_.heading_angle());
+    if (publish_tf)
+    {
+        //since all odometry is 6DOF we'll need a quaternion created from yaw$
+        geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(configuration_.heading_angle());
 
-    //first, we'll publish the transform over tf$
-    geometry_msgs::TransformStamped odom_trans;
-    odom_trans.header.stamp = ros::Time::now();
-    odom_trans.header.frame_id = odometry_frame_;
-    odom_trans.child_frame_id = base_link_;
+        //first, we'll publish the transform over tf$
+        geometry_msgs::TransformStamped odom_trans;
+        odom_trans.header.stamp = ros::Time::now();
+        odom_trans.header.frame_id = odometry_frame_;
+        odom_trans.child_frame_id = base_link_;
 
-    odom_trans.transform.translation.x = configuration_.location().x();
-    odom_trans.transform.translation.y = configuration_.location().y();
-    odom_trans.transform.translation.z = 0.0;
-    odom_trans.transform.rotation = odom_quat;
+        odom_trans.transform.translation.x = configuration_.location().x();
+        odom_trans.transform.translation.y = configuration_.location().y();
+        odom_trans.transform.translation.z = 0.0;
+        odom_trans.transform.rotation = odom_quat;
 
-    //send the transform$
-    transform_broadcaster_.sendTransform(odom_trans);
+        //send the transform$
+        transform_broadcaster_.sendTransform(odom_trans);
+    }
 }
 
 void odometry_subject::publish_state_estimate(
