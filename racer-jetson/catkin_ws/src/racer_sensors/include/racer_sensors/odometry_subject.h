@@ -20,11 +20,10 @@ public:
         const std::string &odometry_frame,
         const std::string &base_link,
         tf::TransformBroadcaster &transform_broadcaster,
-        ros::Publisher &odometry_topic);
+        ros::Publisher &odometry_topicbase_link);
     void process_steering_command(const geometry_msgs::Twist::ConstPtr &msg);
     void process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg);
-    void publish_odometry();
-    void publish_tf();
+    void publish_odometry(bool publish_tf);
 
 private:
     void publish_state_estimate(

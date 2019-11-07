@@ -51,11 +51,7 @@ int main(int argc, char **argv)
 
   while (ros::ok())
   {
-    subject.publish_odometry();
-    if (publish_tf)
-    {
-      subject.publish_tf();
-    }
+    subject.publish_odometry(publish_tf);
 
     ros::spinOnce();
     loop_rate.sleep();
