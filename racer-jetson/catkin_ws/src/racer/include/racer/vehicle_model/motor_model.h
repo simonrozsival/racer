@@ -34,7 +34,7 @@ public:
 
     inline bool operator==(double other_rpm) const
     {
-        return std::abs(rpm_ - other_rpm) < 1e-5;
+        return std::abs(rpm_ - other_rpm) < 1e-3;
     }
 
     rpm operator+(const rpm &other) const
@@ -82,7 +82,7 @@ public:
         const double normalized_load_torque = load_torque(normalize_rpm(state), action.target_steering_angle());
         const double normalized_rpm_change_rate = (normalized_drive_torque - normalized_load_torque) / x_[1];
 
-        return double(state) + normalized_rpm_change_rate * max_rpm_ * dt;
+        return std::max(0.0, double(state) + normalized_rpm_change_rate * max_rpm_ * dt);
     }
 
 private:

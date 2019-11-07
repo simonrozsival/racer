@@ -11,7 +11,7 @@
 
 #include "standalone-experiments/input.h"
 #include "standalone-experiments/output.h"
-// #include "standalone-experiments/plot.h"
+#include "standalone-experiments/plot.h"
 
 #include "racer/math.h"
 #include "racer/action.h"
@@ -190,13 +190,13 @@ void run_benchmark_for(
         const auto experiment_name = output::planning::experiment_name(
             algorithm, config.name, actions.size(), start, lookahead, time_step_s, state_discretization->description());
 
-//plot_trajectory(
-//            config,
-//            initial_config,
-//            measurement_sample->result.found_trajectory,
-//            vehicle_model,
-//            shifted_circut,
-//            experiment_name);
+        plot_trajectory(
+              config,
+              initial_config,
+              measurement_sample->result.found_trajectory,
+              vehicle_model,
+              shifted_circut,
+              experiment_name);
     }
 }
 
