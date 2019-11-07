@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <mutex>
-#include <array>
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -21,11 +20,10 @@ public:
         const std::string &odometry_frame,
         const std::string &base_link,
         tf::TransformBroadcaster &transform_broadcaster,
-        ros::Publisher &odometry_topic);
+        ros::Publisher &odometry_topicbase_link);
     void process_steering_command(const geometry_msgs::Twist::ConstPtr &msg);
     void process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg);
-    void publish_odometry();
-    void publish_tf();
+    void publish_odometry(bool publish_tf);
 
 private:
     void publish_state_estimate(
@@ -37,7 +35,6 @@ private:
     double last_motor_update_time_;
     double total_revolutions_;
     double shaft_to_motor_gear_ratio_;
-    std::array<double, 4> motor_rpm_window_;
     double current_rpm_;
 
     double last_servo_update_time_;

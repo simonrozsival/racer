@@ -18,7 +18,6 @@ odometry_subject::odometry_subject(
       last_motor_update_time_{0},
       total_revolutions_{0},
       shaft_to_motor_gear_ratio_{gear_ratio},
-      motor_rpm_window_{0, 0, 0, 0},
       last_servo_update_time_{0},
       steering_angle_{0},
       last_update_time_{0},
@@ -48,60 +47,51 @@ void odometry_subject::process_wheel_odometry(const std_msgs::Float64::ConstPtr 
 {
     const double t = ros::Time::now().toSec();
     const double dt = last_motor_update_time_ - t;
+    const double revs = shaft_to_motor_gear_ratio_ * msg->data;
 
-    const auto delta_revolutions = (shaft_to_motor_gear_ratio_ * msg->data) - total_revolutions_;
+    const auto delta_revolutions = revs - total_revolutions_;
     const auto revolutions_per_second = delta_revolutions / dt;
-    const auto immediate_rpm = revolutions_per_second * 60;
+    current_rpm_ = revolutions_per_second * 60;
 
-    // calculate the rpm as a moving average (smooth out weird sudden jumps)
-    // and maintain a window of rpms
-    current_rpm_ += (immediate_rpm - motor_rpm_window_[0]) / motor_rpm_window_.size();
-
-    for (std::size_t i{0}; i < motor_rpm_window_.size() - 1; ++i)
-    {
-        motor_rpm_window_[i] = motor_rpm_window_[i + 1];
-    }
-
-    motor_rpm_window_[motor_rpm_window_.size() - 1] = immediate_rpm;
-
+    total_revolutions_ = revs;
     last_motor_update_time_ = t;
 }
 
-void odometry_subject::publish_odometry()
+void odometry_subject::publish_odometry(bool publish_tf)
 {
     std::lock_guard<std::mutex> guard(lock_);
 
-    double current_time = ros::Time::now().toSec();
-    double elapsed_time = current_time - last_update_time_;
+    const double current_time = ros::Time::now().toSec();
+    const double elapsed_time = current_time - last_update_time_;
+    const auto current_state = racer::vehicle_model::kinematic::state{configuration_, current_rpm_, steering_angle_};
 
-    auto prediction = vehicle_model_->predict_next_state(
-        racer::vehicle_model::kinematic::state{configuration_, current_rpm_, steering_angle_}, racer::action{0, 0}, elapsed_time);
-    auto angular_velocity = configuration_.heading_angle().distance_to(prediction.configuration().heading_angle()) / elapsed_time;
+    const auto prediction = vehicle_model_->predict_next_state(current_state, racer::action{0, 0}, elapsed_time);
+    const auto angular_velocity = configuration_.heading_angle().distance_to(prediction.configuration().heading_angle()) / elapsed_time;
 
     publish_state_estimate(prediction.configuration(), angular_velocity);
     configuration_ = prediction.configuration();
 
     last_update_time_ = ros::Time::now().toSec();
-}
 
-void odometry_subject::publish_tf()
-{
-    //since all odometry is 6DOF we'll need a quaternion created from yaw$
-    geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(configuration_.heading_angle());
+    if (publish_tf)
+    {
+        //since all odometry is 6DOF we'll need a quaternion created from yaw$
+        geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(configuration_.heading_angle());
 
-    //first, we'll publish the transform over tf$
-    geometry_msgs::TransformStamped odom_trans;
-    odom_trans.header.stamp = ros::Time::now();
-    odom_trans.header.frame_id = odometry_frame_;
-    odom_trans.child_frame_id = base_link_;
+        //first, we'll publish the transform over tf$
+        geometry_msgs::TransformStamped odom_trans;
+        odom_trans.header.stamp = ros::Time::now();
+        odom_trans.header.frame_id = odometry_frame_;
+        odom_trans.child_frame_id = base_link_;
 
-    odom_trans.transform.translation.x = configuration_.location().x();
-    odom_trans.transform.translation.y = configuration_.location().y();
-    odom_trans.transform.translation.z = 0.0;
-    odom_trans.transform.rotation = odom_quat;
+        odom_trans.transform.translation.x = configuration_.location().x();
+        odom_trans.transform.translation.y = configuration_.location().y();
+        odom_trans.transform.translation.z = 0.0;
+        odom_trans.transform.rotation = odom_quat;
 
-    //send the transform$
-    transform_broadcaster_.sendTransform(odom_trans);
+        //send the transform$
+        transform_broadcaster_.sendTransform(odom_trans);
+    }
 }
 
 void odometry_subject::publish_state_estimate(
