@@ -2,7 +2,6 @@
 
 #include <iostream>
 #include <mutex>
-#include <array>
 
 #include <ros/ros.h>
 #include <tf/transform_broadcaster.h>
@@ -37,7 +36,6 @@ private:
     double last_motor_update_time_;
     double total_revolutions_;
     double shaft_to_motor_gear_ratio_;
-    std::array<double, 4> motor_rpm_window_;
     double current_rpm_;
 
     double last_servo_update_time_;
