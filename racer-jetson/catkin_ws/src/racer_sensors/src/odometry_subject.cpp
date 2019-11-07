@@ -35,7 +35,7 @@ odometry_subject::odometry_subject(
 void odometry_subject::process_steering_command(const geometry_msgs::Twist::ConstPtr &msg)
 {
     const double t = ros::Time::now().toSec();
-    const double dt = last_servo_update_time_ - t;
+    const double dt = t - last_servo_update_time_;
 
     const auto action = racer::action{0, msg->angular.z}; // we don't care about the throttle
     steering_angle_ = servo_model_->predict_next_state(steering_angle_, action, dt);
@@ -46,7 +46,7 @@ void odometry_subject::process_steering_command(const geometry_msgs::Twist::Cons
 void odometry_subject::process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg)
 {
     const double t = ros::Time::now().toSec();
-    const double dt = last_motor_update_time_ - t;
+    const double dt = t - last_motor_update_time_;
     const double revs = shaft_to_motor_gear_ratio_ * msg->data;
 
     const auto delta_revolutions = revs - total_revolutions_;
@@ -112,7 +112,7 @@ void odometry_subject::publish_state_estimate(
 
     //set the velocity
     odom.child_frame_id = base_link_;
-    odom.twist.twist.linear.x = vehicle_model_->calculate_speed_with_no_slip_assumption(current_rpm_);
+    odom.twist.twist.linear.x = current_rpm_; // vehicle_model_->calculate_speed_with_no_slip_assumption(current_rpm_);
     odom.twist.twist.linear.y = 0;
     odom.twist.twist.angular.z = angular_velocity;
 

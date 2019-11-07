@@ -15,5 +15,11 @@
     <param name="covariance" value="0.001" />
   </node>
 
-  <node pkg="tf" type="static_transform_publisher" name="base_link_2_imu" args="0 0 0 0 0 0 base_link imu 1" />
+  <node pkg="hector_imu_attitude_to_tf" type="imu_attitude_to_tf_node" name="imu_attitude_to_tf_node" output="screen">$
+    <remap from="imu_topic" to="/imu_data" />$
+    <param name="base_stabilized_frame" type="string" value="base_footprint" />$
+    <param name="base_frame" type="string" value="base_link" />$
+  </node>$
+
+  <node pkg="tf" type="static_transform_publisher" name="base_link_2_imu" args="0 0 0 0 0 0 base_link imu 10" />
 </launch>
