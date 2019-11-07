@@ -6,6 +6,7 @@
     <param name="max_steering_angle" value="24" />
     <param name="publish_tf" value="false" />
     <param name="odometry_topic" value="/odom" />
+    <param name="base_link" value="base_footprint" />
   </node>
 
   <node pkg="robot_localization" type="ekf_localization_node" name="robot_localization" output="screen">
