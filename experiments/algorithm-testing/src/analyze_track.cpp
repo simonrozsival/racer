@@ -58,7 +58,7 @@ int main(int argc, char *argv[])
   std::cout << "RUN find corners" << std::endl;
   const double max_angle = 4.0 / 5.0 * M_PI;
   const auto find_corners_start = std::chrono::steady_clock::now();
-  const auto waypoints = analysis.find_corners(raw_waypoints, max_angle);
+  const auto waypoints = analysis.find_corners(raw_waypoints, config->checkpoints, max_angle);
   stop_stopwatch("find corners", find_corners_start);
 
   // This requires Linux or WSL+Xserver

@@ -35,58 +35,75 @@ public:
             return {};
         }
 
-        auto prev_circle = std::make_unique<circle>(circle_path.front());
-        auto last_circle = std::make_unique<circle>(*prev_circle);
+        auto prev_circle = circle_path.front();
+        auto last_circle = prev_circle;
 
         // first iteration
-        for (const auto &next_step : circle_path)
+        for (auto &next_step : circle_path)
         {
-            bool are_directly_visible = grid->are_directly_visible(last_circle->center(), next_step.center());
+            bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
             bool contains_checkpoint = std::any_of(std::begin(checkpoints), std::end(checkpoints), [&](point c) { return next_step.contains(c); });
             if (!are_directly_visible || contains_checkpoint)
             {
-                pivot_points.push_back(prev_circle->center());
+                pivot_points.push_back(prev_circle.center());
                 last_circle = std::move(prev_circle);
             }
 
-            prev_circle = std::make_unique<circle>(next_step);
+            prev_circle = std::move(next_step);
         }
 
         // continue from the beginning
-        for (const auto &next_step : circle_path)
+        for (auto &next_step : circle_path)
         {
             if (next_step.center() == pivot_points.front())
             {
                 break;
             }
 
-            if (!grid->are_directly_visible(last_circle->center(), next_step.center()))
+            bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
+            bool contains_checkpoint = std::any_of(std::begin(checkpoints), std::end(checkpoints), [&](point c) { return next_step.contains(c); });
+            if (!are_directly_visible || contains_checkpoint)
             {
-                pivot_points.push_back(prev_circle->center());
+                pivot_points.push_back(prev_circle.center());
                 last_circle = std::move(prev_circle);
             }
 
-            prev_circle = std::make_unique<circle>(next_step);
+            prev_circle = std::move(next_step);
         }
 
         return pivot_points;
     }
 
-    std::vector<point> find_corners(std::vector<point> pivot_points, double max_angle)
+    std::vector<point> find_corners(
+        const std::vector<point> &pivot_points,
+        const std::vector<point> &checkpoints,
+        double max_angle)
     {
-        const auto sharp_turns = remove_insignificant_turns(pivot_points, max_angle);
+        const auto sharp_turns = remove_insignificant_turns(pivot_points, checkpoints, max_angle);
         return merge_close(sharp_turns, min_distance_between_waypoints_);
     }
 
 private:
     const double min_distance_between_waypoints_;
 
-    const std::vector<point> remove_insignificant_turns(const std::vector<point> &points, double max_angle) const
+    const std::vector<point> remove_insignificant_turns(
+        const std::vector<point> &points,
+        const std::vector<point> &checkpoints,
+        double max_angle) const
     {
-        std::vector<bool> used(points.size(), true); // all points are used at the beginning
+        std::size_t next_checkpoint = 0;
+        std::vector<bool> used(points.size(), true); // all points are considered at the beginning
 
         for (std::size_t i = 0; i < points.size(); ++i)
         {
+            const auto area_around = racer::math::circle{points[i], min_distance_between_waypoints_};
+            if (area_around.contains(checkpoints[next_checkpoint]))
+            {
+                // keep at least one point per each checkpoint
+                next_checkpoint++;
+                continue;
+            }
+
             double angle = angle_at(i, points, used);
             if (angle > max_angle)
             {

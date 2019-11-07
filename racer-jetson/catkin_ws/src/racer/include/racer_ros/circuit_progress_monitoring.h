@@ -122,7 +122,7 @@ private:
       return;
     }
 
-    const auto apexes = analysis.find_corners(pivot_points, M_PI * 4.0 / 5.0);
+    const auto apexes = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
     if (apexes.empty())
     {
       ROS_ERROR("cannot find any corners of the track");
