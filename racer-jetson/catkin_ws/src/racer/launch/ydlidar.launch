@@ -11,13 +11,6 @@
 
   <node pkg="tf" type="static_transform_publisher" name="laser_2_base_link" args="0.125 0 0.03 0 0 0 base_link laser 100" />
 
-  <!-- rotate the scan based on the orientation meassured by the IMU -->
-  <node pkg="hector_imu_attitude_to_tf" type="imu_attitude_to_tf_node" name="imu_attitude_to_tf_node" output="screen">
-    <remap from="imu_topic" to="/imu_data" />
-    <param name="base_stabilized_frame" type="string" value="base_footprint" />
-    <param name="base_frame" type="string" value="base_link" />
-  </node>
-
   <!-- remove floor and readings which are too high -->
   <node pkg="laser_filters" type="scan_to_scan_filter_chain" name="laser_filter">
     <rosparam command="load" file="$(find racer)/launch/laser_filters.yaml" />
