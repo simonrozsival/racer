@@ -30,6 +30,11 @@ public:
     {
         std::vector<point> pivot_points;
 
+        if (circle_path.empty())
+        {
+            return {};
+        }
+
         auto prev_circle = std::make_unique<circle>(circle_path.front());
         auto last_circle = std::make_unique<circle>(*prev_circle);
 
