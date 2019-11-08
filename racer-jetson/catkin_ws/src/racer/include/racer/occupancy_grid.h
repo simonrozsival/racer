@@ -110,7 +110,7 @@ public:
 
     double distance_to_closest_obstacle(const racer::math::point &center, double max_radius) const
     {
-        if (collides(center.x(), center.y()))
+        if (collides(center))
         {
             return 0;
         }
@@ -179,16 +179,13 @@ private:
         double distance = 0;
         const auto step = racer::math::vector(cell_size_ * std::cos(angle), cell_size_ * std::sin(angle));
 
-        auto pt = point - origin_;
+        auto pt = point;
 
         while (distance < max_radius)
         {
             pt = pt + step;
 
-            if (collides(pt.x(), pt.y()))
-            {
-                return distance;
-            }
+            if (collides(pt)) return distance;
 
             distance += cell_size_;
         }

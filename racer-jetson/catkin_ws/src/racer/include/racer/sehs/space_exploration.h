@@ -102,7 +102,6 @@ public:
 
         if (!all_waypoints_are_accessible(grid, waypoints))
         {
-            std::cerr << "At least one waypoint lies in a cell occupied by an obstacle. Space exploration fails." << std::endl;
             return {};
         }
 
@@ -258,15 +257,17 @@ private:
         const std::shared_ptr<racer::occupancy_grid> grid,
         const std::vector<racer::math::point> &waypoints) const
     {
+        bool all_are_accessible = true;
         for (auto wp : waypoints)
         {
             if (grid->collides(wp))
             {
-                return false;
+                std::cerr << "Waypoint " << wp << " is not accessible." << std::endl;
+                all_are_accessible = false;
             }
         }
 
-        return true;
+        return all_are_accessible;
     }
 };
 } // namespace racer::sehs
