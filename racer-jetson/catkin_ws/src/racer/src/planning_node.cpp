@@ -68,7 +68,6 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
     next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 
-  collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
   circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
 
   // Space Exploration
@@ -82,7 +81,9 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
 
   // Discretization based on Space Exploration
   auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
-      path_of_circles, 24, vehicle->motor->max_rpm() / 10.0);
+      path_of_circles,
+      2 * M_PI / 24.0,
+      vehicle.motor->max_rpm() / 30.0);
 
   // Planner for the next waypoint
   planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(
@@ -144,6 +145,7 @@ int main(int argc, char *argv[])
 
   // blocks until map is ready
   occupancy_grid = load_map(node);
+  collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
 
   while (ros::ok())
   {
