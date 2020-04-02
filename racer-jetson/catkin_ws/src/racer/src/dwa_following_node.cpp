@@ -7,8 +7,10 @@
 
 #include <tf/transform_datatypes.h>
 
-#include <nav_msgs/Odometry.h>
 #include <geometry_msgs/Twist.h>
+#include <ackermann_msgs/AckermannDrive.h>
+
+#include <nav_msgs/Odometry.h>
 #include <visualization_msgs/MarkerArray.h>
 
 #include <racer_msgs/State.h>
@@ -32,6 +34,8 @@ using trajectory_error_calculator = racer::following_strategies::trajectory_erro
 
 std::shared_ptr<dwa_strategy> dwa;
 trajectory_error_calculator error_calculator;
+std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle;
+std::shared_ptr<racer::vehicle_model::kinematic::model> model;
 
 visualization_msgs::MarkerArray prepare_visualization(
     const racer_ros::Follower<kinematic::state> &follower,
@@ -42,39 +46,38 @@ void spin(
     const int frequency,
     const racer_ros::Follower<kinematic::state> &follower,
     const std::vector<racer::action> actions,
-    const ros::Publisher command_pub,
+    const ros::Publisher twist_pub,
+    const ros::Publisher ackermann_pub,
     const ros::Publisher visualization_pub)
 {
-  std::cout << "Spin" << std::endl;
   ros::Rate rate(frequency);
 
   while (ros::ok())
   {
     if (follower.is_initialized())
     {
-      std::cout << "initialized!" << std::endl;
       auto action = follower.select_driving_command();
       if (!action.is_valid())
       {
         action = follower.stop();
       }
 
-      ROS_DEBUG("following node selected: [throttle: %f, steering angle: %f]", action.throttle(), action.target_steering_angle());
+      // Twist msg
+      geometry_msgs::Twist twist_msg;
+      twist_msg.linear.x = action.throttle();
+      twist_msg.angular.z = -action.target_steering_angle();
+      twist_pub.publish(twist_msg);
 
-      geometry_msgs::Twist msg;
-
-      msg.linear.x = action.throttle();
-      msg.angular.z = -action.target_steering_angle();
-
-      command_pub.publish(msg);
+      // Ackermann msg
+      ackermann_msgs::AckermannDrive ackermann_msg;
+      ackermann_msg.speed = model->calculate_speed_with_no_slip_assumption(action.throttle() * vehicle->motor->max_rpm());
+      ackermann_msg.steering_angle = vehicle->steering_servo->target_steering_angle(action);
+      ackermann_pub.publish(ackermann_msg);
 
       if (visualization_pub.getNumSubscribers() > 0)
       {
-        const auto msg = prepare_visualization(
-            follower,
-            action,
-            actions);
-        visualization_pub.publish(msg);
+        const auto markers = prepare_visualization(follower, action, actions);
+        visualization_pub.publish(markers);
       }
     }
 
@@ -97,7 +100,8 @@ void dynamic_reconfigure_callback(
       config.heading_weight,
       config.velocity_weight,
       config.distance_to_obstacle_weight,
-      config.max_position_error};
+      config.max_position_error,
+      vehicle->motor->max_rpm()};
 
   dwa->reconfigure(error_calculator);
 
@@ -119,7 +123,6 @@ void create_visualization_line(
     double score,
     visualization_msgs::Marker &line)
 {
-
   line.type = visualization_msgs::Marker::LINE_STRIP;
   line.scale.x = 0.01;
   line.action = visualization_msgs::Marker::ADD;
@@ -128,7 +131,7 @@ void create_visualization_line(
   line.id = id;
 
   line.color.r = score;
-  line.color.g = 1.0 - score; // the lower, the better
+  line.color.g = std::clamp(0.0, 1.0, 1.0 - score); // the lower, the better, the greener
 
   line.color.a = 0.5;
 
@@ -164,33 +167,29 @@ visualization_msgs::MarkerArray prepare_visualization(
   for (const auto action : all_actions)
   {
     const auto unfolded_trajectory = dwa->unfold(from, action, map);
+    visualization_msgs::Marker line;
+    line.header.frame_id = follower.map_frame_id;
+    line.header.stamp = ros::Time::now();
 
-    if (!unfolded_trajectory.empty())
-    {
-      visualization_msgs::Marker line;
-      line.header.frame_id = follower.map_frame_id;
-      line.header.stamp = ros::Time::now();
+    const double score = error_calculator.calculate_error(unfolded_trajectory, reference_subtrajectory, map);
+    create_visualization_line(id++, unfolded_trajectory, score, line);
 
-      const double score = error_calculator.calculate_error(unfolded_trajectory, reference_subtrajectory, map);
-      create_visualization_line(id++, unfolded_trajectory, score, line);
-
+    if (!line.points.empty()) {
       msg.markers.push_back(line);
     }
   }
 
   const auto estimated_trajectory = dwa->unfold(from, selected_action, map);
-  if (!estimated_trajectory.empty())
-  {
-    visualization_msgs::Marker estimated_line;
-    estimated_line.header.frame_id = follower.map_frame_id;
-    estimated_line.header.stamp = ros::Time::now();
+  visualization_msgs::Marker estimated_line;
+  estimated_line.header.frame_id = follower.map_frame_id;
+  estimated_line.header.stamp = ros::Time::now();
 
-    const double score = error_calculator.calculate_error(estimated_trajectory, reference_subtrajectory, map);
-    create_visualization_line(id++, estimated_trajectory, score, estimated_line);
+  const double score = error_calculator.calculate_error(estimated_trajectory, reference_subtrajectory, map);
+  create_visualization_line(id++, estimated_trajectory, score, estimated_line);
 
+  if (!estimated_line.points.empty()) {
     estimated_line.scale.x = 0.05;
     estimated_line.color.a = 1.0;
-
     msg.markers.push_back(estimated_line);
   }
 
@@ -205,7 +204,7 @@ int main(int argc, char *argv[])
   // setup_dynamic_reconfigure();
 
   double cell_size;
-  std::string state_topic, trajectory_topic, waypoints_topic, map_topic, driving_topic, visualization_topic;
+  std::string state_topic, trajectory_topic, waypoints_topic, map_topic, twist_topic, ackermann_topic, visualization_topic;
 
   node.param<double>("double", cell_size, 0.05);
 
@@ -214,21 +213,20 @@ int main(int argc, char *argv[])
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
 
-  node.param<std::string>("driving_topic", driving_topic, "/racer/commands");
+  node.param<std::string>("twist_topic", twist_topic, "/racer/commands");
+  node.param<std::string>("ackermann_topic", ackermann_topic, "/racer/ackermann_commands");
   node.param<std::string>("visualization_topic", visualization_topic, "/racer/visualization/dwa");
 
   double integration_step_s, prediction_horizon_s;
-  node.param<double>("integration_step_s", integration_step_s, 1.0 / 20.0);
+  node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
-    racer::vehicle_model::vehicle_chassis::rc_beast();
-
-  auto model = std::make_unique<racer::vehicle_model::kinematic::model>(vehicle);
+  vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
+  model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   ROS_DEBUG("DWA strategy");
-  auto actions = racer::action::create_actions(9, 15);
+  auto actions = racer::action::create_actions(20, 20);
 
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
@@ -241,13 +239,14 @@ int main(int argc, char *argv[])
       heading_weight,
       velocity_weight,
       distance_to_obstacle_weight,
-      vehicle->radius() * 5};
+      vehicle->radius() * 5,
+      vehicle->motor->max_rpm()};
 
   dwa =
       std::make_shared<dwa_strategy>(
           lookahead,
           actions,
-          std::move(model),
+          model,
           error_calculator,
           integration_step_s);
 
@@ -259,13 +258,14 @@ int main(int argc, char *argv[])
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::Follower<kinematic::state>::waypoints_observed, &follower);
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &racer_ros::Follower<kinematic::state>::state_observed, &follower);
 
-  ros::Publisher command_pub = node.advertise<geometry_msgs::Twist>(driving_topic, 1);
+  ros::Publisher twist_pub = node.advertise<geometry_msgs::Twist>(twist_topic, 1);
+  ros::Publisher ackermann_pub = node.advertise<ackermann_msgs::AckermannDrive>(ackermann_topic, 1);
   ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(visualization_topic, 1, true);
 
   int frequency; // Hz
   node.param<int>("update_frequency_hz", frequency, 30);
 
-  spin(frequency, follower, actions, command_pub, visualization_pub);
+  spin(frequency, follower, actions, twist_pub, ackermann_pub, visualization_pub);
 
   return 0;
 }

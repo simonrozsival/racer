@@ -30,8 +30,8 @@ public:
         : original_grid_{grid}
     {
         auto outer_radius = chassis->radius();
-        inflated_grid_outer_radius_ = grid->inflate(outer_radius);
-
+        inflated_grid_outer_radius_ = grid->inflate(2 * outer_radius);
+        
         const double step = 2 * M_PI / double(precision);
         for (double angle = 0; angle < 2 * M_PI; angle += step)
         {

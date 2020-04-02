@@ -45,7 +45,7 @@ std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle = racer::vehicle_
 auto model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
 int number_of_expanded_points = 12;
-double time_step_s = 1.0 / 25.0;
+double time_step_s = 1.0 / 10.0;
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
@@ -71,7 +71,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
   circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
 
   // Space Exploration
-  racer::sehs::space_exploration exploration{1.0 * vehicle->radius(), 4 * vehicle->radius(), number_of_expanded_points};
+  racer::sehs::space_exploration exploration{1.0 * vehicle->radius(), 6 * vehicle->radius(), number_of_expanded_points};
   const auto path_of_circles = exploration.explore_grid(occupancy_grid, last_known_state.configuration(), next_waypoints);
   if (path_of_circles.empty())
   {
@@ -83,7 +83,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
   auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
       path_of_circles,
       2 * M_PI / 24.0,
-      vehicle->motor->max_rpm() / 30.0);
+      vehicle->motor->max_rpm() / 20.0);
 
   // Planner for the next waypoint
   planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(
@@ -121,47 +121,54 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "racing_trajectory_planning");
   ros::NodeHandle node("~");
 
-  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string state_topic, trajectory_topic, path_topic, waypoints_topic;
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
 
-  node.param<std::string>("map_topic", map_topic, "/obstacles/costmap/costmap");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
   node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
 
-  int frequency;
-  node.param<int>("frequency", frequency, 1);
+  int throttle_levels, steering_levels;
+  node.param<int>("throttle_levels", throttle_levels, 5);
+  node.param<int>("steering_levels", steering_levels, 3);
 
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
-  const auto actions = racer::action::create_actions(5, 9);
-
-  ros::Rate rate(frequency);
+  const auto actions = racer::action::create_actions(throttle_levels, steering_levels);
 
   // blocks until map is ready
   occupancy_grid = load_map(node);
   collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
 
+  ROS_INFO("planner is waiting to be initialized, next time search a trajectory just to the next waypoint");
+
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
     {
+      ROS_INFO("starting planning");
       std::lock_guard<std::mutex> guard(lock);
+      const auto start_clock = std::chrono::steady_clock::now();
+
       const auto trajectory = planner->plan(
           last_known_state,
           actions,
           circuit,
           collision_detector,
           next_waypoint);
+      
+      const auto end_clock = std::chrono::steady_clock::now();
+      const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - start_clock);
+      ROS_INFO("trajectory planning took %ld ms", elapsed_time.count());
 
       if (!trajectory)
       {
-        ROS_INFO("no plan found, stick to old plan");
+        ROS_INFO("no plan found, stick to old plan, next time search a trajectory just to the next waypoint");
       }
       else
       {
@@ -184,7 +191,6 @@ int main(int argc, char *argv[])
     }
 
     ros::spinOnce();
-    rate.sleep();
   }
 
   return 0;

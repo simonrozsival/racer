@@ -42,8 +42,7 @@ public:
         for (auto &next_step : circle_path)
         {
             bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
-            bool contains_checkpoint = std::any_of(std::begin(checkpoints), std::end(checkpoints), [&](point c) { return next_step.contains(c); });
-            if (!are_directly_visible || contains_checkpoint)
+            if (!are_directly_visible)
             {
                 pivot_points.push_back(prev_circle.center());
                 last_circle = std::move(prev_circle);
@@ -61,8 +60,7 @@ public:
             }
 
             bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
-            bool contains_checkpoint = std::any_of(std::begin(checkpoints), std::end(checkpoints), [&](point c) { return next_step.contains(c); });
-            if (!are_directly_visible || contains_checkpoint)
+            if (!are_directly_visible)
             {
                 pivot_points.push_back(prev_circle.center());
                 last_circle = std::move(prev_circle);
@@ -97,7 +95,8 @@ private:
         for (std::size_t i = 0; i < points.size(); ++i)
         {
             const auto area_around = racer::math::circle{points[i], min_distance_between_waypoints_};
-            if (area_around.contains(checkpoints[next_checkpoint]))
+            if (next_checkpoint < checkpoints.size()
+                && area_around.contains(checkpoints[next_checkpoint]))
             {
                 // keep at least one point per each checkpoint
                 next_checkpoint++;

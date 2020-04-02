@@ -37,10 +37,15 @@ public:
     static auto with_fitted_values()
     {
         return std::make_unique<steering_servo_model>(
-            angle::from_degrees(-21.16),
+            angle::from_degrees(-26.57),
             angle::from_degrees(26.57),
             std::array<double, 2>{12.701, 1476.686},
             std::array<double, 2>{0.000329, 0.1174});
+    //     return std::make_unique<steering_servo_model>(
+    //         angle::from_degrees(-21.16),
+    //         angle::from_degrees(26.57),
+    //         std::array<double, 2>{12.701, 1476.686},
+    //         std::array<double, 2>{0.000329, 0.1174});
     }
 
     angle predict_next_state(const angle &current_steering_angle, const racer::action &action, const double dt) const
@@ -48,8 +53,22 @@ public:
         const angle target_angle = target_steering_angle(action);
         const double angle_distance = current_steering_angle.distance_to(target_angle);
         const double angle_change_rate = angle_distance / time_to_adjust(current_steering_angle, target_angle);
-        angle ret = current_steering_angle + angle_change_rate * dt;
-        return ret;
+        return current_steering_angle + angle_change_rate * dt;
+    }
+
+    angle target_steering_angle(const racer::action &action) const
+    {
+        const double target_steering_angle_percentage = action.target_steering_angle();
+        const angle left_or_right =
+            target_steering_angle_percentage > 0
+                ? max_steering_angle_right_
+                : max_steering_angle_left_;
+        return left_or_right * std::abs(target_steering_angle_percentage);
+    }
+
+    angle max_steering_angle() const
+    {
+        return max_steering_angle_right_;
     }
 
 private:
@@ -62,16 +81,6 @@ private:
     {
         double pwm_distance = std::abs(pwm(alpha) - pwm(beta));
         return pwm_adjustment_coefficients_[0] * pwm_distance + pwm_adjustment_coefficients_[1];
-    }
-
-    angle target_steering_angle(const racer::action &action) const
-    {
-        const double target_steering_angle_percentage = action.target_steering_angle();
-        const angle left_or_right =
-            target_steering_angle_percentage > 0
-                ? max_steering_angle_right_
-                : max_steering_angle_left_;
-        return left_or_right * std::abs(target_steering_angle_percentage);
     }
 };
 

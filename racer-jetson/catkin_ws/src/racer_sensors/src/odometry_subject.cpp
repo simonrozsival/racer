@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 
 #include <math.h>
+#include <std_msgs/Float64.h>
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 
@@ -13,7 +14,8 @@ odometry_subject::odometry_subject(
     const std::string &odometry_frame,
     const std::string &base_link,
     tf::TransformBroadcaster &transform_broadcaster,
-    ros::Publisher &odometry_topic)
+    ros::Publisher &odometry_topic,
+    ros::Publisher &motor_rpm_topic)
     : configuration_{},
       last_motor_update_time_{0},
       total_revolutions_{0},
@@ -26,7 +28,8 @@ odometry_subject::odometry_subject(
       base_link_{base_link},
       odometry_frame_{odometry_frame},
       transform_broadcaster_{transform_broadcaster},
-      odometry_topic_{odometry_topic}
+      odometry_topic_{odometry_topic},
+      motor_rpm_topic_{motor_rpm_topic}
 {
     last_servo_update_time_ = ros::Time::now().toSec();
     last_motor_update_time_ = ros::Time::now().toSec();
@@ -55,6 +58,10 @@ void odometry_subject::process_wheel_odometry(const std_msgs::Float64::ConstPtr 
 
     total_revolutions_ = revs;
     last_motor_update_time_ = t;
+
+    std_msgs::Float64 rpm_msg;
+    rpm_msg.data = current_rpm_;
+    motor_rpm_topic_.publish(rpm_msg);
 }
 
 void odometry_subject::publish_odometry(bool publish_tf)

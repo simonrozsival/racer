@@ -21,11 +21,8 @@
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
-double shaft_to_motor_ratio;
 
 // motor
-double last_rpm_update_time = 0;
-double revolutions = 0;
 double current_motor_rpm = 0;
 
 // servo
@@ -50,21 +47,9 @@ void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
   last_servo_update_time = t;
 }
 
-void wheel_encoder_callback(const std_msgs::Float64::ConstPtr &msg)
+void motor_rpm_callback(const std_msgs::Float64::ConstPtr &msg)
 {
-  const double revs = msg->data * shaft_to_motor_ratio;
-  const double t = ros::Time::now().toSec();
-
-  if (last_rpm_update_time > 0)
-  {
-    const auto dt = t - last_rpm_update_time;
-    const auto drevs = revs - revolutions;
-    const auto revs_per_second = drevs / dt;
-    current_motor_rpm = revs_per_second * 60;
-  }
-
-  revolutions = revs;
-  last_rpm_update_time = t;
+  current_motor_rpm = msg->data;
 }
 
 racer::vehicle_configuration get_current_configuration(const tf::Transform &transform)
@@ -143,17 +128,15 @@ int main(int argc, char *argv[])
   ros::NodeHandle node("~");
 
   // load parameters
-  std::string odom_topic, command_topic, wheel_encoder_topic, state_topic;
+  std::string odom_topic, command_topic, motor_rpm_topic, state_topic;
 
   node.param<std::string>("command_topic", command_topic, "/racer/commands");
-  node.param<std::string>("wheel_encoder_topic", wheel_encoder_topic, "/racer/wheel_encoders");
+  node.param<std::string>("motor_rpm_topic", motor_rpm_topic, "/racer/motor_rpm");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
   node.param<std::string>("odom_frame_id", odom_frame_id, "odom");
   node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
-
-  node.param<double>("shaft_to_motor_ratio", shaft_to_motor_ratio, 3.4);
 
   int frequency;
   node.param<int>("frequency", frequency, 30);
@@ -164,7 +147,7 @@ int main(int argc, char *argv[])
 
   // set up pubsub
   ros::Subscriber command_sub = node.subscribe<geometry_msgs::Twist>(command_topic, 1, command_callback);
-  ros::Subscriber wheel_encoder_sub = node.subscribe<std_msgs::Float64>(wheel_encoder_topic, 1, wheel_encoder_callback);
+  ros::Subscriber motor_rpm_sub = node.subscribe<std_msgs::Float64>(motor_rpm_topic, 1, motor_rpm_callback);
   ros::Publisher state_pub = node.advertise<racer_msgs::State>(state_topic, 1, false);
 
   spin(frequency, state_pub);

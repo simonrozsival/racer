@@ -75,16 +75,22 @@ public:
     }
     else
     {
+      ROS_INFO("no valid reference trajectory");
       return stop();
     }
   }
 
   racer::action stop() const
   {
-    bool is_moving = std::abs(state_.motor_rpm()) > 250;
-    if (is_moving)
+    bool is_moving_forward = state_.motor_rpm() > 250;
+    bool is_moving_backward = state_.motor_rpm() < -250;
+    if (is_moving_forward)
     {
       return {-1.0, 0.0};
+    }
+    else if (is_moving_backward)
+    {
+      return {1.0, 0.0};
     }
     else
     {

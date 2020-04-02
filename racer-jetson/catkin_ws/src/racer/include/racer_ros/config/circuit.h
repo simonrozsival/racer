@@ -61,7 +61,7 @@ public:
   
     node.param<double>("vehicle_radius", vehicle_radius, 0.25); // m
     node.param<double>("waypoint_radius", waypoint_radius, 1.0); // m
-    node.param<double>("min_distance_between_waypoints", min_distance_between_waypoints, 10.0); // m
+    node.param<double>("min_distance_between_waypoints", min_distance_between_waypoints, 2.0); // m
     node.param<int>("branching_factor", branching_factor, 13);
     node.param<int>("lookahead", lookahead, 3);
 

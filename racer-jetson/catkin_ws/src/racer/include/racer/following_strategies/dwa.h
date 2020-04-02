@@ -10,6 +10,7 @@
 
 #include "racer/circuit.h"
 #include "racer/following_strategies/following_strategy.h"
+#include "racer/vehicle_model/motor_model.h"
 
 namespace racer::following_strategies
 {
@@ -32,12 +33,14 @@ public:
         double heading_error_weight,
         double motor_rpm_error_weight,
         double obstacle_proximity_error_weight,
-        double max_position_error)
+        double max_position_error,
+        racer::vehicle_model::rpm max_rpm)
         : position_error_weight_(position_error_weight),
           heading_error_weight_(heading_error_weight),
           motor_rpm_error_weight_(motor_rpm_error_weight),
           max_position_error_(max_position_error),
-          obstacle_proximity_error_weight_(obstacle_proximity_error_weight)
+          obstacle_proximity_error_weight_(obstacle_proximity_error_weight),
+          max_rpm_(max_rpm)
     {
     }
 
@@ -52,31 +55,40 @@ public:
         const racer::trajectory<State> &reference,
         const std::shared_ptr<racer::occupancy_grid> map) const
     {
-        double error = 0;
+        double accumulated_error = 0;
 
-        auto first_it = attempt.cbegin();
-        auto second_it = reference.steps().cbegin();
+        auto attempt_it = attempt.cbegin();
+        auto reference_it = reference.steps().cbegin();
 
         std::size_t step = 0;
         std::size_t steps = std::min(attempt.size(), reference.steps().size());
 
         const double total_weight = position_error_weight_ + heading_error_weight_ + motor_rpm_error_weight_ + obstacle_proximity_error_weight_;
 
-        for (; first_it != attempt.cend() && second_it != reference.steps().cend(); ++first_it, ++second_it)
+        for (; attempt_it != attempt.cend() && reference_it != reference.steps().cend(); ++attempt_it, ++reference_it)
         {
-            double step_error = position_error_weight_ * position_error(*first_it, second_it->state()) + heading_error_weight_ * heading_error(*first_it, second_it->state()) + motor_rpm_error_weight_ * motor_rpm_error(*first_it, second_it->state()) + obstacle_proximity_error_weight_ * obstacle_proximity_error(*first_it, map);
+            auto at = *attempt_it;
+            auto ref = reference_it->state();
+            double step_error =
+                position_error_weight_ * position_error(at, ref)
+                + heading_error_weight_ * heading_error(at, ref)
+                + motor_rpm_error_weight_ * motor_rpm_error(at, ref)
+                + obstacle_proximity_error_weight_ * obstacle_proximity_error(at, map);
 
-            // double weight = pow(double(steps - step++) / double(steps), 2);
-            // error += weight * step_error;
-            error += step_error;
+            double discount = pow(double(steps - step++) / double(steps), 2);
+            step_error *= discount;
+
+            accumulated_error += step_error;
         }
 
-        return error / (double(steps) * total_weight);
+        return std::isnan(accumulated_error)
+            ? 1000000.0
+            : accumulated_error / (double(steps) * total_weight);
     }
 
 private:
     double position_error_weight_, heading_error_weight_, motor_rpm_error_weight_;
-    double max_position_error_, obstacle_proximity_error_weight_;
+    double max_position_error_, obstacle_proximity_error_weight_, max_rpm_;
 
     double position_error(const State &a, const State &reference) const
     {
@@ -90,9 +102,7 @@ private:
 
     double motor_rpm_error(const State &a, const State &reference) const
     {
-        double speed_ratio = reference.motor_rpm() == 0.0
-                                 ? (a.motor_rpm() == 0.0 ? 0.0 : 1.0)
-                                 : a.motor_rpm() / reference.motor_rpm();
+        double speed_ratio = std::abs(reference.motor_rpm() - a.motor_rpm()) / max_rpm_;
 
         return std::max(0.0, std::abs(1.0 - speed_ratio));
     }
@@ -144,9 +154,13 @@ public:
             const auto trajectory = unfold(current_state, next_action, map);
             if (!trajectory.empty())
             {
-                const double error = trajectory_error_calculator_.calculate_error(
-                    trajectory, reference_subtrajectory, map);
-                if (error < lowest_error)
+                const double error =
+                    trajectory_error_calculator_.calculate_error(
+                        trajectory, reference_subtrajectory, map);
+
+                if (error < lowest_error
+                    || (error == lowest_error
+                        && std::abs(next_action.target_steering_angle()) < std::abs(best_so_far.target_steering_angle())))
                 {
                     lowest_error = error;
                     best_so_far = next_action;
@@ -169,7 +183,6 @@ public:
         const racer::action &action,
         const std::shared_ptr<racer::occupancy_grid> grid) const
     {
-
         std::vector<State> next_states{};
 
         next_states.push_back(origin);
@@ -177,14 +190,9 @@ public:
 
         for (int i = 0; i < steps_; ++i)
         {
-            last_state = model_->predict_next_state(last_state, action, time_step_s_);
-            if (!last_state.is_valid())
-            {
-                break;
-            }
-
             // the obstacles in the map are inflated so it is sufficient to check
             // just the grid cell which the center of the vehicle lies in
+            last_state = model_->predict_next_state(last_state, action, time_step_s_);
             if (grid->collides(last_state.position()))
             {
                 return {};

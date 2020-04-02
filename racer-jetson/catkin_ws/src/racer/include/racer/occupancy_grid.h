@@ -127,6 +127,26 @@ public:
         return min_so_far;
     }
 
+    double find_distance(const racer::math::point &point, const double angle, const double max_radius) const
+    {
+        // this algorithm could be more accurate
+        double distance = 0;
+        const auto step = racer::math::vector(cell_size_ * std::cos(angle), cell_size_ * std::sin(angle));
+
+        auto pt = point;
+
+        while (distance < max_radius)
+        {
+            pt = pt + step;
+
+            if (collides(pt)) return distance;
+
+            distance += cell_size_;
+        }
+
+        return std::min(max_radius, distance);
+    }
+
     bool are_directly_visible(
         const racer::math::point &a,
         const racer::math::point &b) const
@@ -172,26 +192,6 @@ private:
     }
 
     inline bool is_dangerous(uint8_t value) const { return value >= 50; }
-
-    double find_distance(const racer::math::point &point, const double angle, const double max_radius) const
-    {
-        // this algorithm could be more accurate
-        double distance = 0;
-        const auto step = racer::math::vector(cell_size_ * std::cos(angle), cell_size_ * std::sin(angle));
-
-        auto pt = point;
-
-        while (distance < max_radius)
-        {
-            pt = pt + step;
-
-            if (collides(pt)) return distance;
-
-            distance += cell_size_;
-        }
-
-        return std::min(max_radius, distance);
-    }
 };
 
 } // namespace racer
