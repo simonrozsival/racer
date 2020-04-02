@@ -1,0 +1,3 @@
+racer_msgs/RacingLinePoint turn_in
+racer_msgs/RacingLinePoint apex
+racer_msgs/RacingLinePoint exit

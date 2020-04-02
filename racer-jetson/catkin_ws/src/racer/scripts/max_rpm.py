@@ -1,11 +1,5 @@
 #!/usr/bin/env python
 
-"""
-This script/node collects the inputs to the vehicle (most likely from the RC transmitter)
-and the odometry of the vehicle and stores it in a CSV file. The input can be realtime
-or it could be replayed from a ROS bag.
-"""
-
 import rospy
 import math
 import tf

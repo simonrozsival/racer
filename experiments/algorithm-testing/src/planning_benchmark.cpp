@@ -66,7 +66,7 @@ std::unique_ptr<racer::astar::discretization<hybrid_astar_discrete_state, state>
 
 template <typename DiscreteState>
 output::planning::benchmark_result measure_search(
-    std::shared_ptr<racer::astar::discretized_search_problem<DiscreteState, state>> problem,
+    std::unique_ptr<racer::astar::discretized_search_problem<DiscreteState, state>> problem,
     std::chrono::milliseconds time_limit)
 {
     std::optional<search_result> result = {};
@@ -76,7 +76,7 @@ output::planning::benchmark_result measure_search(
     std::atomic<bool> terminate = false;
 
     std::thread work_thread([&]() {
-        result = racer::astar::search<DiscreteState, state>(problem, terminate);
+        result = racer::astar::search<DiscreteState, state>(std::move(problem), terminate);
         const auto end = std::chrono::steady_clock::now();
         elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end - start);
     });
@@ -116,14 +116,6 @@ void run_benchmark_for(
     const auto initial_state = state{initial_config};
 
     const std::shared_ptr<racer::circuit> shifted_circut = circuit->for_waypoint_subset(start + 1, lookahead);
-    auto problem = std::make_shared<racer::astar::discretized_search_problem<DiscreteState, state>>(
-        initial_state,
-        time_step_s,
-        actions,
-        state_discretization,
-        vehicle_model,
-        shifted_circut,
-        collision_detector);
 
     std::vector<double> measurement_times;
     measurement_times.reserve(repetitions);
@@ -133,7 +125,16 @@ void run_benchmark_for(
 
     for (std::size_t i = 0; i < repetitions; ++i)
     {
-        const auto measurement = measure_search<DiscreteState>(problem, time_limit);
+        auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, state>>(
+            initial_state,
+            time_step_s,
+            actions,
+            state_discretization,
+            vehicle_model,
+            shifted_circut,
+            collision_detector);
+
+        const auto measurement = measure_search<DiscreteState>(std::move(problem), time_limit);
         if (!measurement_sample)
         {
             measurement_sample = std::make_unique<output::planning::benchmark_result>(measurement);

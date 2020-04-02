@@ -14,6 +14,7 @@
 
 #include "racer/vehicle_configuration.h"
 #include "racer/occupancy_grid.h"
+#include "racer/track/centerline.h"
 
 namespace racer_ros
 {
@@ -84,7 +85,7 @@ public:
     std::vector<racer::math::circle> waypoints;
     for (std::size_t i = 0; i < config_.lookahead; ++i)
     {
-      const auto wp = waypoints[(next_waypoint_ + i) % waypoints.size()];
+      const auto wp = waypoints_[(next_waypoint_ + i) % waypoints_.size()];
       waypoints.push_back(wp);
     }
 
@@ -100,44 +101,36 @@ private:
       return;
     }
 
-    racer::sehs::space_exploration space_exploration{config_.vehicle_radius, 10 * config_.vehicle_radius, config_.branching_factor};
-    racer::track_analysis analysis{config_.min_distance_between_waypoints};
-
     std::vector<racer::math::point> final_check_points{config_.check_points.begin(), config_.check_points.end()};
     final_check_points.push_back(current_configuration.location()); // back to the start
 
-    const auto path = space_exploration.explore_grid(grid_, current_configuration, final_check_points);
-    if (path.empty())
-    {
-      ROS_ERROR("cannot find path of circles - there might not be enough room for the careful algorithm to fit the car through");
-      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
-      return;
-    }
+    const auto centerline = racer::track::centerline::find(current_configuration, grid_, final_check_points);
 
-    const auto pivot_points = analysis.find_pivot_points(path, final_check_points, grid_);
-    if (pivot_points.empty())
-    {
-      ROS_ERROR("cannot find pivot points");
-      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
-      return;
-    }
+    // racer::track_analysis analysis{config_.min_distance_between_waypoints};
+    // const auto pivot_points = analysis.find_pivot_points(centerline.circles(), final_check_points, grid_);
+    // if (pivot_points.empty())
+    // {
+    //   ROS_ERROR("cannot find pivot points");
+    //   ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+    //   return;
+    // }
 
-    const auto apexes = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
-    if (apexes.empty())
-    {
-      ROS_ERROR("cannot find any corners of the track");
-      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
-      return;
-    }
+    // const auto apexes = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
+    // if (apexes.empty())
+    // {
+    //   ROS_ERROR("cannot find any corners of the track");
+    //   ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+    //   return;
+    // }
 
-    std::lock_guard<std::mutex> guard(analysis_lock_);
-    std::vector<racer::math::circle> wps;
-    for (const auto &apex : apexes)
-    {
-      wps.emplace_back(apex, config_.waypoint_radius);
-    }
+    // std::lock_guard<std::mutex> guard(analysis_lock_);
+    // std::vector<racer::math::circle> wps;
+    // for (const auto &apex : apexes)
+    // {
+    //   wps.emplace_back(apex, config_.waypoint_radius);
+    // }
 
-    waypoints_ = std::vector<racer::math::circle>(wps);
+    waypoints_ = std::vector<racer::math::circle>(centerline.circles());
     next_waypoint_ = 0;
 
     ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints_.size());

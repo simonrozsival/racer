@@ -1,7 +1,9 @@
 <launch>
   <arg name="map" />
+  <arg name="x_pos" default="2.5" />
+  <arg name="y_pos" default="-7.0" />
 
-  <node name="map_server" pkg="map_server" type="map_server" args="$(find racer)/maps/$(arg map).yaml" />
+  <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" />
  
   <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
     <rosparam file="$(find racer)/launch/costmap.yaml" command="load" ns="costmap" />
@@ -16,8 +18,8 @@
     pose: {
       pose: {
         position: {
-          x: 0.0,
-          y: 0.0,
+          x: $(arg x_pos),
+          y: $(arg y_pos),
           z: 0.0
         },
         orientation: {

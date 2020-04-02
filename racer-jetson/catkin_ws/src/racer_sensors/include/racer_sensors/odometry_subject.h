@@ -20,7 +20,8 @@ public:
         const std::string &odometry_frame,
         const std::string &base_link,
         tf::TransformBroadcaster &transform_broadcaster,
-        ros::Publisher &odometry_topicbase_link);
+        ros::Publisher &odometry_topic,
+        ros::Publisher &motor_rpm_topic);
     void process_steering_command(const geometry_msgs::Twist::ConstPtr &msg);
     void process_wheel_odometry(const std_msgs::Float64::ConstPtr &msg);
     void publish_odometry(bool publish_tf);
@@ -50,5 +51,6 @@ private:
     const std::string &base_link_;
     const std::string &odometry_frame_;
     const ros::Publisher &odometry_topic_;
+    const ros::Publisher &motor_rpm_topic_;
     tf::TransformBroadcaster &transform_broadcaster_;
 };

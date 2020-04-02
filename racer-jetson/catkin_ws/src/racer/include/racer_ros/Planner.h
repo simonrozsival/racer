@@ -35,7 +35,6 @@ public:
       : model_(model),
         discretization_(std::move(discretization)),
         time_step_s_(time_step_s),
-        maximum_number_of_expanded_nodes_(10000),
         map_frame_(map_frame_id)
   {
   }
@@ -56,9 +55,8 @@ public:
         circuit,
         collision_detector);
 
-    const auto result = racer::astar::search<DiscreteState, State>(
-        std::move(problem),
-        maximum_number_of_expanded_nodes_);
+    std::atomic<bool> terminate = false;
+    const auto result = racer::astar::search<DiscreteState, State>(std::move(problem), terminate);
 
     if (!result.was_successful())
     {
@@ -102,7 +100,6 @@ public:
 private:
   const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model_;
   const double time_step_s_;
-  const int maximum_number_of_expanded_nodes_;
   const std::shared_ptr<racer::astar::discretization<DiscreteState, State>> discretization_;
   const std::string map_frame_;
 };

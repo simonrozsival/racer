@@ -10,6 +10,71 @@
 namespace racer::math
 {
 
+struct angle
+{
+private:
+    double radians_;
+
+public:
+    angle(double radians)
+        : radians_{radians}
+    {
+    }
+
+    angle(const angle &other) = default;
+    angle &operator=(const angle &other) = default;
+
+    angle(angle &&other) = default;
+    angle &operator=(angle &&other) = default;
+
+    operator double() const
+    {
+        return radians_;
+    }
+
+    inline bool operator==(const angle &other) const
+    {
+        return radians_ == other.radians_;
+    }
+
+    inline bool operator<(const angle &other) const
+    {
+        return radians_ < other.radians_;
+    }
+
+    inline angle distance_to(const angle other) const
+    {
+        return std::min(other.radians_ - radians_, 2 * M_PI - (other.radians_ - radians_));
+    }
+
+    inline angle to_angle_around_zero() const
+    {
+        return radians_ > M_PI
+                   ? radians_ - 2 * M_PI
+                   : radians_;
+    }
+
+    inline angle to_normal_angle() const
+    {
+        double r = radians_;
+        while (r < 0)
+            r += 2 * M_PI;
+        while (r >= 2 * M_PI)
+            r -= 2 * M_PI;
+        return r;
+    }
+
+    inline double to_degrees() const
+    {
+        return radians_ / M_PI * 180.0;
+    }
+
+    static angle from_degrees(const double deg)
+    {
+        return angle(deg / 180.0 * M_PI);
+    }
+};
+
 struct vector
 {
 private:
@@ -18,6 +83,9 @@ private:
 public:
     constexpr vector() : x_{0}, y_{0} {}
     constexpr vector(double x, double y) : x_{x}, y_{y} {}
+    vector(double length, angle direction)
+        : x_{length * std::cos(direction)}, y_{length * std::sin(direction)}
+    {}
 
     vector(vector &&vec) = default;
     vector &operator=(vector &&vec) = default;
@@ -25,8 +93,8 @@ public:
     vector(const vector &vec) = default;
     vector &operator=(const vector &vec) = default;
 
-    double x() const { return x_; }
-    double y() const { return y_; }
+    constexpr double x() const { return x_; }
+    constexpr double y() const { return y_; }
 
     inline double dot(const vector &other) const
     {
@@ -35,10 +103,16 @@ public:
 
     vector normal() const
     {
-        double size = std::sqrt(x_ * x_ + y_ * y_);
+        double size = length();
         return vector(
             -y_ / size,
             x_ / size);
+    }
+
+    vector normalized() const
+    {
+        double size = length();
+        return vector(x_ / size, y_ / size);
     }
 
     bool operator==(const vector &other) const
@@ -75,12 +149,7 @@ public:
         return *this;
     }
 
-    vector operator*(const double scale) const
-    {
-        return vector(scale * x_, scale * y_);
-    }
-
-    inline bool operator<(const vector &other) const
+    constexpr bool operator<(const vector &other) const
     {
         return x_ < other.x_ && y_ < other.y_;
     }
@@ -197,76 +266,6 @@ private:
     }
 };
 
-struct angle
-{
-private:
-    double radians_;
-
-public:
-    angle(double radians)
-        : radians_{radians}
-    {
-    }
-
-    angle(const angle &other) = default;
-    angle &operator=(const angle &other) = default;
-
-    angle(angle &&other) = default;
-    angle &operator=(angle &&other) = default;
-
-    operator double() const
-    {
-        return radians_;
-    }
-
-    inline angle operator*(const double scale) const
-    {
-        return radians_ * scale;
-    }
-
-    inline bool operator==(const angle &other) const
-    {
-        return radians_ == other.radians_;
-    }
-
-    inline bool operator<(const angle &other) const
-    {
-        return radians_ < other.radians_;
-    }
-
-    inline angle distance_to(const angle other) const
-    {
-        return std::min(other.radians_ - radians_, 2 * M_PI - (other.radians_ - radians_));
-    }
-
-    inline angle to_angle_around_zero() const
-    {
-        return radians_ > M_PI
-                   ? radians_ - 2 * M_PI
-                   : radians_;
-    }
-
-    inline angle to_normal_angle() const
-    {
-        double r = radians_;
-        while (r < 0)
-            r += 2 * M_PI;
-        while (r >= 2 * M_PI)
-            r -= 2 * M_PI;
-        return r;
-    }
-
-    inline double to_degrees() const
-    {
-        return radians_ / M_PI * 180.0;
-    }
-
-    static angle from_degrees(const double deg)
-    {
-        return angle(deg / 180.0 * M_PI);
-    }
-};
-
 template <typename T>
 void hash_combine(size_t &seed, T const &v)
 {
@@ -337,6 +336,31 @@ public:
         return dist_sq <= std::pow(radius_, 2) || dist_sq <= std::pow(other.radius_, 2);
     }
 };
+
+inline angle operator*(const double scale, const angle alpha)
+{
+    return scale * double(alpha);
+}
+
+inline angle operator*(const angle alpha, const double scale)
+{
+    return scale * double(alpha);
+}
+
+inline vector operator*(const double scale, const vector vec)
+{
+    return vector(scale * vec.x(), scale * vec.y());
+}
+
+inline vector operator*(const vector vec, const double scale)
+{
+    return scale * vec;
+}
+
+inline vector operator/(const vector vec, const double scale)
+{
+    return vec * (1.0 / scale);
+}
 
 constexpr double sign(double x)
 {
