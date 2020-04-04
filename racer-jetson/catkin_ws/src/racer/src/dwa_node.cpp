@@ -24,6 +24,10 @@
 #include "racer/vehicle_model/vehicle_chassis.h"
 #include "racer_ros/Follower.h"
 
+using kinematic_model = racer::vehicle_model::kinematic::model;
+using kinematic_state = racer::vehicle_model::kinematic::state;
+using Follower = racer_ros::Follower<kinematic_state>;
+
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "dwa_node");
   ros::NodeHandle node("~");
@@ -44,7 +48,7 @@ int main(int argc, char *argv[]) {
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  const auto model = std::make_shared<racer::vehicle_model::kinematic::model>(
+  const auto model = std::make_shared<kinematic_model>(
       racer::vehicle_model::vehicle_chassis::rc_beast());
   const int lookahead =
       static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
@@ -59,7 +63,7 @@ int main(int argc, char *argv[]) {
                      5.0);
 
   const racer::following_strategies::trajectory_error_calculator<
-      kinematic::state>
+      kinematic_state>
       error_calculator = {position_weight,
                           heading_weight,
                           velocity_weight,
@@ -67,31 +71,20 @@ int main(int argc, char *argv[]) {
                           model->chassis->radius() * 5,
                           model->chassis->motor->max_rpm()};
 
-  const auto dwa = std::make_shared<
-      racer::following_strategies::dwa<racer::vehicle_model::kinematic::state>>(
-      lookahead, actions, model, error_calculator, integration_step_s);
-  racer_ros::Follower<racer::vehicle_model::kinematic::state> follower{
-      racer_ros::load_map(node), dwa, integration_step_s};
+  const auto dwa =
+      std::make_shared<racer::following_strategies::dwa<kinematic_state>>(
+          lookahead, actions, model, error_calculator, integration_step_s);
+  Follower follower{racer_ros::load_map(node), dwa, integration_step_s};
 
-  ros::Subscriber trajectory_sub = node.subscribe<racer_msgs::Trajectory>(
-      trajectory_topic, 1,
-      &racer_ros::Follower<
-          racer::vehicle_model::kinematic::state>::trajectory_observed,
-      &follower);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(
-      waypoints_topic, 1,
-      &racer_ros::Follower<
-          racer::vehicle_model::kinematic::state>::waypoints_observed,
-      &follower);
-  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(
-      state_topic, 1,
-      &racer_ros::Follower<
-          racer::vehicle_model::kinematic::state>::state_observed,
-      &follower);
+  auto trajectory_sub = node.subscribe<racer_msgs::Trajectory>(
+      trajectory_topic, 1, &Follower::trajectory_observed, &follower);
+  auto waypoints_sub = node.subscribe<racer_msgs::Waypoints>(
+      waypoints_topic, 1, &Follower::waypoints_observed, &follower);
+  auto state_sub = node.subscribe<racer_msgs::State>(
+      state_topic, 1, &Follower::state_observed, &follower);
 
-  ros::Publisher twist_pub =
-      node.advertise<geometry_msgs::Twist>(twist_topic, 1);
-  ros::Publisher ackermann_pub =
+  auto twist_pub = node.advertise<geometry_msgs::Twist>(twist_topic, 1);
+  auto ackermann_pub =
       node.advertise<ackermann_msgs::AckermannDrive>(ackermann_topic, 1);
 
   double frequency; // Hz
