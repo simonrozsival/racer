@@ -65,28 +65,4 @@ std::vector<racer::math::point> enumerate_segment(
     return points;
 }
 
-std::vector<racer::math::point> enumerate_loop(std::vector<racer::math::point> control_points, double step)
-{
-    std::vector<racer::math::point> points;
-
-    // loop around the control points with a window of four consecutive control points a, b, c, d
-    for (std::size_t b{0}; b < control_points.size(); ++b) {
-        std::size_t a = b == 0 ? control_points.size() - 1 : b - 1;
-        std::size_t c = (b + 1) % control_points.size();
-        std::size_t d = (b + 2) % control_points.size();
-
-        const auto next_segment = enumerate_segment(
-            control_points[a],
-            control_points[b],
-            control_points[c],
-            control_points[d],
-            step
-        );
-
-        points.insert(points.end(), next_segment.begin(), next_segment.end());
-    }
-
-    return points;
-}
-
 }

@@ -35,8 +35,11 @@ public:
             return {};
         }
 
+
         double velocity_command = clamp(pid_->predict_next(current_state.motor_rpm(), sub_trajectory.steps().front().state().motor_rpm()));
-        double steering_command = clamp(pure_pursuit_.select_steering_angle(current_state, passed_waypoints, reference_trajectory) / max_steering_angle_);
+
+        const auto target = pure_pursuit_.find_target(current_state, passed_waypoints, reference_trajectory);
+        double steering_command = clamp(pure_pursuit_.select_steering_angle(current_state, target) / max_steering_angle_);
 
         return {velocity_command, steering_command};
     }

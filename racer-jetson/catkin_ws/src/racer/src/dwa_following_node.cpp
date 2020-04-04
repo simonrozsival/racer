@@ -17,9 +17,6 @@
 #include <racer_msgs/Trajectory.h>
 #include <racer_msgs/Waypoints.h>
 
-#include <dynamic_reconfigure/server.h>
-#include <racer/DWAConfig.h>
-
 #include "racer/action.h"
 #include "racer/trajectory.h"
 
@@ -84,37 +81,6 @@ void spin(
     ros::spinOnce();
     rate.sleep();
   }
-}
-
-void dynamic_reconfigure_callback(
-  const racer::DWAConfig &config,
-  uint32_t level)
-{
-  if (!dwa)
-  {
-    return;
-  }
-
-  error_calculator = {
-      config.position_weight,
-      config.heading_weight,
-      config.velocity_weight,
-      config.distance_to_obstacle_weight,
-      config.max_position_error,
-      vehicle->motor->max_rpm()};
-
-  dwa->reconfigure(error_calculator);
-
-  ROS_INFO("DWA was reconfigured");
-}
-
-void setup_dynamic_reconfigure()
-{
-  dynamic_reconfigure::Server<racer::DWAConfig> server;
-  dynamic_reconfigure::Server<racer::DWAConfig>::CallbackType f;
-  f = boost::bind(&dynamic_reconfigure_callback, _1, _2);
-  server.setCallback(f);
-  ROS_INFO("dynamic reconfiguration for DWA was set up");
 }
 
 void create_visualization_line(
@@ -200,8 +166,6 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "dwa_following_node");
   ros::NodeHandle node("~");
-
-  // setup_dynamic_reconfigure();
 
   double cell_size;
   std::string state_topic, trajectory_topic, waypoints_topic, map_topic, twist_topic, ackermann_topic, visualization_topic;

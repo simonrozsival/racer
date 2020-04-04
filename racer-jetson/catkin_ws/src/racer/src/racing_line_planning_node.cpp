@@ -12,9 +12,6 @@
 #include "racer_ros/config/circuit.h"
 #include "racer_ros/circuit_progress_monitoring.h"
 
-#include "nav_msgs/GetMap.h"
-#include "nav_msgs/OccupancyGrid.h"
-
 #include "racer_msgs/State.h"
 #include "racer_msgs/RacingLine.h"
 
@@ -26,29 +23,6 @@ std::vector<racer::math::point> check_points;
 
 std::unique_ptr<racer::track::racing_line> racing_line;
 bool new_line = false;
-
-void load_map(ros::NodeHandle &node)
-{
-  // get the base map for space exploration
-  while (!ros::service::waitForService("static_map", ros::Duration(3.0)))
-  {
-    ROS_INFO("'racing_line_planning_node': Map service isn't available yet.");
-    continue;
-  }
-
-  auto map_service_client = node.serviceClient<nav_msgs::GetMap>("/static_map");
-
-  nav_msgs::GetMap::Request map_req;
-  nav_msgs::GetMap::Response map_res;
-  while (!map_service_client.call(map_req, map_res))
-  {
-    ROS_ERROR("Cannot obtain the base map from the map service. Another attempt will be made.");
-    ros::Duration(1.0).sleep();
-    continue;
-  }
-
-  grid = racer_ros::msg_to_grid(map_res.map);
-}
 
 void state_update(const racer_msgs::State::ConstPtr msg)
 {
@@ -76,7 +50,7 @@ void state_update(const racer_msgs::State::ConstPtr msg)
 
   // create initial trivial line
   const auto maximum_speed = model->maximum_theoretical_speed();
-  racing_line = racer::track::racing_line::construct_trivial(centerline, corners, maximum_speed);
+  racing_line = racer::track::racing_line::basic_from_apexes(grid, corners, maximum_speed);
   new_line = true;
 }
 
@@ -108,7 +82,7 @@ int main(int argc, char *argv[])
   model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
   // this will block until we get the occupancy grid from the service
-  load_map(node);
+  grid = racer_ros::load_map(node);
 
   ros::Rate publish_frequency{1.0};
   while (ros::ok())
