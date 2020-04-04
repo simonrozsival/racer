@@ -38,7 +38,7 @@ std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
 auto model =
     std::make_shared<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::rc_beast());
 
-double time_step_s = 1.0 / 10.0;
+double time_step_s;
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
@@ -87,6 +87,8 @@ int main(int argc, char *argv[])
   node.param<int>("throttle_levels", throttle_levels, 5);
   node.param<int>("steering_levels", steering_levels, 3);
 
+  node.param<double>("time_step_s", time_step_s, 0.1);
+
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
@@ -97,14 +99,15 @@ int main(int argc, char *argv[])
   occupancy_grid = racer_ros::load_map(node);
   collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72);
 
-  ros::Rate rate{ 5.0 };
+  double max_frequency;
+  node.param<double>("max_frequency", max_frequency, 3);
+  ros::Rate rate{ max_frequency };
 
   ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
     {
-      ROS_INFO("Start planning...");
       const auto start_clock = std::chrono::steady_clock::now();
 
       const auto trajectory = planner->plan(last_known_state, actions, circuit, collision_detector, next_waypoint);
@@ -125,6 +128,7 @@ int main(int argc, char *argv[])
 
     ros::spinOnce();
     rate.sleep();
+    ros::spinOnce();
   }
 
   return 0;

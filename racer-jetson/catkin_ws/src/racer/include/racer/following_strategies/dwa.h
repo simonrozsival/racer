@@ -10,15 +10,16 @@
 
 #include "racer/circuit.h"
 #include "racer/following_strategies/following_strategy.h"
+#include "racer/following_strategies/target_locator.h"
 #include "racer/vehicle_model/motor_model.h"
 
 namespace racer::following_strategies
 {
 template <typename State>
-class trajectory_error_calculator
+class target_error_calculator
 {
 public:
-  trajectory_error_calculator()
+  target_error_calculator()
     : position_error_weight_{ 0 }
     , heading_error_weight_{ 0 }
     , motor_rpm_error_weight_{ 0 }
@@ -26,8 +27,8 @@ public:
   {
   }
 
-  trajectory_error_calculator(double position_error_weight, double heading_error_weight, double motor_rpm_error_weight,
-                              double obstacle_proximity_error_weight, racer::vehicle_model::rpm max_rpm)
+  target_error_calculator(double position_error_weight, double heading_error_weight, double motor_rpm_error_weight,
+                          double obstacle_proximity_error_weight, racer::vehicle_model::rpm max_rpm)
     : position_error_weight_(position_error_weight)
     , heading_error_weight_(heading_error_weight)
     , motor_rpm_error_weight_(motor_rpm_error_weight)
@@ -36,49 +37,17 @@ public:
   {
   }
 
-  trajectory_error_calculator(trajectory_error_calculator<State> &&other) = default;
-  trajectory_error_calculator<State> &operator=(trajectory_error_calculator<State> &&other) = default;
+  target_error_calculator(target_error_calculator<State> &&other) = default;
+  target_error_calculator<State> &operator=(target_error_calculator<State> &&other) = default;
 
-  trajectory_error_calculator(const trajectory_error_calculator<State> &other) = default;
-  trajectory_error_calculator<State> &operator=(const trajectory_error_calculator<State> &other) = default;
+  target_error_calculator(const target_error_calculator<State> &other) = default;
+  target_error_calculator<State> &operator=(const target_error_calculator<State> &other) = default;
 
-  double calculate_error(const std::vector<State> &attempt, const racer::trajectory<State> &reference,
-                         const std::shared_ptr<racer::occupancy_grid> map) const
+  double calculate_error(const State a, const State b, const std::shared_ptr<racer::occupancy_grid> map) const
   {
-    double accumulated_error = 0;
-
-    auto attempt_it = attempt.cbegin();
-    auto reference_it = reference.steps().cbegin();
-
-    std::size_t step = 0;
-    std::size_t steps = std::min(attempt.size(), reference.steps().size());
-
-    const double total_weight =
-        position_error_weight_ + heading_error_weight_ + motor_rpm_error_weight_ + obstacle_proximity_error_weight_;
-
-    for (; attempt_it != attempt.cend() && reference_it != reference.steps().cend(); ++attempt_it, ++reference_it)
-    {
-      auto at = *attempt_it;
-      auto ref = reference_it->state();
-
-      double step_error = position_error_weight_ * position_error(at, ref) +
-                          heading_error_weight_ * heading_error(at, ref) +
-                          motor_rpm_error_weight_ * motor_rpm_error(at, ref) +
-                          obstacle_proximity_error_weight_ * obstacle_proximity_error(at, map);
-
-      // double discount = 1 - pow(double(steps - ++step) / double(steps), 2);
-      // step_error *= discount;
-
-      accumulated_error += step_error;
-    }
-
-    if (std::isnan(accumulated_error))
-    {
-      std::cout << "NAN!!" << std::endl;
-      return 10000000.0;
-    }
-
-    return accumulated_error / (double(steps) * total_weight);
+    return position_error_weight_ * position_error(a, b) + heading_error_weight_ * heading_error(a, b) +
+           motor_rpm_error_weight_ * motor_rpm_error(a, b) +
+           obstacle_proximity_error_weight_ * obstacle_proximity_error(a, map);
   }
 
 private:
@@ -156,10 +125,11 @@ class dwa : public following_strategy<State>
 {
 public:
   dwa(const std::vector<racer::action> available_actions, const unfolder<State> unfolder,
-      const trajectory_error_calculator<State> &trajectory_error_calculator)
+      const target_locator<State> &target_locator, const target_error_calculator<State> &target_error_calculator)
     : available_actions_{ available_actions }
     , unfolder_{ unfolder }
-    , trajectory_error_calculator_{ trajectory_error_calculator }
+    , target_error_calculator_{ target_error_calculator }
+    , target_locator_{ target_locator }
   {
   }
 
@@ -167,23 +137,17 @@ public:
                               const racer::trajectory<State> &reference_trajectory,
                               const std::shared_ptr<racer::occupancy_grid> map) const override
   {
-    const auto &reference_subtrajectory =
-        reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
-    if (reference_subtrajectory.empty())
-    {
-      std::cout << "empty reference subtrajectory" << std::endl;
-      return {};
-    }
-
     racer::action best_so_far{};
     double lowest_error = HUGE_VAL;
 
+    const auto target = target_locator_.find_target(current_state, passed_waypoints, reference_trajectory);
     for (const auto next_action : available_actions_)
     {
       const auto trajectory = unfolder_.unfold(current_state, next_action, map);
       if (!trajectory.empty())
       {
-        const double error = trajectory_error_calculator_.calculate_error(trajectory, reference_subtrajectory, map);
+        const auto final_state = trajectory.back();
+        const double error = target_error_calculator_.calculate_error(final_state, target, map);
 
         if (!best_so_far.is_valid() || error < lowest_error ||
             (error == lowest_error &&
@@ -199,9 +163,10 @@ public:
   }
 
 private:
+  const target_locator<State> target_locator_;
   const unfolder<State> unfolder_;
   std::vector<action> available_actions_;
-  trajectory_error_calculator<State> trajectory_error_calculator_;
+  target_error_calculator<State> target_error_calculator_;
 };
 
 }  // namespace racer::following_strategies

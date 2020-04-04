@@ -42,7 +42,9 @@ public:
 
   inline angle distance_to(const angle other) const
   {
-    return std::min(other.radians_ - radians_, 2 * M_PI - (other.radians_ - radians_));
+    const double a = to_normal_angle();
+    const double b = other.to_normal_angle();
+    return std::min(a - b, 2 * M_PI - (a - b));
   }
 
   inline angle to_normal_angle() const

@@ -6,6 +6,7 @@
 #include <ros/ros.h>
 
 #include "racer/following_strategies/pure_pursuit.h"
+#include "racer/following_strategies/target_locator.h"
 #include "racer/track/racing_line.h"
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
@@ -62,11 +63,12 @@ int main(int argc, char *argv[])
   vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
   model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
-  racer::following_strategies::pure_pursuit<racer::vehicle_model::kinematic::state> strategy(
-      vehicle->wheelbase,
-      5 * vehicle->wheelbase,   // min lookahead
-      15 * vehicle->wheelbase,  // max lookahead
-      vehicle->motor->max_rpm());
+  racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
+    5 * vehicle->wheelbase,   // min lookahead
+    15 * vehicle->wheelbase,  // max lookahead
+    vehicle->motor->max_rpm()
+  };
+  racer::following_strategies::pure_pursuit<racer::vehicle_model::kinematic::state> strategy(vehicle->wheelbase);
 
   double frequency;  // Hz
   node.param<double>("update_frequency_hz", frequency, 30.0);
@@ -79,7 +81,7 @@ int main(int argc, char *argv[])
     if (racing_line && last_known_state)
     {
       // select angle and speed
-      const auto target = strategy.find_target(*last_known_state, *racing_line);
+      const auto target = target_locator.find_target(*last_known_state, *racing_line);
       const auto angle = strategy.select_steering_angle(*last_known_state, target);
       const auto closest_pt_index = racing_line->closest_point_along_the_spline(last_known_state->position());
       const auto speed = racing_line->spline()[closest_pt_index].maximum_speed;

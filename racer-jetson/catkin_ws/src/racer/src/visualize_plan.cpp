@@ -65,22 +65,17 @@ int main(int argc, char *argv[])
         marker.action = visualization_msgs::Marker::ADD;
         marker.ns = "trajectory";
 
-        double speed = model->calculate_speed_with_no_slip_assumption(step.state().motor_rpm()) /
-                       model->maximum_theoretical_speed();
-        marker.color.g = speed;
-        marker.color.r = 1 - speed;
+        double speed_proportion = step.state().motor_rpm() / model->chassis->motor->max_rpm();
+        marker.color.g = speed_proportion;
+        marker.color.r = 1 - speed_proportion;
         marker.color.a = 1.0;
 
         marker.pose.position.x = step.state().position().x();
         marker.pose.position.y = step.state().position().y();
 
-        double heading = step.state().configuration().heading_angle();
-        marker.pose.orientation.w = cos(0.5 * heading);
-        marker.pose.orientation.x = 0;
-        marker.pose.orientation.y = 0;
-        marker.pose.orientation.z = sin(0.5 * heading);
+        marker.pose.orientation = tf::createQuaternionMsgFromYaw(step.state().configuration().heading_angle());
 
-        marker.scale.x = 0.2 + 0.5 * speed;
+        marker.scale.x = 0.05 + 0.45 * speed_proportion;
         marker.scale.y = 0.05;
         marker.scale.z = 0.05;
 
