@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
   int seq = 0;
 
-  double frequency = 20.0;
+  double frequency = 50.0;
   ros::Rate rate{ frequency };
   while (ros::ok())
   {
@@ -93,9 +93,6 @@ int main(int argc, char *argv[])
         }
 
         visualization_pub.publish(marker);
-
-        // wait for the next action before publishing the next marker
-        action = {};
       }
     }
 

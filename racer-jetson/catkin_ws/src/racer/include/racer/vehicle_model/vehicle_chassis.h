@@ -43,6 +43,17 @@ struct vehicle_chassis
                                              0.45,   // safe length
                                              0.05,   // wheel radius
                                              9.0,    // wheel to motor ratio
+                                             steering_servo_model::rc_beast(), motor_model::rc_beast());
+  }
+
+  static std::unique_ptr<vehicle_chassis> simulator()
+  {
+    return std::make_unique<vehicle_chassis>(0.155,  // cog_offset
+                                             0.31,   // wheelbase
+                                             0.30,   // safe width
+                                             0.45,   // safe length
+                                             0.05,   // wheel radius
+                                             9.0,    // wheel to motor ratio
                                              steering_servo_model::simulator(), motor_model::rc_beast());
   }
 

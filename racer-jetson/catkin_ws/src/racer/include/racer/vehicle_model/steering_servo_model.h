@@ -32,9 +32,9 @@ public:
 
   static auto simulator()
   {
-    return std::make_unique<steering_servo_model>(angle::from_degrees(-22.5), angle::from_degrees(22.5),
+    return std::make_unique<steering_servo_model>(angle::from_degrees(-80), angle::from_degrees(80),
                                                   std::array<double, 2>{ 12.701, 1476.686 },
-                                                  std::array<double, 2>{ 0.000329, 0.1174 });
+                                                  std::array<double, 2>{ 0.0001, 0.05 });
   }
 
   static auto rc_beast()
@@ -47,7 +47,8 @@ public:
   angle predict_next_state(const angle &current_steering_angle, const racer::action &action, const double dt) const
   {
     const angle target_angle = target_steering_angle(action);
-    const double angle_distance = current_steering_angle.distance_to(target_angle);
+    const angle angle_distance =
+        std::min(target_angle - current_steering_angle, 2 * M_PI - (target_angle - current_steering_angle));
     const double angle_change_rate = angle_distance / time_to_adjust(current_steering_angle, target_angle);
     return current_steering_angle + angle_change_rate * dt;
   }

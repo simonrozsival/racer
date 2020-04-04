@@ -78,15 +78,17 @@ public:
                                               std::vector<racer::math::point> next_waypoints, double vehicle_radius,
                                               double max_rpm)
   {
-    racer::sehs::space_exploration exploration{ 1.0 * vehicle_radius, 6 * vehicle_radius, 12 };
+    racer::sehs::space_exploration exploration{ 2.0 * vehicle_radius, 5.0 * vehicle_radius, 8 };
     const auto path_of_circles = exploration.explore_grid(occupancy_grid, start, next_waypoints);
     if (path_of_circles.empty())
     {
       return nullptr;
     }
 
-    return std::make_unique<racer::astar::sehs::kinematic::discretization>(path_of_circles, 2 * M_PI / 24.0,
-                                                                           max_rpm / 20.0);
+    double different_angles = 12.0;
+    double speed_levels = 10.0;
+    return std::make_unique<racer::astar::sehs::kinematic::discretization>(path_of_circles, 2 * M_PI / different_angles,
+                                                                           max_rpm / speed_levels);
   }
 
 private:

@@ -62,16 +62,6 @@ std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node)
   return msg_to_grid(map_res.map);
 }
 
-kinematic::state pose_and_twist_to_state(const geometry_msgs::Pose &pose, const geometry_msgs::Twist &twist)
-{
-  racer::vehicle_configuration configuration({ pose.position.x, pose.position.y }, tf::getYaw(pose.orientation));
-
-  return {
-    configuration, sqrt(pow(twist.linear.x, 2) + pow(twist.linear.y, 2)),
-    0  // we assume the steering angle is always zero in the beginning
-  };
-}
-
 racer::trajectory<kinematic::state> msg_to_trajectory(const racer_msgs::Trajectory &msg, double time_step_s)
 {
   std::vector<racer::trajectory_step<kinematic::state>> steps;
@@ -79,8 +69,12 @@ std:
   size_t t = 0;
   for (const auto &step : msg.trajectory)
   {
-    steps.emplace_back(pose_and_twist_to_state(step.pose, step.velocity), racer::action(0, 0), step.next_waypoint.data,
-                       t++ * time_step_s);
+    racer::vehicle_configuration configuration({ step.pose.position.x, step.pose.position.y },
+                                               tf::getYaw(step.pose.orientation));
+    const auto motor_rpm = step.motor_rpm.data;
+    kinematic::state state{ configuration, motor_rpm, 0 };
+
+    steps.emplace_back(state, racer::action(0, 0), step.next_waypoint.data, t++ * time_step_s);
   }
 
   return { steps, time_step_s };

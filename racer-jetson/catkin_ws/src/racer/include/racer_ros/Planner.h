@@ -69,11 +69,7 @@ public:
 
       state.pose.orientation = tf::createQuaternionMsgFromYaw(step.state().configuration().heading_angle());
 
-      const auto speed = model_->speed_in_state(step.state());
-      state.velocity.linear.x = cos(step.state().configuration().heading_angle()) * speed;
-      state.velocity.linear.y = sin(step.state().configuration().heading_angle()) * speed;
-
-      state.velocity.angular.z = (prev_heading_angle - step.state().configuration().heading_angle()) / time_step_s_;
+      state.motor_rpm.data = step.state().motor_rpm();
 
       trajectory->trajectory.push_back(state);
 

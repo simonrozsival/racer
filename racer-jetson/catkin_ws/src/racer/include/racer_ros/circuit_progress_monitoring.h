@@ -141,7 +141,7 @@ private:
     std::vector<racer::math::circle> wps;
     for (const auto& apex : apexes)
     {
-      wps.emplace_back(apex, 1.2 * centerline.width() / 2.0);
+      wps.emplace_back(apex, centerline.width() * 2.0 / 3.0);
     }
 
     waypoints_ = std::vector<racer::math::circle>(wps);

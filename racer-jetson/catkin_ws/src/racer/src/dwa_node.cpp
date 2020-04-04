@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
-  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::rc_beast());
+  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::simulator());
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
   auto actions = racer::action::create_actions(5, 15);
@@ -55,15 +55,21 @@ int main(int argc, char *argv[])
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
-  const racer::following_strategies::trajectory_error_calculator<kinematic_state> error_calculator = {
+  const racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
+    5 * model->chassis->wheelbase,   // min lookahead
+    15 * model->chassis->wheelbase,  // max lookahead
+    model->chassis->motor->max_rpm()
+  };
+  const racer::following_strategies::target_error_calculator<kinematic_state> error_calculator = {
     position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, model->chassis->motor->max_rpm()
   };
   const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{ model,
                                                                                                 integration_step_s,
                                                                                                 lookahead };
-  const auto dwa =
-      std::make_shared<racer::following_strategies::dwa<kinematic_state>>(actions, unfolder, error_calculator);
-  Follower follower{ racer_ros::load_map(node), dwa, integration_step_s };
+  auto map = racer_ros::load_map(node)->inflate(1.5 * model->chassis->radius());
+  const auto dwa = std::make_shared<racer::following_strategies::dwa<kinematic_state>>(
+      actions, unfolder, target_locator, error_calculator);
+  Follower follower{ std::move(map), dwa, integration_step_s };
 
   auto trajectory_sub =
       node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
