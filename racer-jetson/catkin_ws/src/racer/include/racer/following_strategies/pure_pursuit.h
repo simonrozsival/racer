@@ -41,27 +41,28 @@ public:
       int passed_waypoints,
       const trajectory<State> &trajectory) const
   {
-    auto sub_trajectory = trajectory.find_reference_subtrajectory(state, passed_waypoints);
-
+    const auto sub_trajectory = trajectory.find_reference_subtrajectory(state, passed_waypoints);
     if (sub_trajectory.steps().empty())
     {
       return state.configuration();
     }
+    
+    const auto closest = sub_trajectory.steps().front().position();
+    double lookahead_sq = calculate_lookahead_sq(state);
 
-    auto rear_axle_center = calculate_rear_axle_center(state.configuration());
-
-    const double lookahead = calculate_lookahead(state);
-    const double lookahead_sq = lookahead * lookahead;
-    auto reference_step = sub_trajectory.steps().begin();
-    while (reference_step != sub_trajectory.steps().end()
-      && reference_step->state().position().distance_sq(rear_axle_center) < lookahead_sq)
+    auto target = sub_trajectory.steps().begin();
+    while (target != sub_trajectory.steps().end()
+      && target->state().position().distance_sq(closest) < lookahead_sq)
     {
-      ++reference_step;
+      ++target;
     }
 
-    return reference_step == sub_trajectory.steps().end()
-               ? sub_trajectory.steps().back().state().configuration()
-               : reference_step->state().configuration();
+    if (target == sub_trajectory.steps().end())
+    {
+      target = sub_trajectory.steps().back();
+    }
+    
+    return target->state().configuration();
   }
 
   racer::vehicle_configuration find_target(
@@ -71,8 +72,7 @@ public:
     const auto vehicle_pos = state.position();
     const auto closest = racing_line.closest_point_along_the_spline(vehicle_pos);
 
-    const double lookahead = calculate_lookahead(state);
-    double lookahead_sq = lookahead * lookahead;
+    double lookahead_sq = calculate_lookahead_sq(state);
 
     do
     {
@@ -104,6 +104,12 @@ private:
   const double min_lookahead_;
   const double max_lookahead_;
   const double rom_to_lookahead_coef_;
+
+  inline double calculate_lookahead_sq(const State& state) const
+  {
+    const double lookahead = calculate_lookahead(state);
+    return lookahead * lookahead;
+  }
 
   inline double calculate_lookahead(const State& state) const
   {
