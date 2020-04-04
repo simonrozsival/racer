@@ -5,6 +5,7 @@
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
 #include "racer/trajectory.h"
+#include "racer/track/racing_line.h"
 
 namespace racer::following_strategies
 {
@@ -16,39 +17,40 @@ public:
   pure_pursuit(
       double wheelbase,
       double min_lookahead,
-      double lookahead_coefficient)
-      : wheelbase_(wheelbase), min_lookahead_(min_lookahead), lookahead_coefficient_(lookahead_coefficient)
+      double max_lookahead,
+      double max_rpm)
+      : wheelbase_(wheelbase),
+        min_lookahead_(min_lookahead),
+        max_lookahead_(max_lookahead),
+        rom_to_lookahead_coef_(2 * max_lookahead / max_rpm)
   {
   }
 
   racer::math::angle select_steering_angle(
-      const State &current_state, int passed_waypoints,
-      const racer::trajectory<State> &trajectory) const
+      const State state,
+      const racer::vehicle_configuration target) const
   {
-    const auto reference = find_reference_position(
-        current_state, passed_waypoints, trajectory);
+    auto diff = target.location() - calculate_rear_axle_center(state.configuration());
+    double alpha = diff.angle() - state.configuration().heading_angle();
 
-    auto diff = reference.location() - calculate_rear_axle_center(current_state);
-    double alpha = diff.angle() - current_state.configuration().heading_angle();
-
-    return atan(2 * wheelbase_ * sin(alpha) / calculate_lookahead(current_state));
+    return atan(2 * wheelbase_ * sin(alpha) / calculate_lookahead(state));
   }
 
-  racer::vehicle_configuration find_reference_position(
-      const State &current_state,
+  racer::vehicle_configuration find_target(
+      const State &state,
       int passed_waypoints,
       const trajectory<State> &trajectory) const
   {
-    auto sub_trajectory = trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
+    auto sub_trajectory = trajectory.find_reference_subtrajectory(state, passed_waypoints);
 
     if (sub_trajectory.steps().empty())
     {
-      return current_state.configuration();
+      return state.configuration();
     }
 
-    auto rear_axle_center = calculate_rear_axle_center(current_state.configuration());
+    auto rear_axle_center = calculate_rear_axle_center(state.configuration());
 
-    const double lookahead = calculate_lookahead(current_state);
+    const double lookahead = calculate_lookahead(state);
     const double lookahead_sq = lookahead * lookahead;
     auto reference_step = sub_trajectory.steps().begin();
     while (reference_step != sub_trajectory.steps().end()
@@ -62,20 +64,56 @@ public:
                : reference_step->state().configuration();
   }
 
+  racer::vehicle_configuration find_target(
+      const State &state,
+      const racer::track::racing_line &racing_line) const
+  {
+    const auto vehicle_pos = state.position();
+    const auto closest = racing_line.closest_point_along_the_spline(vehicle_pos);
+
+    const double lookahead = calculate_lookahead(state);
+    double lookahead_sq = lookahead * lookahead;
+
+    do
+    {
+      const auto reference = racing_line.spline();
+      for (std::size_t i{0}; i < reference.size(); ++i) {
+        const auto j = (closest + i) % reference.size();
+        const auto dist_sq = reference[closest].coordinate.distance_sq(reference[j].coordinate);
+        if (dist_sq > lookahead_sq) {
+          const auto prev = j == 0 ? reference.size() - 1 : j - 1;
+          const auto next = (j + 1) % reference.size();
+          const auto heading = reference[next].coordinate - reference[prev].coordinate;
+
+          return {reference[j].coordinate, heading.angle()};
+        }
+      }
+
+      // If we get to this point, the lookahead is too large!
+      // Reduce it by half and try again!
+      lookahead_sq *= 0.5;
+    }
+    while (lookahead_sq > 0.01);
+
+    // We should never get to this point in practice.
+    return state.configuration();
+  }
+
 private:
   const double wheelbase_;
   const double min_lookahead_;
-  const double lookahead_coefficient_;
+  const double max_lookahead_;
+  const double rom_to_lookahead_coef_;
 
   inline double calculate_lookahead(const State& state) const
   {
-    return std::max(min_lookahead_, double(state.motor_rpm() * lookahead_coefficient_));
+    return std::max(min_lookahead_, std::min(max_lookahead_, double(state.motor_rpm() * rom_to_lookahead_coef_)));
   }
 
-  inline racer::math::point calculate_rear_axle_center(const State &state) const
+  inline racer::math::point calculate_rear_axle_center(const racer::vehicle_configuration &cfg) const
   {
-    auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(state.configuration().heading_angle());
-    return state.position() + rear_wheel_offset;
+    auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(cfg.heading_angle());
+    return cfg.location() + rear_wheel_offset;
   }
 };
 

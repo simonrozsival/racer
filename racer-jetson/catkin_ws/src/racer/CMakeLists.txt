@@ -71,27 +71,23 @@ include_directories(
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 add_executable(dwa_following_node src/dwa_following_node.cpp)
-add_executable(geometric_following_node src/geometric_following_node.cpp)
 add_executable(planning_node src/planning_node.cpp)
 add_executable(circuit_node src/circuit_node.cpp)
 add_executable(current_state_node src/current_state_node.cpp)
 add_executable(racing_line_planning_node src/racing_line_planning_node.cpp)
+add_executable(pure_pursuit_controller_for_raceline_node src/pure_pursuit_controller_for_raceline_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 add_dependencies(dwa_following_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROMECT_NAME}_gencfg)
-add_dependencies(geometric_following_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS} ${PROMECT_NAME}_gencfg)
 add_dependencies(planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(circuit_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(current_state_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(racing_line_planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(pure_pursuit_controller_for_raceline_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(dwa_following_node
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(geometric_following_node
   ${catkin_LIBRARIES}
 )
 
@@ -108,5 +104,9 @@ target_link_libraries(current_state_node
 )
 
 target_link_libraries(racing_line_planning_node
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(pure_pursuit_controller_for_raceline_node
   ${catkin_LIBRARIES}
 )

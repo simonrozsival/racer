@@ -2,8 +2,6 @@
 #include <ros/ros.h>
 #include <mutex>
 
-#include <nav_msgs/GetMap.h>
-#include <nav_msgs/OccupancyGrid.h>
 #include <nav_msgs/Path.h>
 
 #include <racer_msgs/State.h>
@@ -93,29 +91,6 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
       map_frame_id);
 }
 
-std::shared_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node)
-{
-  // get the base map for space exploration
-  while (!ros::service::waitForService("static_map", ros::Duration(3.0)))
-  {
-    ROS_INFO("'planning_node': Map service isn't available yet.");
-    continue;
-  }
-
-  auto map_service_client = node.serviceClient<nav_msgs::GetMap>("/static_map");
-
-  nav_msgs::GetMap::Request map_req;
-  nav_msgs::GetMap::Response map_res;
-  while (!map_service_client.call(map_req, map_res))
-  {
-    ROS_ERROR("Cannot obtain the base map from the map service. Another attempt will be made.");
-    ros::Duration(1.0).sleep();
-    continue;
-  }
-
-  return racer_ros::msg_to_grid(map_res.map);
-}
-
 int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "racing_trajectory_planning");
@@ -142,16 +117,13 @@ int main(int argc, char *argv[])
   const auto actions = racer::action::create_actions(throttle_levels, steering_levels);
 
   // blocks until map is ready
-  occupancy_grid = load_map(node);
+  occupancy_grid = racer_ros::load_map(node);
   collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
-
-  ROS_INFO("planner is waiting to be initialized, next time search a trajectory just to the next waypoint");
 
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
     {
-      ROS_INFO("starting planning");
       std::lock_guard<std::mutex> guard(lock);
       const auto start_clock = std::chrono::steady_clock::now();
 
@@ -172,21 +144,8 @@ int main(int argc, char *argv[])
       }
       else
       {
-        nav_msgs::Path path;
-        path.header = trajectory->header;
-
-        for (const auto &step : trajectory->trajectory)
-        {
-          geometry_msgs::PoseStamped path_pose;
-          path_pose.header = trajectory->header;
-          path_pose.pose = step.pose;
-
-          path.poses.push_back(path_pose);
-        }
-
-        ROS_INFO("publishing new plan");
         trajectory_pub.publish(*trajectory);
-        path_pub.publish(path);
+        path_pub.publish(racer_ros::visualize_trajectory(*trajectory));
       }
     }
 

@@ -22,34 +22,18 @@
           <param name="steering_levels" value="7" />
         </node>
 
-        <group>
-            <node pkg="racer" name="following" type="dwa_following_node" output="screen">
-                <param name="map_topic" value="/obstacles/costmap/costmap" />
-                <param name="prediction_horizon_s" value="0.75" />
+        <node pkg="racer" name="following" type="dwa_following_node" output="screen">
+            <param name="map_topic" value="/obstacles/costmap/costmap" />
+            <param name="prediction_horizon_s" value="0.75" />
 
-                <param name="distance_to_obstacle_weight" value="2.0" />
-                <param name="position_weight" value="5.0" />
-                <param name="heading_weight" value="6.0" />
-                <param name="velocity_weight" value="1.0" />
+            <param name="distance_to_obstacle_weight" value="2.0" />
+            <param name="position_weight" value="5.0" />
+            <param name="heading_weight" value="6.0" />
+            <param name="velocity_weight" value="1.0" />
 
-                <param name="frequency" value="50" />
+            <param name="frequency" value="50" />
 
-                <param name="ackermann_topic" value="/racer/ackermann_commands" />
-            </node>
-        </group>
-
-        <!--<group>
-            <node pkg="racer" name="following" type="geometric_following_node" output="screen">
-                <param name="map_topic" value="/obstacles/costmap/costmap" />
-                <param name="min_lookahead" value="1" />
-                <param name="max_allowed_speed_percentage" value="0.1" />
-                <param name="frequency" value="15" />
-                <param name="ackermann_topic" value="/car_1/command" />
-
-                <param name="pid_speed_kp" value="1.0" />
-                <param name="pid_speed_ki" value="0.0" />
-                <param name="pid_speed_kd" value="1.0" />
-            </node>
-        </group>-->
+            <param name="ackermann_topic" value="/racer/ackermann_commands" />
+        </node>
     </group>
 </launch>

@@ -1,2 +1,2 @@
 racer_msgs/RacingLineCorner[] corners
-geometry_msgs/Point[] points
+racer_msgs/RacingLinePoint[] points

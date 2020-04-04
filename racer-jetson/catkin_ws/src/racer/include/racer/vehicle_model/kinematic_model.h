@@ -112,7 +112,7 @@ public:
 
     double maximum_theoretical_speed() const override
     {
-        return chassis->motor->max_rpm() * chassis->wheel_radius;
+        return calculate_speed_with_no_slip_assumption(chassis->motor->max_rpm());
     }
 
     double calculate_speed_with_no_slip_assumption(const rpm &motor_rpm) const

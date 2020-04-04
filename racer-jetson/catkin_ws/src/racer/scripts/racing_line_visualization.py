@@ -12,7 +12,11 @@ from geometry_msgs.msg import Point
 from racer_msgs.msg import RacingLine
 from visualization_msgs.msg import Marker, MarkerArray
 
-def create_corner_point_marker(corner, id):
+LARGE = 0.5
+MEDIUM = 0.25
+SMALL = 0.1
+
+def create_track_point_marker(corner, size, id):
     marker = Marker()
 
     marker.header.frame_id = "map"
@@ -27,44 +31,15 @@ def create_corner_point_marker(corner, id):
     marker.pose.position.y = corner.point.y
     marker.pose.position.z = 0
 
-    marker.scale.x = 0.5
-    marker.scale.y = 0.5
-    marker.scale.z = 0.1
+    marker.scale.x = size
+    marker.scale.y = size
+    marker.scale.z = size
 
-    relative_speed = corner.maximum_speed.data / 767.5
+    relative_speed = corner.maximum_speed.data / 9.0
 
     marker.color.r = 1 - relative_speed
     marker.color.g = relative_speed
     marker.color.b = 0.0
-    marker.color.a = 1.0
-
-    return marker
-
-def create_line_strip(points, id):
-    marker = Marker()
-
-    marker.header.frame_id = "map"
-    marker.header.stamp = rospy.Time.now()
-
-    marker.ns = "racing-line"
-    marker.id = id
-    marker.type = Marker.LINE_STRIP
-    marker.action = Marker.ADD
-
-    for pt in points:
-        point = Point()
-        point.x = pt.x
-        point.y = pt.y
-        point.z = 0
-        marker.points.append(point)
-
-    marker.scale.x = 0.1
-    marker.scale.y = 0.1
-    marker.scale.z = 0.1
-
-    marker.color.r = 0.0
-    marker.color.g = 0.0
-    marker.color.b = 1.0
     marker.color.a = 1.0
 
     return marker
@@ -74,12 +49,14 @@ def create_marker_array(msg):
 
     i = 0
     for corner in msg.corners:
-        control_points.markers.append(create_corner_point_marker(corner.turn_in, i))
-        control_points.markers.append(create_corner_point_marker(corner.apex, i + 1))
-        control_points.markers.append(create_corner_point_marker(corner.exit, i + 2))
+        control_points.markers.append(create_track_point_marker(corner.turn_in, MEDIUM, i))
+        control_points.markers.append(create_track_point_marker(corner.apex, LARGE, i + 1))
+        control_points.markers.append(create_track_point_marker(corner.exit, MEDIUM, i + 2))
         i = i + 3
 
-    control_points.markers.append(create_line_strip(msg.points, i))
+    for pt in msg.points:
+        control_points.markers.append(create_track_point_marker(pt, SMALL, i))
+        i = i + 1
 
     return control_points
 

@@ -3,6 +3,8 @@
 #include <iostream>
 #include <vector>
 
+#include "racer/action.h"
+
 namespace racer
 {
 
