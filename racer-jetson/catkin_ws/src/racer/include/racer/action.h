@@ -41,6 +41,12 @@ public:
 
   static const std::vector<action> create_actions(const std::size_t throttle_levels, const std::size_t steering_levels)
   {
+    return create_actions(throttle_levels, steering_levels, 0.0, 1.0);
+  }
+
+  static const std::vector<action> create_actions(const std::size_t throttle_levels, const std::size_t steering_levels,
+                                                  const double min_throttle, const double max_throttle)
+  {
     std::vector<action> actions;
 
     if (throttle_levels < 3 || steering_levels < 3)
@@ -49,9 +55,9 @@ public:
     }
 
     const double steering_step = 2.0 / double(steering_levels - 1);
-    const double throttle_step = 1.0 / std::max(1.0, double(throttle_levels - 2));
+    const double throttle_step = (max_throttle - min_throttle) / std::max(1.0, double(throttle_levels - 2));
 
-    for (double throttle = 1; throttle >= 0; throttle -= throttle_step)
+    for (double throttle = max_throttle; throttle >= min_throttle; throttle -= throttle_step)
     {
       for (double steering = -1; steering <= 1; steering += steering_step)
       {
