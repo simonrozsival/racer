@@ -5,19 +5,21 @@
 
 #include <ros/ros.h>
 #include <tf/tf.h>
-#include <tf/transform_listener.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
 
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
-#include <std_msgs/Float64.h>
 #include <racer_msgs/State.h>
+#include <std_msgs/Float64.h>
 
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
+#include "racer/vehicle_model/kinematic_model.h"
 #include "racer/vehicle_model/motor_model.h"
 #include "racer/vehicle_model/steering_servo_model.h"
-#include "racer/vehicle_model/kinematic_model.h"
+
+#include "racer_ros/utils.h"
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
@@ -40,7 +42,7 @@ void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
   if (last_servo_update_time > 0)
   {
     const auto dt = t - last_servo_update_time;
-    racer::action action{msg->linear.x, msg->angular.z};
+    racer::action action{ msg->linear.x, msg->angular.z };
     current_steering_angle = servo->predict_next_state(current_steering_angle, action, dt);
   }
 
@@ -57,69 +59,7 @@ racer::vehicle_configuration get_current_configuration(const tf::Transform &tran
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
-  return {origin.x(), origin.y(), rotation};
-}
-
-void publish_state(
-    const ros::Publisher &state_pub,
-    const racer::vehicle_configuration &configuration,
-    const double current_rpm,
-    const double current_steering_angle)
-{
-  racer_msgs::State state;
-  state.header.seq = msg_seq++;
-  state.header.frame_id = odom_frame_id;
-  state.header.stamp = ros::Time::now();
-
-  state.x = configuration.location().x();
-  state.y = configuration.location().y();
-  state.heading_angle = configuration.heading_angle();
-  state.motor_rpm = current_motor_rpm;
-  state.steering_angle = current_steering_angle;
-
-  state_pub.publish(state);
-}
-
-void spin(const int frequency, const ros::Publisher &state_pub)
-{
-  ros::Rate rate(frequency);
-  tf::TransformListener tf_listener;
-  ros::Duration speed_averaging_interval(1.0 / double(frequency));
-  std::string err;
-
-  while (ros::ok())
-  {
-    if (is_initialized)
-    {
-      try
-      {
-        tf::StampedTransform odom_to_base_link, map_to_odom;
-        tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), odom_to_base_link);
-        tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
-
-        const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
-        publish_state(state_pub, configuration, current_motor_rpm, current_steering_angle);
-      }
-      catch (tf::TransformException ex)
-      {
-        ROS_ERROR("'current_state' node: %s.", ex.what());
-      }
-    }
-    else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time(0), &err))
-    {
-      is_initialized = true;
-      ROS_INFO("'current_state' node: INITIALIZED.");
-    }
-    else
-    {
-      ROS_INFO("'current_state' node: Still not initialized (%s).", err.c_str());
-      err = "";
-      ros::Duration(1.0).sleep();
-    }
-
-    ros::spinOnce();
-    rate.sleep();
-  }
+  return { origin.x(), origin.y(), rotation };
 }
 
 int main(int argc, char *argv[])
@@ -138,8 +78,8 @@ int main(int argc, char *argv[])
   node.param<std::string>("odom_frame_id", odom_frame_id, "odom");
   node.param<std::string>("base_link_frame_id", base_link_frame_id, "base_link");
 
-  int frequency;
-  node.param<int>("frequency", frequency, 30);
+  double frequency;
+  node.param<double>("frequency", frequency, 30);
 
   // reset current state
   msg_seq = 0;
@@ -150,7 +90,43 @@ int main(int argc, char *argv[])
   ros::Subscriber motor_rpm_sub = node.subscribe<std_msgs::Float64>(motor_rpm_topic, 1, motor_rpm_callback);
   ros::Publisher state_pub = node.advertise<racer_msgs::State>(state_topic, 1, false);
 
-  spin(frequency, state_pub);
+  ros::Rate rate(frequency);
+  tf::TransformListener tf_listener;
+  ros::Duration speed_averaging_interval(1.0 / double(frequency));
+  std::string err;
 
+  while (ros::ok())
+  {
+    if (is_initialized)
+    {
+      try
+      {
+        tf::StampedTransform odom_to_base_link, map_to_odom;
+        tf_listener.lookupTransform(odom_frame_id, base_link_frame_id, ros::Time(0), odom_to_base_link);
+        tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
+
+        const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
+        racer::vehicle_model::kinematic::state state{ configuration, current_motor_rpm, current_steering_angle };
+
+        state_pub.publish(racer_ros::state_to_msg(state, odom_frame_id));
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("'current_state' node: %s.", ex.what());
+      }
+    }
+    else if (tf_listener.canTransform(map_frame_id, base_link_frame_id, ros::Time(0), &err))
+    {
+      is_initialized = true;
+    }
+    else
+    {
+      err = "";
+      ros::Duration(1.0).sleep();
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+  }
   return 0;
 }

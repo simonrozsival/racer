@@ -1,28 +1,24 @@
-#include <iostream>
 #include <ros/ros.h>
+#include <iostream>
 #include <mutex>
 
-#include <nav_msgs/Path.h>
+#include "racer_msgs/State.h"
+#include "racer_msgs/Trajectory.h"
+#include "racer_msgs/Waypoints.h"
 
-#include <racer_msgs/State.h>
-#include <racer_msgs/Waypoints.h>
-#include <racer_msgs/Trajectory.h>
-
-#include "racer/math.h"
 #include "racer/action.h"
+#include "racer/math.h"
 #include "racer/trajectory.h"
 
+#include "racer/astar/sehs.h"
+#include "racer/sehs/space_exploration.h"
+#include "racer/track/collision_detection.h"
+#include "racer/track_analysis.h"
 #include "racer/vehicle_model/kinematic_model.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
-#include "racer/sehs/space_exploration.h"
-#include "racer/astar/sehs.h"
-#include "racer/track_analysis.h"
-#include "racer/track/collision_detection.h"
 
-#include "racer_ros/utils.h"
 #include "racer_ros/Planner.h"
-
-std::mutex lock;
+#include "racer_ros/utils.h"
 
 using State = racer::vehicle_model::kinematic::state;
 using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
@@ -39,24 +35,18 @@ std::vector<racer::math::point> next_waypoints;
 std::string map_frame_id;
 std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
 
-std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
-auto model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
+auto model =
+    std::make_shared<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::rc_beast());
 
-int number_of_expanded_points = 12;
 double time_step_s = 1.0 / 10.0;
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
-  std::lock_guard<std::mutex> guard(lock);
-
-  racer::vehicle_configuration position{state->x, state->y, state->heading_angle};
-  last_known_state = {position, state->motor_rpm, state->steering_angle};
+  last_known_state = racer_ros::msg_to_state(state);
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
 {
-  std::lock_guard<std::mutex> guard(lock);
-
   next_waypoints.clear();
   waypoint_radius = waypoints->waypoints[0].radius;
   next_waypoint = waypoints->next_waypoint;
@@ -66,29 +56,18 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
     next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 
-  circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
-
-  // Space Exploration
-  racer::sehs::space_exploration exploration{1.0 * vehicle->radius(), 6 * vehicle->radius(), number_of_expanded_points};
-  const auto path_of_circles = exploration.explore_grid(occupancy_grid, last_known_state.configuration(), next_waypoints);
-  if (path_of_circles.empty())
+  auto discretization = racer::astar::sehs::kinematic::discretization::from(
+      last_known_state.configuration(), occupancy_grid, next_waypoints, model->chassis->radius(),
+      model->chassis->motor->max_rpm());
+  if (!discretization)
   {
     ROS_WARN("Space exploration failed, goal is inaccessible.");
     return;
   }
 
-  // Discretization based on Space Exploration
-  auto discretization = std::make_unique<racer::astar::sehs::kinematic::discretization>(
-      path_of_circles,
-      2 * M_PI / 24.0,
-      vehicle->motor->max_rpm() / 20.0);
-
-  // Planner for the next waypoint
-  planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(
-      model,
-      std::move(discretization),
-      time_step_s,
-      map_frame_id);
+  circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
+  planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(model, std::move(discretization), time_step_s,
+                                                                       map_frame_id);
 }
 
 int main(int argc, char *argv[])
@@ -103,7 +82,6 @@ int main(int argc, char *argv[])
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
-  node.param<std::string>("path_visualization_topic", path_topic, "/racer/visualization/path");
 
   int throttle_levels, steering_levels;
   node.param<int>("throttle_levels", throttle_levels, 5);
@@ -112,28 +90,21 @@ int main(int argc, char *argv[])
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
-  ros::Publisher path_pub = node.advertise<nav_msgs::Path>(path_topic, 1);
 
   const auto actions = racer::action::create_actions(throttle_levels, steering_levels);
 
   // blocks until map is ready
   occupancy_grid = racer_ros::load_map(node);
-  collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, vehicle, 72);
+  collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72);
 
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
     {
-      std::lock_guard<std::mutex> guard(lock);
       const auto start_clock = std::chrono::steady_clock::now();
 
-      const auto trajectory = planner->plan(
-          last_known_state,
-          actions,
-          circuit,
-          collision_detector,
-          next_waypoint);
-      
+      const auto trajectory = planner->plan(last_known_state, actions, circuit, collision_detector, next_waypoint);
+
       const auto end_clock = std::chrono::steady_clock::now();
       const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - start_clock);
       ROS_INFO("trajectory planning took %ld ms", elapsed_time.count());
@@ -145,7 +116,6 @@ int main(int argc, char *argv[])
       else
       {
         trajectory_pub.publish(*trajectory);
-        path_pub.publish(racer_ros::visualize_trajectory(*trajectory));
       }
     }
 
