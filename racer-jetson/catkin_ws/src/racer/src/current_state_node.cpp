@@ -30,7 +30,7 @@ double current_motor_rpm = 0;
 // servo
 double last_servo_update_time = 0;
 racer::math::angle current_steering_angle = 0;
-auto servo = racer::vehicle_model::steering_servo_model::with_fitted_values();
+auto servo = racer::vehicle_model::steering_servo_model::rc_beast();
 
 uint32_t msg_seq;
 bool is_initialized;
@@ -95,6 +95,7 @@ int main(int argc, char *argv[])
   ros::Duration speed_averaging_interval(1.0 / double(frequency));
   std::string err;
 
+  ROS_INFO("==> CURRENT STATE NODE is ready to go");
   while (ros::ok())
   {
     if (is_initialized)

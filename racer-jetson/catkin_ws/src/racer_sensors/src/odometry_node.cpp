@@ -1,22 +1,22 @@
-#include <iostream>
-#include <ros/ros.h>
 #include <geometry_msgs/Twist.h>
 #include <nav_msgs/Odometry.h>
+#include <ros/ros.h>
 #include <std_msgs/Float64.h>
+#include <iostream>
 
 #include <math.h>
 
-#include "racer_sensors/odometry_subject.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
-#include "racer/vehicle_model/steering_servo_model.h"
 #include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle_model/steering_servo_model.h"
+#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer_sensors/odometry_subject.h"
 
 int main(int argc, char **argv)
 {
   ros::init(argc, argv, "odometry_node");
   ros::NodeHandle nh("~");
 
-  auto servo_model = racer::vehicle_model::steering_servo_model::with_fitted_values();
+  auto servo_model = racer::vehicle_model::steering_servo_model::rc_beast();
   auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
   auto vehicle_model = std::make_unique<racer::vehicle_model::kinematic::model>(std::move(vehicle));
 
@@ -40,21 +40,14 @@ int main(int argc, char **argv)
   ros::Publisher motor_rpm_pub = nh.advertise<nav_msgs::Odometry>(motor_rpm_topic, 10, true);
   tf::TransformBroadcaster odom_broadcaster;
 
-  odometry_subject subject(
-      gear_ratio,
-      std::move(servo_model),
-      std::move(vehicle_model),
-      odometry_frame,
-      base_link,
-      odom_broadcaster,
-      odometry_pub,
-      motor_rpm_pub);
+  odometry_subject subject(gear_ratio, std::move(servo_model), std::move(vehicle_model), odometry_frame, base_link,
+                           odom_broadcaster, odometry_pub, motor_rpm_pub);
 
-  ros::Subscriber steering_sub = nh.subscribe<geometry_msgs::Twist>(
-      driving_topic, 1, &odometry_subject::process_steering_command, &subject);
+  ros::Subscriber steering_sub =
+      nh.subscribe<geometry_msgs::Twist>(driving_topic, 1, &odometry_subject::process_steering_command, &subject);
 
-  ros::Subscriber wheel_encoders_sub = nh.subscribe<std_msgs::Float64>(
-      wheel_encoders_topic, 1, &odometry_subject::process_wheel_odometry, &subject);
+  ros::Subscriber wheel_encoders_sub =
+      nh.subscribe<std_msgs::Float64>(wheel_encoders_topic, 1, &odometry_subject::process_wheel_odometry, &subject);
 
   ros::Rate loop_rate(50);
 

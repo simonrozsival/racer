@@ -3,11 +3,11 @@
   <arg name="circuit" />
 
   <include file="$(find racer)/launch/map.launch">
-    <arg name="map" value="$(find racer)/maps/$(arg map).yaml"/>
+    <arg name="map" value="$(find racer)/maps/$(arg map).yaml" />
   </include>
 
   <include file="$(find racer)/launch/odometry.launch" />
-  
+
   <include file="$(find racer)/launch/amcl_localization.launch" />
 
   <include file="$(find racer)/launch/agent.launch">

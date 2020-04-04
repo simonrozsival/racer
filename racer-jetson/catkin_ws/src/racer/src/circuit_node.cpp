@@ -4,22 +4,22 @@
 #include <ros/ros.h>
 
 #include "racer/math.h"
+#include "racer/occupancy_grid.h"
 #include "racer/sehs/space_exploration.h"
 #include "racer/track_analysis.h"
-#include "racer/occupancy_grid.h"
 #include "racer/vehicle_model/base_model.h"
 
-#include "racer_ros/utils.h"
-#include "racer_ros/config/circuit.h"
 #include "racer_ros/circuit_progress_monitoring.h"
+#include "racer_ros/config/circuit.h"
+#include "racer_ros/utils.h"
 
 #include "nav_msgs/OccupancyGrid.h"
-#include "visualization_msgs/MarkerArray.h"
-#include "visualization_msgs/Marker.h"
-#include "racer_msgs/State.h"
 #include "racer_msgs/Circuit.h"
+#include "racer_msgs/State.h"
 #include "racer_msgs/Waypoint.h"
 #include "racer_msgs/Waypoints.h"
+#include "visualization_msgs/Marker.h"
+#include "visualization_msgs/MarkerArray.h"
 
 std::size_t last_published_next_waypoint = -1;
 
@@ -27,18 +27,22 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "circuit_node");
   ros::NodeHandle node("~");
-  
+
   auto config = racer_ros::config::circuit::load(node);
-  racer_ros::circuit_progress_monitoring circuit{config};
-  
-  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(config.map_topic, 1, &racer_ros::circuit_progress_monitoring::map_update, &circuit);
-  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(config.state_topic, 1, &racer_ros::circuit_progress_monitoring::state_update, &circuit);
+  racer_ros::circuit_progress_monitoring circuit{ config };
+
+  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(
+      config.map_topic, 1, &racer_ros::circuit_progress_monitoring::map_update, &circuit);
+  ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(
+      config.state_topic, 1, &racer_ros::circuit_progress_monitoring::state_update, &circuit);
 
   ros::Publisher waypoints_pub = node.advertise<racer_msgs::Waypoints>(config.waypoints_topic, 1, true);
-  ros::Publisher visualization_pub = node.advertise<visualization_msgs::MarkerArray>(config.waypoints_visualization_topic, 1, true);
+  ros::Publisher visualization_pub =
+      node.advertise<visualization_msgs::MarkerArray>(config.waypoints_visualization_topic, 1, true);
 
   ros::Rate rate(30);
 
+  ROS_INFO("==> CIRCUIT NODE is ready to go");
   while (ros::ok())
   {
     if (circuit.is_initialized() && circuit.next_waypoint() != last_published_next_waypoint)
@@ -73,10 +77,9 @@ int main(int argc, char *argv[])
         visualization_msgs::MarkerArray markers;
         for (std::size_t i = 0; i < waypoints.size(); ++i)
         {
-          bool is_advertised =
-            next_waypoint + lookahead > waypoints.size()
-              ? i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints.size()
-              : next_waypoint <= i && i < next_waypoint + lookahead;
+          bool is_advertised = next_waypoint + lookahead > waypoints.size() ?
+                                   i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints.size() :
+                                   next_waypoint <= i && i < next_waypoint + lookahead;
 
           const auto wp = waypoints[i];
 
@@ -92,6 +95,7 @@ int main(int argc, char *argv[])
           marker.pose.position.x = wp.center().x();
           marker.pose.position.y = wp.center().y();
           marker.pose.position.z = 0;
+          marker.pose.orientation.w = 1.0;
 
           marker.scale.x = 2 * wp.radius();
           marker.scale.y = 2 * wp.radius();

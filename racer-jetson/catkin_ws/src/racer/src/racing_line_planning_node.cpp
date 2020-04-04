@@ -4,16 +4,16 @@
 #include <ros/ros.h>
 
 #include "racer/math.h"
-#include "racer/track_analysis.h"
 #include "racer/occupancy_grid.h"
+#include "racer/track_analysis.h"
 #include "racer/vehicle_model/base_model.h"
 
-#include "racer_ros/utils.h"
-#include "racer_ros/config/circuit.h"
 #include "racer_ros/circuit_progress_monitoring.h"
+#include "racer_ros/config/circuit.h"
+#include "racer_ros/utils.h"
 
-#include "racer_msgs/State.h"
 #include "racer_msgs/RacingLine.h"
+#include "racer_msgs/State.h"
 
 std::shared_ptr<racer::vehicle_model::kinematic::model> model;
 std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle;
@@ -27,18 +27,19 @@ bool new_line = false;
 void state_update(const racer_msgs::State::ConstPtr msg)
 {
   // this must be run only once
-  if (!grid || racing_line) return;
+  if (!grid || racing_line)
+    return;
 
-  racer::vehicle_configuration current_configuration{msg->x, msg->y, msg->heading_angle};
+  racer::vehicle_configuration current_configuration{ msg->x, msg->y, msg->heading_angle };
 
   // the circuit is defined by the initial (current) configuration of the vehicle and the given
   // checkpoints along the track
-  std::vector<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
-  final_check_points.push_back(current_configuration.location()); // back to the start
+  std::vector<racer::math::point> final_check_points{ check_points.begin(), check_points.end() };
+  final_check_points.push_back(current_configuration.location());  // back to the start
 
   // calculate the centerline of the track in the occupancy grid and detect the corners along the centerline
-  const auto centerline = racer::track::centerline::find(current_configuration, grid, final_check_points);  
-  racer::track_analysis analysis{centerline.width()};
+  const auto centerline = racer::track::centerline::find(current_configuration, grid, final_check_points);
+  racer::track_analysis analysis{ centerline.width() };
   const auto pivot_points = analysis.find_pivot_points(centerline.circles(), final_check_points, grid);
   const auto corners = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
   if (corners.empty())
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
 {
   ros::init(argc, argv, "racing_line_planning_node");
   ros::NodeHandle node("~");
-  
+
   std::string state_topic, racing_line_topic;
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("racing_line_topic", racing_line_topic, "/racer/racing_line");
@@ -84,10 +85,13 @@ int main(int argc, char *argv[])
   // this will block until we get the occupancy grid from the service
   grid = racer_ros::load_map(node);
 
-  ros::Rate publish_frequency{1.0};
+  ros::Rate publish_frequency{ 1.0 };
+
+  ROS_INFO("==> RACING LINE PLANNING NODE is ready to go");
   while (ros::ok())
   {
-    if (racing_line && new_line) {
+    if (racing_line && new_line)
+    {
       new_line = false;
       const auto msg = racer_ros::racing_line_to_msg(*racing_line);
       racing_line_pub.publish(msg);

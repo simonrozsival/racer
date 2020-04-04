@@ -5,7 +5,7 @@
   <group>
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
       <rosparam command="load" file="$(arg circuit)" />
-      <param name="lookahead" value="8" />
+      <param name="lookahead" value="3" />
     </node>
 
     <node pkg="racer" name="state" type="current_state_node" output="screen">
@@ -24,12 +24,13 @@
 
     <node pkg="racer" name="following" type="dwa_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="prediction_horizon_s" value="0.75" />
+      <param name="prediction_horizon_s" value="0.25" />
+      <param name="integration_step_s" value="0.1" />
 
-      <param name="distance_to_obstacle_weight" value="2.0" />
-      <param name="position_weight" value="5.0" />
-      <param name="heading_weight" value="6.0" />
-      <param name="velocity_weight" value="1.0" />
+      <param name="distance_to_obstacle_weight" value="35.0" />
+      <param name="position_weight" value="50.0" />
+      <param name="heading_weight" value="0.0" />
+      <param name="velocity_weight" value="10.0" />
 
       <param name="frequency" value="50" />
 
