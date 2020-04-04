@@ -61,7 +61,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
       model->chassis->motor->max_rpm());
   if (!discretization)
   {
-    ROS_WARN("Space exploration failed, goal is inaccessible.");
+    ROS_WARN("space exploration failed, goal is inaccessible.");
     return;
   }
 
@@ -97,29 +97,34 @@ int main(int argc, char *argv[])
   occupancy_grid = racer_ros::load_map(node);
   collision_detector = std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72);
 
+  ros::Rate rate{ 5.0 };
+
+  ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
     {
+      ROS_INFO("Start planning...");
       const auto start_clock = std::chrono::steady_clock::now();
 
       const auto trajectory = planner->plan(last_known_state, actions, circuit, collision_detector, next_waypoint);
 
       const auto end_clock = std::chrono::steady_clock::now();
       const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - start_clock);
-      ROS_INFO("trajectory planning took %ld ms", elapsed_time.count());
 
       if (!trajectory)
       {
-        ROS_INFO("no plan found, stick to old plan, next time search a trajectory just to the next waypoint");
+        ROS_ERROR("X: no plan found after %ld ms, sticking to old plan for now", elapsed_time.count());
       }
       else
       {
+        ROS_INFO("O: trajectory planning took %ld ms", elapsed_time.count());
         trajectory_pub.publish(*trajectory);
       }
     }
 
     ros::spinOnce();
+    rate.sleep();
   }
 
   return 0;

@@ -197,6 +197,11 @@ geometry_msgs::Twist action_to_twist_msg(const racer::action &action)
   return twist_msg;
 }
 
+racer::action twist_to_action(const geometry_msgs::Twist::ConstPtr &msg)
+{
+  return { msg->linear.x, -msg->angular.z };
+}
+
 ackermann_msgs::AckermannDrive action_to_ackermann_msg(
     const racer::action &action, const std::shared_ptr<racer::vehicle_model::kinematic::model> model)
 {
@@ -209,6 +214,23 @@ ackermann_msgs::AckermannDrive action_to_ackermann_msg(
   }
 
   return ackermann_msg;
+}
+
+ackermann_msgs::AckermannDrive ackermann_msg_from_angle_and_speed(double angle, double speed)
+{
+  ackermann_msgs::AckermannDrive ackermann_msg;
+  ackermann_msg.speed = speed;
+  ackermann_msg.steering_angle = angle;
+  return ackermann_msg;
+}
+
+geometry_msgs::Twist twist_msg_from_angle_and_speed(double angle, double speed,
+                                                    const std::shared_ptr<racer::vehicle_model::kinematic::model> model)
+{
+  racer::action action{ speed / model->maximum_theoretical_speed(),
+                        model->chassis->steering_servo->necessary_action_target_angle(angle) };
+
+  return action_to_twist_msg(action);
 }
 
 }  // namespace racer_ros

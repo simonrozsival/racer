@@ -30,6 +30,7 @@ def create_track_point_marker(corner, size, id):
     marker.pose.position.x = corner.point.x
     marker.pose.position.y = corner.point.y
     marker.pose.position.z = 0
+    marker.pose.orientation.w = 1.0
 
     marker.scale.x = size
     marker.scale.y = size
