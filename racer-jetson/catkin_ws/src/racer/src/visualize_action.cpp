@@ -78,8 +78,11 @@ int main(int argc, char *argv[])
         marker.type = visualization_msgs::Marker::LINE_STRIP;
         marker.action = visualization_msgs::Marker::ADD;
         marker.ns = "action";
-        marker.color.b = 1.0;
+
+        marker.color.g = (action->throttle() + 1) / 2;
+        marker.color.r = 1 - marker.color.g;
         marker.color.a = 1.0;
+
         marker.pose.orientation.w = 1.0;
         marker.scale.x = 0.05;
 

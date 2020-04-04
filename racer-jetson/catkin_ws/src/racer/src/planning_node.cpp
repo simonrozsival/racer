@@ -93,7 +93,7 @@ int main(int argc, char *argv[])
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
 
-  const auto actions = racer::action::create_actions(throttle_levels, steering_levels);
+  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, -0.2, 0.8);
 
   // blocks until map is ready
   occupancy_grid = racer_ros::load_map(node);
