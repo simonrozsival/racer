@@ -45,7 +45,7 @@ int main(int argc, char *argv[])
   ROS_INFO("==> CIRCUIT NODE is ready to go");
   while (ros::ok())
   {
-    if (circuit.is_initialized() && circuit.next_waypoint() != last_published_next_waypoint)
+    if (circuit.is_initialized())
     {
       const std::size_t next_waypoint = circuit.next_waypoint();
       const auto waypoints_ahead = circuit.waypoints_ahead();
@@ -74,12 +74,14 @@ int main(int argc, char *argv[])
         const auto waypoints = circuit.waypoints();
         const auto lookahead = waypoints_ahead.size();
 
+        std::size_t first_advertised = next_waypoint % waypoints.size();
+        std::size_t last_advertised = (next_waypoint + lookahead) % waypoints.size();
+
         visualization_msgs::MarkerArray markers;
         for (std::size_t i = 0; i < waypoints.size(); ++i)
         {
-          bool is_advertised = next_waypoint + lookahead > waypoints.size() ?
-                                   i >= next_waypoint || i < (next_waypoint + lookahead) % waypoints.size() :
-                                   next_waypoint <= i && i < next_waypoint + lookahead;
+          bool is_advertised = first_advertised < last_advertised ? first_advertised <= i && i <= last_advertised :
+                                                                    first_advertised <= i || i <= last_advertised;
 
           const auto wp = waypoints[i];
 

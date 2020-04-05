@@ -21,22 +21,35 @@
       <param name="throttle_levels" value="11" />
       <param name="steering_levels" value="9" />
 
-      <param name="time_step_s" value="0.04" />
+      <param name="min_speed" value="-0.5" />
+      <param name="max_speed" value="0.5" />
+
+      <param name="time_step_s" value="0.05" />
     </node>
 
     <node pkg="racer" name="following" type="trajectory_following_node" output="screen">
-      <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="prediction_horizon_s" value="1.2" />
-      <param name="integration_step_s" value="0.04" />
+      <param name="frequency" value="50" />
+      <param name="ackermann_topic" value="/car_1/command" />
 
-      <param name="distance_to_obstacle_weight" value="250.0" />
+      <!-- Pure pursuit -->
+      <param name="strategy" value="pure_pursuit" />
+      <param name="min_lookahead" value="1.0" />
+      <param name="max_lookahead" value="3.0" />
+      <!-- -->
+
+      <!-- DWA -x->
+      <param name="strategy" value="dwa" />
+      <param name="distance_to_obstacle_weight" value="150.0" />
       <param name="position_weight" value="250.0" />
       <param name="heading_weight" value="50.0" />
-      <param name="velocity_weight" value="450.0" />
-
-      <param name="frequency" value="50" />
-
-      <param name="ackermann_topic" value="/racer/ackermann_commands" />
+      <param name="velocity_weight" value="150.0" />
+      <param name="prediction_horizon_s" value="1.0" />
+      <param name="integration_step_s" value="0.05" />
+      <param name="throttle_levels" value="15" />
+      <param name="steering_levels" value="45" />
+      <param name="min_speed_percentage" value="0.0" />
+      <param name="max_speed_percentage" value="1.0" />
+      <!-x- -->
     </node>
   </group>
 </launch>

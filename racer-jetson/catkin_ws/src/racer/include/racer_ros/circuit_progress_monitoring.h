@@ -55,10 +55,10 @@ public:
 
     std::lock_guard<std::mutex> guard(state_lock_);
 
-    const auto wp = waypoints_[next_waypoint_];
+    const auto wp = waypoints_[next_waypoint_ % waypoints_.size()];
     if (wp.contains(current_configuration.location()))
     {
-      next_waypoint_ = (next_waypoint_ + 1) % waypoints_.size();
+      ++next_waypoint_;
     }
   }
 
