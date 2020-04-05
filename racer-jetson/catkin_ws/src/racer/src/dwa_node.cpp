@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
   const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::simulator());
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
 
-  auto actions = racer::action::create_actions(20, 15, -1, 0.6);
+  auto actions = racer::action::create_actions(20, 15, -1, 1);
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
   node.param<double>("position_weight", position_weight, 30.0);
   node.param<double>("heading_weight", heading_weight, 20.0);

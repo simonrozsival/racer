@@ -43,6 +43,25 @@ public:
   target_error_calculator(const target_error_calculator<State> &other) = default;
   target_error_calculator<State> &operator=(const target_error_calculator<State> &other) = default;
 
+  double calculate_error(const std::vector<State> &prediction, const racer::trajectory<State> &reference,
+                         const std::shared_ptr<racer::occupancy_grid> map) const
+  {
+    double total_error = 0;
+    auto it_a{ prediction.begin() };
+    auto it_b{ reference.steps().begin() };
+
+    std::size_t steps = 0;
+
+    for (; it_a != prediction.end() && it_b != reference.steps().end(); ++it_a, ++it_b)
+    {
+      const double err = calculate_error(*it_a, it_b->state(), map);
+      const double discount = (prediction.size() - ++steps) / double(prediction.size());
+      total_error += discount * err;
+    }
+
+    return total_error / double(prediction.size());
+  }
+
   double calculate_error(const State a, const State b, const std::shared_ptr<racer::occupancy_grid> map) const
   {
     return position_error_weight_ * position_error(a, b) + heading_error_weight_ * heading_error(a, b) +
@@ -103,10 +122,10 @@ public:
       // the obstacles in the map are inflated so it is sufficient to check
       // just the grid cell which the center of the vehicle lies in
       last_state = model_->predict_next_state(last_state, action, time_step_s_);
-      if (grid->collides(last_state.position()))
-      {
-        return {};
-      }
+      // if (grid->collides(last_state.position()))
+      // {
+      //   return {};
+      // }
 
       next_states.push_back(last_state);
     }
@@ -140,14 +159,14 @@ public:
     racer::action best_so_far{};
     double lowest_error = HUGE_VAL;
 
-    const auto target = target_locator_.find_target(current_state, passed_waypoints, reference_trajectory);
+    const auto should_follow = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
     for (const auto next_action : available_actions_)
     {
       const auto trajectory = unfolder_.unfold(current_state, next_action, map);
       if (!trajectory.empty())
       {
         const auto final_state = trajectory.back();
-        const double error = target_error_calculator_.calculate_error(final_state, target, map);
+        const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);
 
         if (!best_so_far.is_valid() || error < lowest_error ||
             (error == lowest_error &&
