@@ -16,23 +16,23 @@
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="max_frequency" value="2" />
+      <param name="max_frequency" value="0.5" />
 
-      <param name="throttle_levels" value="9" />
-      <param name="steering_levels" value="15" />
+      <param name="throttle_levels" value="11" />
+      <param name="steering_levels" value="9" />
 
       <param name="time_step_s" value="0.04" />
     </node>
 
     <node pkg="racer" name="following" type="dwa_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="prediction_horizon_s" value="0.28" />
-      <param name="integration_step_s" value="0.04" />
+      <param name="prediction_horizon_s" value="1.5" />
+      <param name="integration_step_s" value="0.1" />
 
-      <param name="distance_to_obstacle_weight" value="100.0" />
-      <param name="position_weight" value="60.0" />
-      <param name="heading_weight" value="30.0" />
-      <param name="velocity_weight" value="80.0" />
+      <param name="distance_to_obstacle_weight" value="300.0" />
+      <param name="position_weight" value="250.0" />
+      <param name="heading_weight" value="50.0" />
+      <param name="velocity_weight" value="150.0" />
 
       <param name="frequency" value="50" />
 
