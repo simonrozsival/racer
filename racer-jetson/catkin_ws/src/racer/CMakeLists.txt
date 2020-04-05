@@ -35,12 +35,6 @@ find_package(catkin REQUIRED COMPONENTS
 ##   * uncomment the "generate_dynamic_reconfigure_options" section below
 ##     and list every .cfg file to be processed
 
-## Generate dynamic reconfigure parameters in the 'cfg' folder
-generate_dynamic_reconfigure_options(
-  cfg/pid.cfg
-  cfg/dwa.cfg
-)
-
 ###################################
 ## catkin specific configuration ##
 ###################################

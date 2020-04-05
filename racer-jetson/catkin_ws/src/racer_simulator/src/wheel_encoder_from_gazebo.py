@@ -22,7 +22,7 @@ def wheel_angular_vel(link, base):
 
 def calculate_motor_rpm(angular_vel):
     wheel_rpm = angular_vel * 60 / (2 * math.pi)
-    gear_ratio = 9
+    gear_ratio = 18
     return wheel_rpm * gear_ratio
 
 def wheel_encoder(

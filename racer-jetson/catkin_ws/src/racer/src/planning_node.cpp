@@ -23,6 +23,8 @@
 using State = racer::vehicle_model::kinematic::state;
 using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
 
+std::mutex mutex;
+
 State last_known_state;
 std::shared_ptr<racer::occupancy_grid> occupancy_grid;
 std::shared_ptr<racer::circuit> circuit;
@@ -36,7 +38,7 @@ std::string map_frame_id;
 std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
 
 auto model = std::make_shared<racer::vehicle_model::kinematic::model>(
-    racer::vehicle_model::vehicle_chassis::rc_beast());
+    racer::vehicle_model::vehicle_chassis::simulator());
 
 double time_step_s;
 
@@ -45,6 +47,15 @@ void state_update(const racer_msgs::State::ConstPtr &state) {
 }
 
 void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
+  std::lock_guard<std::mutex> guard(mutex);
+
+  // have we already successfully processed these next waypoints?
+  if (next_waypoint == waypoints->next_waypoint && planner) {
+    return;
+  }
+
+  planner = nullptr;
+
   next_waypoints.clear();
   waypoint_radius = waypoints->waypoints[0].radius;
   next_waypoint = waypoints->next_waypoint;
@@ -57,7 +68,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
       last_known_state.configuration(), occupancy_grid, next_waypoints,
       model->chassis->radius(), model->chassis->motor->max_rpm());
   if (!discretization) {
-    ROS_WARN("space exploration failed, goal is inaccessible.");
+    ROS_ERROR("space exploration failed, goal is inaccessible.");
     return;
   }
 
@@ -97,10 +108,13 @@ int main(int argc, char *argv[]) {
   const auto actions = racer::action::create_actions(
       throttle_levels, steering_levels, -0.4, 1.0);
 
+  double safety_margin;
+  node.param<double>("safety_margin", safety_margin, 0.3);
+
   // blocks until map is ready
   occupancy_grid = racer_ros::load_map(node);
   collision_detector = std::make_shared<racer::track::collision_detection>(
-      occupancy_grid, model->chassis, 72);
+      occupancy_grid, model->chassis, 72, safety_margin);
 
   double max_frequency;
   node.param<double>("max_frequency", max_frequency, 3);
@@ -109,9 +123,9 @@ int main(int argc, char *argv[]) {
   ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok()) {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty()) {
+      std::lock_guard<std::mutex> guard(mutex);
       const auto start_clock = std::chrono::steady_clock::now();
 
-      std::cout << "plan from: " << last_known_state << std::endl;
       const auto trajectory = planner->plan(last_known_state, actions, circuit,
                                             collision_detector, next_waypoint);
 

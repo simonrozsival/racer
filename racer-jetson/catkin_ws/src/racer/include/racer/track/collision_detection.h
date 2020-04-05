@@ -16,18 +16,18 @@ class collision_detection
   using footprint = std::vector<racer::math::point>;
 
 private:
-  std::shared_ptr<occupancy_grid> original_grid_;
-  std::shared_ptr<occupancy_grid> inflated_grid_outer_radius_;
+  std::shared_ptr<occupancy_grid> grid_;
+  std::shared_ptr<occupancy_grid> uniformly_inflated_grid_;
 
   std::vector<footprint> footprints_;
 
 public:
   collision_detection(std::shared_ptr<occupancy_grid> grid,
-                      std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, const std::size_t precision)
-    : original_grid_{ grid }
+                      std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, const std::size_t precision,
+                      const double safety_margin)
   {
-    auto outer_radius = chassis->radius();
-    inflated_grid_outer_radius_ = grid->inflate(2 * outer_radius);
+    grid_ = grid->inflate(safety_margin);
+    uniformly_inflated_grid_ = grid_->inflate(chassis->radius());
 
     const double step = 2 * M_PI / double(precision);
     for (double angle = 0; angle < 2 * M_PI; angle += step)
@@ -45,14 +45,14 @@ public:
 private:
   bool maybe_collides(const racer::vehicle_configuration &configuration) const
   {
-    return inflated_grid_outer_radius_->collides(configuration.location());
+    return uniformly_inflated_grid_->collides(configuration.location());
   }
 
   bool definitely_collides(const racer::vehicle_configuration &configuration) const
   {
     auto fp = footprint_for(configuration.heading_angle());
     return std::any_of(std::begin(fp), std::end(fp), [&](const auto &cell_offset) {
-      return original_grid_->collides(configuration.location() + cell_offset);
+      return grid_->collides(configuration.location() + cell_offset);
     });
   }
 

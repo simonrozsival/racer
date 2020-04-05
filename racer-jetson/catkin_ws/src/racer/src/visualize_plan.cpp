@@ -10,7 +10,6 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
-#include "racer/following_strategies/dwa.h"
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
 #include "racer/vehicle_model/kinematic_model.h"
@@ -41,7 +40,7 @@ int main(int argc, char *argv[])
   auto trajectory_sub = node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, trajectory_callback);
   auto visualization_pub = node.advertise<visualization_msgs::MarkerArray>(visualization_topic, 1, true);
 
-  const auto model = std::make_shared<kinematic::model>(vehicle_chassis::rc_beast());
+  const auto model = std::make_shared<kinematic::model>(vehicle_chassis::simulator());
   int seq = 0;
 
   double frequency = 5.0;
