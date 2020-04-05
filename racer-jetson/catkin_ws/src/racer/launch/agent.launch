@@ -24,15 +24,15 @@
       <param name="time_step_s" value="0.04" />
     </node>
 
-    <node pkg="racer" name="following" type="dwa_node" output="screen">
+    <node pkg="racer" name="following" type="trajectory_following_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="prediction_horizon_s" value="1.5" />
-      <param name="integration_step_s" value="0.1" />
+      <param name="prediction_horizon_s" value="1.2" />
+      <param name="integration_step_s" value="0.04" />
 
-      <param name="distance_to_obstacle_weight" value="300.0" />
+      <param name="distance_to_obstacle_weight" value="250.0" />
       <param name="position_weight" value="250.0" />
       <param name="heading_weight" value="50.0" />
-      <param name="velocity_weight" value="150.0" />
+      <param name="velocity_weight" value="450.0" />
 
       <param name="frequency" value="50" />
 
