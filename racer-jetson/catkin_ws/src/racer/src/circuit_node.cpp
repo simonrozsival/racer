@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
         const auto lookahead = waypoints_ahead.size();
 
         std::size_t first_advertised = next_waypoint % waypoints.size();
-        std::size_t last_advertised = (next_waypoint + lookahead) % waypoints.size();
+        std::size_t last_advertised = (next_waypoint + lookahead - 1) % waypoints.size();
 
         visualization_msgs::MarkerArray markers;
         for (std::size_t i = 0; i < waypoints.size(); ++i)
