@@ -16,7 +16,7 @@
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="max_frequency" value="10" />
+      <param name="max_frequency" value="0.25" />
 
       <param name="throttle_levels" value="9" />
       <param name="steering_levels" value="7" />
@@ -33,7 +33,7 @@
 
       <!-- Pure pursuit -->
       <param name="strategy" value="pure_pursuit" />
-      <param name="min_lookahead" value="0.8" />
+      <param name="min_lookahead" value="1.0" />
       <param name="max_lookahead" value="2.0" />
       <!-- -->
 
