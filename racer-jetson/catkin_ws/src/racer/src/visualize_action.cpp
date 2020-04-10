@@ -14,15 +14,18 @@
 std::optional<racer::vehicle_model::kinematic::state> state;
 std::optional<racer::action> action;
 
-void command_callback(const geometry_msgs::Twist::ConstPtr &msg) {
+void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
+{
   action = racer_ros::twist_to_action(msg);
 }
 
-void state_callback(const racer_msgs::State::ConstPtr &msg) {
+void state_callback(const racer_msgs::State::ConstPtr &msg)
+{
   state = racer_ros::msg_to_state(msg);
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
   ros::init(argc, argv, "visualize_action");
   ros::NodeHandle node("~");
 
@@ -43,22 +46,25 @@ int main(int argc, char *argv[]) {
   auto visualization_pub = node.advertise<visualization_msgs::Marker>(
       visualization_topic, 100, false);
 
-  const auto model = std::make_shared<racer::vehicle_model::kinematic::model>(
+  auto model = std::make_unique<racer::vehicle_model::kinematic::model>(
       racer::vehicle_model::vehicle_chassis::simulator());
   const racer::following_strategies::unfolder<
       racer::vehicle_model::kinematic::state>
-      unfolder{model, time_step_s,
+      unfolder{std::move(model), time_step_s,
                int(std::ceil(prediction_horizon / time_step_s))};
 
   int seq = 0;
 
   double frequency = 50.0;
   ros::Rate rate{frequency};
-  while (ros::ok()) {
-    if (state && action) {
+  while (ros::ok())
+  {
+    if (state && action)
+    {
       const auto prediction = unfolder.unfold_unsafe(*state, *action);
 
-      if (!prediction.empty()) {
+      if (!prediction.empty())
+      {
         visualization_msgs::Marker marker;
         marker.header.frame_id = "map";
         marker.header.seq = seq++;
@@ -76,7 +82,8 @@ int main(int argc, char *argv[]) {
         marker.pose.orientation.w = 1.0;
         marker.scale.x = 0.05;
 
-        for (const auto &s : prediction) {
+        for (const auto &s : prediction)
+        {
           geometry_msgs::Point pt;
           pt.x = s.position().x();
           pt.y = s.position().y();

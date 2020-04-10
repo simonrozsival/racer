@@ -18,7 +18,7 @@ class pure_pursuit_strategy : public following_strategy<State>
 public:
   pure_pursuit_strategy(target_locator<State> locator, pure_pursuit<State> pursuit,
                         const std::shared_ptr<racer::vehicle_model::kinematic::model> model)
-    : target_locator_{ locator }, pure_pursuit_{ pursuit }, model_{ model }
+      : target_locator_{locator}, pure_pursuit_{pursuit}, model_{model}
   {
   }
 
@@ -29,10 +29,11 @@ public:
     const auto target = target_locator_.find_target(current_state, passed_waypoints, reference_trajectory);
     const auto steering_angle = pure_pursuit_.select_steering_angle(current_state, target.configuration());
 
-    const auto throttle = target.motor_rpm() / model_->chassis->motor->max_rpm();
+    const auto throttle =
+        target.motor_rpm() > current_state.motor_rpm() ? 1.0 : target.motor_rpm() / model_->chassis->motor->max_rpm();
     const auto steering_input = model_->chassis->steering_servo->action_input_for_angle(steering_angle);
 
-    return { throttle, steering_input };
+    return {throttle, steering_input};
   }
 
 private:
@@ -41,4 +42,4 @@ private:
   const std::shared_ptr<racer::vehicle_model::kinematic::model> model_;
 };
 
-}  // namespace racer::following_strategies
+} // namespace racer::following_strategies

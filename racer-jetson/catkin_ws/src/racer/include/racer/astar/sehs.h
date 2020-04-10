@@ -16,11 +16,11 @@ private:
   friend class std::hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>;
 
 public:
-  discrete_state() : circle_{ 0 }, heading_{ 0 }, rpm_{ 0 }
+  discrete_state() : circle_{0}, heading_{0}, rpm_{0}
   {
   }
 
-  discrete_state(int circle, int heading, int rpm) : circle_{ circle }, heading_{ heading }, rpm_{ rpm }
+  discrete_state(int circle, int heading, int rpm) : circle_{circle}, heading_{heading}, rpm_{rpm}
   {
   }
 
@@ -52,7 +52,7 @@ private:
 
 public:
   discretization(const std::vector<racer::math::circle> &circles, racer::math::angle heading, double motor_rpm)
-    : motor_rpm_{ motor_rpm }, heading_{ heading }, nn_{ centers_of(circles) }
+      : motor_rpm_{motor_rpm}, heading_{heading}, nn_{centers_of(circles)}
   {
   }
 
@@ -61,9 +61,9 @@ public:
 
   discrete_state operator()(const racer::vehicle_model::kinematic::state &state) override
   {
-    return { (int)nn_.find_nearest_neighbor(state.position()),
-             (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
-             (int)floor(state.motor_rpm() / motor_rpm_) };
+    return {(int)nn_.find_nearest_neighbor(state.position()),
+            (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
+            (int)floor(state.motor_rpm() / motor_rpm_)};
   }
 
   std::string description() const override
@@ -78,7 +78,7 @@ public:
                                               std::vector<racer::math::point> next_waypoints, double vehicle_radius,
                                               double max_rpm)
   {
-    racer::sehs::space_exploration exploration{ 2.0 * vehicle_radius, 5.0 * vehicle_radius, 8 };
+    racer::sehs::space_exploration exploration{2.0 * vehicle_radius, 5.0 * vehicle_radius, 8};
     const auto path_of_circles = exploration.explore_grid(occupancy_grid, start, next_waypoints);
     if (path_of_circles.empty())
     {
@@ -104,7 +104,7 @@ private:
   }
 };
 
-}  // namespace racer::astar::sehs::kinematic
+} // namespace racer::astar::sehs::kinematic
 
 namespace std
 {
@@ -124,4 +124,4 @@ struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>
   }
 };
 
-}  // namespace std
+} // namespace std

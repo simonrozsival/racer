@@ -10,6 +10,7 @@
 #include <cmath>
 
 #include "racer/math.h"
+#include "racer/vehicle_configuration.h"
 
 namespace racer
 {
@@ -139,7 +140,8 @@ public:
         {
             pt = pt + step;
 
-            if (collides(pt)) return distance;
+            if (collides(pt))
+                return distance;
 
             distance += cell_size_;
         }
@@ -165,6 +167,21 @@ public:
         }
 
         return true;
+    }
+
+    racer::vehicle_configuration move_towards_center(const racer::vehicle_configuration &cfg) const
+    {
+        const double max_radius = 5.0; // meters
+        const racer::math::angle left = cfg.heading_angle() + racer::math::angle::from_degrees(90);
+        const racer::math::angle right = cfg.heading_angle() - racer::math::angle::from_degrees(90);
+
+        const double distance_left = find_distance(cfg.location(), left, max_radius);
+        const double distance_right = find_distance(cfg.location(), right, max_radius);
+        const double radius = (distance_left + distance_right) / 2;
+
+        const double shift_right = distance_right - radius;
+        const racer::math::point center = cfg.location() + racer::math::vector(shift_right, right);
+        return {center, cfg.heading_angle()};
     }
 
     static constexpr uint8_t max_value()
