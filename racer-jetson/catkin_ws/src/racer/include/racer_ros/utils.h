@@ -26,9 +26,11 @@
 
 using namespace racer::vehicle_model;
 
-namespace racer_ros {
+namespace racer_ros
+{
 std::unique_ptr<racer::occupancy_grid>
-msg_to_grid(const nav_msgs::OccupancyGrid &map) {
+msg_to_grid(const nav_msgs::OccupancyGrid &map)
+{
   auto data = std::vector<uint8_t>{map.data.begin(), map.data.end()};
   // convert signed bytes (which are expected to be in the range 0-100) to
   // unsigned bytes
@@ -38,9 +40,11 @@ msg_to_grid(const nav_msgs::OccupancyGrid &map) {
                           map.info.origin.position.y});
 }
 
-std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node) {
+std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node)
+{
   // get the base map for space exploration
-  while (!ros::service::waitForService("static_map", ros::Duration(3.0))) {
+  while (!ros::service::waitForService("static_map", ros::Duration(3.0)))
+  {
     ROS_INFO("Map service isn't available yet.");
     continue;
   }
@@ -49,7 +53,8 @@ std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node) {
 
   nav_msgs::GetMap::Request map_req;
   nav_msgs::GetMap::Response map_res;
-  while (!map_service_client.call(map_req, map_res)) {
+  while (!map_service_client.call(map_req, map_res))
+  {
     ROS_ERROR("Cannot obtain the base map from the map service. Another "
               "attempt will be made.");
     ros::Duration(1.0).sleep();
@@ -60,11 +65,13 @@ std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node) {
 }
 
 racer::trajectory<kinematic::state>
-msg_to_trajectory(const racer_msgs::Trajectory &msg, double time_step_s) {
+msg_to_trajectory(const racer_msgs::Trajectory &msg, double time_step_s)
+{
   std::vector<racer::trajectory_step<kinematic::state>> steps;
 std:
   size_t t = 0;
-  for (const auto &step : msg.trajectory) {
+  for (const auto &step : msg.trajectory)
+  {
     racer::vehicle_configuration configuration(
         {step.pose.position.x, step.pose.position.y},
         tf::getYaw(step.pose.orientation));
@@ -80,7 +87,8 @@ std:
 
 racer_msgs::State
 state_to_msg(const racer::vehicle_model::kinematic::state &state,
-             std::string odom_frame_id) {
+             std::string odom_frame_id)
+{
   racer_msgs::State msg;
   msg.header.frame_id = odom_frame_id;
   msg.header.stamp = ros::Time::now();
@@ -95,13 +103,15 @@ state_to_msg(const racer::vehicle_model::kinematic::state &state,
 }
 
 racer::vehicle_model::kinematic::state
-msg_to_state(const racer_msgs::State::ConstPtr &msg) {
+msg_to_state(const racer_msgs::State::ConstPtr &msg)
+{
   racer::vehicle_configuration cfg{msg->x, msg->y, msg->heading_angle};
   return {cfg, msg->motor_rpm, msg->steering_angle};
 }
 
 racer_msgs::RacingLinePoint
-racing_line_point_msg(const racer::track::point &pt) {
+racing_line_point_msg(const racer::track::point &pt)
+{
   racer_msgs::RacingLinePoint pt_msg;
   pt_msg.point.x = pt.coordinate.x();
   pt_msg.point.y = pt.coordinate.y();
@@ -110,10 +120,12 @@ racing_line_point_msg(const racer::track::point &pt) {
 }
 
 racer_msgs::RacingLine
-racing_line_to_msg(const racer::track::racing_line &racing_line) {
+racing_line_to_msg(const racer::track::racing_line &racing_line)
+{
   racer_msgs::RacingLine msg;
 
-  for (const auto &corner : racing_line.corners()) {
+  for (const auto &corner : racing_line.corners())
+  {
     racer_msgs::RacingLineCorner corner_msg;
     corner_msg.turn_in = racing_line_point_msg(corner.turn_in);
     corner_msg.apex = racing_line_point_msg(corner.apex);
@@ -121,7 +133,8 @@ racing_line_to_msg(const racer::track::racing_line &racing_line) {
     msg.corners.push_back(corner_msg);
   }
 
-  for (const auto &pt : racing_line.spline()) {
+  for (const auto &pt : racing_line.spline())
+  {
     msg.points.push_back(racing_line_point_msg(pt));
   }
 
@@ -129,33 +142,39 @@ racing_line_to_msg(const racer::track::racing_line &racing_line) {
 }
 
 racer::track::point
-msg_to_racing_line_point(const racer_msgs::RacingLinePoint msg) {
+msg_to_racing_line_point(const racer_msgs::RacingLinePoint msg)
+{
   racer::math::point pt{msg.point.x, msg.point.y};
   return {pt, msg.maximum_speed.data};
 }
 
 racer::track::racing_line
-msg_to_racing_line(const racer_msgs::RacingLine::ConstPtr msg) {
+msg_to_racing_line(const racer_msgs::RacingLine::ConstPtr msg)
+{
   std::vector<racer::track::corner> corners;
-  for (const auto &corner : msg->corners) {
+  for (const auto &corner : msg->corners)
+  {
     corners.emplace_back(msg_to_racing_line_point(corner.turn_in),
                          msg_to_racing_line_point(corner.apex),
                          msg_to_racing_line_point(corner.exit));
   }
 
   std::vector<racer::track::point> spline;
-  for (const auto &pt : msg->points) {
+  for (const auto &pt : msg->points)
+  {
     spline.emplace_back(msg_to_racing_line_point(pt));
   }
 
   return {corners, spline};
 }
 
-nav_msgs::Path visualize_trajectory(racer_msgs::Trajectory plan) {
+nav_msgs::Path visualize_trajectory(racer_msgs::Trajectory plan)
+{
   nav_msgs::Path path;
   path.header = plan.header;
 
-  for (const auto &step : plan.trajectory) {
+  for (const auto &step : plan.trajectory)
+  {
     geometry_msgs::PoseStamped path_pose;
     path_pose.header = plan.header;
     path_pose.pose = step.pose;
@@ -166,7 +185,8 @@ nav_msgs::Path visualize_trajectory(racer_msgs::Trajectory plan) {
   return path;
 }
 
-geometry_msgs::PoseStamped pose_msg_from_point(racer::math::point pt) {
+geometry_msgs::PoseStamped pose_msg_from_point(racer::math::point pt)
+{
   geometry_msgs::PoseStamped pose;
   pose.header.frame_id = "map";
   pose.pose.position.x = pt.x();
@@ -176,7 +196,8 @@ geometry_msgs::PoseStamped pose_msg_from_point(racer::math::point pt) {
   return pose;
 }
 
-geometry_msgs::Twist action_to_twist_msg(const racer::action &action) {
+geometry_msgs::Twist action_to_twist_msg(const racer::action &action)
+{
   geometry_msgs::Twist twist_msg;
   twist_msg.linear.x = action.throttle();
   twist_msg.angular.z = -action.target_steering_angle();
@@ -184,14 +205,16 @@ geometry_msgs::Twist action_to_twist_msg(const racer::action &action) {
 }
 
 ackermann_msgs::AckermannDrive
-action_to_ackermann_msg(const racer::action &action) {
+action_to_ackermann_msg(const racer::action &action)
+{
   ackermann_msgs::AckermannDrive ackermann_msg;
-  ackermann_msg.speed = action.throttle();
+  ackermann_msg.speed = 0.5 + action.throttle() * 0.5;
   ackermann_msg.steering_angle = action.target_steering_angle();
   return ackermann_msg;
 }
 
-racer::action twist_to_action(const geometry_msgs::Twist::ConstPtr &msg) {
+racer::action twist_to_action(const geometry_msgs::Twist::ConstPtr &msg)
+{
   return {msg->linear.x, -msg->angular.z};
 }
 

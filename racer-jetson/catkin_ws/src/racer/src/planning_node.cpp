@@ -115,9 +115,11 @@ int main(int argc, char *argv[])
   collision_detector =
       std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72, safety_margin);
 
-  double max_frequency;
-  node.param<double>("max_frequency", max_frequency, 3);
-  ros::Rate rate{ max_frequency };
+  double max_frequency, normal_frequency;
+  node.param<double>("normal_frequency", normal_frequency, 1);
+  node.param<double>("max_frequency", max_frequency, 10);
+  ros::Rate normal_rate{normal_frequency};
+  ros::Rate max_rate{max_frequency};
 
   ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok())
@@ -140,11 +142,11 @@ int main(int argc, char *argv[])
       {
         ROS_INFO("O: trajectory planning took %ld ms", elapsed_time.count());
         trajectory_pub.publish(*trajectory);
+        normal_rate.sleep();
       }
     }
 
-    ros::spinOnce();
-    rate.sleep();
+    max_rate.sleep();
     ros::spinOnce();
   }
 
