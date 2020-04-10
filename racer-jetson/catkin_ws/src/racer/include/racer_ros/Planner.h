@@ -43,10 +43,7 @@ public:
         initial_state, time_step_s_, available_actions, discretization_, model_, circuit, collision_detector);
 
     std::atomic<bool> terminate = false;
-    const auto start_clock = std::chrono::steady_clock::now();
     const auto result = racer::astar::search<DiscreteState, State>(std::move(problem), terminate);
-    const auto end_clock = std::chrono::steady_clock::now();
-    const auto elapsed_time = std::chrono::duration_cast<std::chrono::milliseconds>(end_clock - start_clock).count() / 1000.0;
 
     if (!result.was_successful())
     {
@@ -57,16 +54,9 @@ public:
     trajectory.header.stamp = ros::Time::now();
     trajectory.header.frame_id = map_frame_;
 
-    std::size_t skip_first = std::ceil(elapsed_time / time_step_s_);
     for (const auto &step : result.found_trajectory.steps())
     {
       racer_msgs::TrajectoryState state;
-
-      if (skip_first > 0)
-      {
-        --skip_first;
-        continue;
-      }
 
       // the plan only considers the list of waypoints passed to the planner
       // - the first waypoint will have index 0, so its index has to be offset
