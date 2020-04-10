@@ -30,16 +30,16 @@ void state_update(const racer_msgs::State::ConstPtr msg)
   if (!grid || racing_line)
     return;
 
-  racer::vehicle_configuration current_configuration{ msg->x, msg->y, msg->heading_angle };
+  racer::vehicle_configuration current_configuration{msg->x, msg->y, msg->heading_angle};
 
   // the circuit is defined by the initial (current) configuration of the vehicle and the given
   // checkpoints along the track
-  std::vector<racer::math::point> final_check_points{ check_points.begin(), check_points.end() };
-  final_check_points.push_back(current_configuration.location());  // back to the start
+  std::vector<racer::math::point> final_check_points{check_points.begin(), check_points.end()};
+  final_check_points.push_back(current_configuration.location()); // back to the start
 
   // calculate the centerline of the track in the occupancy grid and detect the corners along the centerline
   const auto centerline = racer::track::centerline::find(current_configuration, grid, final_check_points);
-  racer::track_analysis analysis{ centerline.width() };
+  racer::track_analysis analysis{centerline.width()};
   const auto pivot_points = analysis.find_pivot_points(centerline.circles(), final_check_points, grid);
   const auto corners = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
   if (corners.empty())
@@ -79,13 +79,13 @@ int main(int argc, char *argv[])
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &state_update);
   ros::Publisher racing_line_pub = node.advertise<racer_msgs::RacingLine>(racing_line_topic, 1, true);
 
-  vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
+  vehicle = racer::vehicle_model::vehicle_chassis::simulator();
   model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
   // this will block until we get the occupancy grid from the service
   grid = racer_ros::load_map(node);
 
-  ros::Rate publish_frequency{ 1.0 };
+  ros::Rate publish_frequency{1.0};
 
   ROS_INFO("==> RACING LINE PLANNING NODE is ready to go");
   while (ros::ok())

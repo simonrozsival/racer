@@ -20,9 +20,9 @@
       <param name="max_frequency" value="10" />
 
       <param name="throttle_levels" value="5" />
-      <param name="steering_levels" value="9" />
+      <param name="steering_levels" value="15" />
 
-      <param name="min_speed_percentage" value="0.0" />
+      <param name="min_speed_percentage" value="-0.5" />
       <param name="max_speed_percentage" value="1.0" />
 
       <param name="time_step_s" value="0.02" />
@@ -35,7 +35,7 @@
       <!-- Pure pursuit -->
       <param name="strategy" value="pure_pursuit" />
       <param name="min_lookahead" value="0.75" />
-      <param name="max_lookahead" value="2.0" />
+      <param name="max_lookahead" value="2.25" />
       <!-- -->
 
       <!-- DWA -x->
