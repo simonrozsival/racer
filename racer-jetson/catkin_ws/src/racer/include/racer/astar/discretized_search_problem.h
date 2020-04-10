@@ -30,13 +30,14 @@ public:
                              const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
                              const std::shared_ptr<racer::circuit> circuit,
                              const std::shared_ptr<racer::track::collision_detection> detector)
-    : initial_state_{ initial_state }
-    , time_step_s_(time_step_s)
-    , vehicle_model_(model)
-    , available_actions_(available_actions)
-    , discretize_(discretize)
-    , circuit_{ circuit }
-    , collision_detector_{ detector }
+      : initial_state_{initial_state},
+        time_step_s_(time_step_s),
+        vehicle_model_(model),
+        available_actions_(available_actions),
+        discretize_(discretize),
+        circuit_{circuit},
+        collision_detector_{detector},
+        penalization_weight_{0.025}
   {
   }
 
@@ -79,7 +80,11 @@ public:
         continue;
       }
 
-      transitions.emplace_back(std::move(discretized_prediction), std::move(states), action, steps * time_step_s_);
+      const double total_time = steps * time_step_s_;
+      const double penalization = steps * std::pow(action.target_steering_angle(), 2);
+      const double cost = total_time + penalization_weight_ * penalization;
+
+      transitions.emplace_back(std::move(discretized_prediction), std::move(states), action, cost);
     }
 
     return transitions;
@@ -118,7 +123,7 @@ public:
       parent = parent_ptr->parent;
     }
 
-    return { steps, time_step_s_ };
+    return {steps, time_step_s_};
   }
 
   std::unique_ptr<search_node<DiscreteState, State>> initial_search_node() const override
@@ -128,7 +133,7 @@ public:
 
 private:
   const State initial_state_;
-  double time_step_s_;
+  double time_step_s_, penalization_weight_;
   const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> vehicle_model_;
   const std::vector<action> available_actions_;
   const std::shared_ptr<discretization<DiscreteState, State>> discretize_;
@@ -158,4 +163,4 @@ private:
     return (*discretize_)(state);
   }
 };
-}  // namespace racer::astar
+} // namespace racer::astar
