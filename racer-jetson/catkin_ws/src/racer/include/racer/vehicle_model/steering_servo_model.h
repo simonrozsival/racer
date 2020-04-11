@@ -56,7 +56,7 @@ public:
   {
     const double target_steering_angle_percentage = action.target_steering_angle();
     const angle left_or_right =
-        target_steering_angle_percentage > 0 ? max_steering_angle_right_ : max_steering_angle_left_;
+        target_steering_angle_percentage > 0 ? max_steering_angle_left_ : max_steering_angle_right_;
     return left_or_right * std::abs(target_steering_angle_percentage);
   }
 

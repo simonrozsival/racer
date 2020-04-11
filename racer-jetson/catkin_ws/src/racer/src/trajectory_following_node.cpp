@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   node.param<std::string>("twist_topic", twist_topic, "/racer/commands");
   node.param<std::string>("ackermann_topic", ackermann_topic, "/racer/ackermann_commands");
 
-  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::rc_beast());
+  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::simulator());
 
   std::string strategy_type;
   node.param<std::string>("strategy", strategy_type, "dwa");
