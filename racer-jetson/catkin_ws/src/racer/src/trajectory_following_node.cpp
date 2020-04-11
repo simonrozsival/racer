@@ -54,12 +54,13 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
-  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{model,
-                                                                                               integration_step_s,
-                                                                                               lookahead};
+  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{ model,
+                                                                                                integration_step_s,
+                                                                                                lookahead };
 
   const racer::following_strategies::target_error_calculator<kinematic_state> error_calculator = {
-      position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, model->chassis->motor->max_rpm()};
+    position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, model->chassis->motor->max_rpm()
+  };
 
   return std::make_unique<racer::following_strategies::dwa_strategy<kinematic_state>>(actions, unfolder,
                                                                                       error_calculator);
@@ -73,10 +74,12 @@ create_pure_pursuit_strategy(ros::NodeHandle &node, const std::shared_ptr<kinema
   node.param<double>("max_lookahead", max_lookahead, 5.0);
 
   racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
-      min_lookahead, max_lookahead, model->chassis->motor->max_rpm()};
+    min_lookahead, max_lookahead, model->chassis->motor->max_rpm()
+  };
 
   racer::following_strategies::pure_pursuit<racer::vehicle_model::kinematic::state> pure_pursuit{
-      model->chassis->wheelbase};
+    model->chassis->wheelbase
+  };
 
   return std::make_unique<racer::following_strategies::pure_pursuit_strategy<kinematic_state>>(target_locator,
                                                                                                pure_pursuit, model);
@@ -106,7 +109,7 @@ int main(int argc, char *argv[])
   node.param<std::string>("twist_topic", twist_topic, "/racer/commands");
   node.param<std::string>("ackermann_topic", ackermann_topic, "/racer/ackermann_commands");
 
-  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::simulator());
+  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::rc_beast());
 
   std::string strategy_type;
   node.param<std::string>("strategy", strategy_type, "dwa");
@@ -123,7 +126,7 @@ int main(int argc, char *argv[])
   double integration_step_s, prediction_horizon_s;
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
 
-  Follower follower{std::move(map), std::move(strategy), integration_step_s};
+  Follower follower{ std::move(map), std::move(strategy), integration_step_s };
 
   auto trajectory_sub =
       node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
@@ -134,7 +137,7 @@ int main(int argc, char *argv[])
   auto twist_pub = node.advertise<geometry_msgs::Twist>(twist_topic, 1);
   auto ackermann_pub = node.advertise<ackermann_msgs::AckermannDrive>(ackermann_topic, 1);
 
-  double frequency; // Hz
+  double frequency;  // Hz
   node.param<double>("update_frequency_hz", frequency, 25);
   ros::Rate rate(frequency);
 
