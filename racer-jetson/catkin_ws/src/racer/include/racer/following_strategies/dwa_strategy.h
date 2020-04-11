@@ -36,7 +36,8 @@ public:
     const auto should_follow = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
     for (const auto next_action : available_actions_)
     {
-      const auto trajectory = unfolder_.unfold(current_state, next_action, map);
+      // const auto trajectory = unfolder_.unfold_unsafe(current_state, next_action, map);
+      const auto trajectory = unfolder_.unfold_unsafe(current_state, next_action);
       if (!trajectory.empty())
       {
         const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);

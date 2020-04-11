@@ -34,7 +34,7 @@
       <param name="frequency" value="50" />
       <param name="ackermann_topic" value="/car_1/command" />
 
-      <param name="strategy" value="pure_pursuit" />
+      <param name="strategy" value="dwa" />
 
       <!-- Pure pursuit -->
       <param name="min_lookahead" value="0.75" />
@@ -43,14 +43,14 @@
 
       <!-- DWA -->
       <param name="distance_to_obstacle_weight" value="150.0" />
-      <param name="position_weight" value="350.0" />
-      <param name="heading_weight" value="50.0" />
-      <param name="velocity_weight" value="250.0" />
-      <param name="prediction_horizon_s" value="0.6" />
-      <param name="integration_step_s" value="0.05" />
-      <param name="throttle_levels" value="15" />
+      <param name="position_weight" value="250.0" />
+      <param name="heading_weight" value="100.0" />
+      <param name="velocity_weight" value="350.0" />
+      <param name="prediction_horizon_s" value="0.8" />
+      <param name="integration_step_s" value="0.02" />
+      <param name="throttle_levels" value="21" />
       <param name="steering_levels" value="45" />
-      <param name="min_speed_percentage" value="-1.0" />
+      <param name="min_speed_percentage" value="-0.5" />
       <param name="max_speed_percentage" value="1.0" />
       <!-- -->
     </node>
