@@ -73,6 +73,11 @@ public:
 
     return actions;
   }
+
+  friend std::ostream &operator<<(std::ostream &os, const action &a)
+  {
+    return os << "(throttle: " << a.throttle_ << ", steering angle: " << a.target_steering_angle_ << ")";
+  }
 };
 
 }  // namespace racer
