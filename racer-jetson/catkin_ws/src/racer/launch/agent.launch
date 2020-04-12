@@ -2,6 +2,8 @@
   <arg name="circuit" />
   <arg name="base_link_frame_id" default="base_link" />
   <arg name="origin_is_center_of_rear_axle" default="false" />
+  <arg name="horizon" default="0.75" />
+  <arg name="integration_step" default="0.02" />
 
   <group>
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
@@ -18,16 +20,16 @@
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="normal_frequency" value="0.25" />
+      <param name="normal_frequency" value="0.5" />
       <param name="max_frequency" value="10" />
 
-      <param name="throttle_levels" value="5" />
-      <param name="steering_levels" value="15" />
+      <param name="throttle_levels" value="7" />
+      <param name="steering_levels" value="13" />
 
-      <param name="min_speed_percentage" value="-0.5" />
-      <param name="max_speed_percentage" value="1.0" />
+      <param name="min_throttle" value="-1.0" />
+      <param name="max_throttle" value="1.0" />
 
-      <param name="time_step_s" value="0.02" />
+      <param name="time_step_s" value="$(arg integration_step)" />
     </node>
 
     <node pkg="racer" name="following" type="trajectory_following_node" output="screen">
@@ -42,16 +44,17 @@
       <!-- -->
 
       <!-- DWA -->
-      <param name="distance_to_obstacle_weight" value="150.0" />
-      <param name="position_weight" value="250.0" />
-      <param name="heading_weight" value="100.0" />
-      <param name="velocity_weight" value="350.0" />
-      <param name="prediction_horizon_s" value="0.8" />
-      <param name="integration_step_s" value="0.02" />
-      <param name="throttle_levels" value="21" />
-      <param name="steering_levels" value="45" />
-      <param name="min_speed_percentage" value="-0.5" />
-      <param name="max_speed_percentage" value="1.0" />
+      <param name="distance_to_obstacle_weight" value="3000.0" />
+      <param name="position_weight" value="2000.0" />
+      <param name="heading_weight" value="750.0" />
+      <param name="velocity_weight" value="1250.0" />
+
+      <param name="prediction_horizon_s" value="$(arg horizon)" />
+      <param name="integration_step_s" value="$(arg integration_step)" />
+      <param name="throttle_levels" value="7" />
+      <param name="steering_levels" value="21" />
+      <param name="min_throttle" value="0.20" />
+      <param name="max_throttle" value="1.0" />
       <!-- -->
     </node>
   </group>

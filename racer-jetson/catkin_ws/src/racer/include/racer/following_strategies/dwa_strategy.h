@@ -30,21 +30,31 @@ public:
                               const racer::trajectory<State> &reference_trajectory,
                               const std::shared_ptr<racer::occupancy_grid> map) const override
   {
+    return select_action(current_state, passed_waypoints, reference_trajectory, map, false);
+  }
+
+private:
+  const unfolder<State> unfolder_;
+  std::vector<action> available_actions_;
+  target_error_calculator<State> target_error_calculator_;
+
+  racer::action select_action(const State &current_state, const std::size_t passed_waypoints,
+                              const racer::trajectory<State> &reference_trajectory,
+                              const std::shared_ptr<racer::occupancy_grid> map, bool unsafe) const
+  {
     racer::action best_so_far{};
     double lowest_error = HUGE_VAL;
 
     const auto should_follow = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
     for (const auto next_action : available_actions_)
     {
-      // const auto trajectory = unfolder_.unfold_unsafe(current_state, next_action, map);
-      const auto trajectory = unfolder_.unfold_unsafe(current_state, next_action);
+      const auto trajectory = !unsafe ? unfolder_.unfold(current_state, next_action, map) :
+                                        unfolder_.unfold_unsafe(current_state, next_action);
       if (!trajectory.empty())
       {
         const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);
 
-        if (!best_so_far.is_valid() || error < lowest_error ||
-            (error == lowest_error &&
-             std::abs(next_action.target_steering_angle()) < std::abs(best_so_far.target_steering_angle())))
+        if (error < lowest_error)
         {
           lowest_error = error;
           best_so_far = next_action;
@@ -52,13 +62,14 @@ public:
       }
     }
 
+    if (!best_so_far.is_valid() && !unsafe)
+    {
+      // the car is probably too close to some obstacle, there's no other way around it...
+      return select_action(current_state, passed_waypoints, reference_trajectory, map, true);
+    }
+
     return best_so_far;
   }
-
-private:
-  const unfolder<State> unfolder_;
-  std::vector<action> available_actions_;
-  target_error_calculator<State> target_error_calculator_;
 };
 
 }  // namespace racer::following_strategies

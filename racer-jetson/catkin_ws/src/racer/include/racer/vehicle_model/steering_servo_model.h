@@ -39,7 +39,8 @@ public:
 
   static auto simulator()
   {
-    return std::make_unique<steering_servo_model>(1.0, -1.0, std::array<double, 2>{ 12.701, 1476.686 },
+    return std::make_unique<steering_servo_model>(angle::from_degrees(15.0), angle::from_degrees(-15.0),
+                                                  std::array<double, 2>{ 12.701, 1476.686 },
                                                   std::array<double, 2>{ 0.000329, 0.1174 });
   }
 
