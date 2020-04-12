@@ -21,6 +21,7 @@
 
 #include "racer/following_strategies/dwa_strategy.h"
 #include "racer/following_strategies/pure_pursuit_strategy.h"
+#include "racer/following_strategies/three_stage_dwa_strategy.h"
 
 #include "racer/vehicle_model/base_model.h"
 #include "racer/vehicle_model/kinematic_model.h"
@@ -50,20 +51,19 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
 
   double integration_step_s, prediction_horizon_s;
-  node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
+  node.param<double>("integration_step_s", integration_step_s, 0.02);
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
   const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{ model,
-                                                                                                integration_step_s,
-                                                                                                lookahead };
+                                                                                                integration_step_s };
 
   const racer::following_strategies::target_error_calculator<kinematic_state> error_calculator = {
     position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, model->chassis->motor->max_rpm()
   };
 
   return std::make_unique<racer::following_strategies::dwa_strategy<kinematic_state>>(actions, unfolder,
-                                                                                      error_calculator);
+                                                                                      error_calculator, lookahead);
 }
 
 std::unique_ptr<racer::following_strategies::following_strategy<kinematic_state>>
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
       }
 
       twist_pub.publish(racer_ros::action_to_twist_msg(action));
-      ackermann_pub.publish(racer_ros::action_to_ackermann_msg(action));
+      ackermann_pub.publish(racer_ros::action_to_ackermann_msg(action, *model->chassis->steering_servo));
     }
 
     ros::spinOnce();

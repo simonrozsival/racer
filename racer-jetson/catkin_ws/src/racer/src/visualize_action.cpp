@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
 
   auto model =
       std::make_unique<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::simulator());
-  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{
-    std::move(model), time_step_s, int(std::ceil(prediction_horizon / time_step_s))
-  };
+  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{ std::move(model),
+                                                                                                time_step_s };
+  std::size_t steps = std::ceil(prediction_horizon / time_step_s);
 
   int seq = 0;
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   {
     if (state && action)
     {
-      const auto prediction = unfolder.unfold_unsafe(*state, *action);
+      const auto prediction = unfolder.unfold_unsafe(*state, *action, steps);
 
       if (!prediction.empty())
       {
