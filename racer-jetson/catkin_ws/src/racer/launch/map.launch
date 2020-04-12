@@ -4,7 +4,7 @@
   <arg name="y_pos" default="-7.0" />
 
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" />
- 
+
   <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
     <rosparam file="$(find racer)/launch/costmap.yaml" command="load" ns="costmap" />
   </node>

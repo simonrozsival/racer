@@ -30,12 +30,25 @@ namespace racer_ros
 {
 std::unique_ptr<racer::occupancy_grid> msg_to_grid(const nav_msgs::OccupancyGrid &map)
 {
-  auto data = std::vector<uint8_t>{ map.data.begin(), map.data.end() };
+  auto data = std::vector<int8_t>{ map.data.begin(), map.data.end() };
   // convert signed bytes (which are expected to be in the range 0-100) to
   // unsigned bytes
   return std::make_unique<racer::occupancy_grid>(
       data, map.info.width, map.info.height, map.info.resolution,
       racer::math::vector{ map.info.origin.position.x, map.info.origin.position.y });
+}
+
+nav_msgs::OccupancyGrid grid_to_msg(const racer::occupancy_grid &map)
+{
+  nav_msgs::OccupancyGrid msg;
+  msg.header.frame_id = "map";
+  msg.info.width = map.cols();
+  msg.info.height = map.rows();
+  msg.info.resolution = map.cell_size();
+  msg.info.origin.position.x = map.origin().x();
+  msg.info.origin.position.y = map.origin().y();
+  msg.data = map.raw_data();
+  return msg;
 }
 
 std::unique_ptr<racer::occupancy_grid> load_map(ros::NodeHandle &node)
@@ -194,7 +207,7 @@ geometry_msgs::Twist action_to_twist_msg(const racer::action &action)
 ackermann_msgs::AckermannDrive action_to_ackermann_msg(const racer::action &action)
 {
   ackermann_msgs::AckermannDrive ackermann_msg;
-  ackermann_msg.speed = 0.5 + action.throttle() * 0.5;
+  ackermann_msg.speed = action.throttle();
   ackermann_msg.steering_angle = action.target_steering_angle();
   return ackermann_msg;
 }

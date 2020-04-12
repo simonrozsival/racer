@@ -65,12 +65,6 @@ public:
       }
     }
 
-    // braking
-    for (double steering = -1; steering <= 1; steering += steering_step)
-    {
-      actions.emplace_back(-1, steering);
-    }
-
     return actions;
   }
 
