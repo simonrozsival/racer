@@ -15,11 +15,11 @@
 namespace racer::following_strategies
 {
 template <typename State>
-class dwa_strategy : public following_strategy<State>
+class three_stage_dwa_strategy : public following_strategy<State>
 {
 public:
-  dwa_strategy(const std::vector<racer::action> available_actions, const unfolder<State> unfolder,
-               const target_error_calculator<State> &target_error_calculator, const std::size_t lookahead)
+  three_stage_dwa_strategy(const std::vector<racer::action> available_actions, const unfolder<State> unfolder,
+                           const target_error_calculator<State> &target_error_calculator, const std::size_t lookahead)
     : available_actions_{ available_actions }
     , unfolder_{ unfolder }
     , target_error_calculator_{ target_error_calculator }
@@ -48,19 +48,31 @@ private:
     double lowest_error = HUGE_VAL;
 
     const auto should_follow = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
-    for (const auto next_action : available_actions_)
+    for (const auto first_action : available_actions_)
     {
-      const auto trajectory = !unsafe ? unfolder_.unfold(current_state, next_action, map, lookahead_) :
-                                        unfolder_.unfold_unsafe(current_state, next_action, lookahead_);
-      if (!trajectory.empty())
-      {
-        const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);
+      double best_combo = HUGE_VAL;
 
-        if (error < lowest_error)
+      for (const auto second_action : available_actions_)
+      {
+        for (const auto third_action : available_actions_)
         {
-          lowest_error = error;
-          best_so_far = next_action;
+          racer::action actions[3] = { first_action, second_action, third_action };
+          auto trajectory = unfold(current_state, actions, map, unsafe);
+          if (!trajectory.empty())
+          {
+            const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);
+            if (error < best_combo)
+            {
+              best_combo = error;
+            }
+          }
         }
+      }
+
+      if (best_combo < lowest_error)
+      {
+        lowest_error = best_combo;
+        best_so_far = first_action;
       }
     }
 
@@ -71,6 +83,23 @@ private:
     }
 
     return best_so_far;
+  }
+
+  std::vector<State> unfold(const State &current_state, const racer::action actions[3],
+                            const std::shared_ptr<racer::occupancy_grid> map, bool unsafe) const
+  {
+    std::vector<State> trajectory{ current_state };
+    trajectory.reserve(lookahead_);
+    const std::size_t third_of_lookahead = std::ceil(lookahead_ / 3.0);
+
+    for (std::size_t i{ 0 }; i < 3; ++i)
+    {
+      auto segment = !unsafe ? unfolder_.unfold(trajectory.back(), actions[i], map, third_of_lookahead) :
+                               unfolder_.unfold_unsafe(trajectory.back(), actions[i], third_of_lookahead);
+      trajectory.insert(trajectory.end(), segment.begin(), segment.end());
+    }
+
+    return trajectory;
   }
 };
 
