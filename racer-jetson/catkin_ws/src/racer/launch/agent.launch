@@ -28,6 +28,7 @@
 
       <param name="min_throttle" value="-1.0" />
       <param name="max_throttle" value="1.0" />
+      <param name="safety_margin" value="0.4" />
 
       <param name="time_step_s" value="$(arg integration_step)" />
     </node>
@@ -36,25 +37,25 @@
       <param name="frequency" value="50" />
       <param name="ackermann_topic" value="/car_1/command" />
 
-      <param name="strategy" value="dwa" />
+      <param name="strategy" value="pure_pursuit" />
 
       <!-- Pure pursuit -->
-      <param name="min_lookahead" value="0.75" />
-      <param name="max_lookahead" value="2.25" />
+      <param name="min_lookahead" value="0.5" />
+      <param name="max_lookahead" value="1.5" />
       <!-- -->
 
       <!-- DWA -->
-      <param name="distance_to_obstacle_weight" value="3000.0" />
-      <param name="position_weight" value="2000.0" />
-      <param name="heading_weight" value="750.0" />
-      <param name="velocity_weight" value="1250.0" />
+      <param name="distance_to_obstacle_weight" value="500.0" />
+      <param name="position_weight" value="200.0" />
+      <param name="heading_weight" value="150.0" />
+      <param name="velocity_weight" value="300.0" />
 
       <param name="prediction_horizon_s" value="$(arg horizon)" />
       <param name="integration_step_s" value="$(arg integration_step)" />
-      <param name="throttle_levels" value="7" />
-      <param name="steering_levels" value="21" />
-      <param name="min_throttle" value="0.20" />
-      <param name="max_throttle" value="1.0" />
+      <param name="throttle_levels" value="20" />
+      <param name="steering_levels" value="31" />
+      <param name="min_throttle" value="0.25" />
+      <param name="max_throttle" value="0.85" />
       <!-- -->
     </node>
   </group>
