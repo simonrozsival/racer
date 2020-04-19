@@ -37,7 +37,7 @@ public:
 
   void map_observed(const nav_msgs::OccupancyGrid::ConstPtr &msg)
   {
-    map_ = msg_to_grid(*msg)->inflate(0.25);
+    map_ = msg_to_grid(*msg)->inflate(0.3);
   }
 
   void state_observed(const racer_msgs::State::ConstPtr &state)
