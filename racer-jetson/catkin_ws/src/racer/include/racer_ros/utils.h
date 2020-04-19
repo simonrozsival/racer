@@ -211,7 +211,7 @@ ackermann_msgs::AckermannDrive action_to_ackermann_msg(const racer::action &acti
   // ackermann msgs are used to control the vehicle in the simulator
   ackermann_msgs::AckermannDrive ackermann_msg;
   ackermann_msg.speed = action.throttle();
-  ackermann_msg.steering_angle = action.target_steering_angle() * 0.81;
+  ackermann_msg.steering_angle = action.target_steering_angle();
   return ackermann_msg;
 }
 
