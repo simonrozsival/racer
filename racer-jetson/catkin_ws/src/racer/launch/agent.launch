@@ -54,8 +54,8 @@
       <param name="integration_step_s" value="$(arg integration_step)" />
       <param name="throttle_levels" value="20" />
       <param name="steering_levels" value="31" />
-      <param name="min_throttle" value="0.25" />
-      <param name="max_throttle" value="0.85" />
+      <param name="min_throttle" value="0.0" />
+      <param name="max_throttle" value="1.0" />
       <!-- -->
     </node>
   </group>
