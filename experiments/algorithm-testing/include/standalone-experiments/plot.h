@@ -15,6 +15,7 @@
 
 #include "racer/circuit.h"
 #include "racer/math.h"
+#include "racer/track/centerline.h"
 #include "racer/trajectory.h"
 #include "racer/vehicle_configuration.h"
 #include "racer/vehicle_model/kinematic_model.h"
@@ -22,9 +23,20 @@
 using namespace racer::vehicle_model;
 namespace plt = matplotlibcpp;
 
+std::string speed_color(double speed_percentage)
+{
+  uint8_t green = speed_percentage * 255.0;
+  uint8_t red = 255 - green;
+
+  char buf[8];
+  sprintf(buf, "#%02X%02X00", red, green);
+  return buf;
+}
+
 void plot_vehicle_configuration(
     const racer::vehicle_configuration &configuration, std::string color,
-    const double cell_size) {
+    const double cell_size)
+{
   auto direction =
       racer::math::vector(1, 0).rotate(configuration.heading_angle());
 
@@ -34,14 +46,16 @@ void plot_vehicle_configuration(
   u.push_back(direction.x() / cell_size);
   v.push_back(direction.y() / cell_size);
 
-  plt::quiver(x, y, u, v, {{"color", color}, {"zorder", "10"}});
+  plt::quiver(x, y, u, v, {{"color", color}, {"zorder", "5"}});
 }
 
 void plot_path_of_circles(const std::string &name,
                           const std::vector<racer::math::circle> &circles,
-                          const std::string &format, const double cell_size) {
+                          const std::string &format, const double cell_size)
+{
   std::vector<double> circles_x, circles_y;
-  for (const auto &circle : circles) {
+  for (const auto &circle : circles)
+  {
     circles_x.push_back(circle.center().x() / cell_size);
     circles_y.push_back(circle.center().y() / cell_size);
   }
@@ -50,18 +64,23 @@ void plot_path_of_circles(const std::string &name,
 
 void plot_circles(const std::vector<racer::math::point> &points,
                   const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
-                  const double radius, unsigned char *img) {
+                  const double radius, unsigned char *img)
+{
   img = new unsigned char[occupancy_grid->cols() * occupancy_grid->rows() * 4];
   const auto raw_grid = occupancy_grid->raw_data();
-  for (std::size_t row = 0; row < (std::size_t)occupancy_grid->rows(); ++row) {
+  for (std::size_t row = 0; row < (std::size_t)occupancy_grid->rows(); ++row)
+  {
     for (std::size_t col = 0; col < (std::size_t)occupancy_grid->cols();
-         ++col) {
+         ++col)
+    {
       racer::math::point c(col * occupancy_grid->cell_size(),
                            row * occupancy_grid->cell_size());
 
       std::size_t number_of_circles = 0;
-      for (const auto &p : points) {
-        if (c.distance_sq(p) < std::pow(radius, 2)) {
+      for (const auto &p : points)
+      {
+        if (c.distance_sq(p) < std::pow(radius, 2))
+        {
           number_of_circles++;
         }
       }
@@ -80,9 +99,11 @@ void plot_circles(const std::vector<racer::math::point> &points,
 void plot_points(const std::string &name,
                  const std::vector<racer::math::point> &points,
                  const std::string &format, const double cell_size,
-                 std::map<std::string, std::string> keywords = {}) {
+                 std::map<std::string, std::string> keywords = {})
+{
   std::vector<double> points_x, points_y;
-  for (const auto &point : points) {
+  for (const auto &point : points)
+  {
     points_x.push_back(point.x() / cell_size);
     points_y.push_back(point.y() / cell_size);
   }
@@ -92,17 +113,22 @@ void plot_points(const std::string &name,
 }
 
 void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
-                    unsigned char *img) {
+                    unsigned char *img)
+{
   img = new unsigned char[circuit->grid->cols() * circuit->grid->rows() * 4];
   const auto raw_grid = circuit->grid->raw_data();
-  for (std::size_t row = 0; row < (std::size_t)circuit->grid->rows(); ++row) {
-    for (std::size_t col = 0; col < (std::size_t)circuit->grid->cols(); ++col) {
+  for (std::size_t row = 0; row < (std::size_t)circuit->grid->rows(); ++row)
+  {
+    for (std::size_t col = 0; col < (std::size_t)circuit->grid->cols(); ++col)
+    {
       racer::math::point c(col * circuit->grid->cell_size(),
                            row * circuit->grid->cell_size());
 
       std::size_t number_of_waypoints = 0;
-      for (std::size_t i = 0; i < circuit->waypoints.size(); ++i) {
-        if (circuit->passes_waypoint(c, i)) {
+      for (std::size_t i = 0; i < circuit->waypoints.size(); ++i)
+      {
+        if (circuit->passes_waypoint(c, i))
+        {
           ++number_of_waypoints;
         }
       }
@@ -122,32 +148,51 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 }
 
 void plot_trajectory(const racer::trajectory<kinematic::state> trajectory,
-                     const double radius, const double cell_size) {
+                     const double cell_size, const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle)
+{
   std::vector<racer::math::point> states, every_second;
-  for (const auto &step : trajectory.steps()) {
+  std::vector<double> speeds;
+  for (const auto &step : trajectory.steps())
+  {
     states.push_back(step.state().position());
+    speeds.push_back(vehicle->chassis->motor->normalize_rpm(step.state().motor_rpm()));
 
     if (step.timestamp() >= 1 &&
         step.timestamp() - std::floor(step.timestamp()) <
-            trajectory.time_step()) {
+            trajectory.time_step())
+    {
       every_second.push_back(states.back());
     }
   }
 
-  // double width = radius / cell_size;
-
   plot_points("Seconds marks", every_second, "k*", cell_size,
               {{"zorder", "11"}});
-  // plot_points("Trajectory", states, "r-", cell_size, {{"zorder", "9"},
-  // {"linewidth", std::to_string(width)}});
-  plot_points("Trajectory", states, "r-", cell_size, {{"zorder", "9"}});
+
+  const auto steps = trajectory.steps();
+  auto prev = steps.front().state().position();
+
+  for (std::size_t i{0}; i < steps.size(); ++i)
+  {
+    const auto pos = steps[i].state().position();
+
+    std::map<std::string, std::string> keywords = {
+        {"color", speed_color(speeds[i])},
+        {"zorder", "9"},
+        {"linewidth", std::to_string(vehicle->chassis->radius() * 0.5 / cell_size)}};
+
+    plt::plot(std::vector<double>{prev.x() / cell_size, pos.x() / cell_size}, std::vector<double>{prev.y() / cell_size, pos.y() / cell_size}, "-", keywords);
+
+    prev = pos;
+  }
 }
 
 void plot_grid(const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
-               unsigned char *img) {
+               unsigned char *img)
+{
   img = new unsigned char[occupancy_grid->cols() * occupancy_grid->rows() * 4];
   const auto raw_grid = occupancy_grid->raw_data();
-  for (std::size_t i = 0; i < raw_grid.size(); ++i) {
+  for (std::size_t i = 0; i < raw_grid.size(); ++i)
+  {
     std::size_t index = i * 4;
     img[index] = img[index + 1] = img[index + 2] =
         (unsigned char)(255 - raw_grid[i]);       // make obstacles dark
@@ -158,9 +203,11 @@ void plot_grid(const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
 }
 
 void plot_track_analysis(const track_analysis_input &config,
-                         const std::vector<racer::math::circle> &circles,
+                         const racer::track::centerline &centerline,
                          const std::vector<racer::math::point> &raw_waypoints,
-                         const std::vector<racer::math::point> &waypoints) {
+                         const std::vector<racer::math::point> &waypoints,
+                         const double waypoint_radius)
+{
   // plt::title("Corner Detection");
   plt::grid(true);
   plt::xlim(0, config.occupancy_grid->cols());
@@ -172,14 +219,14 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_points("Check points", config.checkpoints, "bx",
               config.occupancy_grid->cell_size());
 
-  plot_path_of_circles("Path", circles, "k-",
-                       config.occupancy_grid->cell_size());
+  plot_points("Centerline", centerline.points(), "k-",
+              config.occupancy_grid->cell_size());
   plot_points("Merged corner points", raw_waypoints, "ro",
               config.occupancy_grid->cell_size());
 
-  unsigned char *circles_img = nullptr;
-  plot_circles(waypoints, config.occupancy_grid,
-               config.min_distance_between_waypoints, circles_img);
+  unsigned char *waypoints_img = nullptr;
+  plot_circles(waypoints, config.occupancy_grid, waypoint_radius,
+               waypoints_img);
   plot_points("Corners", waypoints, "go", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
@@ -188,7 +235,7 @@ void plot_track_analysis(const track_analysis_input &config,
   plt::show();
 
   delete[] grid_img;
-  delete[] circles_img;
+  delete[] waypoints_img;
 }
 
 void plot_trajectory(
@@ -196,19 +243,17 @@ void plot_trajectory(
     const racer::vehicle_configuration initial_configuration,
     const racer::trajectory<kinematic::state> &trajectory,
     const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle,
-    const std::shared_ptr<racer::circuit> circuit, const std::string name) {
+    const std::shared_ptr<racer::circuit> circuit, const std::string name)
+{
   std::vector<racer::math::point> rpm_points, steering_angle_points,
       speed_points, throttle, steering;
-  for (const auto &step : trajectory.steps()) {
+  for (const auto &step : trajectory.steps())
+  {
     rpm_points.emplace_back(step.timestamp(),
                             step.state().motor_rpm() /
                                 vehicle->chassis->motor->max_rpm());
-    std::cout << step.timestamp() << ": " << step.state().steering_angle()
-              << std::endl;
     steering_angle_points.emplace_back(step.timestamp(),
                                        double(step.state().steering_angle()));
-    std::cout << steering_angle_points.back().x() << ": "
-              << steering_angle_points.back().y() << std::endl;
     speed_points.emplace_back(step.timestamp(),
                               vehicle->calculate_speed_with_no_slip_assumption(
                                   step.state().motor_rpm()));
@@ -232,12 +277,12 @@ void plot_trajectory(
                circles_img);
   plot_waypoints(circuit, waypoints_img);
 
+  plot_trajectory(trajectory,
+                  config.occupancy_grid->cell_size(), vehicle);
   plot_vehicle_configuration(trajectory.steps().back().state().configuration(),
                              "red", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(initial_configuration, "green",
                              config.occupancy_grid->cell_size());
-  plot_trajectory(trajectory, vehicle->chassis->width,
-                  config.occupancy_grid->cell_size());
 
   // plt::legend();
 

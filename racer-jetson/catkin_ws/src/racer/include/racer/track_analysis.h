@@ -1,263 +1,228 @@
 #pragma once
 
-#include <vector>
-#include <set>
-#include <utility>
 #include <algorithm>
 #include <optional>
+#include <set>
+#include <utility>
+#include <vector>
 
 #include "racer/math.h"
-#include "racer/vehicle_configuration.h"
 #include "racer/occupancy_grid.h"
+#include "racer/vehicle_configuration.h"
 
 using namespace racer::math;
 
-namespace racer
-{
+namespace racer {
 
-class track_analysis
-{
+class track_analysis {
 public:
-    track_analysis(const double min_distance_between_waypoints)
-        : min_distance_between_waypoints_(min_distance_between_waypoints)
-    {
+  track_analysis(const double min_distance_between_waypoints)
+      : min_distance_between_waypoints_(min_distance_between_waypoints) {}
+
+  const std::vector<point>
+  find_pivot_points(const std::vector<circle> &circle_path,
+                    const std::vector<point> &checkpoints,
+                    const std::shared_ptr<racer::occupancy_grid> grid) const {
+    std::vector<point> pivot_points;
+
+    if (circle_path.empty()) {
+      return {};
     }
 
-    const std::vector<point> find_pivot_points(
-        const std::vector<circle> &circle_path,
-        const std::vector<point> &checkpoints,
-        const std::shared_ptr<racer::occupancy_grid> grid) const
-    {
-        std::vector<point> pivot_points;
+    auto prev_circle = circle_path.front();
+    auto last_circle = prev_circle;
 
-        if (circle_path.empty())
-        {
-            return {};
-        }
+    // first iteration
+    for (auto &next_step : circle_path) {
+      bool are_directly_visible =
+          grid->are_directly_visible(last_circle.center(), next_step.center());
+      if (!are_directly_visible) {
+        pivot_points.push_back(prev_circle.center());
+        last_circle = std::move(prev_circle);
+      }
 
-        auto prev_circle = circle_path.front();
-        auto last_circle = prev_circle;
-
-        // first iteration
-        for (auto &next_step : circle_path)
-        {
-            bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
-            if (!are_directly_visible)
-            {
-                pivot_points.push_back(prev_circle.center());
-                last_circle = std::move(prev_circle);
-            }
-
-            prev_circle = std::move(next_step);
-        }
-
-        // continue from the beginning
-        for (auto &next_step : circle_path)
-        {
-            if (next_step.center() == pivot_points.front())
-            {
-                break;
-            }
-
-            bool are_directly_visible = grid->are_directly_visible(last_circle.center(), next_step.center());
-            if (!are_directly_visible)
-            {
-                pivot_points.push_back(prev_circle.center());
-                last_circle = std::move(prev_circle);
-            }
-
-            prev_circle = std::move(next_step);
-        }
-
-        return pivot_points;
+      prev_circle = std::move(next_step);
     }
 
-    std::vector<point> find_corners(
-        const std::vector<point> &pivot_points,
-        const std::vector<point> &checkpoints,
-        double max_angle)
-    {
-        const auto sharp_turns = remove_insignificant_turns(pivot_points, checkpoints, max_angle);
-        return merge_close(sharp_turns, min_distance_between_waypoints_);
+    // continue from the beginning
+    for (auto &next_step : circle_path) {
+      if (pivot_points.size() > 0 &&
+          next_step.center() == pivot_points.front()) {
+        break;
+      }
+
+      bool are_directly_visible =
+          grid->are_directly_visible(last_circle.center(), next_step.center());
+      if (!are_directly_visible) {
+        pivot_points.push_back(prev_circle.center());
+        last_circle = std::move(prev_circle);
+      }
+
+      prev_circle = std::move(next_step);
     }
+
+    return pivot_points;
+  }
+
+  std::vector<point> find_corners(const std::vector<point> &pivot_points,
+                                  const std::vector<point> &checkpoints,
+                                  double max_angle) {
+    const auto sharp_turns =
+        remove_insignificant_turns(pivot_points, checkpoints, max_angle);
+    return merge_close(sharp_turns, min_distance_between_waypoints_);
+  }
 
 private:
-    const double min_distance_between_waypoints_;
+  const double min_distance_between_waypoints_;
 
-    const std::vector<point> remove_insignificant_turns(
-        const std::vector<point> &points,
-        const std::vector<point> &checkpoints,
-        double max_angle) const
-    {
-        std::size_t next_checkpoint = 0;
-        std::vector<bool> used(points.size(), true); // all points are considered at the beginning
+  const std::vector<point>
+  remove_insignificant_turns(const std::vector<point> &points,
+                             const std::vector<point> &checkpoints,
+                             double max_angle) const {
+    std::vector<bool> used(points.size(),
+                           true); // all points are considered at the beginning
 
-        for (std::size_t i = 0; i < points.size(); ++i)
-        {
-            const auto area_around = racer::math::circle{points[i], min_distance_between_waypoints_};
-            if (next_checkpoint < checkpoints.size()
-                && area_around.contains(checkpoints[next_checkpoint]))
-            {
-                // keep at least one point per each checkpoint
-                next_checkpoint++;
-                continue;
-            }
-
-            double angle = angle_at(i, points, used);
-            if (angle > max_angle)
-            {
-                used[i] = false;
-            }
-        }
-
-        std::vector<point> remaining;
-        for (std::size_t i = 0; i < points.size(); ++i)
-        {
-            if (used[i])
-            {
-                remaining.push_back(points[i]);
-            }
-        }
-
-        return remaining;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+      double angle = angle_at(i, points, used);
+      if (angle > max_angle) {
+        used[i] = false;
+      }
     }
 
-    const std::vector<point> merge_close(const std::vector<point> &points, double d_min) const
-    {
-        std::vector<bool> used(points.size(), true); // all points are used at the beginning
+    std::vector<point> remaining;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+      if (used[i]) {
+        remaining.push_back(points[i]);
+      }
+    }
 
-        std::size_t i_max, max_close = 0;
-        do
-        {
-            max_close = 0;
+    return remaining;
+  }
 
-            for (std::size_t i = 0; i < points.size(); ++i)
-            {
-                if (!used[i])
-                    continue;
-                const auto close = close_points(points, used, i, d_min);
-                if (close.size() > max_close)
-                {
-                    max_close = close.size();
-                    i_max = i;
-                }
-            }
+  const std::vector<point> merge_close(const std::vector<point> &points,
+                                       double d_min) const {
+    std::vector<bool> used(points.size(),
+                           true); // all points are used at the beginning
 
-            if (max_close > 0)
-            {
-                auto to_remove = close_points(points, used, i_max, d_min);
-                to_remove.insert(i_max);
-                const auto i_mid = pick_corner_point_index(points, to_remove, used);
-                to_remove.erase(i_mid);
+    std::size_t i_max, max_close = 0;
+    do {
+      max_close = 0;
 
-                // remove all the points except for the mid one
-                for (std::size_t i : to_remove)
-                {
-                    used[i] = false;
-                }
-            }
-        } while (max_close > 0);
-
-        std::vector<point> remaining;
-        for (std::size_t i = 0; i < points.size(); ++i)
-        {
-            if (used[i])
-            {
-                remaining.push_back(points[i]);
-            }
+      for (std::size_t i = 0; i < points.size(); ++i) {
+        if (!used[i])
+          continue;
+        const auto close = close_points(points, used, i, d_min);
+        if (close.size() > max_close) {
+          max_close = close.size();
+          i_max = i;
         }
+      }
 
-        return remaining;
-    }
+      if (max_close > 0) {
+        auto to_remove = close_points(points, used, i_max, d_min);
+        to_remove.insert(i_max);
+        const auto i_mid = pick_corner_point_index(points, to_remove, used);
+        to_remove.erase(i_mid);
 
-    const std::set<std::size_t> close_points(const std::vector<point> &points, const std::vector<bool> &used, std::size_t i, double d_min) const
-    {
-        std::set<std::size_t> close;
-
-        std::size_t j = next(i, used);
-        while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2))
-        {
-            auto res = close.insert(j);
-            if (!res.second)
-            {
-                break;
-            }
-
-            j = next(j, used);
+        // remove all the points except for the mid one
+        for (std::size_t i : to_remove) {
+          used[i] = false;
         }
+      }
+    } while (max_close > 0);
 
-        j = prev(i, used);
-        while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2))
-        {
-            auto res = close.insert(j);
-            if (!res.second)
-            {
-                break;
-            }
-
-            j = prev(j, used);
-        }
-
-        return close;
+    std::vector<point> remaining;
+    for (std::size_t i = 0; i < points.size(); ++i) {
+      if (used[i]) {
+        remaining.push_back(points[i]);
+      }
     }
 
-    const std::size_t pick_corner_point_index(const std::vector<racer::math::point> &points, const std::set<std::size_t> &indices, const std::vector<bool> &used) const
-    {
-        if (indices.empty())
-        {
-            throw std::runtime_error("Cannot pick a corner point from empty set of points.");
-        }
+    return remaining;
+  }
 
-        double acutest_angle = 2 * M_PI;
-        std::size_t corner_i = 0;
+  const std::set<std::size_t> close_points(const std::vector<point> &points,
+                                           const std::vector<bool> &used,
+                                           std::size_t i, double d_min) const {
+    std::set<std::size_t> close;
 
-        for (const auto i : indices)
-        {
-            double angle = angle_at(i, points, used);
-            if (angle < acutest_angle)
-            {
-                acutest_angle = angle;
-                corner_i = i;
-            }
-        }
+    std::size_t j = next(i, used);
+    while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2)) {
+      auto res = close.insert(j);
+      if (!res.second) {
+        break;
+      }
 
-        return corner_i;
+      j = next(j, used);
     }
 
-    const double angle_at(std::size_t i, const std::vector<racer::math::point> &points, const std::vector<bool> &used) const
-    {
-        const auto a = points[next(i, used)] - points[i];
-        const auto b = points[prev(i, used)] - points[i];
-        const auto A = a.length();
-        const auto B = b.length();
+    j = prev(i, used);
+    while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2)) {
+      auto res = close.insert(j);
+      if (!res.second) {
+        break;
+      }
 
-        if (A == 0 || B == 0)
-            return 0;
-
-        return std::acos(a.dot(b) / (A * B));
+      j = prev(j, used);
     }
 
-    const std::size_t next(std::size_t i, const std::vector<bool> &used) const
-    {
-        std::size_t j = i;
-        do
-        {
-            j = (j + 1) % used.size();
-        } while (j != i && !used[j]);
+    return close;
+  }
 
-        return j;
+  const std::size_t
+  pick_corner_point_index(const std::vector<racer::math::point> &points,
+                          const std::set<std::size_t> &indices,
+                          const std::vector<bool> &used) const {
+    if (indices.empty()) {
+      throw std::runtime_error(
+          "Cannot pick a corner point from empty set of points.");
     }
 
-    const std::size_t prev(std::size_t i, const std::vector<bool> &used) const
-    {
-        std::size_t j = i;
-        do
-        {
-            j = (j + used.size() - 1) % used.size();
-        } while (j != i && !used[j]);
+    double acutest_angle = 2 * M_PI;
+    std::size_t corner_i = 0;
 
-        return j;
+    for (const auto i : indices) {
+      double angle = angle_at(i, points, used);
+      if (angle < acutest_angle) {
+        acutest_angle = angle;
+        corner_i = i;
+      }
     }
+
+    return corner_i;
+  }
+
+  const double angle_at(std::size_t i,
+                        const std::vector<racer::math::point> &points,
+                        const std::vector<bool> &used) const {
+    const auto a = points[next(i, used)] - points[i];
+    const auto b = points[prev(i, used)] - points[i];
+    const auto A = a.length();
+    const auto B = b.length();
+
+    if (A == 0 || B == 0)
+      return 0;
+
+    return std::acos(a.dot(b) / (A * B));
+  }
+
+  const std::size_t next(std::size_t i, const std::vector<bool> &used) const {
+    std::size_t j = i;
+    do {
+      j = (j + 1) % used.size();
+    } while (j != i && !used[j]);
+
+    return j;
+  }
+
+  const std::size_t prev(std::size_t i, const std::vector<bool> &used) const {
+    std::size_t j = i;
+    do {
+      j = (j + used.size() - 1) % used.size();
+    } while (j != i && !used[j]);
+
+    return j;
+  }
 };
 
 } // namespace racer
