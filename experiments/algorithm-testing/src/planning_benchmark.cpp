@@ -39,10 +39,34 @@ std::unique_ptr<
 create_hybrid_astar_discretization(
     const racer::vehicle_model::vehicle_chassis &vehicle,
     const double cell_size, const std::size_t heading_angle_bins,
-    const std::size_t motor_rpm_bins) {
+    const std::size_t motor_rpm_bins)
+{
   return std::make_unique<hybrid_astar_discretization>(
       cell_size, cell_size, 2 * M_PI / double(heading_angle_bins),
       vehicle.motor->max_rpm() / double(motor_rpm_bins));
+}
+
+std::unique_ptr<
+    racer::astar::discretization<sehs_discrete_state, state>>
+create_sehs_discretization(
+    const racer::vehicle_model::vehicle_chassis &vehicle,
+    const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
+    const racer::vehicle_configuration start,
+    const std::vector<racer::math::point> waypoints,
+    const std::size_t heading_angle_bins,
+    const std::size_t motor_rpm_bins)
+{
+  racer::sehs::space_exploration exploration{vehicle.radius(),
+                                             5.0 * vehicle.radius(), 8};
+  const auto path_of_circles =
+      exploration.explore_grid(occupancy_grid, start, waypoints);
+  if (path_of_circles.empty())
+  {
+    return nullptr;
+  }
+
+  return std::make_unique<racer::astar::sehs::kinematic::discretization>(
+      path_of_circles, 2 * M_PI / double(heading_angle_bins), vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
 
 template <typename DiscreteState>
@@ -50,7 +74,8 @@ output::planning::benchmark_result measure_search(
     std::unique_ptr<
         racer::astar::discretized_search_problem<DiscreteState, state>>
         problem,
-    std::chrono::milliseconds time_limit) {
+    std::chrono::milliseconds time_limit)
+{
   std::optional<search_result> result = {};
   std::chrono::milliseconds elapsed_time;
 
@@ -66,7 +91,8 @@ output::planning::benchmark_result measure_search(
   });
 
   bool exceeded_time_limit = false;
-  do {
+  do
+  {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     exceeded_time_limit =
         !result && std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -93,11 +119,12 @@ void run_benchmark_for(
     const racer::vehicle_configuration initial_config, const std::size_t start,
     const std::size_t lookahead, const double time_step_s,
     const std::size_t repetitions, const std::chrono::milliseconds time_limit,
-    const bool plot) {
+    const bool plot)
+{
   const auto initial_state = state{initial_config};
 
   const std::shared_ptr<racer::circuit> shifted_circut =
-      circuit->for_waypoint_subset(start + 1, lookahead);
+      circuit->for_waypoint_subset(start, lookahead);
 
   std::vector<double> measurement_times;
   measurement_times.reserve(repetitions);
@@ -105,7 +132,8 @@ void run_benchmark_for(
   std::unique_ptr<output::planning::benchmark_result> measurement_sample;
   bool unsuccessful = false;
 
-  for (std::size_t i = 0; i < repetitions; ++i) {
+  for (std::size_t i = 0; i < repetitions; ++i)
+  {
     auto problem = std::make_unique<
         racer::astar::discretized_search_problem<DiscreteState, state>>(
         initial_state, time_step_s, actions, state_discretization,
@@ -113,12 +141,14 @@ void run_benchmark_for(
 
     const auto measurement =
         measure_search<DiscreteState>(std::move(problem), time_limit);
-    if (!measurement_sample) {
+    if (!measurement_sample)
+    {
       measurement_sample =
           std::make_unique<output::planning::benchmark_result>(measurement);
     }
 
-    if (measurement.exceeded_time_limit) {
+    if (measurement.exceeded_time_limit)
+    {
       unsuccessful = true;
       break;
     }
@@ -126,7 +156,8 @@ void run_benchmark_for(
     measurement_times.push_back(measurement.computation_time.count());
   }
 
-  if (unsuccessful) {
+  if (unsuccessful)
+  {
     output::planning::print_unsuccessful_result(
         algorithm, config.name, actions.size(), start, lookahead, time_step_s,
         state_discretization->description(), *measurement_sample, repetitions,
@@ -151,7 +182,8 @@ void run_benchmark_for(
       double(measurement_times.size()) / double(repetitions), repetitions, mean,
       variance);
 
-  if (plot && measurement_sample->result.was_successful()) {
+  if (plot && measurement_sample->result.was_successful())
+  {
     const auto experiment_name = output::planning::experiment_name(
         algorithm, config.name, actions.size(), start, lookahead, time_step_s,
         state_discretization->description());
@@ -165,7 +197,8 @@ void run_benchmark_for(
 void test_full_circuit_search(
     const std::vector<std::shared_ptr<track_analysis_input>> configs,
     const std::size_t repetitions, const std::chrono::milliseconds time_limit,
-    const bool plot) {
+    const bool plot)
+{
   std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
       racer::vehicle_model::vehicle_chassis::rc_beast();
   const auto vehicle_model = std::make_shared<model>(vehicle);
@@ -175,16 +208,33 @@ void test_full_circuit_search(
   const std::vector<double> cell_size_coefficients{4};
   const std::vector<double> frequencies{50.0};
 
-  for (const auto &config : configs) {
+  for (const auto &config : configs)
+  {
     // prepare circuit
+    const auto centerline = racer::track::centerline::find(
+        config->initial_position, config->occupancy_grid, config->checkpoints);
+    if (centerline.circles().empty())
+    {
+      std::cout << "Finding centerline failed for " << config->name
+                << std::endl;
+      continue;
+    }
+    racer::track_analysis analysis(config->min_distance_between_waypoints);
+    const auto raw_waypoints = analysis.find_pivot_points(
+        centerline.circles(), config->checkpoints, config->occupancy_grid);
+    const double max_angle = 4.0 / 5.0 * M_PI;
+    auto waypoints =
+        analysis.find_corners(raw_waypoints, config->checkpoints, max_angle);
+
     const auto circuit = std::make_shared<racer::circuit>(
-        config->checkpoints, config->radius, config->occupancy_grid);
+        waypoints, centerline.width() / 2.0, config->occupancy_grid);
 
     const auto collision_detector =
         std::make_shared<racer::track::collision_detection>(
             config->occupancy_grid, vehicle, 36, 0.0);
 
-    if (!circuit) {
+    if (!circuit)
+    {
       std::cerr
           << "Track analysis failed for " << config->name
           << " and it cannot be used for benchmarking (for vehicle radius of "
@@ -192,58 +242,56 @@ void test_full_circuit_search(
       return;
     }
 
-    for (std::size_t start = 0; start < circuit->waypoints.size(); ++start)
-      for (const auto heading_angle_bins : heading_angles)
-        for (const auto motor_rpm_bins : motor_rpms)
-          for (const auto frequency : frequencies) {
-            const std::size_t lookahead = 3;
+    for (const auto heading_angle_bins : heading_angles)
+      for (const auto motor_rpm_bins : motor_rpms)
+        for (const auto frequency : frequencies)
+        {
+          const std::size_t lookahead = waypoints.size();
+          const std::size_t throttle_levels = 5;
+          const std::size_t steering_angle_levels = 15;
+          const auto actions = racer::action::create_actions(
+              throttle_levels, steering_angle_levels);
 
-            const auto prev =
-                start == 0 ? circuit->waypoints.size() - 1 : start - 1;
-            const auto next = (start + 1) % circuit->waypoints.size();
-            const auto heading =
-                circuit->waypoints[next] - circuit->waypoints[prev];
-            const auto initial_configuration = racer::vehicle_configuration{
-                circuit->waypoints[start], heading.angle()};
+          const double time_step_s = 1.0 / frequency;
 
-            const std::size_t throttle_levels = 9;
-            const std::size_t steering_angle_levels = 11;
-            const auto actions = racer::action::create_actions(
-                throttle_levels, steering_angle_levels);
-
-            const double time_step_s = 1.0 / frequency;
-
-            for (const auto cell_size_coefficient : cell_size_coefficients) {
-              auto hybrid_astar = create_hybrid_astar_discretization(
-                  *vehicle, cell_size_coefficient * vehicle->radius(),
-                  heading_angle_bins, motor_rpm_bins);
-              run_benchmark_for<hybrid_astar_discrete_state>(
-                  "hybrid_astar", vehicle_model, *config, circuit,
-                  collision_detector, std::move(hybrid_astar), actions,
-                  initial_configuration, start, lookahead, time_step_s,
-                  repetitions, time_limit, plot);
-            }
-
-            auto sehs = racer::astar::sehs::kinematic::discretization::from(
-                initial_configuration, config->occupancy_grid,
-                config->checkpoints, vehicle->radius(),
-                vehicle->motor->max_rpm());
-
-            if (!sehs) {
-              std::cerr << "SE failed and HS will be skipped." << std::endl;
-              continue;
-            }
-
-            run_benchmark_for<sehs_discrete_state>(
-                "sehs", vehicle_model, *config, circuit, collision_detector,
-                std::move(sehs), actions, initial_configuration, start,
-                lookahead, time_step_s, repetitions, time_limit, plot);
+          for (const auto cell_size_coefficient : cell_size_coefficients)
+          {
+            auto hybrid_astar = create_hybrid_astar_discretization(
+                *vehicle, cell_size_coefficient * vehicle->radius(),
+                heading_angle_bins, motor_rpm_bins);
+            run_benchmark_for<hybrid_astar_discrete_state>(
+                "hybrid_astar", vehicle_model, *config, circuit,
+                collision_detector, std::move(hybrid_astar), actions,
+                config->initial_position, 0, lookahead, time_step_s,
+                repetitions, time_limit, plot);
           }
+
+          auto sehs = create_sehs_discretization(
+              *vehicle,
+              config->occupancy_grid,
+              config->initial_position,
+              config->checkpoints,
+              heading_angle_bins,
+              motor_rpm_bins);
+
+          if (!sehs)
+          {
+            std::cerr << "SE failed and HS will be skipped." << std::endl;
+            continue;
+          }
+
+          run_benchmark_for<sehs_discrete_state>(
+              "sehs", vehicle_model, *config, circuit, collision_detector,
+              std::move(sehs), actions, config->initial_position, 0, lookahead,
+              time_step_s, repetitions, time_limit, plot);
+        }
   }
 }
 
-int main(int argc, char *argv[]) {
-  if (argc < 4) {
+int main(int argc, char *argv[])
+{
+  if (argc < 4)
+  {
     std::cout
         << "Usage: " << argv[0]
         << " <number of repetitions> <time limit for one search in "
@@ -258,7 +306,8 @@ int main(int argc, char *argv[]) {
   const auto plot = true;
 
   const auto maybe_configs = track_analysis_input::load(argc - 3, argv + 3);
-  if (!maybe_configs) {
+  if (!maybe_configs)
+  {
     return 2;
   }
 

@@ -49,7 +49,7 @@ load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size,
         }
 
         const std::size_t index = i * cols + j;
-        data[index] = 255 - cell;
+        data[index] = 127 - cell;
       }
     }
 
