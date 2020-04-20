@@ -5,6 +5,7 @@
   <arg name="horizon" default="0.75" />
   <arg name="integration_step" default="0.02" />
   <arg name="following_strategy" default="dwa" />
+  <arg name="planning_safety_margin" default="0.3" />
 
   <group>
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
@@ -29,7 +30,7 @@
 
       <param name="min_throttle" value="-1.0" />
       <param name="max_throttle" value="1.0" />
-      <param name="safety_margin" value="0.2" />
+      <param name="safety_margin" value="$(arg planning_safety_margin)" />
 
       <param name="time_step_s" value="$(arg integration_step)" />
     </node>
@@ -41,7 +42,7 @@
       <param name="strategy" value="$(arg following_strategy)" />
 
       <!-- Pure pursuit -->
-      <param name="min_lookahead" value="1.0" />
+      <param name="min_lookahead" value="0.5" />
       <param name="max_lookahead" value="2.0" />
       <!-- -->
 
