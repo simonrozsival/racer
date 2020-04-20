@@ -34,7 +34,7 @@
   </node>
 
   <!-- launch rviz with navigation configuration -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find f1tenth-sim)/rviz/racer.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/racer.rviz" />
 
   <!-- visualization -->
   <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="car_1 $(arg number_laps)" output="screen" />
