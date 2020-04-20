@@ -42,8 +42,8 @@
       <param name="strategy" value="$(arg following_strategy)" />
 
       <!-- Pure pursuit -->
-      <param name="min_lookahead" value="0.5" />
-      <param name="max_lookahead" value="2.0" />
+      <param name="min_lookahead" value="0.75" />
+      <param name="max_lookahead" value="2.00" />
       <!-- -->
 
       <!-- DWA -->
