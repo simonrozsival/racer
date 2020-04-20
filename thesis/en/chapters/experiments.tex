@@ -332,7 +332,7 @@ Each trajectory is accompanied by three charts, showing the control inputs for t
 		\label{table:zurich}
 	\end{subfigure}
 	
-	\vspace{0.75cm}
+1	\vspace{0.75cm}
 
 	\caption{Track ``Zurich''}
 	\label{fig:zurich}
@@ -349,3 +349,13 @@ We want to determine if the algorithms are fast enough to find the following tra
 \section{Real-World Test}
 
 \todo[inline]{This part is still not finished.}
+
+\section{Simulator}
+
+We performed further tests in the F1/10 simulator \cite{varundev_ros_19} which is built on top of Gazebo \cite{gazebo}. The simulator uses a physics engine to determine the movement of a vehicle based on the inputs and collisions with walls and obstacles. We can run the same \gls*{ROS} nodes we run on the experimental vehicle and use them to control the vehicle in the simulated environment.
+
+The simulator can also simulate sensors, such as a \gls*{LIDAR}, and publish the data as \gls*{ROS} messages. We could use this data to perform localization, but in order to avoid the same problems we experienced with our testing vehicle, we use the ground truth odometry exposed by the F1/10 simulator instead. The \gls*{LIDAR} data is used just as input for the Costmap library to detect obstacles.
+
+\subsection{Setup}
+
+\subsection{Observations And Results}
