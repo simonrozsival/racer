@@ -11,15 +11,14 @@ footprint: [[-0.4, -0.3], [-0.4, 0.3], [0.4, 0.3], [0.4, -0.3]] # slightly large
 plugins:
   - { name: static, type: "costmap_2d::StaticLayer" }
   - { name: obstacles, type: "costmap_2d::ObstacleLayer" }
-#  - { name: inflation, type: "costmap_2d::InflationLayer" }
 
 static:
   map_topic: /map
   trinary_costmap: false
 
-inflation:
-  inflation_radius: 1.5
-  cost_scaling_factor: 10.0
+static:
+  map_topic: /map
+  trinary_costmap: false
 
 obstacles:
   observation_sources: base_scan
@@ -27,9 +26,10 @@ obstacles:
     topic: /car_1/scan
     data_type: LaserScan
     sensor_frame: car_1_laser
-    observation_persistence: 0.1
-    expected_update_rate: 0.05
-    obstacle_range: 10 # default is 2.5
-    raytrace_range: 10 # default is 3.0
+    observation_persistence: 0
+    obstacle_range: 5 # default is 2.5
+    raytrace_range: 5 # default is 3.0
     clearing: true
     marking: true
+    footprint_clearing_enabled: true
+    combination_method: Maximum

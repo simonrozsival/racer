@@ -9,14 +9,16 @@ or it could be replayed from a ROS bag.
 import rospy
 import math
 import tf
+import time
 
-from sensor_msgs.msg import Odometry
+from nav_msgs.msg import Odometry
 from geometry_msgs.msg import Twist
 from std_msgs.msg import Float64
 
+
 class State:
     # constants
-    max_steering_angle = 24.0 / 180.0 * math.pi # radians
+    max_steering_angle = math.radians(24.0)
     encoder_to_motor_gear_ratio = 3.5
     wheel_to_motor_gear_ratio = encoder_to_motor_gear_ratio * 3
     wheel_radius = 0.1
@@ -41,15 +43,12 @@ class State:
 
     # inner state
     has_published = False
-    previous_total_revolutions = 0
-    previous_revolutions_time = float("inf")
-    latest_total_revolutions = 0
-    latest_revolutions_time = None
 
     def odometry_callback(self, msg):
         self.x = msg.pose.position.x
         self.y = msg.pose.position.y
-        self.heading_angle = tf.transformations.euler_from_quaternion(msg.pose.orientation)[2]
+        self.heading_angle = tf.transformations.euler_from_quaternion(
+            msg.pose.orientation)[2]
 
         vx = msg.twist.linear.x
         vy = msg.twist.linear.y
@@ -62,48 +61,42 @@ class State:
         self.steering_angle_input = msg.angular.z
         self.steering_angle = self.steering_angle_input * self.max_steering_angle
 
-    def encoder_callback(self, msg):
-        self.latest_total_revolutions = msg.data
-        self.latest_revolutions_time = rospy.Time.now().to_sec()
+    def rpm_callback(self, msg):
+        self.motor_rpm = msg.data
 
     def publish(self):
         if self.has_published is False:
-            print("throttle_input,steering_angle_input,x,y,heading_angle,speed,slip_angle,yaw_rate,motor_rpm,steering_angle,estimated_longitudinal_slip")
+            print("time,throttle_input,steering_angle_input,x,y,heading_angle,speed,slip_angle,yaw_rate,motor_rpm,steering_angle,estimated_longitudinal_slip")
             self.has_published = True
 
-        self.calculate_motor_rpm()
-
-        line = ",".join([self.throttle_input, self.steering_angle_input, self.x, self.y, self.heading_angle, self.speed, self.slip_angle, self.yaw_rate, self.motor_rpm, self.steering_angle, self.estimate_longitudinal_slip()])
-        print(line) # for now, just publish it to STDOUT and suppose that the user redirects it into a file
-
-    def calculate_motor_rpm(self):
-        dt = self.latest_revolutions_time - self.previous_revolutions_time
-        dr = self.latest_total_revolutions - self.previous_total_revolutions
-        rotations_per_second = dr / dt if dt > 0 else 0
-        self.motor_rpm = rotations_per_second * 60
-
-        self.previous_revolutions_time = self.latest_revolutions_time
-        self.previous_total_revolutions = self.latest_total_revolutions
+        values = [time.time(), self.throttle_input, self.steering_angle_input, self.x, self.y, self.heading_angle, self.speed,
+                  self.slip_angle, self.yaw_rate, self.motor_rpm, self.steering_angle, self.estimate_longitudinal_slip()]
+        line = ",".join([str(x) for x in values])
+        # for now, just publish it to STDOUT and suppose that the user redirects it into a file
+        print(line)
 
     def estimate_longitudinal_slip(self):
-        wheel_rpm = self.motor_rpm * motor_to_wheel_geer_ratio
-        wheel_angular_velocity = wheel_rpm / 30 * math.pi # rad s^-1
+        wheel_rpm = self.motor_rpm * self.wheel_to_motor_gear_ratio
+        wheel_angular_velocity = wheel_rpm / 30 * math.pi  # rad s^-1
         rolling_speed = wheel_angular_velocity * self.wheel_radius
+
+        if self.speed == 0:
+            return 0
 
         return (rolling_speed - self.speed) / self.speed
 
-if __name__ == 'main':
+
+if __name__ == '__main__':
     rospy.init_node('collect_telemetry', anonymous=True)
 
     state = State()
 
     rospy.Subscriber("/odom", Odometry, state.odometry_callback)
     rospy.Subscriber("/racer/commands", Twist, state.input_callback)
-    rospy.Subscriber("/racer/wheel_encoders", Float64, state.encoder_callback)
+    rospy.Subscriber("/racer/motor_rpm", Float64, state.rpm_callback)
 
     rate = rospy.Rate(25)
 
     while rospy.is_shutdown() is False:
-        rospy.spinOnce()
         state.publish()
         rate.sleep()

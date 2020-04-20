@@ -17,21 +17,23 @@ class steering_servo_model : public base_model<racer::math::angle>
 {
 private:
   const racer::math::angle max_steering_angle_left_, max_steering_angle_right_;
-  const std::array<double, 2> angle_to_pwm_;
-  const std::array<double, 2> pwm_adjustment_coefficients_;
+
+  const std::array<double, 2> angle_to_signal_;
+  const std::array<double, 2> signal_adjustment_coefficients_;
 
 public:
   steering_servo_model(racer::math::angle max_steering_angle_left, racer::math::angle max_steering_angle_right,
-                       std::array<double, 2> angle_to_pwm, std::array<double, 2> pwm_adjustment_coefficients)
+                       std::array<double, 2> angle_to_signal, std::array<double, 2> signal_adjustment_coefficients)
     : max_steering_angle_left_{ max_steering_angle_left }
     , max_steering_angle_right_{ max_steering_angle_right }
-    , angle_to_pwm_{ angle_to_pwm }
-    , pwm_adjustment_coefficients_{ pwm_adjustment_coefficients }
+    , angle_to_signal_{ angle_to_signal }
+    , signal_adjustment_coefficients_{ signal_adjustment_coefficients }
   {
   }
 
   static auto rc_beast()
   {
+    // "signal" is the PWM and it ranges between 1200 and 1800 microseconds
     return std::make_unique<steering_servo_model>(angle::from_degrees(21.16), angle::from_degrees(-26.57),
                                                   std::array<double, 2>{ 12.701, 1476.686 },
                                                   std::array<double, 2>{ 0.000329, 0.1174 });
@@ -39,7 +41,9 @@ public:
 
   static auto simulator()
   {
-    return std::make_unique<steering_servo_model>(angle::from_degrees(9), angle::from_degrees(-9),
+    // "signal" is the direct input to the simulated actuator and it ranges
+    // between -0.8 and 0.8
+    return std::make_unique<steering_servo_model>(angle::from_degrees(12), angle::from_degrees(-12),
                                                   std::array<double, 2>{ 12.701, 1476.686 },
                                                   std::array<double, 2>{ 0.000329, 0.1174 });
   }
@@ -73,15 +77,15 @@ public:
   }
 
 private:
-  inline double pwm(const angle alpha) const
+  inline double signal(const angle alpha) const
   {
-    return angle_to_pwm_[0] * alpha.to_degrees() + angle_to_pwm_[1];
+    return angle_to_signal_[0] * alpha.to_degrees() + angle_to_signal_[1];
   }
 
   inline double time_to_adjust(const angle alpha, const angle beta) const
   {
-    double pwm_distance = std::abs(pwm(alpha) - pwm(beta));
-    return pwm_adjustment_coefficients_[0] * pwm_distance + pwm_adjustment_coefficients_[1];
+    double signal_distance = std::abs(signal(alpha) - signal(beta));
+    return signal_adjustment_coefficients_[0] * signal_distance + signal_adjustment_coefficients_[1];
   }
 };
 

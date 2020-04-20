@@ -49,9 +49,9 @@ double time_step_s;
 void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
 {
   occupancy_grid = racer_ros::msg_to_grid(*map);
-  debug_map_pub.publish(racer_ros::grid_to_msg(*occupancy_grid));
   collision_detector =
       std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72, safety_margin);
+  debug_map_pub.publish(racer_ros::grid_to_msg(*collision_detector->inflated_grid()));
 }
 
 void state_update(const racer_msgs::State::ConstPtr &state)

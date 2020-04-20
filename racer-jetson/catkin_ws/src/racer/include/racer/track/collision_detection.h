@@ -26,8 +26,8 @@ public:
                       std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, const std::size_t precision,
                       const double safety_margin)
   {
-    grid_ = grid->inflate(safety_margin);
-    uniformly_inflated_grid_ = grid_->inflate(chassis->radius());
+    grid_ = grid;
+    uniformly_inflated_grid_ = grid_->inflate(safety_margin + chassis->radius());
 
     const double step = 2 * M_PI / double(precision);
     for (double angle = 0; angle < 2 * M_PI; angle += step)
@@ -40,6 +40,11 @@ public:
   bool collides(const racer::vehicle_configuration &configuration) const
   {
     return maybe_collides(configuration) && definitely_collides(configuration);
+  }
+
+  std::shared_ptr<occupancy_grid> inflated_grid() const
+  {
+    return uniformly_inflated_grid_;
   }
 
 private:

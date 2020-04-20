@@ -50,8 +50,8 @@ struct vehicle_chassis
   {
     return std::make_unique<vehicle_chassis>(0.16,  // cog_offset
                                              0.32,  // wheelbase
-                                             0.30,  // safe width
-                                             0.45,  // safe length
+                                             0.3,   // safe width
+                                             0.4,   // safe length
                                              0.05,  // wheel radius
                                              9.0,   // wheel to motor ratio
                                              steering_servo_model::simulator(), motor_model::simulator());
