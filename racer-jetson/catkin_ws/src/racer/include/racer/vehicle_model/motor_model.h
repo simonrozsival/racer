@@ -16,7 +16,7 @@ private:
   double rpm_;
 
 public:
-  rpm(double rpm) : rpm_{rpm}
+  rpm(double rpm) : rpm_{ rpm }
   {
   }
 
@@ -38,12 +38,12 @@ public:
 
   rpm operator+(const rpm &other) const
   {
-    return rpm{rpm_ + other.rpm_};
+    return rpm{ rpm_ + other.rpm_ };
   }
 
   rpm operator*(const double &factor) const
   {
-    return rpm{rpm_ * factor};
+    return rpm{ rpm_ * factor };
   }
 
   inline operator double() const
@@ -64,22 +64,22 @@ private:
   const std::array<double, 6> x_;
 
 public:
-  motor_model(const rpm max_rpm, const std::array<double, 6> x) : max_rpm_{max_rpm}, x_{x}
+  motor_model(const rpm max_rpm, const std::array<double, 6> x) : max_rpm_{ max_rpm }, x_{ x }
   {
   }
 
   static auto rc_beast()
   {
     return std::make_unique<motor_model>(15350.0,
-                                         std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
-                                                               7.68248846e+01, 2.05190302e+02, 1.16584276e+00});
+                                         std::array<double, 6>{ 7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
+                                                                7.68248846e+01, 2.05190302e+02, 1.16584276e+00 });
   }
 
   static auto simulator()
   {
     return std::make_unique<motor_model>(15350.0,
-                                         std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
-                                                               7.68248846e+01, 2.05190302e+02, 1.16584276e+00});
+                                         std::array<double, 6>{ 7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
+                                                                7.68248846e+01, 2.05190302e+02, 1.16584276e+00 });
   }
 
   inline const rpm &max_rpm() const
@@ -120,4 +120,4 @@ private:
   }
 };
 
-} // namespace racer::vehicle_model
+}  // namespace racer::vehicle_model

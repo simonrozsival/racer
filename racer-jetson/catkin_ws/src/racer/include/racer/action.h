@@ -65,13 +65,12 @@ public:
       }
     }
 
-    // braking
-    for (double steering = -1; steering <= 1; steering += steering_step)
-    {
-      actions.emplace_back(-1, steering);
-    }
-
     return actions;
+  }
+
+  friend std::ostream &operator<<(std::ostream &os, const action &a)
+  {
+    return os << "(throttle: " << a.throttle_ << ", steering angle: " << a.target_steering_angle_ << ")";
   }
 };
 

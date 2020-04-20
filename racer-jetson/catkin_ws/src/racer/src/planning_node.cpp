@@ -27,12 +27,16 @@ std::mutex mutex;
 
 State last_known_state;
 std::shared_ptr<racer::occupancy_grid> occupancy_grid;
+std::shared_ptr<racer::occupancy_grid> inflated_grid;
 std::shared_ptr<racer::circuit> circuit;
+double safety_margin;
 std::shared_ptr<racer::track::collision_detection> collision_detector;
 
 int next_waypoint;
 double waypoint_radius;
 std::vector<racer::math::point> next_waypoints;
+
+ros::Publisher debug_map_pub;
 
 std::string map_frame_id;
 std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
@@ -41,6 +45,14 @@ auto model =
     std::make_shared<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::rc_beast());
 
 double time_step_s;
+
+void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map)
+{
+  occupancy_grid = racer_ros::msg_to_grid(*map);
+  debug_map_pub.publish(racer_ros::grid_to_msg(*occupancy_grid));
+  collision_detector =
+      std::make_shared<racer::track::collision_detection>(occupancy_grid, model->chassis, 72, safety_margin);
+}
 
 void state_update(const racer_msgs::State::ConstPtr &state)
 {
@@ -87,10 +99,11 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "racing_trajectory_planning");
   ros::NodeHandle node("~");
 
-  std::string state_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
 
+  node.param<std::string>("map_topic", map_topic, "/obstacles/costmap/costmap");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
@@ -101,14 +114,18 @@ int main(int argc, char *argv[])
 
   node.param<double>("time_step_s", time_step_s, 0.1);
 
+  ros::Subscriber map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
+  debug_map_pub = node.advertise<nav_msgs::OccupancyGrid>("/racer/planner_map", 1);
 
-  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, -0.4, 1.0);
+  double min_throttle, max_throttle;
+  node.param<double>("min_throttle", min_throttle, -1.0);
+  node.param<double>("max_throttle", max_throttle, 1.0);
+  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle);
 
-  double safety_margin;
-  node.param<double>("safety_margin", safety_margin, 0.3);
+  node.param<double>("safety_margin", safety_margin, 0.1);
 
   // blocks until map is ready
   occupancy_grid = racer_ros::load_map(node);
@@ -118,8 +135,8 @@ int main(int argc, char *argv[])
   double max_frequency, normal_frequency;
   node.param<double>("normal_frequency", normal_frequency, 1);
   node.param<double>("max_frequency", max_frequency, 10);
-  ros::Rate normal_rate{normal_frequency};
-  ros::Rate max_rate{max_frequency};
+  ros::Rate normal_rate{ normal_frequency };
+  ros::Rate max_rate{ max_frequency };
 
   ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok())

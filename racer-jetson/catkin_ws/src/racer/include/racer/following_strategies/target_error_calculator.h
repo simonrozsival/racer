@@ -10,7 +10,6 @@
 #include "racer/vehicle_model/vehicle_chassis.h"
 
 namespace racer::following_strategies {
-
 template <typename State> class target_error_calculator {
 public:
   target_error_calculator()
@@ -49,13 +48,12 @@ public:
 
     for (; it_a != prediction.end() && it_b != reference.steps().end();
          ++it_a, ++it_b) {
-      const double err = calculate_error(*it_a, it_b->state(), map);
-      const double discount =
-          (prediction.size() - ++steps) / double(prediction.size());
-      total_error += discount * err;
+      const auto err = calculate_error(*it_a, it_b->state(), map);
+      const auto weight = prediction.size() - steps++;
+      total_error += err * weight;
     }
 
-    return total_error / double(prediction.size());
+    return total_error;
   }
 
   double
@@ -72,7 +70,7 @@ private:
   double obstacle_proximity_error_weight_, max_rpm_;
 
   double position_error(const State &a, const State &reference) const {
-    return a.position().distance_sq(reference.position());
+    return a.position().distance(reference.position());
   }
 
   double heading_error(const State &a, const State &reference) const {
@@ -80,7 +78,7 @@ private:
     const auto heading_b =
         reference.configuration().heading_angle().to_normal_angle();
 
-    return heading_a.distance_to(heading_b) / M_PI;
+    return std::abs(heading_a.distance_to(heading_b) / M_PI);
   }
 
   double motor_rpm_error(const State &a, const State &reference) const {
@@ -89,10 +87,18 @@ private:
 
   double obstacle_proximity_error(
       const State &a, const std::shared_ptr<racer::occupancy_grid> grid) const {
-    const double ideal_distance = 2.0;
-    const double dist =
-        grid->distance_to_closest_obstacle(a.position(), ideal_distance);
-    return (ideal_distance - dist) / ideal_distance;
+    const double ideal_head_on_distance = 2.5;
+    const double ideal_min_distance = 0.5;
+
+    const double head_on_dist =
+        grid->find_distance(a.position(), a.configuration().heading_angle(),
+                            ideal_head_on_distance);
+    const double any_dir_dist =
+        grid->distance_to_closest_obstacle(a.position(), ideal_min_distance);
+
+    return std::max((ideal_head_on_distance - head_on_dist) /
+                        ideal_head_on_distance,
+                    (ideal_min_distance - any_dir_dist) / ideal_min_distance);
   }
 };
 
