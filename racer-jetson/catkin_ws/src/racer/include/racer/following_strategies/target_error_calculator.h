@@ -16,20 +16,13 @@ class target_error_calculator
 {
 public:
   target_error_calculator()
-    : position_error_weight_{ 0 }
-    , heading_error_weight_{ 0 }
-    , motor_rpm_error_weight_{ 0 }
-    , obstacle_proximity_error_weight_{ 0 }
+      : position_error_weight_{0}, heading_error_weight_{0}, motor_rpm_error_weight_{0}, obstacle_proximity_error_weight_{0}
   {
   }
 
   target_error_calculator(double position_error_weight, double heading_error_weight, double motor_rpm_error_weight,
                           double obstacle_proximity_error_weight, racer::vehicle_model::rpm max_rpm)
-    : position_error_weight_(position_error_weight)
-    , heading_error_weight_(heading_error_weight)
-    , motor_rpm_error_weight_(motor_rpm_error_weight)
-    , obstacle_proximity_error_weight_(obstacle_proximity_error_weight)
-    , max_rpm_(max_rpm)
+      : position_error_weight_(position_error_weight), heading_error_weight_(heading_error_weight), motor_rpm_error_weight_(motor_rpm_error_weight), obstacle_proximity_error_weight_(obstacle_proximity_error_weight), max_rpm_(max_rpm)
   {
   }
 
@@ -43,8 +36,8 @@ public:
                          const std::shared_ptr<racer::occupancy_grid> map) const
   {
     double total_error = 0;
-    auto it_a{ prediction.begin() };
-    auto it_b{ reference.steps().begin() };
+    auto it_a{prediction.begin()};
+    auto it_b{reference.steps().begin()};
 
     std::size_t steps = 0;
 
@@ -102,4 +95,4 @@ private:
   }
 };
 
-}  // namespace racer::following_strategies
+} // namespace racer::following_strategies

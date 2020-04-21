@@ -12,9 +12,11 @@
 #include "racer/vehicle_model/base_model.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
 
-namespace racer::following_strategies {
+namespace racer::following_strategies
+{
 template <typename State>
-class dwa_strategy : public following_strategy<State> {
+class dwa_strategy : public following_strategy<State>
+{
 public:
   dwa_strategy(const std::vector<racer::action> available_actions,
                const unfolder<State> unfolder,
@@ -27,7 +29,8 @@ public:
   racer::action select_action(
       const State &current_state, const std::size_t passed_waypoints,
       const racer::trajectory<State> &reference_trajectory,
-      const std::shared_ptr<racer::occupancy_grid> map) const override {
+      const std::shared_ptr<racer::occupancy_grid> map) const override
+  {
     return select_action(current_state, passed_waypoints, reference_trajectory,
                          map, false);
   }
@@ -42,30 +45,35 @@ private:
   select_action(const State &current_state, const std::size_t passed_waypoints,
                 const racer::trajectory<State> &reference_trajectory,
                 const std::shared_ptr<racer::occupancy_grid> map,
-                bool unsafe) const {
+                bool unsafe) const
+  {
     racer::action best_so_far{};
     double lowest_error = HUGE_VAL;
 
     const auto should_follow =
         reference_trajectory.find_reference_subtrajectory(current_state,
                                                           passed_waypoints);
-    for (const auto next_action : available_actions_) {
+    for (const auto next_action : available_actions_)
+    {
       const auto trajectory =
           !unsafe
               ? unfolder_.unfold(current_state, next_action, map, lookahead_)
               : unfolder_.unfold_unsafe(current_state, next_action, lookahead_);
-      if (!trajectory.empty()) {
+      if (!trajectory.empty())
+      {
         const double error = target_error_calculator_.calculate_error(
             trajectory, should_follow, map);
 
-        if (error < lowest_error) {
+        if (error < lowest_error)
+        {
           lowest_error = error;
           best_so_far = next_action;
         }
       }
     }
 
-    if (!best_so_far.is_valid() && !unsafe) {
+    if (!best_so_far.is_valid() && !unsafe)
+    {
       // the car is probably too close to some obstacle, there's no other way
       // around it...
       return select_action(current_state, passed_waypoints,

@@ -75,22 +75,22 @@ private:
     double a = chassis->wheelbase + cell_size / 2;
     double b = chassis->width + cell_size / 2;
 
-    racer::math::rectangle basic_shape({ a / 2, b / 2 }, { -a / 2, b / 2 }, { -a / 2, -b / 2 }, { a / 2, -b / 2 });
+    racer::math::rectangle basic_shape({a / 2, b / 2}, {-a / 2, b / 2}, {-a / 2, -b / 2}, {a / 2, -b / 2});
 
     const auto rotated_shape = basic_shape.rotate(angle);
 
     // bounding rect
-    double minX = std::min({ rotated_shape.A.x(), rotated_shape.B.x(), rotated_shape.C.x(), rotated_shape.D.x() });
-    double minY = std::min({ rotated_shape.A.y(), rotated_shape.B.y(), rotated_shape.C.y(), rotated_shape.D.y() });
-    double maxX = std::max({ rotated_shape.A.x(), rotated_shape.B.x(), rotated_shape.C.x(), rotated_shape.D.x() });
-    double maxY = std::max({ rotated_shape.A.y(), rotated_shape.B.y(), rotated_shape.C.y(), rotated_shape.D.y() });
+    double minX = std::min({rotated_shape.A.x(), rotated_shape.B.x(), rotated_shape.C.x(), rotated_shape.D.x()});
+    double minY = std::min({rotated_shape.A.y(), rotated_shape.B.y(), rotated_shape.C.y(), rotated_shape.D.y()});
+    double maxX = std::max({rotated_shape.A.x(), rotated_shape.B.x(), rotated_shape.C.x(), rotated_shape.D.x()});
+    double maxY = std::max({rotated_shape.A.y(), rotated_shape.B.y(), rotated_shape.C.y(), rotated_shape.D.y()});
 
     for (double x = minX; x < maxX; x += cell_size)
     {
       for (double y = maxY; y > minY; y -= cell_size)
       {
-        racer::math::rectangle cell({ x, y }, { x + cell_size, y }, { x + cell_size, y + cell_size },
-                                    { x, y + cell_size });
+        racer::math::rectangle cell({x, y}, {x + cell_size, y}, {x + cell_size, y + cell_size},
+                                    {x, y + cell_size});
 
         // Improvement: skip the "inner" cells within the rectangle and keep
         // only the cells on the edge of the vehicle to improve the performance.
@@ -104,8 +104,8 @@ private:
 
     cells.sort();
     cells.unique();
-    return { std::vector<racer::math::point>{ std::begin(cells), std::end(cells) } };
+    return {std::vector<racer::math::point>{std::begin(cells), std::end(cells)}};
   }
-};  // namespace racer::track
+}; // namespace racer::track
 
-}  // namespace racer::track
+} // namespace racer::track
