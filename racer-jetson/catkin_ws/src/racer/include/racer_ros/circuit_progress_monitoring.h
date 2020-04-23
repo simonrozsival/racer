@@ -19,10 +19,8 @@
 
 #include "racer_ros/utils.h"
 
-namespace racer_ros
-{
-class circuit_progress_monitoring
-{
+namespace racer_ros {
+class circuit_progress_monitoring {
 private:
   const config::circuit config_;
 
@@ -36,19 +34,17 @@ private:
   std::vector<racer::math::circle> waypoints_;
 
 public:
-  circuit_progress_monitoring(const config::circuit& config) : config_{ config }
-  {
-  }
+  circuit_progress_monitoring(const config::circuit &config)
+      : config_{config} {}
 
-  void state_update(const racer_msgs::State::ConstPtr& state)
-  {
+  void state_update(const racer_msgs::State::ConstPtr &state) {
     if (!grid_)
       return;
 
-    racer::vehicle_configuration current_configuration{ state->x, state->y, state->heading_angle };
+    racer::vehicle_configuration current_configuration{state->x, state->y,
+                                                       state->heading_angle};
 
-    if (waypoints_.empty())
-    {
+    if (waypoints_.empty()) {
       calculate_positions_of_waypoints(current_configuration);
       return;
     }
@@ -56,16 +52,13 @@ public:
     std::lock_guard<std::mutex> guard(state_lock_);
 
     const auto wp = waypoints_[next_waypoint_ % waypoints_.size()];
-    if (wp.contains(current_configuration.location()))
-    {
+    if (wp.contains(current_configuration.location())) {
       ++next_waypoint_;
     }
   }
 
-  void map_update(const nav_msgs::OccupancyGrid::ConstPtr& map)
-  {
-    if (grid_)
-    {
+  void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map) {
+    if (grid_) {
       throw std::runtime_error("There is already an existing map.");
     }
 
@@ -73,33 +66,21 @@ public:
     frame_id_ = map->header.frame_id;
   }
 
-  bool is_initialized() const
-  {
-    return !waypoints_.empty();
-  }
-  std::size_t next_waypoint() const
-  {
-    return next_waypoint_;
-  }
-  const std::vector<racer::math::circle>& waypoints() const
-  {
+  bool is_initialized() const { return !waypoints_.empty(); }
+  std::size_t next_waypoint() const { return next_waypoint_; }
+  const std::vector<racer::math::circle> &waypoints() const {
     return waypoints_;
   }
-  std::string frame_id() const
-  {
-    return frame_id_;
-  }
+  std::string frame_id() const { return frame_id_; }
 
-  std::vector<racer::math::circle> waypoints_ahead()
-  {
+  std::vector<racer::math::circle> waypoints_ahead() {
     if (waypoints_.empty())
       return {};
 
     std::lock_guard<std::mutex> guard(analysis_lock_);
 
     std::vector<racer::math::circle> waypoints;
-    for (std::size_t i = 0; i < config_.lookahead; ++i)
-    {
+    for (std::size_t i = 0; i < config_.lookahead; ++i) {
       const auto wp = waypoints_[(next_waypoint_ + i) % waypoints_.size()];
       waypoints.push_back(wp);
     }
@@ -108,48 +89,54 @@ public:
   }
 
 private:
-  void calculate_positions_of_waypoints(const racer::vehicle_configuration& current_configuration)
-  {
-    if (!current_configuration.is_valid() || !grid_)
-    {
+  void calculate_positions_of_waypoints(
+      const racer::vehicle_configuration &current_configuration) {
+    if (!current_configuration.is_valid() || !grid_) {
       return;
     }
 
-    std::vector<racer::math::point> final_check_points{ config_.check_points.begin(), config_.check_points.end() };
-    final_check_points.push_back(current_configuration.location());  // back to the start
+    std::vector<racer::math::point> final_check_points{
+        config_.check_points.begin(), config_.check_points.end()};
+    final_check_points.push_back(
+        current_configuration.location()); // back to the start
 
-    const auto centerline = racer::track::centerline::find(current_configuration, grid_, final_check_points);
+    const auto centerline = racer::track::centerline::find(
+        current_configuration, grid_, final_check_points);
 
-    racer::track_analysis analysis{ centerline.width() };
-    const auto pivot_points = analysis.find_pivot_points(centerline.circles(), final_check_points, grid_);
-    if (pivot_points.empty())
-    {
+    racer::track_analysis analysis{centerline.width()};
+    const auto pivot_points =
+        analysis.find_pivot_points(centerline.circles(), grid_);
+    if (pivot_points.empty()) {
       ROS_ERROR("cannot find pivot points");
-      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+      ROS_DEBUG("select different checkpoints, decrease the radius of the car, "
+                "or create a new map");
       return;
     }
 
-    const auto apexes = analysis.find_corners(pivot_points, final_check_points, M_PI * 4.0 / 5.0);
-    if (apexes.empty())
-    {
+    const auto sharp_turns =
+        analysis.remove_insignificant_turns(pivot_points, M_PI * 4.0 / 5.0);
+    const auto apexes = analysis.merge_close(sharp_turns);
+    if (apexes.empty()) {
       ROS_ERROR("cannot find any corners of the track");
-      ROS_DEBUG("select different checkpoints, decrease the radius of the car, or create a new map");
+      ROS_DEBUG("select different checkpoints, decrease the radius of the car, "
+                "or create a new map");
       return;
     }
 
     std::lock_guard<std::mutex> guard(analysis_lock_);
     std::vector<racer::math::circle> wps;
-    for (const auto& apex : apexes)
-    {
+    for (const auto &apex : apexes) {
       wps.emplace_back(apex, centerline.width() * 2.0 / 3.0);
     }
 
     waypoints_ = std::vector<racer::math::circle>(wps);
     next_waypoint_ = 0;
 
-    ROS_DEBUG("Track analysis is completed. Number of discovered waypoints: %lu", waypoints_.size());
+    ROS_DEBUG(
+        "Track analysis is completed. Number of discovered waypoints: %lu",
+        waypoints_.size());
     ROS_DEBUG("Next waypoint: %lu", next_waypoint_);
   }
 };
 
-}  // namespace racer_ros
+} // namespace racer_ros

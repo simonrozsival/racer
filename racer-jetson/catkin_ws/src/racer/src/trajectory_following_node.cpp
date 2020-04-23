@@ -44,11 +44,12 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<double>("max_throttle", max_throttle, 1.0);
 
   const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle);
-  double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight;
+  double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, acceleration_weight;
   node.param<double>("position_weight", position_weight, 30.0);
   node.param<double>("heading_weight", heading_weight, 20.0);
   node.param<double>("velocity_weight", velocity_weight, 10.0);
   node.param<double>("distance_to_obstacle_weight", distance_to_obstacle_weight, 5.0);
+  node.param<double>("acceleration_weight", acceleration_weight, 50.0);
 
   double integration_step_s, prediction_horizon_s;
   node.param<double>("integration_step_s", integration_step_s, 0.02);
@@ -62,8 +63,8 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
     position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, model->chassis->motor->max_rpm()
   };
 
-  return std::make_unique<racer::following_strategies::dwa_strategy<kinematic_state>>(actions, unfolder,
-                                                                                      error_calculator, lookahead);
+  return std::make_unique<racer::following_strategies::dwa_strategy<kinematic_state>>(
+      actions, unfolder, error_calculator, acceleration_weight, lookahead);
 }
 
 std::unique_ptr<racer::following_strategies::following_strategy<kinematic_state>>

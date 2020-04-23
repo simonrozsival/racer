@@ -10,13 +10,13 @@ In this experiment we will test the Hybrid A* and \gls{SEHS} algorithms as we de
 
 The parameters of the vehicle chassis and the vehicle model we used are equal to the properties of our experimental vehicle as stated in Table~\ref{table:dimensions} and derived in Section~\ref{sec:actuators_model}.
 
-Both Hybrid A* and \gls*{SEHS} require specification of state space and time discretization parameters. We found that both algorithms performed well with time step $\Delta t=\SI{0.04}{\second}$ (\SI{25}{\hertz}), the heading angle values divided into \num{24} sectors of a circle, and the range of possible values of motor \gls*{RPM} divided into \num{50} sub-ranges. Additionally, the Hybrid A* algorithm splits the $x$ and $y$ coordinates were split into squares with side lengths of $4r$, where $r$ is the radius of the vehicle. The SEHS algorithm discretizes the $xy$ plane by finding a path of circles in the Space Exploration step. We require the radii of the circles to be between $r$ a $4r$
+Both Hybrid A* and \gls*{SEHS} require specification of state space and time discretization parameters. We found that both algorithms performed well with time step $\Delta t=\SI{0.04}{\second}$ (\SI{25}{\hertz}), the heading angle values divided into \num{24} sectors of a circle, and the range of possible values of motor \gls*{RPM} divided into \num{50} sub-ranges. Additionally, the Hybrid A* algorithm splits the $x$ and $y$ coordinates were split into squares with side lengths of $4r$, where $r$ is the radius of the vehicle. The SEHS algorithm discretizes the $xy$ plane by finding a path of circles in the Space Exploration step. We require the radii of the circles to be between $r$ a $5r$.
 
-The actions available to the planner were a cross product of 3 throttle levels (\num{-1}, \num{0}, \num{1}) and 5 target steering angles (\num{-1}, \num{-0.5}, \num{0}, \num{0.5}, \num{1}). This limits the possible maneuvers of the vehicle, but it allows the planner to run reasonably fast.
+The actions available to the planner were a cross product of 5 throttle levels (\num{-1}, \num{-0.5}, \num{0}, \num{0.5}, \num{1}) and 11 target steering angles (\num{-1}, \num{-0.8}, \num{-0.6}, \num{-0.4}, \num{-0.2}, \num{0}, \num{0.2}, \num{0.4}, \num{0.6}, \num{0.8}, \num{1}). This limits the possible maneuvers of the vehicle, but it allows the planner to run reasonably fast.
 
 Circuits are represented by an occupancy grid bitmap with a resolution of \SI{0.05}{\meter} per grid cell. For each circuit, we first perform track segmentation, as described in Section~\ref{sec:track_segmentation}, to detect corners which we use as waypoints. We also perform the Space Exploration step of the SEHS algorithm. We then let both algorithms find the near time-optimal trajectory from the initial configuration defined for each circuit to the last waypoint. We measure the number of search nodes the algorithm opens during search, the number of search nodes which are expanded, and also the time it takes to find the solution on a testing computer. Because both of the algorithms are deterministic, they always find the same solution for the same problem and they always open and expand the same number of search nodes. The execution times differ slightly and so we repeat the measurement 100 times and calculate the mean execution time.
 
-The computer we used for measurement uses an Intel Core i5-7200U CPU running at the base clock of \SI{2.71}{\giga\hertz} and 16 GB of DDR4 RAM at the base clock of \SI{2133}{\mega\hertz}. The source code was written in C++ and compiled using GCC 9.2 with the \texttt{-O3} optimization flag.
+We used a desktop computer with an AMD Ryzen 7 3700X CPU running at the base clock of \SI{3.6}{\giga\hertz} and \SI{32}{\giga\byte} of DDR4 RAM at the base clock of \SI{3200}{\mega\hertz}. The source code was written in C++ and compiled using GCC 9.2 with the \texttt{-O3} and \texttt{-ffast-math} optimization flags. We ran each planning algorithm 50 times for every circuit to calculate the average computation time using our testing computer.
 
 \subsection{Results}
 
@@ -29,8 +29,6 @@ The trajectory is plotted over a map of the circuit with white parts showing the
 Each trajectory is accompanied by three charts, showing the control inputs for the vehicle, the normalized state of the actuators, and the speed profile of the trajectory.
 
 \todo[inline]{Add commentary for the results.}
-
-\todo[inline]{I want to measure this on the Nvidia JETSON next week and replace the measurements done on my laptop.}
 
 \begin{figure}[!tbp]%
 	\centering

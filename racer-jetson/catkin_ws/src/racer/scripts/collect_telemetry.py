@@ -12,7 +12,7 @@ import tf
 import time
 
 from nav_msgs.msg import Odometry
-from geometry_msgs.msg import Twist
+from ackermann_msgs.msg import AckermannDrive
 from std_msgs.msg import Float64
 
 
@@ -21,7 +21,7 @@ class State:
     max_steering_angle = math.radians(24.0)
     encoder_to_motor_gear_ratio = 3.5
     wheel_to_motor_gear_ratio = encoder_to_motor_gear_ratio * 3
-    wheel_radius = 0.1
+    wheel_radius = 0.05
 
     # the control inputs
     throttle_input = 0
@@ -45,20 +45,22 @@ class State:
     has_published = False
 
     def odometry_callback(self, msg):
-        self.x = msg.pose.position.x
-        self.y = msg.pose.position.y
-        self.heading_angle = tf.transformations.euler_from_quaternion(
-            msg.pose.orientation)[2]
+        self.x = msg.pose.pose.position.x
+        self.y = msg.pose.pose.position.y
 
-        vx = msg.twist.linear.x
-        vy = msg.twist.linear.y
+        o = msg.pose.pose.orientation
+        quat = (o.x, o.y, o.z, o.w)
+        self.heading_angle = tf.transformations.euler_from_quaternion(quat)[2]
+
+        vx = msg.twist.twist.linear.x
+        vy = msg.twist.twist.linear.y
         self.speed = math.sqrt(vx**2 + vy**2)
         self.slip_angle = math.atan2(vy, vx)
-        self.yaw_rate = msg.twist.angular.z
+        self.yaw_rate = msg.twist.twist.angular.z
 
     def input_callback(self, msg):
-        self.throttle_input = msg.linear.x
-        self.steering_angle_input = msg.angular.z
+        self.throttle_input = msg.speed
+        self.steering_angle_input = msg.steering_angle
         self.steering_angle = self.steering_angle_input * self.max_steering_angle
 
     def rpm_callback(self, msg):
@@ -76,7 +78,7 @@ class State:
         print(line)
 
     def estimate_longitudinal_slip(self):
-        wheel_rpm = self.motor_rpm * self.wheel_to_motor_gear_ratio
+        wheel_rpm = self.motor_rpm / self.wheel_to_motor_gear_ratio
         wheel_angular_velocity = wheel_rpm / 30 * math.pi  # rad s^-1
         rolling_speed = wheel_angular_velocity * self.wheel_radius
 
@@ -91,8 +93,8 @@ if __name__ == '__main__':
 
     state = State()
 
-    rospy.Subscriber("/odom", Odometry, state.odometry_callback)
-    rospy.Subscriber("/racer/commands", Twist, state.input_callback)
+    rospy.Subscriber("/car_1/base/odom", Odometry, state.odometry_callback)
+    rospy.Subscriber("/car_1/command", AckermannDrive, state.input_callback)
     rospy.Subscriber("/racer/motor_rpm", Float64, state.rpm_callback)
 
     rate = rospy.Rate(25)

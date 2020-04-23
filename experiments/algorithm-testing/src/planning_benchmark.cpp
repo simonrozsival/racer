@@ -46,15 +46,13 @@ create_hybrid_astar_discretization(
       vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
 
-std::unique_ptr<
-    racer::astar::discretization<sehs_discrete_state, state>>
+std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>>
 create_sehs_discretization(
     const racer::vehicle_model::vehicle_chassis &vehicle,
     const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
     const racer::vehicle_configuration start,
     const std::vector<racer::math::point> waypoints,
-    const std::size_t heading_angle_bins,
-    const std::size_t motor_rpm_bins)
+    const std::size_t heading_angle_bins, const std::size_t motor_rpm_bins)
 {
   racer::sehs::space_exploration exploration{vehicle.radius(),
                                              5.0 * vehicle.radius(), 8};
@@ -66,7 +64,8 @@ create_sehs_discretization(
   }
 
   return std::make_unique<racer::astar::sehs::kinematic::discretization>(
-      path_of_circles, 2 * M_PI / double(heading_angle_bins), vehicle.motor->max_rpm() / double(motor_rpm_bins));
+      path_of_circles, 2 * M_PI / double(heading_angle_bins),
+      vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
 
 template <typename DiscreteState>
@@ -200,13 +199,13 @@ void test_full_circuit_search(
     const bool plot)
 {
   std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
-      racer::vehicle_model::vehicle_chassis::rc_beast();
+      racer::vehicle_model::vehicle_chassis::simulator();
   const auto vehicle_model = std::make_shared<model>(vehicle);
 
-  const std::vector<std::size_t> heading_angles{12};
-  const std::vector<std::size_t> motor_rpms{10};
+  const std::vector<std::size_t> heading_angles{24};
+  const std::vector<std::size_t> motor_rpms{50};
   const std::vector<double> cell_size_coefficients{4};
-  const std::vector<double> frequencies{50.0};
+  const std::vector<double> frequencies{25.0};
 
   for (const auto &config : configs)
   {
@@ -221,10 +220,16 @@ void test_full_circuit_search(
     }
     racer::track_analysis analysis(config->min_distance_between_waypoints);
     const auto raw_waypoints = analysis.find_pivot_points(
-        centerline.circles(), config->checkpoints, config->occupancy_grid);
+        centerline.circles(), config->occupancy_grid);
     const double max_angle = 4.0 / 5.0 * M_PI;
-    auto waypoints =
-        analysis.find_corners(raw_waypoints, config->checkpoints, max_angle);
+    auto sharp_turns =
+        analysis.remove_insignificant_turns(raw_waypoints, max_angle);
+
+    // Insert the starting position to the list of waypoints to make sure that
+    // we have some waypoint very close to the starting position.
+    sharp_turns.push_back(config->initial_position.location());
+
+    auto waypoints = analysis.merge_close(sharp_turns);
 
     const auto circuit = std::make_shared<racer::circuit>(
         waypoints, centerline.width() / 2.0, config->occupancy_grid);
@@ -248,7 +253,7 @@ void test_full_circuit_search(
         {
           const std::size_t lookahead = waypoints.size();
           const std::size_t throttle_levels = 5;
-          const std::size_t steering_angle_levels = 15;
+          const std::size_t steering_angle_levels = 11;
           const auto actions = racer::action::create_actions(
               throttle_levels, steering_angle_levels);
 
@@ -267,12 +272,8 @@ void test_full_circuit_search(
           }
 
           auto sehs = create_sehs_discretization(
-              *vehicle,
-              config->occupancy_grid,
-              config->initial_position,
-              config->checkpoints,
-              heading_angle_bins,
-              motor_rpm_bins);
+              *vehicle, config->occupancy_grid, config->initial_position,
+              config->checkpoints, heading_angle_bins, motor_rpm_bins);
 
           if (!sehs)
           {

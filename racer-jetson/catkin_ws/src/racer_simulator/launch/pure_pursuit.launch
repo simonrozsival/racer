@@ -23,7 +23,7 @@
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="horizon" value="$(arg horizon)" />
     <arg name="following_strategy" value="pure_pursuit" />
-    <arg name="planning_safety_margin" value="0.4" />
+    <arg name="planning_safety_margin" value="0.2" />
   </include>
 
   <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">

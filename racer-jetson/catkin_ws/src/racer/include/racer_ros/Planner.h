@@ -1,7 +1,7 @@
 #pragma once
 
-#include <vector>
 #include <optional>
+#include <vector>
 
 #include "geometry_msgs/PoseStamped.h"
 #include "nav_msgs/OccupancyGrid.h"
@@ -30,7 +30,7 @@ public:
   Planner(std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
           std::unique_ptr<racer::astar::discretization<DiscreteState, State>> discretization, const double time_step_s,
           const std::string map_frame_id)
-      : model_(model), discretization_(std::move(discretization)), time_step_s_(time_step_s), map_frame_(map_frame_id)
+    : model_(model), discretization_(std::move(discretization)), time_step_s_(time_step_s), map_frame_(map_frame_id)
   {
   }
 
@@ -54,7 +54,9 @@ public:
     trajectory.header.stamp = ros::Time::now();
     trajectory.header.frame_id = map_frame_;
 
-    for (const auto &step : result.found_trajectory.steps())
+    const auto final_trajectory = result.found_trajectory;
+
+    for (const auto &step : final_trajectory.steps())
     {
       racer_msgs::TrajectoryState state;
 
@@ -84,4 +86,4 @@ private:
   const std::string map_frame_;
 };
 
-} // namespace racer_ros
+}  // namespace racer_ros

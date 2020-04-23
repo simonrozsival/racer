@@ -24,7 +24,10 @@ private:
 public:
   steering_servo_model(racer::math::angle max_steering_angle_left, racer::math::angle max_steering_angle_right,
                        std::array<double, 2> angle_to_signal, std::array<double, 2> signal_adjustment_coefficients)
-      : max_steering_angle_left_{max_steering_angle_left}, max_steering_angle_right_{max_steering_angle_right}, angle_to_signal_{angle_to_signal}, signal_adjustment_coefficients_{signal_adjustment_coefficients}
+    : max_steering_angle_left_{ max_steering_angle_left }
+    , max_steering_angle_right_{ max_steering_angle_right }
+    , angle_to_signal_{ angle_to_signal }
+    , signal_adjustment_coefficients_{ signal_adjustment_coefficients }
   {
   }
 
@@ -32,17 +35,15 @@ public:
   {
     // "signal" is the PWM and it ranges between 1200 and 1800 microseconds
     return std::make_unique<steering_servo_model>(angle::from_degrees(21.16), angle::from_degrees(-26.57),
-                                                  std::array<double, 2>{12.701, 1476.686},
-                                                  std::array<double, 2>{0.000329, 0.1174});
+                                                  std::array<double, 2>{ 12.701, 1476.686 },
+                                                  std::array<double, 2>{ 0.000329, 0.1174 });
   }
 
   static auto simulator()
   {
-    // "signal" is the direct input to the simulated actuator and it ranges
-    // between -1 and 1
-    return std::make_unique<steering_servo_model>(angle::from_degrees(12), angle::from_degrees(-12),
-                                                  std::array<double, 2>{12.701, 1476.686},
-                                                  std::array<double, 2>{0.000329, 0.1174});
+    return std::make_unique<steering_servo_model>(angle::from_degrees(10.5), angle::from_degrees(-10.5),
+                                                  std::array<double, 2>{ 12.701, 1476.686 },
+                                                  std::array<double, 2>{ 0.000329, 0.1174 });
   }
 
   angle predict_next_state(const angle &current_steering_angle, const racer::action &action, const double dt) const
@@ -86,4 +87,4 @@ private:
   }
 };
 
-} // namespace racer::vehicle_model
+}  // namespace racer::vehicle_model

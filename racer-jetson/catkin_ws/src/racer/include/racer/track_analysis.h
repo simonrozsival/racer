@@ -16,12 +16,11 @@ namespace racer {
 
 class track_analysis {
 public:
-  track_analysis(const double min_distance_between_waypoints)
-      : min_distance_between_waypoints_(min_distance_between_waypoints) {}
+  track_analysis(const double d_min)
+      : min_distance_between_waypoints_sq_{d_min * d_min} {}
 
   const std::vector<point>
   find_pivot_points(const std::vector<circle> &circle_path,
-                    const std::vector<point> &checkpoints,
                     const std::shared_ptr<racer::occupancy_grid> grid) const {
     std::vector<point> pivot_points;
 
@@ -64,20 +63,8 @@ public:
     return pivot_points;
   }
 
-  std::vector<point> find_corners(const std::vector<point> &pivot_points,
-                                  const std::vector<point> &checkpoints,
-                                  double max_angle) {
-    const auto sharp_turns =
-        remove_insignificant_turns(pivot_points, checkpoints, max_angle);
-    return merge_close(sharp_turns, min_distance_between_waypoints_);
-  }
-
-private:
-  const double min_distance_between_waypoints_;
-
   const std::vector<point>
   remove_insignificant_turns(const std::vector<point> &points,
-                             const std::vector<point> &checkpoints,
                              double max_angle) const {
     std::vector<bool> used(points.size(),
                            true); // all points are considered at the beginning
@@ -99,8 +86,7 @@ private:
     return remaining;
   }
 
-  const std::vector<point> merge_close(const std::vector<point> &points,
-                                       double d_min) const {
+  const std::vector<point> merge_close(const std::vector<point> &points) const {
     std::vector<bool> used(points.size(),
                            true); // all points are used at the beginning
 
@@ -111,7 +97,7 @@ private:
       for (std::size_t i = 0; i < points.size(); ++i) {
         if (!used[i])
           continue;
-        const auto close = close_points(points, used, i, d_min);
+        const auto close = close_points(points, used, i);
         if (close.size() > max_close) {
           max_close = close.size();
           i_max = i;
@@ -119,7 +105,7 @@ private:
       }
 
       if (max_close > 0) {
-        auto to_remove = close_points(points, used, i_max, d_min);
+        auto to_remove = close_points(points, used, i_max);
         to_remove.insert(i_max);
         const auto i_mid = pick_corner_point_index(points, to_remove, used);
         to_remove.erase(i_mid);
@@ -141,13 +127,17 @@ private:
     return remaining;
   }
 
+private:
+  const double min_distance_between_waypoints_sq_;
+
   const std::set<std::size_t> close_points(const std::vector<point> &points,
                                            const std::vector<bool> &used,
-                                           std::size_t i, double d_min) const {
+                                           std::size_t i) const {
     std::set<std::size_t> close;
 
     std::size_t j = next(i, used);
-    while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2)) {
+    while (j != i && points[i].distance_sq(points[j]) <
+                         min_distance_between_waypoints_sq_) {
       auto res = close.insert(j);
       if (!res.second) {
         break;
@@ -157,7 +147,8 @@ private:
     }
 
     j = prev(i, used);
-    while (j != i && points[i].distance_sq(points[j]) < pow(d_min, 2)) {
+    while (j != i && points[i].distance_sq(points[j]) <
+                         min_distance_between_waypoints_sq_) {
       auto res = close.insert(j);
       if (!res.second) {
         break;

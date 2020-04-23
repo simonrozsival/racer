@@ -10,7 +10,8 @@
 #include "racer/occupancy_grid.h"
 #include "racer/vehicle_configuration.h"
 
-class track_analysis_input {
+class track_analysis_input
+{
 public:
   const std::string name;
   const racer::vehicle_configuration initial_position;
@@ -32,9 +33,11 @@ public:
         min_distance_between_waypoints(min_distance_between_waypoints) {}
 
   static std::unique_ptr<track_analysis_input>
-  load(std::filesystem::path input_file_name) {
+  load(std::filesystem::path input_file_name)
+  {
     std::ifstream file(input_file_name, std::ifstream::in);
-    if (!file.is_open()) {
+    if (!file.is_open())
+    {
       std::cerr << "Cannot open circuit definition file '"
                 << std::filesystem::absolute(input_file_name) << "'."
                 << std::endl;
@@ -60,7 +63,8 @@ public:
 
     auto occupancy_grid = load_occupancy_grid_from_pgm(
         pgm_file_path, occupancy_grid_resolution, false);
-    if (!occupancy_grid) {
+    if (!occupancy_grid)
+    {
       std::cerr << "Cannot load occupancy grid from file '" << pgm_file_path
                 << "'." << std::endl;
       return nullptr;
@@ -83,7 +87,8 @@ public:
     // load checkpoints
     double x, y;
     std::vector<racer::math::point> checkpoints;
-    while (ss >> x) {
+    while (ss >> x)
+    {
       ss >> y;
       checkpoints.emplace_back(x * occupancy_grid_resolution,
                                y * occupancy_grid_resolution);
@@ -100,13 +105,16 @@ public:
   }
 
   static std::optional<std::vector<std::shared_ptr<track_analysis_input>>>
-  load(int number_of_configs, char *config_file_names[]) {
+  load(int number_of_configs, char *config_file_names[])
+  {
     std::vector<std::shared_ptr<track_analysis_input>> configs;
-    for (int i = 0; i < number_of_configs; ++i) {
+    for (int i = 0; i < number_of_configs; ++i)
+    {
       auto input_file_name = std::filesystem::path{config_file_names[i]};
       const std::shared_ptr<track_analysis_input> config =
           load(input_file_name);
-      if (!config) {
+      if (!config)
+      {
         std::cerr << "Loading configuration from '" << input_file_name
                   << "' failed." << std::endl;
         return {};

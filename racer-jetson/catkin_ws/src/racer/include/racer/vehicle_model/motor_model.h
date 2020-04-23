@@ -16,7 +16,9 @@ private:
   double rpm_;
 
 public:
-  rpm(double rpm) : rpm_{rpm} {}
+  rpm(double rpm) : rpm_{ rpm }
+  {
+  }
 
   rpm(const rpm &other) = default;
   rpm &operator=(const rpm &other) = default;
@@ -24,18 +26,30 @@ public:
   rpm(rpm &&other) = default;
   rpm &operator=(rpm &&other) = default;
 
-  inline bool operator==(const rpm &other) const { return *this == other.rpm_; }
+  inline bool operator==(const rpm &other) const
+  {
+    return *this == other.rpm_;
+  }
 
   inline bool operator==(double other_rpm) const
   {
     return std::abs(rpm_ - other_rpm) < 1e-3;
   }
 
-  rpm operator+(const rpm &other) const { return rpm{rpm_ + other.rpm_}; }
+  rpm operator+(const rpm &other) const
+  {
+    return rpm{ rpm_ + other.rpm_ };
+  }
 
-  rpm operator*(const double &factor) const { return rpm{rpm_ * factor}; }
+  rpm operator*(const double &factor) const
+  {
+    return rpm{ rpm_ * factor };
+  }
 
-  inline operator double() const { return rpm_; }
+  inline operator double() const
+  {
+    return rpm_;
+  }
 
   constexpr auto to_radians_per_second() const
   {
@@ -50,39 +64,36 @@ private:
   const std::array<double, 6> x_;
 
 public:
-  motor_model(const rpm max_rpm, const std::array<double, 6> x)
-      : max_rpm_{max_rpm}, x_{x} {}
+  motor_model(const rpm max_rpm, const std::array<double, 6> x) : max_rpm_{ max_rpm }, x_{ x }
+  {
+  }
 
   static auto rc_beast()
   {
-    return std::make_unique<motor_model>(
-        15350.0,
-        std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
-                              7.68248846e+01, 2.05190302e+02, 1.16584276e+00});
+    return std::make_unique<motor_model>(15350.0,
+                                         std::array<double, 6>{ 7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
+                                                                7.68248846e+01, 2.05190302e+02, 1.16584276e+00 });
   }
 
   static auto simulator()
   {
-    return std::make_unique<motor_model>(
-        16000.0,
-        std::array<double, 6>{2.00112083e+02, 1.58906592e+03, 1.95144104e-02,
-                              1.83867207e+02, 1.15343890e-02, 6.94902305e-01});
+    return std::make_unique<motor_model>(18000.0,
+                                         std::array<double, 6>{ 7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
+                                                                7.68248846e+01, 2.05190302e+02, 1.16584276e+00 });
   }
 
-  inline const rpm &max_rpm() const { return max_rpm_; }
-
-  rpm predict_next_state(const rpm &state, const action &action,
-                         const double dt) const override
+  inline const rpm &max_rpm() const
   {
-    const double normalized_drive_torque =
-        drive_torque(normalize_rpm(state), action.throttle());
-    const double normalized_load_torque =
-        load_torque(normalize_rpm(state), action.target_steering_angle());
-    const double normalized_rpm_change_rate =
-        (normalized_drive_torque - normalized_load_torque) / x_[1];
+    return max_rpm_;
+  }
 
-    return std::max(0.0,
-                    double(state) + normalized_rpm_change_rate * max_rpm_ * dt);
+  rpm predict_next_state(const rpm &state, const action &action, const double dt) const override
+  {
+    const double normalized_drive_torque = drive_torque(normalize_rpm(state), action.throttle());
+    const double normalized_load_torque = load_torque(normalize_rpm(state), action.target_steering_angle());
+    const double normalized_rpm_change_rate = (normalized_drive_torque - normalized_load_torque) / x_[1];
+
+    return std::max(0.0, double(state) + normalized_rpm_change_rate * max_rpm_ * dt);
   }
 
   inline double normalize_rpm(const double raw_rpm) const
@@ -98,18 +109,15 @@ private:
     return (1 - current_rpm) * x_[0];
   }
 
-  constexpr double drive_torque(const double current_rpm,
-                                const double throttle) const
+  constexpr double drive_torque(const double current_rpm, const double throttle) const
   {
     return max_torque(current_rpm) * throttle;
   }
 
-  constexpr double load_torque(const double current_rpm,
-                               const double steering_angle) const
+  constexpr double load_torque(const double current_rpm, const double steering_angle) const
   {
-    return std::pow(current_rpm, x_[2]) *
-           std::pow(x_[3] + x_[4] * std::abs(steering_angle), x_[5]);
+    return std::pow(current_rpm, x_[2]) * std::pow(x_[3] + x_[4] * std::abs(steering_angle), x_[5]);
   }
 };
 
-} // namespace racer::vehicle_model
+}  // namespace racer::vehicle_model

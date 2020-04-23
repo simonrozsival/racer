@@ -6,9 +6,9 @@
   <param name="use_sim_time" value="true" />
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
-  <arg name="horizon" default="0.5" />
+  <arg name="horizon" default="0.25" />
   <arg name="integration_step" default="0.02" />
-  <arg name="planning_safety_margin" default="0.3" />
+  <arg name="planning_safety_margin" default="0.20" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -24,7 +24,7 @@
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="horizon" value="$(arg horizon)" />
     <arg name="following_strategy" value="dwa" />
-    <arg name="planning_safety_margin" value="0.2" />
+    <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
   </include>
 
   <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">

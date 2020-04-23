@@ -42,7 +42,7 @@ std::string map_frame_id;
 std::unique_ptr<racer_ros::Planner<State, DiscreteState>> planner;
 
 auto model =
-    std::make_shared<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::rc_beast());
+    std::make_shared<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::simulator());
 
 double time_step_s;
 
@@ -135,8 +135,8 @@ int main(int argc, char *argv[])
   double max_frequency, normal_frequency;
   node.param<double>("normal_frequency", normal_frequency, 1);
   node.param<double>("max_frequency", max_frequency, 10);
-  ros::Rate normal_rate{normal_frequency};
-  ros::Rate max_rate{max_frequency};
+  ros::Rate normal_rate{ normal_frequency };
+  ros::Rate max_rate{ max_frequency };
 
   ROS_INFO("==> PLANNING NODE is ready to go");
   while (ros::ok())

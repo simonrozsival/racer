@@ -18,13 +18,7 @@ class occupancy_grid
 public:
   occupancy_grid(const std::vector<int8_t> data, const uint32_t width, const uint32_t height, const double cell_size,
                  const racer::math::point origin)
-    : cell_size_(cell_size)
-    , cell_size_sq_(cell_size * cell_size)
-    , data_(data)
-    , width_(width)
-    , height_(height)
-    , size_(data.size())
-    , origin_(origin)
+      : cell_size_(cell_size), cell_size_sq_(cell_size * cell_size), data_(data), width_(width), height_(height), size_(data.size()), origin_(origin)
   {
   }
 
@@ -36,13 +30,13 @@ public:
 
   std::unique_ptr<occupancy_grid> inflate(double radius) const
   {
-    std::vector<int8_t> inflated{ data_.begin(), data_.end() };  // start with a copy
+    std::vector<int8_t> inflated{data_.begin(), data_.end()}; // start with a copy
     const int r = static_cast<int>(std::ceil(radius / cell_size_));
     const int r2 = r * r;
 
-    for (std::size_t i{ 0 }; i < width_; ++i)
+    for (std::size_t i{0}; i < width_; ++i)
     {
-      for (std::size_t j{ 0 }; j < height_; ++j)
+      for (std::size_t j{0}; j < height_; ++j)
       {
         const std::size_t index = index_of(i, j);
         if (!is_dangerous(data_[index]))
@@ -50,9 +44,9 @@ public:
           continue;
         }
 
-        for (int dx{ -r }; dx <= r; ++dx)
+        for (int dx{-r}; dx <= r; ++dx)
         {
-          for (int dy{ -r }; dy <= r; ++dy)
+          for (int dy{-r}; dy <= r; ++dy)
           {
             bool is_out_of_bounds = (dx < 0 && i < static_cast<std::size_t>(std::abs(dx))) ||
                                     (dy < 0 && j < static_cast<std::size_t>(std::abs(dy))) ||
@@ -85,9 +79,8 @@ public:
     int y_cell = int((y - origin_.y()) / cell_size_);
     const std::size_t index = index_of(x_cell, y_cell);
 
-    int8_t val = index < 0 || index >= size_ ? max_value()  // no information
-                                               :
-                                               data_[index];
+    int8_t val = index < 0 || index >= size_ ? max_value() // no information
+                                             : data_[index];
 
     return val;
   }
@@ -162,7 +155,7 @@ public:
 
   racer::vehicle_configuration move_towards_center(const racer::vehicle_configuration &cfg) const
   {
-    const double max_radius = 5.0;  // meters
+    const double max_radius = 5.0; // meters
     const racer::math::angle left = cfg.heading_angle() + racer::math::angle::from_degrees(90);
     const racer::math::angle right = cfg.heading_angle() - racer::math::angle::from_degrees(90);
 
@@ -172,7 +165,7 @@ public:
 
     const double shift_right = distance_right - radius;
     const racer::math::point center = cfg.location() + racer::math::vector(shift_right, right);
-    return { center, cfg.heading_angle() };
+    return {center, cfg.heading_angle()};
   }
 
   static constexpr int8_t max_value()
@@ -220,4 +213,4 @@ private:
   }
 };
 
-}  // namespace racer
+} // namespace racer

@@ -22,13 +22,13 @@
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="normal_frequency" value="0.25" />
+      <param name="normal_frequency" value="2" />
       <param name="max_frequency" value="10" />
 
       <param name="throttle_levels" value="7" />
       <param name="steering_levels" value="13" />
 
-      <param name="min_throttle" value="-1.0" />
+      <param name="min_throttle" value="-0.25" />
       <param name="max_throttle" value="1.0" />
       <param name="safety_margin" value="$(arg planning_safety_margin)" />
 
@@ -42,21 +42,22 @@
       <param name="strategy" value="$(arg following_strategy)" />
 
       <!-- Pure pursuit -->
-      <param name="min_lookahead" value="0.75" />
-      <param name="max_lookahead" value="2.00" />
+      <param name="min_lookahead" value="1.25" />
+      <param name="max_lookahead" value="2.5" />
       <!-- -->
 
       <!-- DWA -->
-      <param name="distance_to_obstacle_weight" value="650.0" />
+      <param name="distance_to_obstacle_weight" value="800.0" />
       <param name="position_weight" value="500.0" />
       <param name="heading_weight" value="250.0" />
-      <param name="velocity_weight" value="400.0" />
+      <param name="velocity_weight" value="250.0" />
+      <param name="acceleration_weight" value="50.0" />
 
       <param name="prediction_horizon_s" value="$(arg horizon)" />
       <param name="integration_step_s" value="$(arg integration_step)" />
-      <param name="throttle_levels" value="20" />
+      <param name="throttle_levels" value="10" />
       <param name="steering_levels" value="33" />
-      <param name="min_throttle" value="0.1" />
+      <param name="min_throttle" value="0.0" />
       <param name="max_throttle" value="1.0" />
       <!-- -->
     </node>
