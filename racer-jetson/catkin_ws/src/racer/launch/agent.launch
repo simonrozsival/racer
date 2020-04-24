@@ -22,11 +22,11 @@
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="normal_frequency" value="2" />
-      <param name="max_frequency" value="10" />
+      <param name="normal_frequency" value="20" />
+      <param name="max_frequency" value="20" />
 
-      <param name="throttle_levels" value="7" />
-      <param name="steering_levels" value="13" />
+      <param name="throttle_levels" value="5" />
+      <param name="steering_levels" value="19" />
 
       <param name="min_throttle" value="-0.25" />
       <param name="max_throttle" value="1.0" />

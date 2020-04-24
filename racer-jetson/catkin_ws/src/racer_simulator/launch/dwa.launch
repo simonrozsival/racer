@@ -6,9 +6,9 @@
   <param name="use_sim_time" value="true" />
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
-  <arg name="horizon" default="0.25" />
+  <arg name="horizon" default="0.3" />
   <arg name="integration_step" default="0.02" />
-  <arg name="planning_safety_margin" default="0.20" />
+  <arg name="planning_safety_margin" default="0.05" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -38,7 +38,7 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/racer.rviz" />
 
   <!-- visualization -->
-  <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="car_1 $(arg number_laps)" output="screen" />
+  <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="car_1 $(arg number_laps)" output="screen" launch-prefix="xterm -e" />
   <node name="visualize_action" pkg="racer" type="visualize_action" output="screen">
     <param name="prediction_horizon" value="$(arg horizon)" />
     <param name="time_step_s" value="$(arg integration_step)" />
