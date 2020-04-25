@@ -1,0 +1,80 @@
+<?xml version="1.0" ?>
+
+<launch>
+    <!-- global parameters -->
+    <param name="use_sim_time" value="true" />
+    <arg name="number_laps" default="100" />
+    <arg name="run_rviz" default="true" />
+    <arg name="horizon" default="0.5" />
+    <arg name="integration_step" default="0.02" />
+    <arg name="planning_safety_margin" default="0.1" />
+
+    <!-- spawn first car and the whole simulator -->
+    <include file="$(find f1tenth-sim)/launch/simulator.launch">
+        <arg name="run_gazebo" value="true" />
+        <arg name="car_name" value="dwa" />
+        <arg name="paint" value="Yellow" />
+    </include>
+
+    <!-- spawn second car -->
+    <include file="$(find f1tenth-sim)/launch/simulator.launch">
+        <arg name="run_gazebo" value="false" />
+        <arg name="car_name" value="pure_pursuit" />
+        <arg name="paint" value="Green" />
+        <arg name="x_pos" value="3.5" />
+    </include>
+
+    <!-- race car 1 - DWA -->
+    <group ns="dwa">
+        <arg name="car_name" value="dwa" />
+        <node name="map_server" pkg="map_server" type="map_server" args="$(find f1tenth-sim)/map/race_track.yaml" />
+        <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
+            <rosparam file="$(find racer)/launch/costmap.yaml" command="load" subst_value="True" />
+        </node>
+        <include file="$(find racer)/launch/agent.launch">
+            <arg name="car_name" value="dwa" />
+            <arg name="strategy" value="dwa" />
+
+            <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
+            <arg name="origin_is_center_of_rear_axle" value="true" />
+            <arg name="horizon" value="$(arg horizon)" />
+            <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
+        </include>
+        <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
+            <param name="base_link_frame_id" value="dwa_base_link" />
+            <param name="left_wheel_frame_id" value="dwa_left_rear_wheel" />
+            <param name="right_wheel_frame_id" value="dwa_right_rear_wheel" />
+            <param name="topic" value="/dwa/motor_rpm" />
+        </node>
+
+        <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="dwa $(arg number_laps)" output="screen" launch-prefix="xterm -e" />
+    </group>
+
+    <!-- racer car 2 - Pure Pursuit -->
+    <group ns="pure_pursuit">
+        <arg name="car_name" value="pure_pursuit" />
+        <node name="map_server" pkg="map_server" type="map_server" args="$(find f1tenth-sim)/map/race_track.yaml" />
+        <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
+            <rosparam file="$(find racer)/launch/costmap.yaml" command="load" subst_value="True" />
+        </node>
+        <include file="$(find racer)/launch/agent.launch">
+            <arg name="car_name" value="pure_pursuit" />
+            <arg name="strategy" value="pure_pursuit" />
+
+            <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
+            <arg name="origin_is_center_of_rear_axle" value="true" />
+            <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
+        </include>
+        <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
+            <param name="base_link_frame_id" value="pure_pursuit_base_link" />
+            <param name="left_wheel_frame_id" value="pure_pursuit_left_rear_wheel" />
+            <param name="right_wheel_frame_id" value="pure_pursuit_right_rear_wheel" />
+            <param name="topic" value="/pure_pursuit/motor_rpm" />
+        </node>
+
+        <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="pure_pursuit $(arg number_laps)" output="screen" launch-prefix="xterm -e" />
+    </group>
+
+    <!-- launch rviz with navigation configuration -->
+    <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/head_to_head.rviz" />
+</launch>

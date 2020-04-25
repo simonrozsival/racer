@@ -44,14 +44,14 @@ int main(int argc, char *argv[])
 
   auto model =
       std::make_unique<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::simulator());
-  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{ std::move(model),
-                                                                                                time_step_s };
+  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{std::move(model),
+                                                                                               time_step_s};
   std::size_t steps = std::ceil(prediction_horizon / time_step_s);
 
   int seq = 0;
 
   double frequency = 50.0;
-  ros::Rate rate{ frequency };
+  ros::Rate rate{frequency};
   while (ros::ok())
   {
     if (state && action)
@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
         marker.header.seq = seq++;
         marker.header.stamp = ros::Time::now();
         marker.id = 1558;
-        marker.lifetime = ros::Duration{ 10 * 1.0 / frequency };
+        marker.lifetime = ros::Duration{10 * 1.0 / frequency};
         marker.type = visualization_msgs::Marker::LINE_STRIP;
         marker.action = visualization_msgs::Marker::ADD;
         marker.ns = "action";

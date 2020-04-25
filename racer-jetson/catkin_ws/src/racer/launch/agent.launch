@@ -2,24 +2,36 @@
   <arg name="circuit" />
 
   <arg name="car_name" default="car_1" />
-  <arg name="base_link_frame_id" default="base_link" />
   <arg name="origin_is_center_of_rear_axle" default="false" />
   <arg name="horizon" default="0.75" />
   <arg name="integration_step" default="0.02" />
   <arg name="strategy" default="dwa" />
   <arg name="planning_safety_margin" default="0.3" />
+  <arg name="min_lookahead" default="0.75" />
+  <arg name="max_lookahead" default="1.75" />
 
   <group>
     <node pkg="racer" name="circuit_analysis" type="circuit_node" output="screen">
       <rosparam command="load" file="$(arg circuit)" />
       <param name="lookahead" value="3" />
+
+      <param name="state_topic" value="/$(arg car_name)/state" />
+      <param name="waypoints_topic" value="/$(arg car_name)/waypoints" />
+      <param name="waypoints_visualization_topic" value="/$(arg car_name)/visualization/waypoints" />
     </node>
 
     <node pkg="racer" name="state" type="current_state_node" output="screen">
       <param name="frequency" value="25" />
-      <param name="base_link_frame_id" value="$(arg base_link_frame_id)" />
-      <param name="motor_rpm_topic" value="/racer/motor_rpm" />
+      <param name="motor_rpm_topic" value="/$(arg car_name)/motor_rpm" />
       <param name="origin_is_center_of_rear_axle" value="$(arg origin_is_center_of_rear_axle)" />
+
+      <param name="state_topic" value="/$(arg car_name)/state" />
+      <param name="command_topic" value="/$(arg car_name)/commands" />
+      <param name="motor_rpm_topic" value="/$(arg car_name)/motor_rpm" />
+
+      <param name="map_frame_id" value="map" />
+      <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
+      <param name="odom_frame_id" value="odom" />
     </node>
 
     <node pkg="racer" name="planning" type="planning_node" output="screen">
@@ -35,17 +47,22 @@
       <param name="safety_margin" value="$(arg planning_safety_margin)" />
 
       <param name="time_step_s" value="$(arg integration_step)" />
+
+      <param name="map_topic" value="/obstacles/costmap/costmap" />
+      <param name="state_topic" value="/$(arg car_name)/state" />
+      <param name="waypoints_topic" value="/$(arg car_name)/waypoints" />
+      <param name="trajectory_topic" value="/$(arg car_name)/trajectory" />
+      <param name="inflated_map_topic" value="/$(arg car_name)/planner_map" />
     </node>
 
     <node pkg="racer" name="following" type="trajectory_following_node" output="screen">
       <param name="frequency" value="50" />
-      <param name="ackermann_topic" value="/$(arg car_name)/command" />
 
       <param name="strategy" value="$(arg strategy)" />
 
       <!-- Pure pursuit -->
-      <param name="min_lookahead" value="0.75" />
-      <param name="max_lookahead" value="1.75" />
+      <param name="min_lookahead" value="$(arg min_lookahead)" />
+      <param name="max_lookahead" value="$(arg max_lookahead)" />
       <!-- -->
 
       <!-- DWA -->
@@ -62,6 +79,27 @@
       <param name="min_throttle" value="0.0" />
       <param name="max_throttle" value="1.0" />
       <!-- -->
+
+      <param name="map_topic" value="/obstacles/costmap/costmap" />
+      <param name="state_topic" value="/$(arg car_name)/state" />
+      <param name="waypoints_topic" value="/$(arg car_name)/waypoints" />
+      <param name="trajectory_topic" value="/$(arg car_name)/trajectory" />
+      <param name="twist_topic" value="/$(arg car_name)/commands" />
+      <param name="ackermann_topic" value="/$(arg car_name)/command" />
+    </node>
+
+    <node name="visualize_action" pkg="racer" type="visualize_action" output="screen">
+      <param name="prediction_horizon" value="$(arg horizon)" />
+      <param name="time_step_s" value="$(arg integration_step)" />
+
+      <param name="state_topic" value="/$(arg car_name)/state" />
+      <param name="command_topic" value="/$(arg car_name)/commands" />
+      <param name="visualization_topic" value="/$(arg car_name)/visualization/action" />
+    </node>
+
+    <node name="visualize_plan" pkg="racer" type="visualize_plan" output="screen">
+      <param name="trajectory_topic" value="/$(arg car_name)/trajectory" />
+      <param name="visualization_topic" value="/$(arg car_name)/visualization/trajectory" />
     </node>
   </group>
 </launch>

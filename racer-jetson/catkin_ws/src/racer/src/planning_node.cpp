@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   ros::init(argc, argv, "racing_trajectory_planning");
   ros::NodeHandle node("~");
 
-  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic;
+  std::string map_topic, state_topic, trajectory_topic, path_topic, waypoints_topic, inflated_map_topic;
 
   node.param<std::string>("map_frame_id", map_frame_id, "map");
 
@@ -107,6 +107,7 @@ int main(int argc, char *argv[])
   node.param<std::string>("state_topic", state_topic, "/racer/state");
   node.param<std::string>("waypoints_topic", waypoints_topic, "/racer/waypoints");
   node.param<std::string>("trajectory_topic", trajectory_topic, "/racer/trajectory");
+  node.param<std::string>("inflated_map_topic", inflated_map_topic, "/racer/planner_map");
 
   int throttle_levels, steering_levels;
   node.param<int>("throttle_levels", throttle_levels, 5);
@@ -118,7 +119,7 @@ int main(int argc, char *argv[])
   ros::Subscriber state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
   ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_update);
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
-  debug_map_pub = node.advertise<nav_msgs::OccupancyGrid>("/racer/planner_map", 1);
+  debug_map_pub = node.advertise<nav_msgs::OccupancyGrid>(inflated_map_topic, 1);
 
   double min_throttle, max_throttle;
   node.param<double>("min_throttle", min_throttle, -1.0);

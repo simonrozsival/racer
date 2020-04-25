@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 
 <launch>
-  <arg name="car_name" default="car_1" />
+  <arg name="car_name" default="dwa" />
 
   <!-- global parameters -->
   <param name="use_sim_time" value="true" />
@@ -24,7 +24,6 @@
   <include file="$(find racer)/launch/agent.launch">
     <arg name="car_name" value="$(arg car_name)" />
     <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
-    <arg name="base_link_frame_id" value="$(arg car_name)_base_link" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="horizon" value="$(arg horizon)" />
     <arg name="strategy" value="dwa" />
@@ -35,18 +34,13 @@
     <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
     <param name="left_wheel_frame_id" value="$(arg car_name)_left_rear_wheel" />
     <param name="right_wheel_frame_id" value="$(arg car_name)_right_rear_wheel" />
-    <param name="topic" value="/racer/motor_rpm" />
+    <param name="topic" value="/$(arg car_name)/motor_rpm" />
   </node>
 
   <!-- launch rviz with navigation configuration -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/racer.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/dwa.rviz" />
 
   <!-- visualization -->
   <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="$(arg car_name) $(arg number_laps)" output="screen" />
-  <node name="visualize_action" pkg="racer" type="visualize_action" output="screen">
-    <param name="prediction_horizon" value="$(arg horizon)" />
-    <param name="time_step_s" value="$(arg integration_step)" />
-  </node>
-  <node name="visualize_plan" pkg="racer" type="visualize_plan" output="screen" />
 
 </launch>

@@ -1,15 +1,16 @@
 <?xml version="1.0" ?>
 
 <launch>
-  <arg name="car_name" default="car_1" />
+  <arg name="car_name" default="pure_pursuit" />
 
   <!-- global parameters -->
   <param name="use_sim_time" value="true" />
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
-  <arg name="horizon" default="0.5" />
   <arg name="integration_step" default="0.02" />
   <arg name="planning_safety_margin" default="0.1" />
+  <arg name="min_lookahead" default="0.75" />
+  <arg name="max_lookahead" default="1.75" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -19,13 +20,12 @@
   <!-- racer -->
   <include file="$(find racer)/launch/map.launch">
     <arg name="map" value="$(find f1tenth-sim)/map/race_track.yaml" />
+    <arg name="car_name" value="$(arg car_name)" />
   </include>
   <include file="$(find racer)/launch/agent.launch">
     <arg name="car_name" value="$(arg car_name)" />
     <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
-    <arg name="base_link_frame_id" value="$(arg car_name)_base_link" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
-    <arg name="horizon" value="$(arg horizon)" />
     <arg name="strategy" value="pure_pursuit" />
     <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
   </include>
@@ -34,18 +34,21 @@
     <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
     <param name="left_wheel_frame_id" value="$(arg car_name)_left_rear_wheel" />
     <param name="right_wheel_frame_id" value="$(arg car_name)_right_rear_wheel" />
-    <param name="topic" value="/racer/motor_rpm" />
+    <param name="topic" value="/$(arg car_name)/motor_rpm" />
   </node>
 
   <!-- launch rviz with navigation configuration -->
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/racer.rviz" />
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/pure_pursuit.rviz" />
 
   <!-- visualization -->
   <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="$(arg car_name) $(arg number_laps)" output="screen" launch-prefix="xterm -e" />
-  <node name="visualize_action" pkg="racer" type="visualize_action" output="screen">
-    <param name="prediction_horizon" value="$(arg horizon)" />
-    <param name="time_step_s" value="$(arg integration_step)" />
-  </node>
-  <node name="visualize_plan" pkg="racer" type="visualize_plan" output="screen" />
 
+  <node name="visualize_carrot" pkg="racer" type="visualize_carrot" output="screen">
+    <param name="min_lookahead" value="$(arg min_lookahead)" />
+    <param name="max_lookahead" value="$(arg max_lookahead)" />
+    <param name="state_topic" value="/$(arg car_name)/state" />
+    <param name="trajectory_topic" value="/$(arg car_name)/trajectory" />
+    <param name="visualization_topic" value="/$(arg car_name)/visualization/carrot" />
+    <param name="waypoints_topic" value="/$(arg car_name)/waypoints" />
+  </node>
 </launch>
