@@ -1,5 +1,7 @@
 <launch>
   <arg name="circuit" />
+
+  <arg name="car_name" default="car_1" />
   <arg name="base_link_frame_id" default="base_link" />
   <arg name="origin_is_center_of_rear_axle" default="false" />
   <arg name="horizon" default="0.75" />
@@ -37,7 +39,7 @@
 
     <node pkg="racer" name="following" type="trajectory_following_node" output="screen">
       <param name="frequency" value="50" />
-      <param name="ackermann_topic" value="/car_1/command" />
+      <param name="ackermann_topic" value="/$(arg car_name)/command" />
 
       <param name="strategy" value="$(arg strategy)" />
 

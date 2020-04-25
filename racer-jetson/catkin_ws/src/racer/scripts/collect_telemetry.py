@@ -93,9 +93,13 @@ if __name__ == '__main__':
 
     state = State()
 
-    rospy.Subscriber("/car_1/base/odom", Odometry, state.odometry_callback)
-    rospy.Subscriber("/car_1/command", AckermannDrive, state.input_callback)
-    rospy.Subscriber("/racer/motor_rpm", Float64, state.rpm_callback)
+    odom_topic = rospy.get_param("~odom_topic", "/car_1/base/odom")
+    command_topic = rospy.get_param("~command_topic", "/car_1/command")
+    rpm_topic = rospy.get_param("~rpm_topic", "/car_1/motor_rpm")
+
+    rospy.Subscriber(odom_topic, Odometry, state.odometry_callback)
+    rospy.Subscriber(command_topic, AckermannDrive, state.input_callback)
+    rospy.Subscriber(rpm_topic, Float64, state.rpm_callback)
 
     rate = rospy.Rate(25)
 
