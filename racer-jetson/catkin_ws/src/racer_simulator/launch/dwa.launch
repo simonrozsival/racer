@@ -8,7 +8,7 @@
   <arg name="run_rviz" default="true" />
   <arg name="horizon" default="0.3" />
   <arg name="integration_step" default="0.02" />
-  <arg name="planning_safety_margin" default="0.05" />
+  <arg name="planning_safety_margin" default="0.0" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -23,7 +23,7 @@
     <arg name="base_link_frame_id" value="car_1_base_link" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="horizon" value="$(arg horizon)" />
-    <arg name="following_strategy" value="dwa" />
+    <arg name="strategy" value="dwa" />
     <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
   </include>
 

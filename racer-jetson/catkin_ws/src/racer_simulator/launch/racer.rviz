@@ -8,8 +8,6 @@ Panels:
         - /Status1
         - /Car 11/Car1 POV1
         - /Racer1
-        - /Map Seen By Planner1
-        - /Acatual trajectory1/Shape1
       Splitter Ratio: 0.5617647171020508
     Tree Height: 446
   - Class: rviz/Selection
@@ -137,13 +135,13 @@ Visualization Manager:
           Queue Size: 100
           Value: true
         - Class: rviz/Marker
-          Enabled: false
+          Enabled: true
           Marker Topic: /racer/visualization/action
           Name: Movement prediction
           Namespaces:
-            {}
+            action: true
           Queue Size: 100
-          Value: false
+          Value: true
       Enabled: true
       Name: Racer
     - Alpha: 0.699999988079071
@@ -191,7 +189,7 @@ Visualization Manager:
         Alpha: 1
         Axes Length: 1
         Axes Radius: 0.10000000149011612
-        Color: 255; 25; 0
+        Color: 52; 101; 164
         Head Length: 0.30000001192092896
         Head Radius: 0.10000000149011612
         Shaft Length: 0

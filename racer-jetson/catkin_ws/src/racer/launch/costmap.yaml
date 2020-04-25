@@ -10,7 +10,7 @@ footprint: [[-0.4, -0.3], [-0.4, 0.3], [0.4, 0.3], [0.4, -0.3]] # slightly large
 
 plugins:
   - { name: static, type: "costmap_2d::StaticLayer" }
-  - { name: obstacles, type: "costmap_2d::ObstacleLayer" }
+#  - { name: obstacles, type: "costmap_2d::ObstacleLayer" }
 
 static:
   map_topic: /map
