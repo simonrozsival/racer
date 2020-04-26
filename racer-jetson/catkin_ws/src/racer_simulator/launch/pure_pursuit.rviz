@@ -6,6 +6,7 @@ Panels:
       Expanded:
         - /Map1
         - /Map1/Flag area1
+        - /Pure Pursuit1
       Splitter Ratio: 0.5617647171020508
     Tree Height: 446
   - Class: rviz/Selection
@@ -186,16 +187,16 @@ Visualization Manager:
           Topic: /pure_pursuit/base/odom
           Unreliable: false
           Value: true
+        - Class: rviz/Marker
+          Enabled: true
+          Marker Topic: /pure_pursuit/visualization/carrot
+          Name: Carrot
+          Namespaces:
+            carrot: true
+          Queue Size: 100
+          Value: true
       Enabled: true
-      Name: DWA
-    - Class: rviz/Marker
-      Enabled: true
-      Marker Topic: /pure_pursuit/visualization/carrot
-      Name: Marker
-      Namespaces:
-        carrot: true
-      Queue Size: 100
-      Value: true
+      Name: Pure Pursuit
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48

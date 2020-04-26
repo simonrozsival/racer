@@ -30,6 +30,7 @@
     <arg name="min_lookahead" value="$(arg min_lookahead)" />
     <arg name="max_lookahead" value="$(arg max_lookahead)" />
     <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
+    <arg name="planning_frequency" value="1" />
   </include>
 
   <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
