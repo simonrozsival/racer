@@ -143,7 +143,7 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 
   plt::imshow(img, circuit->grid->rows(), circuit->grid->cols(), 4,
               {{"zorder", "6"}});
-  plot_points("Centers of waypoints", circuit->waypoints, "b+",
+  plot_points("Waypoints", circuit->waypoints, "b+",
               circuit->grid->cell_size(), {{"zorder", "20"}});
 }
 
@@ -169,7 +169,7 @@ void plot_trajectory(
   }
 
   plot_points("Seconds marks", every_second, "k*", cell_size,
-              {{"zorder", "11"}});
+              {{"zorder", "110"}});
 
   const auto steps = trajectory.steps();
   auto prev = steps.front().state().position();

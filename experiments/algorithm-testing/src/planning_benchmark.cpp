@@ -70,7 +70,7 @@ create_sehs_discretization(
 
 template <typename DiscreteState>
 output::planning::benchmark_result measure_search(
-    std::unique_ptr<
+    std::shared_ptr<
         racer::astar::discretized_search_problem<DiscreteState, state>>
         problem,
     std::chrono::milliseconds time_limit)
@@ -133,13 +133,13 @@ void run_benchmark_for(
 
   for (std::size_t i = 0; i < repetitions; ++i)
   {
-    auto problem = std::make_unique<
+    auto problem = std::make_shared<
         racer::astar::discretized_search_problem<DiscreteState, state>>(
         initial_state, time_step_s, actions, state_discretization,
         vehicle_model, shifted_circut, collision_detector);
 
     const auto measurement =
-        measure_search<DiscreteState>(std::move(problem), time_limit);
+        measure_search<DiscreteState>(problem, time_limit);
     if (!measurement_sample)
     {
       measurement_sample =
@@ -202,23 +202,35 @@ void test_full_circuit_search(
       racer::vehicle_model::vehicle_chassis::simulator();
   const auto vehicle_model = std::make_shared<model>(vehicle);
 
-  const std::vector<std::size_t> heading_angles{24};
-  const std::vector<std::size_t> motor_rpms{50};
+  // const std::vector<std::size_t> heading_angles{28};
+  // const std::vector<std::size_t> motor_rpms{10, 20};
+  // const std::vector<double> cell_size_coefficients{2, 4, 5, 8};
+  // const std::vector<double> frequencies{25.0, 50.0};
+  // const std::vector<std::size_t> steering{11, 21, 31};
+  // const std::vector<std::size_t> throttle{5, 9, 21};
+
+  const std::vector<std::size_t> heading_angles{28};
+  const std::vector<std::size_t> motor_rpms{10};
   const std::vector<double> cell_size_coefficients{4};
   const std::vector<double> frequencies{25.0};
 
   for (const auto &config : configs)
   {
+    std::vector<racer::math::point> final_check_points{
+        config->checkpoints.begin(), config->checkpoints.end()};
+    final_check_points.push_back(
+        config->initial_position.location()); // back to the start
+
     // prepare circuit
     const auto centerline = racer::track::centerline::find(
-        config->initial_position, config->occupancy_grid, config->checkpoints);
+        config->initial_position, config->occupancy_grid, final_check_points);
     if (centerline.circles().empty())
     {
       std::cout << "Finding centerline failed for " << config->name
                 << std::endl;
       continue;
     }
-    racer::track_analysis analysis(config->min_distance_between_waypoints);
+    racer::track_analysis analysis(centerline.width());
     const auto raw_waypoints = analysis.find_pivot_points(
         centerline.circles(), config->occupancy_grid);
     const double max_angle = 4.0 / 5.0 * M_PI;
@@ -230,13 +242,12 @@ void test_full_circuit_search(
     sharp_turns.push_back(config->initial_position.location());
 
     auto waypoints = analysis.merge_close(sharp_turns);
-
     const auto circuit = std::make_shared<racer::circuit>(
-        waypoints, centerline.width() / 2.0, config->occupancy_grid);
+        waypoints, centerline.width() * 2.0 / 3.0, config->occupancy_grid);
 
     const auto collision_detector =
         std::make_shared<racer::track::collision_detection>(
-            config->occupancy_grid, vehicle, 36, 0.0);
+            config->occupancy_grid, vehicle, 72, 0.0);
 
     if (!circuit)
     {
@@ -252,10 +263,7 @@ void test_full_circuit_search(
         for (const auto frequency : frequencies)
         {
           const std::size_t lookahead = waypoints.size();
-          const std::size_t throttle_levels = 5;
-          const std::size_t steering_angle_levels = 11;
-          const auto actions = racer::action::create_actions(
-              throttle_levels, steering_angle_levels);
+          const auto actions = racer::action::create_actions(6, 21, -0.25, 1.0);
 
           const double time_step_s = 1.0 / frequency;
 

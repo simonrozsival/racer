@@ -4,7 +4,7 @@
   <arg name="car_name" default="car_1" />
   <arg name="origin_is_center_of_rear_axle" default="false" />
   <arg name="horizon" default="0.75" />
-  <arg name="integration_step" default="0.02" />
+  <arg name="integration_step" default="0.04" />
   <arg name="strategy" default="dwa" />
   <arg name="planning_safety_margin" default="0.3" />
   <arg name="planning_frequency" default="25" />
