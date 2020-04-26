@@ -1,12 +1,13 @@
 <launch>
   <arg name="map" />
+  <arg name="car_name" />
   <arg name="x_pos" default="2.5" />
   <arg name="y_pos" default="-7.0" />
 
   <node name="map_server" pkg="map_server" type="map_server" args="$(arg map)" />
 
   <node name="obstacles" pkg="costmap_2d" type="costmap_2d_node" output="screen">
-    <rosparam file="$(find racer)/launch/costmap.yaml" command="load" ns="costmap" />
+    <rosparam file="$(find racer)/launch/costmap.yaml" command="load" ns="costmap" subst_value="True" />
   </node>
 
   <!-- we assume that the origin of the map [0, 0], direction 0rad, is the starting position of the racecar -->

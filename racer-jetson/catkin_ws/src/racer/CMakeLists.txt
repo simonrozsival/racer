@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(racer)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++17)
+#add_compile_options(-std=c++17 -O3 -ffast-math)
+add_compile_options(-std=c++17 -O3)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -72,6 +73,7 @@ add_executable(racing_line_planning_node src/racing_line_planning_node.cpp)
 add_executable(pure_pursuit_controller_for_raceline_node src/pure_pursuit_controller_for_raceline_node.cpp)
 add_executable(visualize_action src/visualize_action.cpp)
 add_executable(visualize_plan src/visualize_plan.cpp)
+add_executable(visualize_carrot src/visualize_carrot.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -83,6 +85,7 @@ add_dependencies(racing_line_planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} $
 add_dependencies(pure_pursuit_controller_for_raceline_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualize_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualize_plan ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(visualize_carrot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(trajectory_following_node
@@ -114,5 +117,9 @@ target_link_libraries(visualize_action
 )
 
 target_link_libraries(visualize_plan
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(visualize_carrot
   ${catkin_LIBRARIES}
 )

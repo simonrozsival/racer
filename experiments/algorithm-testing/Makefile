@@ -6,6 +6,7 @@ track_analysis:
 		-std=c++17 \
 		-Wall \
 		-O3 \
+		-ffast-math \
 		-I./include \
 		-I../../racer-jetson/catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \
@@ -17,6 +18,7 @@ track_analysis_benchmark:
 		-std=c++17 \
 		-Wall \
 		-O3 \
+		-ffast-math \
 		-I./include \
 		-I../../racer-jetson/catkin_ws/src/racer/include
 
@@ -27,6 +29,7 @@ planning_benchmark:
 		-pthread \
 		-Wall \
 		-O3 \
+		-ffast-math \
 		-I./include \
 		-I../../racer-jetson/catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \

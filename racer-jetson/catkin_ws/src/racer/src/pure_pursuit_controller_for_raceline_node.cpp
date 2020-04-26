@@ -26,8 +26,8 @@ std::optional<racer::track::racing_line> racing_line;
 
 void state_update(const racer_msgs::State::ConstPtr msg)
 {
-  racer::vehicle_configuration position = { msg->x, msg->y, msg->heading_angle };
-  last_known_state = { position, msg->motor_rpm, msg->steering_angle };
+  racer::vehicle_configuration position = {msg->x, msg->y, msg->heading_angle};
+  last_known_state = {position, msg->motor_rpm, msg->steering_angle};
 }
 
 void racing_line_update(const racer_msgs::RacingLine::ConstPtr msg)
@@ -64,16 +64,15 @@ int main(int argc, char *argv[])
   model = std::make_shared<racer::vehicle_model::kinematic::model>(vehicle);
 
   racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
-    5 * vehicle->wheelbase,   // min lookahead
-    15 * vehicle->wheelbase,  // max lookahead
-    vehicle->motor->max_rpm()
-  };
+      5 * vehicle->wheelbase,  // min lookahead
+      15 * vehicle->wheelbase, // max lookahead
+      vehicle->motor->max_rpm()};
   racer::following_strategies::pure_pursuit<racer::vehicle_model::kinematic::state> strategy(vehicle->wheelbase);
 
-  double frequency;  // Hz
+  double frequency; // Hz
   node.param<double>("update_frequency_hz", frequency, 30.0);
 
-  ros::Rate publish_frequency{ frequency };
+  ros::Rate publish_frequency{frequency};
 
   ROS_INFO("==> PURE PURSUIT CONTROLLER FOR RACELINE NODE is ready to go");
   while (ros::ok())

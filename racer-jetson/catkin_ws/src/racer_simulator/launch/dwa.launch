@@ -1,0 +1,46 @@
+<?xml version="1.0" ?>
+
+<launch>
+  <arg name="car_name" default="dwa" />
+
+  <!-- global parameters -->
+  <param name="use_sim_time" value="true" />
+  <arg name="number_laps" default="100" />
+  <arg name="run_rviz" default="true" />
+  <arg name="horizon" default="0.3" />
+  <arg name="integration_step" default="0.02" />
+  <arg name="planning_safety_margin" default="0.0" />
+
+  <include file="$(find f1tenth-sim)/launch/simulator.launch">
+    <arg name="run_gazebo" value="true" />
+    <arg name="car_name" value="$(arg car_name)" />
+  </include>
+
+  <!-- racer -->
+  <include file="$(find racer)/launch/map.launch">
+    <arg name="map" value="$(find f1tenth-sim)/map/race_track.yaml" />
+    <arg name="car_name" value="$(arg car_name)" />
+  </include>
+  <include file="$(find racer)/launch/agent.launch">
+    <arg name="car_name" value="$(arg car_name)" />
+    <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
+    <arg name="origin_is_center_of_rear_axle" value="true" />
+    <arg name="horizon" value="$(arg horizon)" />
+    <arg name="strategy" value="dwa" />
+    <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
+  </include>
+
+  <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
+    <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
+    <param name="left_wheel_frame_id" value="$(arg car_name)_left_rear_wheel" />
+    <param name="right_wheel_frame_id" value="$(arg car_name)_right_rear_wheel" />
+    <param name="topic" value="/$(arg car_name)/motor_rpm" />
+  </node>
+
+  <!-- launch rviz with navigation configuration -->
+  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/dwa.rviz" />
+
+  <!-- visualization -->
+  <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="$(arg car_name) $(arg number_laps)" output="screen" />
+
+</launch>

@@ -32,7 +32,7 @@ public:
                              const std::shared_ptr<racer::track::collision_detection> detector)
     : initial_state_{ initial_state }
     , time_step_s_(time_step_s)
-    , penalization_weight_{ 0.025 }
+    , penalization_weight_{ 0.0 }
     , vehicle_model_(model)
     , available_actions_(available_actions)
     , discretize_(discretize)

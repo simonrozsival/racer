@@ -37,7 +37,7 @@ def wheel_encoder(
 ):
     pub = rospy.Publisher(pub_topic, Float64, queue_size=1)
 
-    rate = rospy.Rate(50)
+    rate = rospy.Rate(100)
     while not rospy.is_shutdown():
         # we'll takte the maximum of the two rear wheels
         # to account for a differential (if any)

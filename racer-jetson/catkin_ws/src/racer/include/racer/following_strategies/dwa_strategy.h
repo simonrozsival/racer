@@ -19,10 +19,12 @@ class dwa_strategy : public following_strategy<State>
 {
 public:
   dwa_strategy(const std::vector<racer::action> available_actions, const unfolder<State> unfolder,
-               const target_error_calculator<State> &target_error_calculator, const std::size_t lookahead)
+               const target_error_calculator<State> &target_error_calculator, double acceleration_weight,
+               const std::size_t lookahead)
     : available_actions_{ available_actions }
     , unfolder_{ unfolder }
     , target_error_calculator_{ target_error_calculator }
+    , acceleration_weight_{ acceleration_weight }
     , lookahead_{ lookahead }
   {
   }
@@ -38,6 +40,7 @@ private:
   const unfolder<State> unfolder_;
   std::vector<action> available_actions_;
   target_error_calculator<State> target_error_calculator_;
+  double acceleration_weight_;
   std::size_t lookahead_;
 
   racer::action select_action(const State &current_state, const std::size_t passed_waypoints,
@@ -54,7 +57,8 @@ private:
                                         unfolder_.unfold_unsafe(current_state, next_action, lookahead_);
       if (!trajectory.empty())
       {
-        const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map);
+        const double error = target_error_calculator_.calculate_error(trajectory, should_follow, map) +
+                             acceleration_weight_ * (1 - next_action.throttle());
 
         if (error < lowest_error)
         {
@@ -66,7 +70,8 @@ private:
 
     if (!best_so_far.is_valid() && !unsafe)
     {
-      // the car is probably too close to some obstacle, there's no other way around it...
+      // the car is probably too close to some obstacle, there's no other way
+      // around it...
       return select_action(current_state, passed_waypoints, reference_trajectory, map, true);
     }
 

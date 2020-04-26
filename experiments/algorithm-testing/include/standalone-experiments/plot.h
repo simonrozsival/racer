@@ -143,19 +143,22 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 
   plt::imshow(img, circuit->grid->rows(), circuit->grid->cols(), 4,
               {{"zorder", "6"}});
-  plot_points("Centers of waypoints", circuit->waypoints, "b+",
+  plot_points("Waypoints", circuit->waypoints, "b+",
               circuit->grid->cell_size(), {{"zorder", "20"}});
 }
 
-void plot_trajectory(const racer::trajectory<kinematic::state> trajectory,
-                     const double cell_size, const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle)
+void plot_trajectory(
+    const racer::trajectory<kinematic::state> trajectory,
+    const double cell_size,
+    const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle)
 {
   std::vector<racer::math::point> states, every_second;
   std::vector<double> speeds;
   for (const auto &step : trajectory.steps())
   {
     states.push_back(step.state().position());
-    speeds.push_back(vehicle->chassis->motor->normalize_rpm(step.state().motor_rpm()));
+    speeds.push_back(
+        vehicle->chassis->motor->normalize_rpm(step.state().motor_rpm()));
 
     if (step.timestamp() >= 1 &&
         step.timestamp() - std::floor(step.timestamp()) <
@@ -166,7 +169,7 @@ void plot_trajectory(const racer::trajectory<kinematic::state> trajectory,
   }
 
   plot_points("Seconds marks", every_second, "k*", cell_size,
-              {{"zorder", "11"}});
+              {{"zorder", "110"}});
 
   const auto steps = trajectory.steps();
   auto prev = steps.front().state().position();
@@ -178,9 +181,12 @@ void plot_trajectory(const racer::trajectory<kinematic::state> trajectory,
     std::map<std::string, std::string> keywords = {
         {"color", speed_color(speeds[i])},
         {"zorder", "9"},
-        {"linewidth", std::to_string(vehicle->chassis->radius() * 0.5 / cell_size)}};
+        {"linewidth",
+         std::to_string(vehicle->chassis->radius() * 0.5 / cell_size)}};
 
-    plt::plot(std::vector<double>{prev.x() / cell_size, pos.x() / cell_size}, std::vector<double>{prev.y() / cell_size, pos.y() / cell_size}, "-", keywords);
+    plt::plot(std::vector<double>{prev.x() / cell_size, pos.x() / cell_size},
+              std::vector<double>{prev.y() / cell_size, pos.y() / cell_size},
+              "-", keywords);
 
     prev = pos;
   }
@@ -277,20 +283,19 @@ void plot_trajectory(
                circles_img);
   plot_waypoints(circuit, waypoints_img);
 
-  plot_trajectory(trajectory,
-                  config.occupancy_grid->cell_size(), vehicle);
+  plot_trajectory(trajectory, config.occupancy_grid->cell_size(), vehicle);
   plot_vehicle_configuration(trajectory.steps().back().state().configuration(),
                              "red", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(initial_configuration, "green",
                              config.occupancy_grid->cell_size());
 
-  // plt::legend();
+  plt::legend();
 
-  // std::stringstream trajectory_file_name;
-  // trajectory_file_name << name << "_trajectory.pdf";
-  // plt::save(trajectory_file_name.str());
+  std::stringstream trajectory_file_name;
+  trajectory_file_name << "sim_" << name << "_trajectory.pdf";
+  plt::save(trajectory_file_name.str());
 
-  plt::show();
+  // plt::show();
 
   // actuators state profile
   plt::subplot(3, 1, 1);
@@ -312,11 +317,11 @@ void plot_trajectory(
 
   plot_points("Speed profile", speed_points, "r-", 1.0);
 
-  // std::stringstream actuators_file_name;
-  // actuators_file_name << name << "_actuators.pdf";
-  // plt::save(actuators_file_name.str());
+  std::stringstream actuators_file_name;
+  actuators_file_name << "sim_" << name << "_actuators.pdf";
+  plt::save(actuators_file_name.str());
 
-  plt::show();
+  // plt::show();
 
   delete[] grid_img;
   delete[] circles_img;

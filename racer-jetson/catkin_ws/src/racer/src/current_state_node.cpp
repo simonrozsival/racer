@@ -43,7 +43,7 @@ void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
   if (last_servo_update_time > 0)
   {
     const auto dt = t - last_servo_update_time;
-    racer::action action{ msg->linear.x, msg->angular.z };
+    racer::action action{msg->linear.x, msg->angular.z};
     current_steering_angle = chassis->steering_servo->predict_next_state(current_steering_angle, action, dt);
   }
 
@@ -60,15 +60,15 @@ racer::vehicle_configuration get_current_configuration(const tf::Transform &tran
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
 
-  racer::math::point center_of_gravity{ origin.x(), origin.y() };
+  racer::math::point center_of_gravity{origin.x(), origin.y()};
   if (origin_is_rear_axle)
   {
     // move the origin to the center of gravity
-    auto offset = racer::math::point{ chassis->distance_of_center_of_gravity_to_rear_axle, 0 }.rotate(rotation);
+    auto offset = racer::math::point{chassis->distance_of_center_of_gravity_to_rear_axle, 0}.rotate(rotation);
     center_of_gravity += offset;
   }
 
-  return { center_of_gravity, rotation };
+  return {center_of_gravity, rotation};
 }
 
 int main(int argc, char *argv[])
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
         tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
         const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
-        racer::vehicle_model::kinematic::state state{ configuration, current_motor_rpm, current_steering_angle };
+        racer::vehicle_model::kinematic::state state{configuration, current_motor_rpm, current_steering_angle};
 
         state_pub.publish(racer_ros::state_to_msg(state, odom_frame_id));
       }
