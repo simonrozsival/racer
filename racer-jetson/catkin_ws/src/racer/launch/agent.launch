@@ -21,7 +21,7 @@
     </node>
 
     <node pkg="racer" name="state" type="current_state_node" output="screen">
-      <param name="frequency" value="25" />
+      <param name="frequency" value="50" />
       <param name="motor_rpm_topic" value="/$(arg car_name)/motor_rpm" />
       <param name="origin_is_center_of_rear_axle" value="$(arg origin_is_center_of_rear_axle)" />
 
@@ -34,13 +34,13 @@
       <param name="odom_frame_id" value="odom" />
     </node>
 
-    <node pkg="racer" name="planning" type="planning_node" output="screen">
+    <node pkg="racer" name="planning" type="planning_node">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
-      <param name="normal_frequency" value="20" />
-      <param name="max_frequency" value="25" />
+      <param name="normal_frequency" value="25" />
+      <param name="max_frequency" value="50" />
 
-      <param name="throttle_levels" value="5" />
-      <param name="steering_levels" value="19" />
+      <param name="throttle_levels" value="6" />
+      <param name="steering_levels" value="21" />
 
       <param name="min_throttle" value="-0.25" />
       <param name="max_throttle" value="1.0" />

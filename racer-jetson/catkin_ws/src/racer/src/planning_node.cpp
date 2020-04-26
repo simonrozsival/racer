@@ -140,6 +140,7 @@ int main(int argc, char *argv[])
   ros::Rate max_rate{max_frequency};
 
   ROS_INFO("==> PLANNING NODE is ready to go");
+
   while (ros::ok())
   {
     if (planner && last_known_state.is_valid() && !next_waypoints.empty())
@@ -154,7 +155,7 @@ int main(int argc, char *argv[])
 
       if (!trajectory)
       {
-        ROS_ERROR("X: no plan found after %ld ms, sticking to old plan for now", elapsed_time.count());
+        ROS_INFO("X: no plan found after %ld ms, sticking to old plan for now", elapsed_time.count());
       }
       else
       {

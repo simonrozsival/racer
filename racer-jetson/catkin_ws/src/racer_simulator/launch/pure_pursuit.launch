@@ -8,7 +8,7 @@
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
   <arg name="integration_step" default="0.02" />
-  <arg name="planning_safety_margin" default="0.1" />
+  <arg name="planning_safety_margin" default="0.12" />
   <arg name="min_lookahead" default="0.75" />
   <arg name="max_lookahead" default="1.75" />
 
@@ -27,6 +27,8 @@
     <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="strategy" value="pure_pursuit" />
+    <arg name="min_lookahead" value="$(arg min_lookahead)" />
+    <arg name="max_lookahead" value="$(arg max_lookahead)" />
     <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
   </include>
 
@@ -41,7 +43,7 @@
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find racer_simulator)/launch/pure_pursuit.rviz" />
 
   <!-- visualization -->
-  <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="$(arg car_name) $(arg number_laps)" output="screen" launch-prefix="xterm -e" />
+  <node name="statistics_logger" pkg="f1tenth-sim" type="lap_statistics.py" args="$(arg car_name) $(arg number_laps)" output="screen" />
 
   <node name="visualize_carrot" pkg="racer" type="visualize_carrot" output="screen">
     <param name="min_lookahead" value="$(arg min_lookahead)" />

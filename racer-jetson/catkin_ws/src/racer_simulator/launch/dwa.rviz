@@ -145,10 +145,10 @@ Visualization Manager:
           Value: true
         - Class: rviz/Marker
           Enabled: true
-          Marker Topic: /racer/visualization/action
+          Marker Topic: /dwa/visualization/action
           Name: Movement prediction
           Namespaces:
-            {}
+            action: true
           Queue Size: 100
           Value: true
         - Angle Tolerance: 0.10000000149011612

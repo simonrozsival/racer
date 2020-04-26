@@ -13,7 +13,7 @@ plugins:
 #  - { name: obstacles, type: "costmap_2d::ObstacleLayer" }
 
 static:
-  map_topic: /$(arg car_name)/map
+  map_topic: /map
   trinary_costmap: false
 
 obstacles:

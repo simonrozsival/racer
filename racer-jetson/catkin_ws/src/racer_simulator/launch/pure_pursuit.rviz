@@ -4,7 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /DWA1
+        - /Map1
+        - /Map1/Flag area1
       Splitter Ratio: 0.5617647171020508
     Tree Height: 446
   - Class: rviz/Selection
@@ -70,7 +71,7 @@ Visualization Manager:
           Color: 25; 255; 0
           Enabled: true
           Name: Flag area
-          Topic: /dwa/lap_statics
+          Topic: /pure_pursuit/lap_statics
           Unreliable: false
           Value: true
         - Alpha: 0.699999988079071
