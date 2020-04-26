@@ -11,6 +11,7 @@
 #include "racer/trajectory.h"
 
 #include "racer/astar/sehs.h"
+#include "racer/astar/hybrid_astar.h"
 #include "racer/sehs/space_exploration.h"
 #include "racer/track/collision_detection.h"
 #include "racer/track_analysis.h"
@@ -22,6 +23,7 @@
 
 using State = racer::vehicle_model::kinematic::state;
 using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
+// using DiscreteState = racer::astar::hybrid_astar::discrete_state;
 
 std::mutex mutex;
 
@@ -88,6 +90,12 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
     ROS_ERROR("space exploration failed, goal is inaccessible.");
     return;
   }
+
+  // @todo: allow switching without changing the code
+
+  // auto cell_size = 5 * model->chassis->radius();
+  // auto discretization = std::make_unique<racer::astar::hybrid_astar::discretization>(
+  //     cell_size, cell_size, 2 * M_PI / 28.0, model->chassis->motor->max_rpm() / 10.0);
 
   circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
   planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(model, std::move(discretization), time_step_s,

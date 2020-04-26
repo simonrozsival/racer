@@ -6,8 +6,10 @@
 #include "racer/nearest_neighbor.h"
 #include "racer/vehicle_model/kinematic_model.h"
 
-namespace racer::astar::sehs::kinematic {
-struct discrete_state {
+namespace racer::astar::sehs::kinematic
+{
+struct discrete_state
+{
 private:
   int circle_, heading_, rpm_;
 
@@ -26,19 +28,22 @@ public:
   discrete_state(discrete_state &&other) = default;
   discrete_state &operator=(discrete_state &&other) = default;
 
-  bool operator==(const discrete_state &other) const {
+  bool operator==(const discrete_state &other) const
+  {
     return circle_ == other.circle_ && heading_ == other.heading_ &&
            rpm_ == other.rpm_;
   }
 
-  bool operator!=(const discrete_state &other) const {
+  bool operator!=(const discrete_state &other) const
+  {
     return !(*this == other);
   }
 };
 
 struct discretization
     : public racer::astar::discretization<
-          discrete_state, racer::vehicle_model::kinematic::state> {
+          discrete_state, racer::vehicle_model::kinematic::state>
+{
 private:
   const double motor_rpm_;
   const racer::math::angle heading_;
@@ -55,7 +60,8 @@ public:
   discretization(discretization &&other) = delete;
 
   discrete_state
-  operator()(const racer::vehicle_model::kinematic::state &state) override {
+  operator()(const racer::vehicle_model::kinematic::state &state) override
+  {
     return {
         (int)nn_.find_nearest_neighbor(state.position()),
         (int)floor(racer::math::angle(state.configuration().heading_angle()) /
@@ -63,7 +69,8 @@ public:
         (int)floor(state.motor_rpm() / motor_rpm_)};
   }
 
-  std::string description() const override {
+  std::string description() const override
+  {
     std::stringstream s;
     s << "c-" << nn_.size() << "-rpm-" << motor_rpm_ << "-theta-"
       << heading_.to_degrees();
@@ -74,12 +81,14 @@ public:
   from(racer::vehicle_configuration start,
        std::shared_ptr<racer::occupancy_grid> occupancy_grid,
        std::vector<racer::math::point> next_waypoints, double vehicle_radius,
-       double max_rpm) {
+       double max_rpm)
+  {
     racer::sehs::space_exploration exploration{vehicle_radius,
                                                5.0 * vehicle_radius, 16};
     const auto path_of_circles =
         exploration.explore_grid(occupancy_grid, start, next_waypoints);
-    if (path_of_circles.empty()) {
+    if (path_of_circles.empty())
+    {
       return nullptr;
     }
 
@@ -91,9 +100,11 @@ public:
 
 private:
   static std::vector<racer::math::point>
-  centers_of(std::vector<racer::math::circle> circles) {
+  centers_of(std::vector<racer::math::circle> circles)
+  {
     std::vector<racer::math::point> centers;
-    for (const auto &circle : circles) {
+    for (const auto &circle : circles)
+    {
       centers.push_back(circle.center());
     }
 
@@ -103,12 +114,15 @@ private:
 
 } // namespace racer::astar::sehs::kinematic
 
-namespace std {
+namespace std
+{
 template <>
-struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>> {
+struct hash<std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>>
+{
   size_t operator()(
       const std::pair<racer::astar::sehs::kinematic::discrete_state, size_t>
-          &obj) const {
+          &obj) const
+  {
     size_t seed = 0;
 
     racer::math::hash_combine(seed, obj.first.circle_);

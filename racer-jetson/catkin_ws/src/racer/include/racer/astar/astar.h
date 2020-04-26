@@ -16,7 +16,7 @@ template <typename TKey, typename State>
 struct neighbor_transition
 {
   neighbor_transition(TKey key, std::vector<State> states, racer::action previous_action, const double cost)
-    : key{ key }, states{ states }, previous_action{ previous_action }, cost{ cost }
+      : key{key}, states{states}, previous_action{previous_action}, cost{cost}
   {
   }
 
@@ -46,19 +46,13 @@ struct search_node
   search_node(TKey key, std::vector<State> states, racer::action previous_action,
               std::weak_ptr<search_node<TKey, State>> parent, double cost_to_come, double cost_estimate,
               std::size_t passed_waypoints)
-    : key{ key }
-    , states{ states }
-    , previous_action{ previous_action }
-    , cost_to_come{ cost_to_come }
-    , cost_estimate{ cost_estimate }
-    , passed_waypoints{ passed_waypoints }
-    , parent{ parent }
+      : key{key}, states{states}, previous_action{previous_action}, cost_to_come{cost_to_come}, cost_estimate{cost_estimate}, passed_waypoints{passed_waypoints}, parent{parent}
   {
   }
 
   static auto for_initial_state(TKey key, State state)
   {
-    return std::make_unique<search_node<TKey, State>>(key, std::vector<State>{ state }, action{ 0, 0 },
+    return std::make_unique<search_node<TKey, State>>(key, std::vector<State>{state}, action{0, 0},
                                                       std::weak_ptr<search_node<TKey, State>>(), 0, 0, 0);
   }
 
@@ -134,7 +128,7 @@ private:
   std::size_t number_of_opened_nodes_;
 
 public:
-  open_set(std::unique_ptr<search_node<TKey, State>> initial_node) : number_of_opened_nodes_{ 0 }
+  open_set(std::unique_ptr<search_node<TKey, State>> initial_node) : number_of_opened_nodes_{0}
   {
     push(std::move(initial_node));
   }
@@ -176,19 +170,13 @@ struct search_result
   }
 
   search_result(std::size_t number_of_opened_nodes, std::size_t number_of_expanded_nodes)
-    : found_trajectory{}
-    , number_of_opened_nodes{ number_of_opened_nodes }
-    , number_of_expanded_nodes{ number_of_expanded_nodes }
-    , final_cost{ 0 }
+      : found_trajectory{}, number_of_opened_nodes{number_of_opened_nodes}, number_of_expanded_nodes{number_of_expanded_nodes}, final_cost{0}
   {
   }
 
   search_result(racer::trajectory<State> found_trajectory, std::size_t number_of_opened_nodes,
                 std::size_t number_of_expanded_nodes, double final_cost)
-    : found_trajectory{ found_trajectory }
-    , number_of_opened_nodes{ number_of_opened_nodes }
-    , number_of_expanded_nodes{ number_of_expanded_nodes }
-    , final_cost{ final_cost }
+      : found_trajectory{found_trajectory}, number_of_opened_nodes{number_of_opened_nodes}, number_of_expanded_nodes{number_of_expanded_nodes}, final_cost{final_cost}
   {
   }
 
@@ -208,11 +196,11 @@ template <typename TKey, typename State>
 const search_result<State> search(std::shared_ptr<base_search_problem<TKey, State>> problem,
                                   const std::atomic<bool> &terminate)
 {
-  open_set<TKey, State> opened_nodes{ problem->initial_search_node() };
+  open_set<TKey, State> opened_nodes{problem->initial_search_node()};
   closed_set<TKey, State> closed_nodes;
-  std::vector<std::shared_ptr<search_node<TKey, State>>> expanded_nodes;  // we must remember the whole graph so that we
-                                                                          // can reconstruct the final path from the
-                                                                          // weak pointers
+  std::vector<std::shared_ptr<search_node<TKey, State>>> expanded_nodes; // we must remember the whole graph so that we
+                                                                         // can reconstruct the final path from the
+                                                                         // weak pointers
 
   while (!terminate && !opened_nodes.is_empty())
   {
@@ -229,18 +217,16 @@ const search_result<State> search(std::shared_ptr<base_search_problem<TKey, Stat
 
     if (problem->is_goal(expanded_node->passed_waypoints))
     {
-      return { problem->reconstruct_trajectory(*expanded_node),
-               opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size(),
-               expanded_node->cost_to_come };
+      return {problem->reconstruct_trajectory(*expanded_node),
+              opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size(),
+              expanded_node->cost_to_come};
     }
 
     closed_nodes.add(*expanded_node);
 
     for (auto neighbor : problem->valid_neighbors(*expanded_node))
     {
-      size_t passed_waypoints = problem->passes_waypoint(neighbor.states, expanded_node->passed_waypoints) ?
-                                    expanded_node->passed_waypoints + 1 :
-                                    expanded_node->passed_waypoints;
+      size_t passed_waypoints = problem->passes_waypoint(neighbor.states, expanded_node->passed_waypoints) ? expanded_node->passed_waypoints + 1 : expanded_node->passed_waypoints;
 
       if (closed_nodes.contains(neighbor.key, passed_waypoints))
       {
@@ -255,7 +241,7 @@ const search_result<State> search(std::shared_ptr<base_search_problem<TKey, Stat
     }
   }
 
-  return { opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size() };
+  return {opened_nodes.number_of_opened_nodes_since_initial_state(), expanded_nodes.size()};
 };
 
-}  // namespace racer::astar
+} // namespace racer::astar
