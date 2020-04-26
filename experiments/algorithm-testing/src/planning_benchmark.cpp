@@ -199,7 +199,8 @@ void test_full_circuit_search(
     const bool plot)
 {
   std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
-      racer::vehicle_model::vehicle_chassis::simulator();
+      // racer::vehicle_model::vehicle_chassis::simulator();
+      racer::vehicle_model::vehicle_chassis::rc_beast();
   const auto vehicle_model = std::make_shared<model>(vehicle);
 
   // const std::vector<std::size_t> heading_angles{28};

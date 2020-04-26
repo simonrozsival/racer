@@ -1,0 +1,15 @@
+algorithm, circuit name, number of actions, from waypoint, lookahead, finished within time limit, found solution, open nodes, expanded nodes, time to finish, time to last but one waypoint, travelled distance, time step, discretization, success rate, number of repetitions, average computation time in ms, computation time variance
+hybrid_astar, eight, 105, 0, 7, yes, yes, 186374, 4466, 6.96, 6.44, 38.2593, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 339.55, 5.7475
+sehs, eight, 105, 0, 7, yes, yes, 230224, 5186, 7.4, 6.92, 39.0076, 0.04, c-87-rpm-1535-theta-12.8571, 1, 20, 516.15, 28.6275
+hybrid_astar, porto, 105, 0, 6, yes, yes, 504107, 10324, 6.96, 5.72, 38.059, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 793.2, 26.46
+sehs, porto, 105, 0, 6, yes, yes, 291687, 5960, 7.08, 5.84, 40.0939, 0.04, c-87-rpm-1535-theta-12.8571, 1, 20, 563, 17
+hybrid_astar, race_track, 105, 0, 10, yes, yes, 2389238, 54269, 13.8, 13.28, 80.2725, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 5717.95, 1413.95
+sehs, race_track, 105, 0, 10, yes, yes, 2098623, 44951, 14.44, 13.88, 81.6888, 0.04, c-177-rpm-1535-theta-12.8571, 1, 20, 6391, 3409.7
+hybrid_astar, simple, 105, 0, 7, yes, yes, 588820, 13700, 11.44, 10, 68.6645, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 1193.25, 98.1875
+sehs, simple, 105, 0, 7, yes, yes, 404326, 8737, 11.52, 10.04, 68.5064, 0.04, c-137-rpm-1535-theta-12.8571, 1, 20, 956.4, 86.44
+hybrid_astar, tornado, 105, 0, 7, yes, yes, 4799135, 108212, 15.08, 13.24, 85.2524, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 12463.5, 6933.95
+sehs, tornado, 105, 0, 7, yes, yes, 1147666, 24285, 14.28, 12.8, 83.2145, 0.04, c-162-rpm-1535-theta-12.8571, 1, 20, 3153.45, 771.348
+hybrid_astar, u, 105, 0, 8, yes, yes, 2728137, 58495, 12.52, 11.32, 73.0735, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 6441.4, 1716.24
+sehs, u, 105, 0, 8, yes, yes, 1201905, 25363, 12.64, 11.52, 72.5634, 0.04, c-130-rpm-1535-theta-12.8571, 1, 20, 3381.65, 787.627
+hybrid_astar, zurich, 105, 0, 12, yes, yes, 3877615, 90808, 20, 17.12, 117.845, 0.04, x-1.08167_y-1.08167-rpm-1535-theta-12.8571, 1, 20, 9778.15, 3440.63
+sehs, zurich, 105, 0, 12, yes, yes, 1602588, 37000, 20, 17.12, 116.48, 0.04, c-223-rpm-1535-theta-12.8571, 1, 20, 5483.6, 2245.04
