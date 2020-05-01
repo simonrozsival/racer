@@ -39,28 +39,29 @@ public:
   }
 };
 
-class motor_model : public base_model<rpm> {
+class hardware_motor_model : public base_model<rpm> {
 private:
   const rpm max_rpm_;
   const std::array<double, 6> x_;
 
 public:
-  motor_model(const rpm max_rpm, const std::array<double, 6> x)
+  hardware_motor_model(const rpm max_rpm, const std::array<double, 6> x)
       : max_rpm_{max_rpm}, x_{x} {}
 
-  static auto rc_beast() {
-    return std::make_unique<motor_model>(
+  static auto with_fitted_values() {
+    return std::make_unique<hardware_motor_model>(
         15350.0,
         std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
                               7.68248846e+01, 2.05190302e+02, 1.16584276e+00});
   }
 
-  static auto simulator() {
-    return std::make_unique<motor_model>(
-        18000.0,
-        std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
-                              7.68248846e+01, 2.05190302e+02, 1.16584276e+00});
-  }
+  // static auto simulator() {
+  //   return std::make_unique<hardware_motor_model>(
+  //       18000.0,
+  //       std::array<double, 6>{7.33016701e+02, 8.58626896e+02, 7.40739969e-01,
+  //                             7.68248846e+01,
+  //                             2.05190302e+02, 1.16584276e+00});
+  // }
 
   inline const rpm &max_rpm() const { return max_rpm_; }
 

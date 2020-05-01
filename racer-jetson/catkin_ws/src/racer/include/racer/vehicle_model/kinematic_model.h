@@ -12,8 +12,7 @@
 #include "racer/math.h"
 
 #include "racer/vehicle_model/base_model.h"
-#include "racer/vehicle_model/motor_model.h"
-#include "racer/vehicle_model/steering_servo_model.h"
+#include "racer/vehicle_model/hardware_motor_model.h"
 #include "racer/vehicle_model/vehicle_chassis.h"
 
 namespace racer::vehicle_model::kinematic {
@@ -79,11 +78,10 @@ public:
 public:
   state predict_next_state(const state &current, const action &input,
                            const double dt) const override {
-    rpm motor_rpm =
+    auto motor_rpm =
         chassis->motor->predict_next_state(current.motor_rpm(), input, dt);
-    racer::math::angle steering_angle =
-        chassis->steering_servo->predict_next_state(current.steering_angle(),
-                                                    input, dt);
+    auto steering_angle = chassis->steering_servo->predict_next_state(
+        current.steering_angle(), input, dt);
 
     // the computed engine RPM is used immediately - not with a 1 step delay
     // - otherwise, the car could not start moving in the very first step (with
@@ -91,10 +89,14 @@ public:
 
     double v = calculate_speed_with_no_slip_assumption(motor_rpm);
 
+    // calculate the effective steering angle given the current speed of the
+    // vehicle - the higher the speed, the lower the effective steering angle
+    double speed_percentage = std::clamp(v / top_speed_, 0.0, 1.0);
+    double delta = effective_steering_angle(speed_percentage, steering_angle);
+
     // just some renaming to make the equations look the same as in the thesis
     double theta = current.configuration().heading_angle();
-    double delta = steering_angle;
-    double beta = slip_angle(steering_angle);
+    double beta = slip_angle(delta);
     double L = chassis->wheelbase;
 
     vehicle_configuration translation_and_rotation{
@@ -105,24 +107,14 @@ public:
             steering_angle};
   }
 
-  double maximum_theoretical_speed() const override {
-    return calculate_speed_with_no_slip_assumption(chassis->motor->max_rpm());
-  }
+  double maximum_theoretical_speed() const override { return top_speed_; }
 
   double calculate_speed_with_no_slip_assumption(const rpm &motor_rpm) const {
-    return (motor_rpm.to_radians_per_second() /
-            chassis->motor_to_wheel_gear_ratio) *
-           chassis->wheel_radius;
+    return (double(motor_rpm) / top_rpm_) * top_speed_;
   }
 
   double speed_in_state(const state &state) const {
     return calculate_speed_with_no_slip_assumption(state.motor_rpm());
-  }
-
-  action action_from_speed_and_steering_angle(const double speed,
-                                              const double angle) const {
-    return {speed / maximum_theoretical_speed(),
-            chassis->steering_servo->action_input_for_angle(angle)};
   }
 
 private:
@@ -131,6 +123,23 @@ private:
                  chassis->wheelbase) *
                 tan(steering_angle));
   }
+
+  double effective_steering_angle(double speed, double steering) const {
+    // double m, c;
+    // if (speed < 0.25) {
+    //   m = 1.074 * speed + 0.406;
+    //   c = -0.582 * speed + 0.155;
+    // } else {
+    //   m = -0.086 * speed + 0.229;
+    //   c = -0.036 * speed + 0.026;
+    // }
+
+    // return racer::math::sign(steering) * (m * std::abs(steering) + c);
+    return steering * racer::math::angle::from_degrees(10.5);
+  }
+
+private:
+  const double top_speed_{4.1}, top_rpm_{780.0};
 };
 
 } // namespace racer::vehicle_model::kinematic

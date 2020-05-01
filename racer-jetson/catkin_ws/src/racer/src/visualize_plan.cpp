@@ -12,9 +12,8 @@
 
 #include "racer/math.h"
 #include "racer/vehicle_configuration.h"
+#include "racer/vehicle_model/hardware_motor_model.h"
 #include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/motor_model.h"
-#include "racer/vehicle_model/steering_servo_model.h"
 
 #include "racer_ros/utils.h"
 
@@ -64,8 +63,7 @@ int main(int argc, char *argv[]) {
         marker.action = visualization_msgs::Marker::ADD;
         marker.ns = "trajectory";
 
-        double speed_proportion =
-            step.state().motor_rpm() / model->chassis->motor->max_rpm();
+        double speed_proportion = step.state().motor_rpm() / 764.0;
         marker.color.g = speed_proportion;
         marker.color.r = 1 - speed_proportion;
         marker.color.a = 1.0;
