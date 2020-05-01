@@ -2,6 +2,7 @@
 
 import rospy
 import math
+import numpy as np
 
 from geometry_msgs.msg import Twist
 from ackermann_msgs.msg import AckermannDrive
@@ -12,30 +13,22 @@ if __name__ == '__main__':
     ackermann_topic = rospy.get_param("~ackermann_topic", "/car_1/command")
     ackermann = rospy.Publisher(ackermann_topic, AckermannDrive, queue_size=1)
 
-    options = [
-        [-1, 1],
-        [-0.9, 0.9],
-        [-0.8, 0.8],
-        [-0.7, 0.7],
-        [-0.6, 0.6],
-        [-0.5, 0.5],
-        [-0.4, 0.4],
-        [-0.3, 0.3],
-        [-0.2, 0.2],
-        [-0.1, 0.1],
-    ]
+    rate = rospy.Rate(10.0)
 
-    rate = rospy.Rate(1.0 / 10.0)
+    steering = np.arange(0.0, 1.0, 0.1)
+    steering = np.append(steering, np.arange(-0.1, -1.0, -0.1))
 
-    i = 0
     while rospy.is_shutdown() is False:
-        for o in options:
-            for k in range(1, 10):
-                msg = AckermannDrive()
-                msg.steering_angle = o[i % 2]
-                msg.speed = 0.0
+        for s in steering:
+            for m in [1.0, 0.75, 0.5]:
+                o = [0.0, m]
+                for i in range(1, 10):
+                    msg = AckermannDrive()
+                    msg.steering_angle = s
+                    msg.speed = o[i % 2]
 
-                ackermann.publish(msg)
-                i = i + 1
+                    print("t: {}, s: {}".format(msg.speed, msg.steering_angle))
 
-                rate.sleep()
+                    for j in range(200):
+                        ackermann.publish(msg)
+                        rate.sleep()

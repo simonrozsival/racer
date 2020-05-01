@@ -90,9 +90,9 @@ if __name__ == '__main__':
 
     state = State()
 
-    odom_topic = rospy.get_param("~odom_topic", "/dwa/base/odom")
-    command_topic = rospy.get_param("~command_topic", "/dwa/command")
-    rpm_topic = rospy.get_param("~rpm_topic", "/dwa/motor_rpm")
+    odom_topic = rospy.get_param("~odom_topic", "/car_1/base/odom")
+    command_topic = rospy.get_param("~command_topic", "/car_1/command")
+    rpm_topic = rospy.get_param("~rpm_topic", "/car_1/motor_rpm")
 
     rospy.Subscriber(odom_topic, Odometry, state.odometry_callback)
     rospy.Subscriber(command_topic, AckermannDrive, state.input_callback)
