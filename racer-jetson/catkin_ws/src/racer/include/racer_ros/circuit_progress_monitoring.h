@@ -126,7 +126,7 @@ private:
     std::lock_guard<std::mutex> guard(analysis_lock_);
     std::vector<racer::math::circle> wps;
     for (const auto &apex : apexes) {
-      wps.emplace_back(apex, centerline.width() * 2.0 / 3.0);
+      wps.emplace_back(apex, centerline.width());
     }
 
     waypoints_ = std::vector<racer::math::circle>(wps);

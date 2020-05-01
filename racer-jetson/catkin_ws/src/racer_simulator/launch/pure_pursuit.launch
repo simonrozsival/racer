@@ -34,9 +34,7 @@
   </include>
 
   <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
-    <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
-    <param name="left_wheel_frame_id" value="$(arg car_name)_left_rear_wheel" />
-    <param name="right_wheel_frame_id" value="$(arg car_name)_right_rear_wheel" />
+    <param name="odom_topic" value="/$(arg car_name)/ground_truth" />
     <param name="topic" value="/$(arg car_name)/motor_rpm" />
   </node>
 
