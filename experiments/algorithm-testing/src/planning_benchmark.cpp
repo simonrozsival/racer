@@ -202,10 +202,6 @@ void test_full_circuit_search(
   // racer::vehicle_model::vehicle_chassis::rc_beast();
   const auto vehicle_model = std::make_shared<model>(vehicle);
 
-  // const std::vector<std::size_t> heading_angles{28};
-  // const std::vector<std::size_t> motor_rpms{10, 20};
-  // const std::vector<double> cell_size_coefficients{2, 4, 5, 8};
-  // const std::vector<double> frequencies{25.0, 50.0};
   const std::vector<std::size_t> steering{11, 21, 31};
   const std::vector<std::size_t> throttle{5, 9, 21};
   const std::vector<std::size_t> heading_angles{18, 36, 52};
