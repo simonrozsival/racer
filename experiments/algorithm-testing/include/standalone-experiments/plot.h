@@ -143,8 +143,8 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 
   plt::imshow(img, circuit->grid->rows(), circuit->grid->cols(), 4,
               {{"zorder", "6"}});
-  plot_points("Waypoints", circuit->waypoints, "b+",
-              circuit->grid->cell_size(), {{"zorder", "20"}});
+  // plot_points("Waypoints", circuit->waypoints, "b+", circuit->grid->cell_size(),
+  //             {{"zorder", "20"}});
 }
 
 void plot_trajectory(
@@ -168,8 +168,8 @@ void plot_trajectory(
     }
   }
 
-  plot_points("Seconds marks", every_second, "k*", cell_size,
-              {{"zorder", "110"}});
+  // plot_points("Seconds marks", every_second, "k*", cell_size,
+  //             {{"zorder", "110"}});
 
   const auto steps = trajectory.steps();
   auto prev = steps.front().state().position();
@@ -214,7 +214,7 @@ void plot_track_analysis(const track_analysis_input &config,
                          const std::vector<racer::math::point> &waypoints,
                          const double waypoint_radius)
 {
-  // plt::title("Corner Detection");
+  plt::title(config.name);
   plt::grid(true);
   plt::xlim(0, config.occupancy_grid->cols());
   plt::ylim(0, config.occupancy_grid->rows());
@@ -222,25 +222,30 @@ void plot_track_analysis(const track_analysis_input &config,
 
   unsigned char *grid_img = nullptr;
   plot_grid(config.occupancy_grid, grid_img);
-  plot_points("Check points", config.checkpoints, "bx",
+  plot_points("Centerline", centerline.points(), "k.",
+              config.occupancy_grid->cell_size());
+  plot_points("Skipped candidates", raw_waypoints, "ro",
               config.occupancy_grid->cell_size());
 
-  plot_points("Centerline", centerline.points(), "k-",
-              config.occupancy_grid->cell_size());
-  plot_points("Merged corner points", raw_waypoints, "ro",
-              config.occupancy_grid->cell_size());
-
+  unsigned char *circles_img = nullptr;
   unsigned char *waypoints_img = nullptr;
   plot_circles(waypoints, config.occupancy_grid, waypoint_radius,
-               waypoints_img);
-  plot_points("Corners", waypoints, "go", config.occupancy_grid->cell_size());
+               circles_img);
+
+  auto circuit = std::make_shared<racer::circuit>(waypoints, waypoint_radius, config.occupancy_grid);
+  plot_waypoints(circuit, waypoints_img);
+  plot_points("Corners", waypoints, "bo", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
 
-  plt::legend();
-  plt::show();
+  // plt::legend();
+  std::stringstream trajectory_file_name;
+  trajectory_file_name << config.name << ".pdf";
+  plt::save(trajectory_file_name.str());
+  // plt::show();
 
   delete[] grid_img;
+  delete[] circles_img;
   delete[] waypoints_img;
 }
 
@@ -253,19 +258,31 @@ void plot_trajectory(
 {
   std::vector<racer::math::point> rpm_points, steering_angle_points,
       speed_points, throttle, steering;
+
+  double min_time = HUGE_VAL;
+  double max_time = 0;
+  double max_speed = 0;
+  double avg_speed = 0;
+
   for (const auto &step : trajectory.steps())
   {
+    const double speed = vehicle->calculate_speed_with_no_slip_assumption(
+        step.state().motor_rpm());
     rpm_points.emplace_back(step.timestamp(),
                             step.state().motor_rpm() /
                                 vehicle->chassis->motor->max_rpm());
     steering_angle_points.emplace_back(step.timestamp(),
                                        double(step.state().steering_angle()));
     speed_points.emplace_back(step.timestamp(),
-                              vehicle->calculate_speed_with_no_slip_assumption(
-                                  step.state().motor_rpm()));
+                              speed);
     throttle.emplace_back(step.timestamp(), step.previous_action().throttle());
     steering.emplace_back(step.timestamp(),
                           step.previous_action().target_steering_angle());
+
+    avg_speed = (avg_speed * (speed_points.size() - 1) + speed) / double(speed_points.size());
+    max_speed = std::max(speed, max_speed);
+    min_time = std::min(step.timestamp(), min_time);
+    max_time = std::max(step.timestamp(), max_time);
   }
 
   plt::title(config.name);
@@ -292,7 +309,7 @@ void plot_trajectory(
   plt::legend();
 
   std::stringstream trajectory_file_name;
-  trajectory_file_name << "sim_" << name << "_trajectory.pdf";
+  trajectory_file_name << name << "_trajectory.pdf";
   plt::save(trajectory_file_name.str());
 
   // plt::show();
@@ -307,7 +324,7 @@ void plot_trajectory(
 
   plt::subplot(3, 1, 2);
   plot_points("Motor RPM (normalized)", rpm_points, "r-", 1.0);
-  plot_points("Steering angle", steering_angle_points, "b-", 1.0);
+  plot_points("Steering angle [rad]", steering_angle_points, "b-", 1.0);
   plt::legend();
 
   // speed profile
@@ -315,10 +332,38 @@ void plot_trajectory(
   plt::ylabel("speed [m/s]");
   plt::xlabel("time [s]");
 
-  plot_points("Speed profile", speed_points, "r-", 1.0);
+  // hack: draw the max speed line
+  plt::ylim(0.1, 1.1 * max_speed);
+  std::vector<racer::math::point> max_speed_points{
+      {min_time, max_speed}, {max_time, max_speed}};
+  std::vector<racer::math::point> avg_speed_points{
+      {min_time, avg_speed}, {max_time, avg_speed}};
+  std::stringstream max_speed_label;
+  max_speed_label << std::setprecision(2);
+  max_speed_label << max_speed << " m/s";
+  std::stringstream avg_speed_label;
+  avg_speed_label << std::setprecision(2);
+  avg_speed_label << avg_speed << " m/s";
+  plot_points(max_speed_label.str(), max_speed_points, "k--", 1.0);
+  plot_points(avg_speed_label.str(), avg_speed_points, "k--", 1.0);
+
+  // plot_points("Speed profile", speed_points, "r-", 1.0);
+  // colored speed profile
+  racer::math::point prev = speed_points.front();
+  for (auto speed_pt : speed_points)
+  {
+    std::map<std::string, std::string> keywords = {{"color", speed_color(speed_pt.y() / vehicle->top_speed())}};
+    plt::plot(std::vector<double>{prev.x(), speed_pt.x()},
+              std::vector<double>{prev.y(), speed_pt.y()},
+              "-", keywords);
+
+    prev = speed_pt;
+  }
+
+  plt::legend();
 
   std::stringstream actuators_file_name;
-  actuators_file_name << "sim_" << name << "_actuators.pdf";
+  actuators_file_name << name << "_actuators.pdf";
   plt::save(actuators_file_name.str());
 
   // plt::show();

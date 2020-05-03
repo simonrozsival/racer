@@ -41,9 +41,7 @@
             <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
         </include>
         <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
-            <param name="base_link_frame_id" value="dwa_base_link" />
-            <param name="left_wheel_frame_id" value="dwa_left_rear_wheel" />
-            <param name="right_wheel_frame_id" value="dwa_right_rear_wheel" />
+            <param name="odom_topic" value="/dwa/ground_truth" />
             <param name="topic" value="/dwa/motor_rpm" />
         </node>
 
@@ -66,9 +64,7 @@
             <arg name="planning_safety_margin" value="$(arg planning_safety_margin)" />
         </include>
         <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
-            <param name="base_link_frame_id" value="pure_pursuit_base_link" />
-            <param name="left_wheel_frame_id" value="pure_pursuit_left_rear_wheel" />
-            <param name="right_wheel_frame_id" value="pure_pursuit_right_rear_wheel" />
+            <param name="odom_topic" value="/pure_pursuit/ground_truth" />
             <param name="topic" value="/pure_pursuit/motor_rpm" />
         </node>
 

@@ -18,7 +18,6 @@ from std_msgs.msg import Float64
 
 class State:
     # constants
-    max_steering_angle = math.radians(24.0)
     encoder_to_motor_gear_ratio = 3.5
     wheel_to_motor_gear_ratio = encoder_to_motor_gear_ratio * 3
     wheel_radius = 0.05
@@ -29,7 +28,6 @@ class State:
 
     # the state of actuators
     motor_rpm = 0
-    steering_angle = 0
 
     # the configuration of the ve=hicle
     x = 0
@@ -61,18 +59,17 @@ class State:
     def input_callback(self, msg):
         self.throttle_input = msg.speed
         self.steering_angle_input = msg.steering_angle
-        self.steering_angle = self.steering_angle_input * self.max_steering_angle
 
     def rpm_callback(self, msg):
         self.motor_rpm = msg.data
 
     def publish(self):
         if self.has_published is False:
-            print("time,throttle_input,steering_angle_input,x,y,heading_angle,speed,slip_angle,yaw_rate,motor_rpm,steering_angle,estimated_longitudinal_slip")
+            print("time,throttle_input,steering_angle_input,x,y,heading_angle,speed,slip_angle,yaw_rate,motor_rpm,estimated_longitudinal_slip")
             self.has_published = True
 
         values = [time.time(), self.throttle_input, self.steering_angle_input, self.x, self.y, self.heading_angle, self.speed,
-                  self.slip_angle, self.yaw_rate, self.motor_rpm, self.steering_angle, self.estimate_longitudinal_slip()]
+                  self.slip_angle, self.yaw_rate, self.motor_rpm, self.estimate_longitudinal_slip()]
         line = ",".join([str(x) for x in values])
         # for now, just publish it to STDOUT and suppose that the user redirects it into a file
         print(line)

@@ -35,8 +35,8 @@ if __name__ == '__main__':
     while rospy.is_shutdown() is False:
         if n % 100 == 0:
             throttle = throttle + 0.05
-            if n % 2000 == 0:
-                throttle = 0
+            if n % 1000 == 0:
+                throttle = 0.1
                 steering = steering + 0.05
                 if steering > 1.0:
                     steering = -1.0

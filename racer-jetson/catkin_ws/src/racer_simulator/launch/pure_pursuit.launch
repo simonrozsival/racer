@@ -7,10 +7,12 @@
   <param name="use_sim_time" value="true" />
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
-  <arg name="integration_step" default="0.02" />
-  <arg name="planning_safety_margin" default="0.12" />
-  <arg name="min_lookahead" default="0.75" />
-  <arg name="max_lookahead" default="1.75" />
+  <arg name="integration_step" default="0.04" />
+  <!--arg name="planning_safety_margin" default="0.12" /-->
+  <arg name="planning_safety_margin" default="0.0" />
+  <arg name="min_lookahead" default="1.0" />
+  <!--arg name="max_lookahead" default="1.75" /-->
+  <arg name="max_lookahead" default="1.5" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -34,9 +36,7 @@
   </include>
 
   <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
-    <param name="base_link_frame_id" value="$(arg car_name)_base_link" />
-    <param name="left_wheel_frame_id" value="$(arg car_name)_left_rear_wheel" />
-    <param name="right_wheel_frame_id" value="$(arg car_name)_right_rear_wheel" />
+    <param name="odom_topic" value="/$(arg car_name)/ground_truth" />
     <param name="topic" value="/$(arg car_name)/motor_rpm" />
   </node>
 

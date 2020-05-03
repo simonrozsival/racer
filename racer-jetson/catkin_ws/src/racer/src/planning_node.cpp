@@ -22,8 +22,8 @@
 #include "racer_ros/utils.h"
 
 using State = racer::vehicle_model::kinematic::state;
-using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
-// using DiscreteState = racer::astar::hybrid_astar::discrete_state;
+// using DiscreteState = racer::astar::sehs::kinematic::discrete_state;
+using DiscreteState = racer::astar::hybrid_astar::discrete_state;
 
 std::mutex mutex;
 
@@ -82,20 +82,20 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints)
     next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 
-  auto discretization = racer::astar::sehs::kinematic::discretization::from(
-      last_known_state.configuration(), occupancy_grid, next_waypoints, model->chassis->radius(),
-      model->chassis->motor->max_rpm());
-  if (!discretization)
-  {
-    ROS_ERROR("space exploration failed, goal is inaccessible.");
-    return;
-  }
+  // auto discretization = racer::astar::sehs::kinematic::discretization::from(
+  //     last_known_state.configuration(), occupancy_grid, next_waypoints, model->chassis->radius(),
+  //     model->chassis->motor->max_rpm());
+  // if (!discretization)
+  // {
+  //   ROS_ERROR("space exploration failed, goal is inaccessible.");
+  //   return;
+  // }
 
   // @todo: allow switching without changing the code
 
-  // auto cell_size = 5 * model->chassis->radius();
-  // auto discretization = std::make_unique<racer::astar::hybrid_astar::discretization>(
-  //     cell_size, cell_size, 2 * M_PI / 28.0, model->chassis->motor->max_rpm() / 10.0);
+  auto cell_size = 3 * model->chassis->radius();
+  auto discretization = std::make_unique<racer::astar::hybrid_astar::discretization>(
+      cell_size, cell_size, 2 * M_PI / 18.0, model->chassis->motor->max_rpm() / 20.0);
 
   circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius, occupancy_grid);
   planner = std::make_unique<racer_ros::Planner<State, DiscreteState>>(model, std::move(discretization), time_step_s,
@@ -129,10 +129,12 @@ int main(int argc, char *argv[])
   ros::Publisher trajectory_pub = node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
   debug_map_pub = node.advertise<nav_msgs::OccupancyGrid>(inflated_map_topic, 1);
 
-  double min_throttle, max_throttle;
+  double min_throttle, max_throttle, max_right, max_left;
   node.param<double>("min_throttle", min_throttle, -1.0);
   node.param<double>("max_throttle", max_throttle, 1.0);
-  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle);
+  node.param<double>("max_right", max_right, -1.0);
+  node.param<double>("max_left", max_left, 1.0);
+  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle, max_right, max_left);
 
   node.param<double>("safety_margin", safety_margin, 0.1);
 

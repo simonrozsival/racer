@@ -46,7 +46,7 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  // Step 1
+  // Step 0
   std::vector<racer::math::point> final_check_points{
       config->checkpoints.begin(), config->checkpoints.end()};
   final_check_points.push_back(
@@ -55,6 +55,7 @@ int main(int argc, char *argv[])
   std::cout << "Find centerline" << std::endl;
   const auto se_start = std::chrono::steady_clock::now();
 
+  // Step 1
   const auto centerline = racer::track::centerline::find(
       config->initial_position, config->occupancy_grid, final_check_points);
   stop_stopwatch("centerline", se_start);
@@ -69,24 +70,22 @@ int main(int argc, char *argv[])
   // Step 2
   std::cout << "RUN find pivot points" << std::endl;
   const auto find_pivot_points_start = std::chrono::steady_clock::now();
-  racer::track_analysis analysis(centerline.width());
-  const auto raw_waypoints =
+  racer::track_analysis analysis{centerline.width()};
+  const auto pivot_points =
       analysis.find_pivot_points(centerline.circles(), config->occupancy_grid);
   stop_stopwatch("find pivot points", find_pivot_points_start);
 
   // Step 3
   std::cout << "RUN find corners" << std::endl;
   const auto find_corners_start = std::chrono::steady_clock::now();
-  const double max_angle = M_PI * 4.0 / 5.0;
   const auto sharp_turns =
-      analysis.remove_insignificant_turns(raw_waypoints, max_angle);
+      analysis.remove_insignificant_turns(pivot_points);
   const auto waypoints = analysis.merge_close(sharp_turns);
   stop_stopwatch("find corners", find_corners_start);
 
   // This requires Linux or WSL+Xserver
   std::cout << "Show interactive plot" << std::endl;
-  plot_track_analysis(*config, centerline, raw_waypoints, waypoints,
-                      centerline.width() * 2.0 / 3.0);
+  plot_track_analysis(*config, centerline, pivot_points, waypoints, centerline.width());
 
   std::cout << "Done." << std::endl;
   return 0;
