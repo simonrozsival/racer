@@ -1,7 +1,7 @@
 % Metadata to be stored in PDF, see documentation of the pdfx package for more details.
 
 \Author{Šimon Rozsíval}
-\Title{Thesis title}
-\Keywords{keywords\sep more such\sep yet another}
+\Title{Trajectory planning for fast moving cars}
+\Keywords{planning\sep autonomous vehicle\sep autonomous racing}
 \Subject{Abstract of thesis}
 \Publisher{Charles University}
