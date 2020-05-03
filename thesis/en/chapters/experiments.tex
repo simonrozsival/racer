@@ -7,35 +7,421 @@ In this experiment we test the Hybrid A* and \gls{SEHS} algorithms as we describ
 
 \subsection{Test Setup}
 
-The parameters of the vehicle chassis and the vehicle model we used are equal to the properties of our experimental vehicle as stated in Table~\ref{table:dimensions} and derived in Section~\ref{sec:actuators_model}.
+Both Hybrid A* and \gls*{SEHS} are dependent on the level discretization. The finer the discretization is, the close the results are to the optimal solution, but at the same time the size of the searched state space increases. In order to compare our implementation of the two algorithms, we ran them with several different combinations parameter values.
 
-Both Hybrid A* and \gls*{SEHS} require specification of state space and time discretization parameters. We found that both algorithms performed well with time step $\Delta t=\SI{0.04}{\second}$ (\SI{25}{\hertz}), the heading angle values divided into \num{28} sectors of a circle, and the range of possible values of motor \gls*{RPM} divided into \num{10} sub-ranges. Additionally, the Hybrid A* algorithm splits the $x$ and $y$ coordinates were split into squares with side lengths of $4r$, where $r$ is the radius of the vehicle. The SEHS algorithm discretizes the $xy$ plane by finding a path of circles in the Space Exploration step. We require the radii of the circles to be between $r$ a $5r$. The actions available to the planner were a cross product of 6 throttle levels (\num{-0.25} - \num{1}) and 21 steering angles (\num{-1} - \num{1}).
+The heading angle ($\theta$) values were arranged into \num{18}, \num{36}, or \num{52} uniform sectors. The motor \gls*{RPM}s were split into \num{20}, \num{40}, and \num{80} sub-ranges. Additionally, the Hybrid A* algorithm divided the $xy$ plane into a grid of square cells with the side lengths of $4r$ or $5r$, where $r$ is the radius of the vehicle. The \gls*{SEHS} algorithm discretized the $xy$ plane by finding a path of circles in the Space Exploration step. We require the radii of the circles to be between $r$ a $5r$. The actions available to the planner were a cross product of \num{5}, \num{9}, or \num{21} throttle levels and \num{11}, \num{21}, or \num{31} steering angles. The discrete time step $\delta t$ was \SI{0.04}{\second} (\SI{25}{\hertz}) at all times.
 
-Circuits are represented by an occupancy grid bitmap with a resolution of \SI{0.05}{\meter} per grid cell. For each circuit, we first perform track segmentation, as described in Section~\ref{sec:track_segmentation}, to detect corners which we use as waypoints. We also perform the Space Exploration step of the SEHS algorithm. We then let both algorithms find the near time-optimal trajectory from the initial configuration defined for each circuit to the last waypoint. We measure the number of search nodes the algorithm opens during search, the number of search nodes which are expanded, and also the time it takes to find the solution on a testing computer. Because both of the algorithms are deterministic, they always find the same solution for the same problem and they always open and expand the same number of search nodes. The execution times differ slightly and so we repeat the measurement 20 times and calculate the average execution time.
+The parameters of the vehicle model we used are equal to the properties of our experimental vehicle as stated in Table~\ref{table:dimensions} and derived in Section~\ref{sec:actuators_model}. \todo[inline]{We actually used the model of the simulated vehicle. Change this.}
 
-These values were not selected at random, but rather by evaluating the performance and the quality of the solutions for different values. The selected parameters yielded good quality results while being reasonably fast.
+Circuits are represented by an occupancy grid bitmap with a resolution of \SI{0.05}{\meter} per grid cell. For each circuit, we first perform track segmentation, as described in Section~\ref{sec:track_segmentation}, to detect corners which we use as waypoints. We then let both algorithms find the near time-optimal trajectory from the initial configuration defined for each circuit to the last waypoint.
 
-We used a desktop computer with an AMD Ryzen 7 3700X CPU running at the base clock of \SI{3.6}{\giga\hertz} and \num{32}GB of DDR4 RAM at the base clock of \SI{3200}{\mega\hertz}. The source code was written in C++17 and compiled using GCC 9.2 with the \texttt{-O3} and \texttt{-ffast-math} optimization flags.
+We measure the number of search nodes the algorithm opens during search, the number of search nodes which are expanded, and also the time it takes to find the solution on a testing computer. Because both of the algorithms are deterministic, they always find the same solution for the same problem and they always open and expand the same number of search nodes. For the SEHS algorithm, we do not measure the time of the \textit{Space Exploration} step and we only measure the actual \textit{Heuristic Search}.
+
+The execution times differ slightly and so we repeat the measurement ten times and calculate the average execution time. We used a desktop computer with an AMD Ryzen 7 3700X CPU running at the base clock of \SI{3.6}{\giga\hertz} (\SI{4.4}{\giga\hertz} boost) and \num{32}GB of DDR4 RAM at the base clock of \SI{3200}{\mega\hertz}. The source code was written in C++17 and it was compiled using GCC 9.2 with the \texttt{-O3} and \texttt{-ffast-math} optimization flags.
 
 \subsection{Results}
 
-The results of our experiments are shown in Figure~\ref{fig:porto},~\ref{fig:tornado},~\ref{fig:simple},~\ref{fig:u}, and~\ref{fig:zurich}.
+The results of our experiments are shown in Figures~\ref{fig:porto},~\ref{fig:tornado},~\ref{fig:simple},~\ref{fig:u},~\ref{fig:race_track}, and~\ref{fig:zurich}. Each figure contains a table with the fastest lap each algorithm was able to find and the trajectory which took the least amount of time to compute and the discretization parameters which were used to obtain this result as well as the visualization of the trajectory that was found in the shortest time period. The trajectory is shown as a curve from the initial configuration (marked with a green arrow) to a final configuration which reaches the last waypoint (shown with a red arrow).
 
-Each figure shows the trajectory as a curve from the initial configuration (marked with a green arrow) to a final configuration which passes the last waypoint (marked with a red waypoint). The black stars along the trajectory are a visual aid which marks the position of the vehicle every 1 second. The waypoints found by the track segmentation algorithm are marked as blue circles.
+The curve which represents the trajectory of the vehicle has a color ranging from red to green. The color corresponds to the speed of the vehicle at the given position. The segments where the vehicle moves slowly is shown in red and the faster the car is moving the closer the color is to bright green. The trajectory is plotted over a map of the circuit with white parts showing the road and gray parts the boundaries of the track. As we mentioned earlier, the occupancy grids for the circuits all have resolution of \SI{0.05}{\meter}. Every \num{20} grid cells correspond to \SI{1}{\meter} in real world. Therefore for example the circuit in Figure~\ref{fig:zurich} represents an area of \SI{25}{\meter} $\times$ \SI{25}{\meter}.
 
-The curve which represents the trajectory of the vehicle has a color ranging from red to green. The color corresponds to the speed of the vehicle at the given position. The segments where the vehicle moves slowly is shown in red and the faster the car is moving the closer the color is to bright green.
+Each trajectory is accompanied by three charts, showing the control inputs for the vehicle, the predicted state of the motor and the steering servo, and the speed profile of the trajectory. The speed profile has the top speed and the average speed marked with horizontal dashed lines.
 
-The trajectory is plotted over a map of the circuit with white parts showing the road and gray parts the boundaries of the track. As we mentioned earlier, the occupancy grids for the circuits all have resolution of \SI{0.05}{\meter}. Every \num{20} grid cells correspond to \SI{1}{\meter} in real world. Therefore for example the circuit in Figure~\ref{fig:zurich} represents an area of \SI{25}{\meter} $\times$ \SI{25}{\meter}.
+From our results, it is hard to declare a winner of the two algorithms. Both preformed similarly and each of them found a better solution than the other for some of the test circuits. In the thesis in which Chao Chen introduces the \gls{SEHS} algorithm, it clearly outperforms the Hybrid A* algorithm \cite{SEHS}. This is probably due to differences in the internal implementation and the choice of discretization parameters. It is clearly possible to tune the Hybrid A* algorithm to perform similarly or better than \gls*{SEHS} with the same parameters. The \gls*{SEHS} algorithm also failed to provide a solution within a time limit of \SI{10}{\second} while our implementation of the Hybrid A* algorithm managed to solve each test circuit.
 
-Each trajectory is accompanied by three charts, showing the control inputs for the vehicle, the normalized state of the actuators, and the speed profile of the trajectory.
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto_hybrid_astar_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto_hybrid_astar_actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{192.30}{\milli\second}}
+		\label{fig:solution_porto-hybrid_astar}	
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto_sehs_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto_sehs_actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{253.60}{\milli\second}}
+		\label{fig:solution_porto-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.80 & 20 & 18 & \bfseries 67301 & \bfseries 192.30 & 13.64 \\
+			248 & 1.44 & 20 & 36 & 838926 & 2544.00 & \bfseries 12.28 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* found both a trajectory in the least amount of time and also a trajectory with the best lap time.}
+		\label{table:porto-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
 
-\todo[inline]{Add commentary for the results.}
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & Circles & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 71 & 20 & 18 & 80763 & 253.60 & 13.16 \\
+			84 & 71 & 80 & 36 & 1054427 & 2171.60 & 12.48 \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS could not find a solution faster nor could it find a better solution than Hybrid A* with any of the tested combination of parameters.}
+		\label{table:porto-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Porto'' is a simple track which was inspired by the track used in the 2018 F1/10 competition in Porto.}
+	\label{fig:porto}
+\end{figure}
 
-The trajectories found by the planning algorithms are very ambitious. The algorithm utilizes the kinematic model and so it assumes that the car will be able to make very sharp turns at very high speeds. It is highly unlikely that any vehicle would be able to exactly follow the planned trajectories.
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado_hybrid_astar_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado_hybrid_astar_actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{494.50}{\milli\second}}
+		\label{fig:solution_tornado-hybrid_astar}	
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado_sehs_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado_sehs_actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{551.30}{\milli\second}}
+		\label{fig:solution_tornado-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.44 & 20 & 18 & 177778 & \bfseries 494.50 & 28.64 \\
+			84 & 1.44 & 80 & 52 & 3464766 & 6611.70 & \bfseries 26.24 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A*: }
+		\label{table:tornado-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & Circles & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 126 & 20 & 18 & \bfseries 144864 & 551.30 & 28.08 \\
+			84 & 126 & 80 & 52 & 2827948 & 6397.60 & 26.84 \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS: }
+		\label{table:tornado-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Tornado''}
+	\label{fig:tornado}
+\end{figure}
 
-It is interesting to observe that even though the \gls*{SEHS} algorithm usually opens and expands fewer search graph nodes, the total computation time can be higher than the computation time of Hybrid A*. There is significant overhead determining which circle is closest to a given point. We tried improving this using \texttt{kd}-trees for faster nearest neighbor search, but that in turn slowed down the computation when compared to simple linear search.
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple_hybrid_astar_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple_hybrid_astar_actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{236.20}{\milli\second}}
+		\label{fig:simple-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple_sehs_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple_sehs_actuators}
+		\end{subfigure}
+		\caption{Soultion found by SEHS in \SI{449.20}{\milli\second}}
+		\label{fig:simple-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.80 & 20 & 18 & \bfseries 78401 & \bfseries 236.20 & 20.88 \\
+			84 & 1.44 & 40 & 36 & 807771 & 1926.50 & 19.92 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* results}
+		\label{table:simple-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
 
-\include{experiments_figures}
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & Circles & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 134 & 20 & 18 & 129796 & 449.20 & 21.64 \\
+			88 & 134 & 40 & 52 & 1443863 & 4204.30 & \bfseries 19.76 \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS results}
+		\label{table:simple-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Simple''}
+	\label{fig:simple}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u_hybrid_astar_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u_hybrid_astar_actuators}
+		\end{subfigure}	
+		\caption{Solution found by Hybrid A* in \SI{440.10}{\milli\second}}
+		\label{fig:u-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u_sehs_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u_sehs_actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{533.60}{\milli\second}}
+		\label{fig:u-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.80 & 20 & 18 & \bfseries 145240 & \bfseries 440.10 & 23.08 \\
+			84 & 1.44 & 40 & 36 & 1442255 & 3667.90 & 21.84 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A*:}
+		\label{table:u-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & Circles & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 123 & 20 & 18 & 147605 & 533.60 & 23.64 \\
+			44 & 123 & 40 & 52 & 829326 & 2289.80 & \bfseries 21.60 \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS:}
+		\label{table:u-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``U''}
+	\label{fig:u}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track_hybrid_astar_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track_hybrid_astar_actuators}
+		\end{subfigure}	
+		\caption{Solution found by Hybrid A* in \SI{570.30}{\milli\second}}
+		\label{fig:race_track-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track_sehs_trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track_sehs_actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{598.10}{\milli\second}}
+		\label{fig:race_track-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.80 & 20 & 36 & 195755 & \bfseries 570.30 & 26.64 \\
+			84 & 1.80 & 80 & 36 & 1450767 & 2749.70 & 25.48 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* performed worse when compared to SEHS for this track.}
+		\label{table:race_track-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.5cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & Circles & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 164 & 20 & 18 & \bfseries 169002 & 598.10 & 25.52 \\
+			124 & 164 & 20 & 52 & 1277382 & 4809.20 & \bfseries 25.04 \\
+			\bottomrule
+		\end{tabular}
+		\caption{The solution found by the fastest lap time. Of the two solutions with the lowest computation time, the solution found by SEHS has a significantly better lap time.}
+		\label{table:race_track-sehs}
+	\end{subfigure}
+	
+	\vspace{0.25cm}
+	
+	\caption{Circuit ``Race Track''}
+	\label{fig:race_track}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/zurich_hybrid_astar_trajectory.pdf}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[c]{0.49\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/zurich_hybrid_astar_actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{1041.10}{\milli\second}}
+		\label{fig:zurich-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\robustify\bfseries
+		\begin{tabular}{c c c c S[detect-weight,table-format=7.0] S[detect-weight] S[detect-weight,table-format=2.2]}%
+			\toprule
+			Available & \multicolumn{3}{c}{Discretization} & \multicolumn{1}{c}{Opened} & \multicolumn{1}{c}{Search time} & \multicolumn{1}{c}{Lap time} \\
+			actions & $xy$ [\si{\meter}] & RPM & $\theta$ & \multicolumn{1}{c}{nodes} & \multicolumn{1}{c}{[\si{\milli\second}]} & \multicolumn{1}{c}{[\si{\second}]} \\
+			\midrule
+			44 & 1.80 & 40 & 36 & 488873 & 1041.10 & 41.28 \\
+			88 & 1.80 & 80 & 36 & 1922591 & 3811.00 & 38.52 \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* was the only algorithm of the two which found a solution. The SEHS algorithm did not find any solution for any combination of the parameters.}
+		\label{table:zurich-hybrid_astar}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Zurich''}
+	\label{fig:zurich}
+\end{figure}
 
 \section{Autonomous Race}
 
@@ -121,14 +507,14 @@ The trajectory analysis algorithm correctly detects eight corners of the circuit
 
 In our test, the \gls*{DWA} algorithm was achieve an average lap time of \SI{26.239}{\s} with the best lap time of \SI{23.855}{\s} and reaching a top speed of \SI{4.08}{\meter\per\second}. The Pure Pursuit algorithm achieved an average lap time of \SI{28.319}{\s} with the best lap time of \SI{26.908}{\s} and reaching a top speed of \SI{4.00}{\meter\per\second}. The detailed results of the experiment can be seen in Table~\ref{tbl:dwa} and Table~\ref{tbl:pure-pursuit}.
 
-\todo[inline]{Compare this to the pre-planned times.}
+If we compare these results with the trajectories planned ahead of time for the whole track as shown in~\ref{fig:race_track}, especially the lap times of the first rounds when the vehicle starts from standstill, it is clear that the planning algorithm finds trajectories which the following algorithms cannot follow to the full extent. This is most likely due to the imperfections of the kinematic vehicle model. The vehicle cannot go through some of the corners at the planned speed without hitting the outer wall of the track and so it has to brake more. On the other hand, the planned trajectory is not too far of from the actual trajectory and it serves as a good guidance for the vehicle during the race.
 
 \begin{table}
 	\centering
 	\label{tbl:reference-impl}
 	\begin{tabular}{c c c c c}
 		\toprule
-		& Lap time       & Distance traveled  & Average speed             & Maximum speed             \\
+		& Lap time       traveled  & Average speed             & Maximum speed             \\
 		& [\si{\second}] & [\si{\meter}]      & [\si{\meter\per\second}]  & [\si{\meter\per\second}]  \\
 		\midrule
 		1. & 27.876 & 84.72 & 3.25 & 4.06 \\
@@ -152,7 +538,7 @@ In our test, the \gls*{DWA} algorithm was achieve an average lap time of \SI{26.
 	\label{tbl:dwa}
 	\begin{tabular}{c c c c c}
 		\toprule
-		    & Lap time       & Distance traveled  & Average speed             & Maximum speed             \\
+		    & Lap time       traveled  & Average speed             & Maximum speed             \\
 		    & [\si{\second}] & [\si{\meter}]      & [\si{\meter\per\second}]  & [\si{\meter\per\second}]  \\
 		\midrule
 		1. & 33.422 & 88.45 & 2.96 & 3.83 \\
@@ -175,7 +561,7 @@ In our test, the \gls*{DWA} algorithm was achieve an average lap time of \SI{26.
 	\label{tbl:pure-pursuit}
 	\begin{tabular}{c c c c c}
 		\toprule
-		& Lap time       & Distance traveled  & Average speed             & Maximum speed             \\
+		& Lap time       traveled  & Average speed             & Maximum speed             \\
 		& [\si{\second}] & [\si{\meter}]      & [\si{\meter\per\second}]  & [\si{\meter\per\second}]  \\
 		\midrule
 		1.  & 32.200 & 84.66 & 2.88 & 3.72 \\
