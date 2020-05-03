@@ -93,7 +93,6 @@ For a car with a wheelbase length $L\in\mathbb{R}$, the velocity can be approxim
 
 \begin{figure}
 	\centering
-	\label{fig:simple_car}
 	
 	\begin{tikzpicture}[
 	axis/.style={thin, densely dashed, gray},
@@ -173,6 +172,7 @@ For a car with a wheelbase length $L\in\mathbb{R}$, the velocity can be approxim
 	\end{tikzpicture}
 		
 	\caption{The simple car from the example has three state variables. The speed and the steering angle are action variables and they can change at any moment, so the vehicle can stop on a spot and change the steering angle instantaneously, which is of course not possible in a real world car.}
+	\label{fig:simple_car}
 \end{figure}
 
 The configuration space of all possible transformations of the robot and possibly additional variables required to keep the state of the kinematics and dynamics of the robot together form a continuous \textit{state space} $X$. In the example of the simple car, the state space would be just the configuration space itself, therefore $X=\mathbb{R}^2\times\left[0,2\pi\right)$, but different models could have more dimensions as we will see in Section~\ref{sec:vehicle_model}.
@@ -1042,7 +1042,6 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 
 \begin{algorithm}[]
 	\caption{Find Corners}
-	\label{alg:find_Corners}
 	
 	\SetAlgoLined
 	\DontPrintSemicolon
@@ -1104,6 +1103,7 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 		\KwRet{$N$}\;
 	}
 
+	\label{alg:find_corners}
 \end{algorithm}
 
 \subsubsection{Algorithm Analysis}

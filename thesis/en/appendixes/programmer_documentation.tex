@@ -84,7 +84,7 @@ The data from the odometry sensors is inherently noisy and inaccurate and the es
 
 \begin{figure}
 	\centering
-	\includegraphics[width=125mm]{../img/racing_tf_tree}
+	\includegraphics[width=125mm]{../img/racing_tf_tree.pdf}
 	\cprotect\caption{The tree shows which nodes publish transformations between the coordinate frames and at what average rate the transformations are updated. This diagram is the output of the \verb|tf| \verb|view_frames| diagnostics tool.}
 	\label{fig:tf_tree_racing}
 \end{figure}
@@ -117,7 +117,7 @@ If we assume that the fused odometry gives us reasonable movement estimates over
 
 \subsubsection{Circuit Node}
 
-The circuit node analyzes the occupancy grid of the current track based on a circuit definition for the track at the start of the race using Algorithm~\ref{alg:find_apexes}. The circuit definition is a list of checkpoints on the map. The vehicle is supposed to drive along the track in a way such that it passes these checkpoints in the given order. The starting position is considered to be an implicit checkpoint. This list is loaded from a \verb|.yaml| configuration file which contains an array of 2D~point coordinates under the key \verb|check_points|. The coordinates are strings with the $x$ and $y$ coordinate separated by a whitespace. An example of such configuration file with two would look like this:
+The circuit node analyzes the occupancy grid of the current track based on a circuit definition for the track at the start of the race using Algorithm~\ref{alg:find_pivots}. The circuit definition is a list of checkpoints on the map. The vehicle is supposed to drive along the track in a way such that it passes these checkpoints in the given order. The starting position is considered to be an implicit checkpoint. This list is loaded from a \verb|.yaml| configuration file which contains an array of 2D~point coordinates under the key \verb|check_points|. The coordinates are strings with the $x$ and $y$ coordinate separated by a whitespace. An example of such configuration file with two would look like this:
 
 \begin{verbatim}
 check_points:
@@ -146,7 +146,7 @@ There is an alternative following node which implements the Pure Pursuit algorit
 
 \subsection{Hardware Interface}
 
-The \verb|Arduino 2| from Figure~\ref{fig:rosdiagram} has two responsibilities:
+The \verb|Arduino 2| from Figure~\ref{fig:ros_diagram} has two responsibilities:
 
 \begin{enumerate}[label=(\roman*)]
 	\item subscribe to the commands produced by the agent and transform them into electrical signals for the servo and the \gls*{DC} motor,

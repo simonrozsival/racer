@@ -433,10 +433,10 @@ For the planning algorithm to be viable, it must calculate the trajectory in a s
 \subsection{Real World Testing}
 
 \begin{figure}
-	\label{fig:real-world-testing-still}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/real-world-still.jpg}
 	\caption{The planning algorithm finds a trajectory from the last known state of the vehicle through the waypoints ahead of it while avoiding the obstacles marked in the map.}
+	\label{fig:real-world-testing-still}
 \end{figure}
 
 
@@ -449,10 +449,10 @@ We struggled with unreliable odometry for several days. We tested several differ
 By the end of the testing, the vehicle was able to reliably circle around the track without hitting obstacles and without the odometry significantly diverging from the actual state of the vehicle. The car repeatedly completed a circuit which was approximately 20 meters long in 15 seconds at a steady speed of \SI{1.3}{\meter\per\second}~(\SI{4.68}{\kilo\meter\per\hour}) which corresponds to a speed of \SI{46.8}{\kilo\meter\per\hour} of a full-size vehicle. At this speed, the limitations of the kinematic model do not manifest, and the vehicle had no issues undershooting or overshooting turns. A photo from this test is shown in Figure~\ref{fig:real-world-testing-driving} and a video recording of this experiment is available in the attachment of this thesis \todo{Add the path to the file in a footnote}.
 
 \begin{figure}
-	\label{fig:real-world-testing-driving}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/real-world-driving.jpg}
 	\caption{The vehicle is slowly driving along a circuit in a gym. The telemetry from the vehicle is monitored on a notebook connected to the vehicle over Wi-Fi.}
+	\label{fig:real-world-testing-driving}
 \end{figure}
 
 The trajectory planning algorithm performed well even with just the low-powered ARM processor and the vehicle had never reached the end of the planned trajectory before a new extended trajectory was published. The \gls{DWA} algorithm kept the vehicle on the track and avoided all crates along the circuit.
@@ -468,17 +468,17 @@ The F1/10 simulator repository\footnote{\url{https://github.com/f1tenth-dev/simu
 For this experiment, we turned off obstacle detection and we focused only on the lap times in a track without any obstacles. We tried a reference implementation against our four different combinations of algorithms and for each of them, we let it run for up to 10 consecutive laps. We ran each algorithm three times and we used the run in which it was able to complete all of the 10 laps and in which it reached the best average lap time.
 
 \begin{figure}
-	\label{fig:gazebo-track}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/gazebo-track.png}
 	\caption{The testing track contains several long straights and several challenging turns. The Gazebo simulator allows us to monitor and modify the 3D scene.}
+	\label{fig:gazebo-track}
 \end{figure}
 
 \begin{figure}
-	\label{fig:rviz-planned-track}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/rviz-planned-track.jpg}
 	\caption{This figure captures a planned trajectory and a vehicle on the testing track as it is shown in Rviz. The circles represent the positions of the corners detected by the track analysis algorithm. The circles marked in red are the next three corners ahead of the vehicle. The mostly green line represents the last planned trajectory. Green parts of the trajectory show where the vehicle is expected to drive fast and red parts would show where the vehicle should slow down.}
+	\label{fig:rviz-planned-track}
 \end{figure}
 
 \paragraph{Reference Implementation}
@@ -526,7 +526,6 @@ If we compare the results with the trajectories planned ahead of time for the wh
 
 \begin{table}
 	\centering
-	\label{tbl:reference-impl}
 	\begin{tabular}{c c c c c}
 		\toprule
 		& Lap time       & Traveled distance  & Average speed             & Maximum speed             \\
@@ -545,11 +544,11 @@ If we compare the results with the trajectories planned ahead of time for the wh
 		\bottomrule
 	\end{tabular}
 	\caption{The results of ten consecutive laps achieved with the reference implementation of the Pure Pursuit algorithm following a predefined curve. This implementation was taken from the F1/10 Simulator GitHub repository.}
+	\label{tbl:reference-impl}
 \end{table}
 
 \begin{table}
 	\centering
-	\label{tbl:dwa-sehs}
 	\begin{tabular}{c c c c c}
 		\toprule
 		    & Lap time       & Traveled distance  & Average speed             & Maximum speed             \\
@@ -568,11 +567,11 @@ If we compare the results with the trajectories planned ahead of time for the wh
 		\bottomrule
 	\end{tabular}
 	\caption{The results of ten consecutive laps achieved with the combination of the SEHS and DWA algorithms in the Gazebo simulator.}
+	\label{tbl:dwa-sehs}
 \end{table}
 
 \begin{table}
 	\centering
-	\label{tbl:dwa-hybrid-astar}
 	\begin{tabular}{c c c c c}
 		\toprule
 		& Lap time       & Traveled distance  & Average speed             & Maximum speed             \\
@@ -591,11 +590,11 @@ If we compare the results with the trajectories planned ahead of time for the wh
 		\bottomrule
 	\end{tabular}
 	\caption{The results of ten consecutive laps achieved with the combination of the Hybrid A* and DWA algorithms in the Gazebo simulator.}
+	\label{tbl:dwa-hybrid-astar}
 \end{table}
 
 \begin{table}
 	\centering
-	\label{tbl:pure-pursuit-sehs}
 	\begin{tabular}{c c c c c}
 		\toprule
 		& Lap time & Traveled distance  & Average speed & Maximum speed             \\
@@ -614,11 +613,11 @@ If we compare the results with the trajectories planned ahead of time for the wh
 		\bottomrule
 	\end{tabular}
 	\caption{The results of ten consecutive laps achieved with the combination of the SEHS and Pure Pursuit algorithms in the Gazebo simulator. During the last lap, the vehicle hit a wall and was slowed down.}
+	\label{tbl:pure-pursuit-sehs}
 \end{table}
 
 \begin{table}
 	\centering
-	\label{tbl:pure-pursuit-hybrid-astar}
 	\begin{tabular}{c c c c c}
 		\toprule
 		& Lap time & Traveled distance  & Average speed & Maximum speed             \\
@@ -637,6 +636,7 @@ If we compare the results with the trajectories planned ahead of time for the wh
 		\bottomrule
 	\end{tabular}
 	\caption{The results of ten consecutive laps achieved with the combination of the Hybrid A* and Pure Pursuit algorithms in the Gazebo simulator. The vehicle hit a wall during the 6-th lap and it got stuck for a brief moment.}
+	\label{tbl:pure-pursuit-hybrid-astar}
 \end{table}
 
 Both the \gls{SEHS} and Hybrid A* algorithms proved to be fast enough and to produce good reference trajectories even for the vehicle as it was moving at its maximum speed in the simulator. The algorithms were able to produce new plans at a rate of up to \SI{10}{\hertz}. The only problem we were experiencing was a drop of the re-planning frequency in the middle section of the track. The algorithms were sometimes not able to find a trajectory in the series of a tight left run followed-up with a hairpin turn. Each of the trajectories the algorithm tested resulted in a collision with the boundary of the track. Most of the time, the car would slow down enough that the algorithm could find a trajectory to the next waypoint, but sometimes the car would keep following the trajectory to its end and then it would not have anything to follow. The Pure Pursuit algorithm would immediately crash into the road boundary and get stuck. The \gls*{DWA} algorithm on the other hand can follow further guided just by obstacle avoidance. Once the vehicle reaches the apex of the hairpin turn, the planning algorithm is able to find a collision-free trajectory to the waypoints ahead of the vehicle and it can continue the race with only a small worsening of the lap time. The Hybrid A* algorithm performed slightly better in this regard and it was mostly the SEHS algorithm which occasionally failed to produce a trajectory. This seems to be in line with the issue SEHS had with the complex ``Zurich'' circuit as shown in Figure~\ref{fig:zurich}.
@@ -652,17 +652,17 @@ The Gazebo simulator allows us to place obstacles, such as cubes and cylinders, 
 The most challenging scenario was several obstacles placed one after each other. The vehicle detects the first one but it hits the second one if the planned trajectory goes through the second obstacle. The vehicle often managed to mark the obstacle into the occupancy grid, but the DWA algorithm was often unable to avoid it. A second challenging scenario was a narrow passage between two obstacles. If the obstacles were not marked precisely, which was often the case, the track would either appear to be blocked to the vehicle or the passage as too narrow for the vehicle to align itself with it and fit inside. The planning algorithm would fail to find a trajectory through the passage. The vehicle would then run out of the planned reference trajectory and it would stop or crash into a wall.
 
 \begin{figure}
-	\label{fig:obstacle-avoidance-gazebo}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/simulator/obstacles-gazebo.png}
 	\caption{The vehicle is passing three cubes in an alternating pattern.}
+	\label{fig:obstacle-avoidance-gazebo}
 \end{figure}
 
 \begin{figure}
-	\label{fig:obstacle-avoidance-rviz}
 	\centering
 	\includegraphics[width=\textwidth]{../img/experiments/simulator/obstacles-rviz.png}
 	\caption{This picture shows how the information the vehicle has about its surroundings. The red dots are the readings from the LIDAR, black pixels show the original map of the track and the gray pixels are the detected obstacles which have been marked into the occupancy grid. The planned trajectory already accounted for the obstacles and it guides the vehicle through the narrow passage at a low speed.}
+	\label{fig:obstacle-avoidance-rviz}
 \end{figure}
 
 
