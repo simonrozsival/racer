@@ -1,0 +1,362 @@
+
+\begin{figure}[!tbp]%
+	\centering
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto-hybrid_astar-actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{192.30}{\milli\second}}
+		\label{fig:solution_porto-hybrid_astar}	
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/porto-sehs-actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{253.60}{\milli\second}}
+		\label{fig:solution_porto-sehs}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+			\toprule
+			Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\	
+			\midrule
+			\num{44} & \num{1.80} & \num{20} & \num{18} & \bftab \num{67301} & \bftab \SI{192.30}{\milli\second} & \SI{39.94}{\meter} & \SI{13.64}{\second} \\
+			\num{248} & \num{1.44} & \num{20} & \num{36} & \num{838926} & \SI{2544.00}{\milli\second} & \SI{36.99}{\meter} & \bftab \SI{12.28}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* found both a trajectory in the least amout of time and also a trajectory with the best lap time.}
+		\label{table:porto-hybrid_astar}
+	\end{subfigure}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r r}%
+			\toprule
+			Actions & Circles & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\			
+			\midrule
+			\num{44} & \num{71} & \num{20} & \num{18} & \num{80763} & \SI{253.60}{\milli\second} & \SI{39.62}{\meter} & \SI{13.16}{\second} \\
+			\num{84} & \num{71} & \num{80} & \num{36} & \num{1054427} & \SI{2171.60}{\milli\second} & \SI{37.50}{\meter} & \SI{12.48}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS could not find a solution faster nor could it find a better solution than Hybrid A* with any of the tested combination of parameters.}
+		\label{table:porto-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Porto''}
+	\label{fig:porto}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado-hybrid_astar-actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{494.50}{\milli\second}}
+		\label{fig:solution_tornado-hybrid_astar}	
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/tornado-sehs-actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{551.30}{\milli\second}}
+		\label{fig:solution_tornado-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+            \toprule
+                Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+            \midrule
+                \num{44} & \num{1.44} & \num{20} & \num{18} & \num{177778} & \bftab \SI{494.50}{\milli\second} & \SI{85.22}{\meter} & \SI{28.64}{\second} \\
+                \num{84} & \num{1.44} & \num{80} & \num{52} & \num{3464766} & \SI{6611.70}{\milli\second} & \SI{84.96}{\meter} & \bftab \SI{26.24}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A*: }
+		\label{table:tornado-hybrid_astar}
+    \end{subfigure}
+    
+    \begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+            \toprule
+                Actions & Circles & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+            \midrule
+                \num{44} & \num{126} & \num{20} & \num{18} & \bftab \num{144864} & \SI{551.30}{\milli\second} & \SI{87.37}{\meter} & \SI{28.08}{\second} \\
+                \num{84} & \num{126} & \num{80} & \num{52} & \num{2827948} & \SI{6397.60}{\milli\second} & \SI{84.68}{\meter} & \SI{26.84}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS: }
+		\label{table:tornado-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Tornado''}
+	\label{fig:tornado}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple-hybrid_astar-actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A* in \SI{236.20}{\milli\second}}
+		\label{fig:simple-hybrid_astar}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/simple-sehs-actuators}
+		\end{subfigure}
+		\caption{Soultion found by SEHS in \SI{449.20}{\milli\second}}
+		\label{fig:simple-sehs}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+			\toprule
+                Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+            \midrule
+                \num{44} & \num{1.80} & \num{20} & \num{18} & \bftab \num{78401} & \bftab \SI{236.20}{\milli\second} & \SI{69.75}{\meter} & \SI{20.88}{\second} \\
+                \num{84} & \num{1.44} & \num{40} & \num{36} & \num{807771} & \SI{1926.50}{\milli\second} & \SI{67.91}{\meter} & \SI{19.92}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* results}
+		\label{table:simple-hybrid_astar}
+    \end{subfigure}
+    
+    \begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+            \toprule
+                Actions & Circles & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+            \midrule
+                \num{44} & \num{134} & \num{20} & \num{18} & \num{129796} & \SI{449.20}{\milli\second} & \SI{71.82}{\meter} & \SI{21.64}{\second} \\
+                \num{88} & \num{134} & \num{40} & \num{52} & \num{1443863} & \SI{4204.30}{\milli\second} & \SI{67.76}{\meter} & \bftab \SI{19.76}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{SEHS results}
+		\label{table:simple-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+
+	\caption{Circuit ``Simple''}
+	\label{fig:simple}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u-hybrid_astar-actuators}
+		\end{subfigure}	
+		\caption{Solution found by Hybrid A* in \SI{440.10}{\milli\second}}
+		\label{fig:u-hybrid_astar}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/u-sehs-actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{533.60}{\milli\second}}
+		\label{fig:u-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+        \toprule
+            Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+        \midrule
+            \num{44} & \num{1.80} & \num{20} & \num{18} & \bftab \num{145240} & \bftab \SI{440.10}{\milli\second} & \SI{73.18}{\meter} & \SI{23.08}{\second} \\
+            \num{84} & \num{1.44} & \num{40} & \num{36} & \num{1442255} & \SI{3667.90}{\milli\second} & \SI{71.11}{\meter} & \SI{21.84}{\second} \\
+		\bottomrule
+	\end{tabular}
+	\caption{Hybrid A*:}
+	\label{table:u-hybrid_astar}
+    \end{subfigure}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+		\toprule
+            Actions & Circles & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+        \midrule
+            \num{44} & \num{123} & \num{20} & \num{18} & \num{147605} & \SI{533.60}{\milli\second} & \SI{74.67}{\meter} & \SI{23.64}{\second} \\
+            \num{44} & \num{123} & \num{40} & \num{52} & \num{829326} & \SI{2289.80}{\milli\second} & \SI{69.97}{\meter} & \bftab \SI{21.60}{\second} \\
+		\bottomrule
+	\end{tabular}
+	\caption{SEHS:}
+	\label{table:u-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``U''}
+	\label{fig:u}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track-hybrid_astar-actuators}
+		\end{subfigure}	
+		\caption{Solution found by Hybrid A* in \SI{570.30}{\milli\second}}
+		\label{fig:race_track-hybrid_astar}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track-sehs-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/race_track-sehs-actuators}
+		\end{subfigure}
+		\caption{Solution found by SEHS in \SI{598.10}{\milli\second}}
+		\label{fig:race_track-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+		\toprule
+            Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+        \midrule
+            \num{44} & \num{1.80} & \num{20} & \num{36} & \num{195755} & \bftab \SI{570.30}{\milli\second} & \SI{85.92}{\meter} & \SI{26.64}{\second} \\
+            \num{84} & \num{1.80} & \num{80} & \num{36} & \num{1450767} & \SI{2749.70}{\milli\second} & \SI{82.33}{\meter} & \SI{25.48}{\second} \\
+		\bottomrule
+	\end{tabular}
+	\caption{Hybrid A* peformed worse when compared to SEHS for this track.}
+	\label{table:race_track-hybrid_astar}
+    \end{subfigure}
+
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+		\toprule
+            Actions & Circles & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+        \midrule
+            \num{44} & \num{164} & \num{20} & \num{18} & \bftab \num{169002} & \SI{598.10}{\milli\second} & \SI{82.66}{\meter} & \SI{25.52}{\second} \\
+            \num{124} & \num{164} & \num{20} & \num{52} & \num{1277382} & \SI{4809.20}{\milli\second} & \SI{81.46}{\meter} & \bftab \SI{25.04}{\second} \\
+		\bottomrule
+	\end{tabular}
+	\caption{The solution found by the fastest lap time. Of the two solutions with the lowest computation time, the solution found by SEHS has a significantly better lap time.}
+	\label{table:race_track-sehs}
+	\end{subfigure}
+	
+	\vspace{0.75cm}
+	
+	\caption{Circuit ``Race Track''}
+	\label{fig:u}
+\end{figure}
+
+\begin{figure}[!tbp]%
+	\centering
+		
+	\begin{subfigure}[t]{\textwidth}
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/zurich-hybrid_astar-trajectory}
+		\end{subfigure}
+		\hfill
+		\begin{subfigure}[t]{0.45\textwidth}
+			\includegraphics[width=\textwidth]{../img/experiments/zurich-hybrid_astar-actuators}
+		\end{subfigure}
+		\caption{Solution found by Hybrid A*}
+		\label{fig:zurich-hybrid_astar}
+	\end{subfigure}
+
+	\vspace{0.75cm}
+	
+	\begin{subfigure}[t]{\textwidth}
+		\centering
+		\begin{tabular}{r r r r r r r r}%
+            \toprule
+                Actions & Grid cell size & RPM levels & Heading angle sectors & Opened & Expanded & Search time & Distance & Lap time \\
+			\midrule
+                \num{44} & \num{1.80} & \num{40} & \num{36} & \num{488873} & \SI{1041.10}{\milli\second} & \SI{123.67}{\meter} & \SI{41.28}{\second} \\
+                \num{88} & \num{1.80} & \num{80} & \num{36} & \num{1922591} & \SI{3811.00}{\milli\second} & \SI{120.09}{\meter} & \SI{38.52}{\second} \\
+			\bottomrule
+		\end{tabular}
+		\caption{Hybrid A* was the only algorithm of the two which found a solution. The SEHS algorithm did not find any solution for any combination of the parameters.}
+		\label{table:zurich-hybrid_astar}
+    \end{subfigure}
+	
+	\vspace{0.75cm}
+
+	\caption{Circuit ``Zurich''}
+	\label{fig:zurich}
+\end{figure}

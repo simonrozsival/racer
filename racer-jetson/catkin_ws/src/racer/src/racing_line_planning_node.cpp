@@ -46,8 +46,7 @@ void state_update(const racer_msgs::State::ConstPtr msg) {
   racer::track_analysis analysis{centerline.width()};
   const auto pivot_points =
       analysis.find_pivot_points(centerline.circles(), grid);
-  const auto sharp_turns =
-      analysis.remove_insignificant_turns(pivot_points, 4.0 / 5.0 * M_PI);
+  const auto sharp_turns = analysis.remove_insignificant_turns(pivot_points);
   const auto corners = analysis.merge_close(sharp_turns);
   if (corners.empty()) {
     ROS_ERROR("cannot find any corners of the track");

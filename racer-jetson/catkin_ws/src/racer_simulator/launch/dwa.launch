@@ -7,7 +7,7 @@
   <param name="use_sim_time" value="true" />
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
-  <arg name="horizon" default="0.75" />
+  <arg name="horizon" default="0.5" />
   <arg name="integration_step" default="0.04" />
   <arg name="planning_safety_margin" default="0.0" />
   <arg name="planning_frequency" default="25" />

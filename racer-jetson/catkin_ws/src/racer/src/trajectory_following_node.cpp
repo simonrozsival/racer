@@ -39,11 +39,13 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<int>("throttle_levels", throttle_levels, 20);
   node.param<int>("steering_levels", steering_levels, 20);
 
-  double min_throttle, max_throttle;
+  double min_throttle, max_throttle, max_right, max_left;
   node.param<double>("min_throttle", min_throttle, -1.0);
   node.param<double>("max_throttle", max_throttle, 1.0);
+  node.param<double>("max_right", max_right, -1.0);
+  node.param<double>("max_left", max_left, 1.0);
 
-  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle);
+  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle, max_right, max_left);
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, acceleration_weight;
   node.param<double>("position_weight", position_weight, 30.0);
   node.param<double>("heading_weight", heading_weight, 20.0);

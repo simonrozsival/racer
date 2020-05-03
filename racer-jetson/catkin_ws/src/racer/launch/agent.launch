@@ -41,10 +41,12 @@
       <param name="max_frequency" value="50" />
 
       <param name="throttle_levels" value="6" />
-      <param name="steering_levels" value="21" />
+      <param name="steering_levels" value="17" />
 
-      <param name="min_throttle" value="-0.25" />
+      <param name="min_throttle" value="0.0" />
       <param name="max_throttle" value="1.0" />
+      <param name="max_right" value="-1.0" />
+      <param name="max_left" value="1.0" />
       <param name="safety_margin" value="$(arg planning_safety_margin)" />
 
       <param name="time_step_s" value="$(arg integration_step)" />
@@ -67,7 +69,7 @@
       <!-- -->
 
       <!-- DWA -->
-      <param name="distance_to_obstacle_weight" value="800.0" />
+      <param name="distance_to_obstacle_weight" value="600.0" />
       <param name="position_weight" value="500.0" />
       <param name="heading_weight" value="250.0" />
       <param name="velocity_weight" value="250.0" />
@@ -79,6 +81,8 @@
       <param name="steering_levels" value="33" />
       <param name="min_throttle" value="0.0" />
       <param name="max_throttle" value="1.0" />
+      <param name="max_right" value="-1.0" />
+      <param name="max_left" value="1.0" />
       <!-- -->
 
       <param name="map_topic" value="/obstacles/costmap/costmap" />

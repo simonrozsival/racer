@@ -28,7 +28,7 @@ def odometry_callback(msg):
         avg_speed = sum(speed_history) / len(speed_history)
 
         wheel_diameter = 0.1
-        gear_ratio = 1
+        gear_ratio = 18
         wheel_circumference = math.pi * wheel_diameter
         wheel_rotations_per_second = avg_speed / wheel_circumference
         wheel_rpm = 60 * wheel_rotations_per_second
