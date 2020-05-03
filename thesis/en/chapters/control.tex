@@ -1,7 +1,7 @@
 \chapter{Trajectory Following}
 \label{chapter:following}
 
-Given a reference state trajectory $\hat{x}_k=\left\langle x_0, x_1, \ldots, x_k \right\rangle$ obtained for a fixed time step $\Delta t$ and a current state of the vehicle estimated from sensor readings using some localization and odometry algorithm, our task is to define a function which will select the next action $u\in U$ such that the car will move in a way in which it will follow the reference trajectory ``as closely as possible''. We will also consider avoiding any obstacles which were not known during the planning phase and which might be hit if we followed the trajectory blindly.
+Given a reference state trajectory $\hat{x}_k=\left\langle x_0, x_1, \ldots, x_k \right\rangle$ obtained for a fixed time step $\Delta t$ and a current state of the vehicle estimated from sensor readings using a localization and odometry algorithm, our task is to define a function which will select the next action $u\in U$ such that the car will move in a way in which it will follow the reference trajectory ``as closely as possible''. We will also consider avoiding any obstacles which were not known during the planning phase and which might have been hit if we had followed the trajectory blindly.
 
 In this chapter, we will first formally define what we mean by following the trajectory ``as close as possible''. We will then describe algorithms which we will later implement and try on the experimental vehicle.
 
@@ -11,7 +11,7 @@ First, we must consider the timing of the next control input we will use. The la
 
 To achieve better accuracy, we can estimate the decision delay $t_d$ by averaging the reaction times of the selected algorithm gathered during experiments. We can use our system simulator to estimate the state of the vehicle at the time $t+t_d$. when the action should be applied. We will therefore use the predicted state $x_{pred}=f_{t_d}(x_t,u)$ to find a corresponding state on the reference trajectory to calculate an error.
 
-We must determine what part of the trajectory we have already followed and what is still remaining to be followed.  For the predicted state of the vehicle $x_{pred}$, we will select its reference state along the reference trajectory $\hat{x}_k$ as the state, which is closest to the current location. In the ideal case, this would be one of the states along the reference trajectory or some state between two adjacent states. In practice, the vehicle will deviate from the reference trajectory due to sensing and steering imperfections, but we assume that it is still near the reference trajectory. When the vehicle deviates too much, we assume that the trajectory will be re-planned with respect to the current state of the vehicle. The following function describes how we find the reference state $x_{ref}$:
+We must determine what part of the trajectory we have already followed and what is still remaining to be followed.  For the predicted state of the vehicle $x_{pred}$, we will select its reference state along the reference trajectory $\hat{x}_k$ as the state, which is closest to the current location. In the ideal case, this would be one of the states along the reference trajectory or a state between two adjacent states. In practice, the vehicle will deviate from the reference trajectory due to sensing and steering imperfections, but we assume that it is still near the reference trajectory. When the vehicle deviates too much, we assume that the trajectory will be re-planned with respect to the current state of the vehicle. The following function describes how we find the reference state $x_{ref}$:
 
 \begin{equation}
 \begin{aligned}
@@ -25,7 +25,7 @@ We will consider the reference state to be the point which splits the trajectory
 
 \section{Trajectory Tracking Error}
 
-To evaluate which control input to select and to evaluate the choice of this input, we must define an error function $e: X\times X\rightarrow \left[0, 1\right]$ which gives us how far from are two states apart. This function will allow us to compare vehicle states between each other and determine which one of them is better. We will also define a second error $\hat{e}_{\Delta t}: X^*\times X^*\rightarrow \left[0, 1\right]$ function to calculate an error between two sequences of states.
+To evaluate which control input to select and to evaluate the choice of this input, we must define an error function $e: X\times X\rightarrow \left[0, 1\right]$ which tells us how far apart the two states are from each other. This function will allow us to compare vehicle states between each other and determine which one of them is better. We will also define a second error $\hat{e}_{\Delta t}: X^*\times X^*\rightarrow \left[0, 1\right]$ function to calculate an error between two sequences of states.
 
 \subsection{Single State Error}
 
@@ -93,7 +93,7 @@ An advantage of the geometric controller is its simplicity and very straightforw
  
 \subsection{Proportional Integral Derivative (PID)}
 
-\gls*{PID} is a classical controller used in many different areas for regulating the output of some system based on reference values. The name stands for Proportional, Integral, and Derivative terms, which are multiplied by predefined gains $k_p,k_i,k_d\in\mathbb{R}$ and combined into an output value which will be directly used as the control input for an actuator.
+\gls*{PID} is a classical controller used in many different areas for regulating the output of a system based on reference values. The name stands for Proportional, Integral, and Derivative terms, which are multiplied by predefined gains $k_p,k_i,k_d\in\mathbb{R}$ and combined into an output value which will be directly used as the control input for an actuator.
 
 The proportional term is equal to the error between the current value and the reference value. The derivative term is the change in the error since the previous iteration. Finally, the integral term is the accumulated error over time since the last time there was no error.
 
@@ -104,7 +104,7 @@ We can use \gls*{PID} to calculate the target throttle control input $\tau_t$ fr
 	\tau_t(e_i)&=k_p \cdot e_i+k_i\cdot\sum_{j=i-n}^{i}e_j + k_d\cdot \left(e_i - e_{i-1}\right),
 \end{align*}
 
-where $x_i, x_{ref, i}$ are the  $i$-th state of the vehicle and the reference state, $n\leq i$ is the number of steps since the error was zero ($e_{i-n}=0\land \forall j>i-n: e_j>0$). The values of the gain parameters must be tuned experimentally for the specific vehicle. When some gain is set to $0$, it means that the corresponding error is not used. The controller can then be referred to as for example just P, PI, or PD. The control input value must be within the range of $\left[-1, 1\right]$ so in the case that the \gls*{PID} controller calculates a greater value, we must use the closest valid value. 
+where $x_i, x_{ref, i}$ are the  $i$-th state of the vehicle and the reference state, $n\leq i$ is the number of steps since the error was zero ($e_{i-n}=0\land \forall j>i-n: e_j>0$). The values of the gain parameters must be tuned experimentally for the specific vehicle. When a gain is set to $0$, it means that the corresponding error is not used. The controller can then be referred to as for example just P, PI, or PD. The control input value must be within the range of $\left[-1, 1\right]$ so in the case that the \gls*{PID} controller calculates a greater value, we must use the closest valid value. 
 
 \subsection{Pure Pursuit}
 

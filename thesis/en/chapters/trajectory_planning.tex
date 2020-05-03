@@ -4,7 +4,7 @@ The main focus of this thesis is the problem of trajectory planning for a fast m
 
 With the knowledge of the theory, we will formulate our trajectory planning problem. We will consider several well-known search algorithms used to solve planning problems and adapt them to our problem.
 
-The solution of the planning problem will be a trajectory. A trajectory is the description of both a path the vehicle should follow and also a speed profile. If a robot is able to follow this trajectory, it will have an advantage over reactive steering algorithms, such as end-to-end driving, as it will be able to go through a series of corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line. We will discuss a way of following the trajectory later in Chapter~\ref{chapter:following}.
+The solution of the planning problem will be a trajectory. A trajectory is the description of both the path the vehicle should follow and the speed profile. If a robot is able to follow this trajectory, it will have an advantage over reactive steering algorithms, such as end-to-end driving, as it will be able to go through a series of corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line. We will discuss a way of following the trajectory later in Chapter~\ref{chapter:following}.
 
 \section{Introduction to Planning}
 
@@ -12,7 +12,7 @@ In this section, we will give a brief overview of the basic concepts of automati
 
 \subsection{Automatic Planning}
 
-Planning is the task of solving some problem by finding a sequence of actions, which transforms the world to some desired state. The world of a planning problem is defined in terms of states and actions.
+Planning is the task of solving a problem by finding a sequence of actions, which transforms the world to some desired state. The world of a planning problem is defined in terms of states and actions.
 
 A single state is a full description of all of the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or a vector of an $n$-dimensional vector of real numbers. All of the possible states of the world form a state space.
 
@@ -66,7 +66,7 @@ This graph can in general have several subgraphs. We are only interested in the 
 
 The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
 
-When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see, that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
+When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
 We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all of the combinations of the state variables of the world.
 
@@ -75,12 +75,12 @@ We must keep in mind that the number of states of the system can be very high ev
 
 When describing the motion of a car-like robot on a two-dimensional plane, we assume that we can treat it as a rigid body, usually represented as a bounding rectangle. The configuration of the rigid body is then described by the pose of the vehicle: the $\left(x,y\right)$ Cartesian coordinates of a fixed reference point of the body in the world reference frame, and the heading angle $\theta$ between the longitudinal axis of the vehicle and the $x$ axis of the world reference frame. The $(x, y)$ location is in some bounded area $P\subset\mathbb{R}^2$ and the heading angle is an arbitrary angle $\theta\in\left[0,2\pi\right)$. This simple configuration space already has three continuous dimensions and it is uncountably infinite.
 
-The kinematics and dynamics of a robots are typically described by differential equations. These equations give us the velocities at which the state of the robot changes when an action is applied. As an example of these constraints, we can look at a model of a \textit{simple car} \cite[Section~13.1.2.1]{lavalle_2006}.
+The kinematics and dynamics of robots are typically described by differential equations. These equations give us the velocities at which the state of the robot changes when an action is applied. As an example of these constraints, we can look at a model of a \textit{simple car} \cite[Section~13.1.2.1]{lavalle_2006}.
 
 \begin{example}
-The state space of a simple car will consist of the poses in an infinite 2D plane $(x, y, \theta)$ as we described it earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}.
+The state space of a simple car will consist of the poses in an infinite 2D plane $(x, y, \theta)$ as described earlier. The control inputs are two dimensional vectors $\left(u_s, u_\varphi\right)$, where $u_s$ is the commanded speed of the vehicle in the direction perpendicular to the rear axis, and $u_\varphi$ is the steering angle of the front wheels. For a better understanding of this example, see the Figure~\ref{fig:simple_car}.
 
-For a car with a wheelbase length $L\in\mathbb{R}$, its velocity can be approximated by this set of equations:
+For a car with a wheelbase length $L\in\mathbb{R}$, the velocity can be approximated by this set of equations:
 
 \begin{equation}
 \begin{aligned}
@@ -179,7 +179,7 @@ The configuration space of all possible transformations of the robot and possibl
 
 \paragraph{Obstacles}
 
-Additionally, we must be able split the state space $X$ into two complementary subsets: the obstacle region $X_{obs}\subseteq X$ and the free region $X_{free}=X\setminus X_{obs}$. Only the states in $X_{free}$ can be entered safely while the states in $X_{obs}$ must be avoided to prevent collisions of the robot with obstacles.
+Additionally, we must be able to split the state space $X$ into two complementary subsets: the obstacle region $X_{obs}\subseteq X$ and the free region $X_{free}=X\setminus X_{obs}$. Only the states in $X_{free}$ can be entered safely while the states in $X_{obs}$ must be avoided to prevent collisions of the robot with obstacles.
 
 \paragraph{State Transition Function}
 
@@ -189,7 +189,7 @@ In order to be able formulate the planning problem for a system with differentia
 	\dot{x}=f(x, u).
 \]
 
-The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} which reaches some goal state. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U\cup\left\{u_t\right\}$ which maps an infinite interval $T=\left[0, \infty\right)$ to an action, which should be executed at the given point in time. From some point in time $t_{end}\in\left[0, \infty\right)$, a termination action $u_t$ can be applied to mark the end of the action trajectory ($\forall t>t_{end}: \tilde{u}(t)=u_t$). To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
+The function $f$ must be defined for every $x\in X$ and $u\in U(x)$. The task of a planning algorithm is then to find an \textit{action trajectory} which produces a collision-free \textit{state trajectory} which reaches a goal state. An \textit{action trajectory} is a continuous function $\tilde{u}: T \rightarrow U\cup\left\{u_t\right\}$ which maps an infinite interval $T=\left[0, \infty\right)$ to an action, which should be executed at the given point in time. From a point in time $t_{end}\in\left[0, \infty\right)$, a termination action $u_t$ can be applied to mark the end of the action trajectory ($\forall t>t_{end}: \tilde{u}(t)=u_t$). To \textit{state trajectory} corresponding to the action trajectory $\tilde{u}$ is a function $\tilde{x}: T \rightarrow X$, such that $\tilde{x}(0)$ is a given initial state $x_0$, and $\forall t \in \left(0, t_{end}\right]$:
 
 \begin{equation}
 	\label{eq:integrate_state_trajectory}
@@ -219,9 +219,9 @@ such that $\forall \tau\in\left[0, t_{end}\right]: \tilde{u}(\tau)\in U(\tilde{x
 
 \subsubsection{Sampling-Based Planning Methods}
 
-In order to be able to plan in a world with a continuous state space and continuous time, sampling-based methods can be used. The main idea is to discretize the action trajectory by using the same action for some non-trivial time period. This effectively discretizes time into time intervals, which usually have a fixed length $\Delta t$ or the duration depends depend on the action which is used (``a motion primitive'' \cite[Section~14.2.3]{lavalle_2006}). The action trajectory can then be expressed as a simple sequence of actions and for every action in the sequence it is possible to determine the time at which it is supposed to be applied and for how long it is supposed to be applied. We can still obtain a continuous trajectory through the state space by integrating the action sequence.
+In order to be able to plan in a world with a continuous state space and continuous time, sampling-based methods can be used. The main idea is to discretize the action trajectory by using the same action for a non-trivial time period. This effectively discretizes time into time intervals, which usually have a fixed length $\Delta t$ or the duration depends on the action which is used (``a motion primitive'' \cite[Section~14.2.3]{lavalle_2006}). The action trajectory can then be expressed as a simple sequence of actions and for every action in the sequence it is possible to determine the time at which it is supposed to be applied and for how long it is supposed to be applied. We can still obtain a continuous trajectory through the state space by integrating the action sequence.
 
-Ideally, every segment of a state trajectory obtained by integrating some action from some state over some time period should be checked for collision. In practice, this could be very resource intensive, and so only a few samples (sometimes only the end state of the segment) are tested using a ``black box'' collision detection function to see if the segment is in $X_{obs}$ or $X_{free}$.
+Ideally, every segment of a state trajectory obtained by integrating an action from a state over a time period should be checked for collision. In practice, this could be very resource intensive, and so only a few samples (sometimes only the end state of the segment) are tested using a ``black box'' collision detection function to see if the segment is in $X_{obs}$ or $X_{free}$.
 
 If the action space is infinite, it should be sampled as well and only a finite number of actions should be considered. This makes it possible to construct a graph where samples of $X$ are the vertices and the edges between them are actions. Starting from $x_0$, we compute all of the possible state trajectories starting in this state with all the actions in the finite set of actions over a time period (either a fixed $\Delta t$ or a time associated with the action) and add the final states as vertices to the graph and connect them with directed edges to the origin state. We repeat this for all added states over and over again.
 
@@ -260,13 +260,13 @@ To achieve a time-optimal trajectory, we will search for a trade off between the
 
 Given our assumption, that we will most likely have to re-plan the trajectory at some point in the future anyway, it does not make too much sense to plan the trajectory for the whole circuit at once. The longer the trajectory we are planning, the longer it will take to find a suitable plan. Instead, we could split the track into multiple shorter segments and plan a trajectory only for a few of the segments directly in front of the current pose of the vehicle.
 
-When the vehicle is moving fast, a late or too early decision to change the direction or adjust the speed of the vehicle might result in a crash or a sub-optimal trajectory. Fast reaction times are therefore key. If we plan a trajectory for only a limited stretch in front of the vehicle, we must be able to find the plan for the following stretch before we reach the end of the current reference trajectory. Failing to do this, the vehicle will not have any trajectory to follow and it would probably have to preform some kind of an emergency braking in order to prevent collisions, or it would be forced to resort to some simpler reactive steering strategy, which does not involve planning ahead and which would most likely be sub-optimal.
+When the vehicle is moving fast, a belated or too early decision to change the direction or adjust the speed of the vehicle might result in a crash or a sub-optimal trajectory. Fast reaction times are therefore key. If we plan a trajectory for only a limited stretch in front of the vehicle, we must be able to find the plan for the following stretch before we reach the end of the current reference trajectory. Failing to do this, the vehicle will not have a trajectory to follow and it would probably have to preform some kind of an emergency braking in order to prevent collisions, or it would be forced to resort to some simpler reactive steering strategy, which does not involve planning ahead and which would most likely be sub-optimal.
 
 We can now summarize the discussion in this section into a set of requirements for the trajectory planning algorithm which will make it more suitable for fast moving cars:
 
 \begin{itemize}
 	\item The whole track should be split into smaller segments, so that we do not have to waste resources to plan a trajectory for segments which will most likely not be reached by the time we will need to re-plan the trajectory.
-	\item The differential constraints of the vehicle must accurately describe capture the movement of the vehicle at its handling limits and we must be able to eliminate dangerous maneuvers, which could lead to a crash or a trajectory or which could not be followed closely by the vehicle.
+	\item The differential constraints of the vehicle must accurately describe the movement of the vehicle at its handling limits and we must be able to eliminate dangerous maneuvers, which could lead to a crash or a trajectory or which could not be followed closely by the vehicle.
 	\item The search algorithm we will use must find good solutions which are time-optimal or close to time-optimal in a very short period of time.
 \end{itemize}
 
@@ -277,14 +277,14 @@ We can now summarize the discussion in this section into a set of requirements f
 
 We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all of the parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
 
-Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ will consist of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$, where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
+Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ consisting of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$ where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
 
 The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will define a function $\kappa: X\rightarrow C$ which returns the configuration of the vehicle in the given state, and also $\kappa_{x,y}: X\rightarrow \mathbb{R}^2$ and $\kappa_\theta: X\rightarrow \left[0, 2\pi\right)$ to obtain just the position or the heading angle of the given state. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
 
 \paragraph{Initial State}
 At the start of the race, the vehicle is expected to be situated at a predefined starting location of the racing circuit with its heading angle identical to the direction of the race. The vehicle starts from a standstill with the wheels not spinning and the front wheels pointing the heading direction of the car.
 
-During the race, the speed and the steering angle have to be measured using sensors. We must take in mind that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
+During the race, the speed and the steering angle have to be measured using sensors. We must take into account that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
 
 \subsubsection{Collision Detection}
 
@@ -297,12 +297,12 @@ A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divide
 \end{aligned}
 \end{equation*}
 
-The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine, if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
+The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
 
 The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $x\in X_{obs} \iff c_x\in C_{obs} \wedge x\in X_{free} \iff c_x\in C_{free}$.
 
 \paragraph{Representation of Obstacles}
-We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$, where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
+We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$ where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
 
 To check if a single point of the world $\left(x,y\right)\in \mathbb{R}^2$ collides with an obstacle or not, we must first determine the coordinates of the tile in which it belongs:
 
@@ -339,7 +339,7 @@ The footprint of the body of the vehicle is a rotated rectangle and we have to c
 	\item Inflating the obstacles in the occupancy grid and performing a single point check.
 \end{enumerate}
 
-The idea of \textit{the first method} is to calculate a list of tiles relative to the tile in which the center of the rectangle lies which the vehicle could collide with. We would split the heading angle dimension of the configuration into several regular intervals. For each of these intervals we would take the value in the middle and use it as a heading angle $\theta$. We would then rotate the bounding rectangle by the angle $\theta$ and mark which cells of a grid with the resolution $r$ it would overlay. We must take into consideration that the center of the rectangle can be at any point of the tile and different cells would be overlaid for example when the center coincides with the top left corner of the cell or the bottom right corner. Figure~\ref{fig:collision_detection_overlap} depicts this idea. To check collisions, we would first determine the cell corresponding to the center of the bounding rectangle of the vehicle and determine the discretization f the heading angle $\theta$. For the discretized heading angle, we would then remember a list of integer coordinates of the cells which would be occupied relative to the center of the rectangle. We would then check the state of the occupancy grid for the tiles occupied by the footprint of the vehicle and if any of them was marked as $X$ or if the coordinate would be outside of the bounds of the $m\times n$ grid, we would report a collision.
+The idea of \textit{the first method} is to calculate a list of tiles relative to the tile in which the center of the rectangle lies which the vehicle could collide with. We would split the heading angle dimension of the configuration into several regular intervals. For each of these intervals we would take the value in the middle and use it as a heading angle $\theta$. We would then rotate the bounding rectangle by the angle $\theta$ and mark which cells of a grid with the resolution $r$ it would overlay. We must take into consideration that the center of the rectangle can be at any point of the tile and different cells would be overlaid for example when the center coincides with the top left corner of the cell or the bottom right corner. Figure~\ref{fig:collision_detection_overlap} depicts this idea. To check collisions, we would first determine the cell corresponding to the center of the bounding rectangle of the vehicle and determine the discretization of the heading angle $\theta$. For the discretized heading angle, we would then remember a list of integer coordinates of the cells which would be occupied relative to the center of the rectangle. We would then check the state of the occupancy grid for the tiles occupied by the footprint of the vehicle and if any of them was marked as $X$ or if the coordinate would be outside of the bounds of the $m\times n$ grid, we would report a collision.
 
 \begin{figure}[!tbp]%
 	\centering
@@ -360,15 +360,15 @@ The idea of \textit{the first method} is to calculate a list of tiles relative t
 	\caption{These figures compare two approaches to collision checking. The second approach requires fewer operations whenever we need to test a collision and therefore we chose the ``obstacle inflation'' method.}
 \end{figure}
 
-\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle from the width and length of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required, which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
+\textit{The second idea} is simpler. First, we determine the minimum safe distance of the vehicle from the width and length of the vehicle. We will then change all free tiles in the occupancy grid to obstacle tiles if they are closer to an original obstacle tile than the minimum radius and ``inflate'' the obstacles. To check for collisions of a vehicle at position $(x, y)$, only a single invocation of $c_1$ is required which has very little performance requirements. This method is depicted in Figure~\ref{fig:collision_detection_inflation}.
 
 The obvious advantage of the first method is its higher accuracy. The second method could be insufficient for tasks such as perpendicular parking between two cars, where the whole space between the two cars could be filled with the inflated obstacles. In principle, we could fix this by ``inflating'' the occupancy grid for different heading angles and mark the footprints of rotated rectangles directly into the occupancy grid. The problem we had with this approach is an increased cost of pre-processing before the planning algorithm can start. The footprints of the vehicle can be pre-calculated ahead of time and they do not take any extra computation at runtime.
 
-The occupancy grid can in principle change between two executions of the planning algorithm (e.g., a new obstacle is discovered) and therefore we might have to calculate the inflation before any invocation of the planning algorithm for all of the heading angles. In the end, the second approach was sufficient for the racing task and we used the simple implementation. The resulting function is sometimes ``to cautious`` and it reports collisions even if there is still some gap between the actual vehicle and the obstacle, but that can be considered as an advantage for high speed maneuvers and it might make sense to increase the radius even more to force the trajectory to be further from the obstacles in practice.
+The occupancy grid can in principle change between two executions of the planning algorithm (e.g., a new obstacle is discovered) and therefore we might have to calculate the inflation before any invocation of the planning algorithm for all of the heading angles. In the end, the second approach was sufficient for the racing task and we used the simple implementation. The resulting function is sometimes ``too cautious`` and it reports collisions even if there is still some gap between the actual vehicle and the obstacle, but that can be considered as an advantage for high speed maneuvers and it might make sense to increase the radius even more to force the trajectory to be further from the obstacles in practice.
 
 \subsubsection{Action Space}
 
-Our vehicle has two actuators which can be controlled:
+Our vehicle has two actuators which can be controlled by:
 \begin{itemize}
 	\item Steering servo which we can move to a desired position achieving a specific steering angle between the maximum left position, center position, and maximum rotation to the right.
 	
@@ -381,7 +381,7 @@ The electric signal we send to the actuators is interpreted as a target value an
 	U=\left\{ \left( \delta_t,\tau_t\right) \mid \delta_t\in\left[\delta_{min},\delta_{max}\right] \tau_t\in\left[-1, 1\right] \right\}
 \]
 
-$U$ is a set of tuples of a steering angle $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in some direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with any. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed.
+$U$ is a set of tuples of a steering angle $\delta_t$, and a throttle position $\tau_t$. These actions are an abstraction of the signals which would be sent to the hardware. Negative throttle position $\tau_t$ means that the motor should spin in reverse, while positive values should result in the motor spinning in the normal direction of travel. When the vehicle is moving in a direction and the action specifies a throttle position in the opposite direction, the vehicle might engage brakes, if it is equipped with some. Since these actions represent merely the target values of the state of the actuators, our actions do not have any preconditions for the state in which they can be executed.
 
 The action space $U$ as we defined it is infinite. In practice, our actuators can be set only to a fixed number of values. The \gls*{PWM} signal which controls the servo motors can only encode a finite number of levels. For a specific vehicle hardware, we can use only a finite subset $U_f\subset U$, $\abs{U_f}\in\mathbb{N}$ of valid actions.
 
@@ -413,7 +413,7 @@ It is worth noting that if the vehicle is in state when its action set is empty,
 
 When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $l>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track $\hat{w}=\langle \vec{w_0}, \vec{w_1}, \ldots, \vec{w_l} \rangle$.
 
-To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in a the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
+To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
 
 \begin{defn}[Directly Visible Points]
 	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the line between these two points. The set $D(O_r^{m\times n})\subseteq \mathbb{R}^2\times\mathbb{R}^2$ for the given occupancy grid captures this relation:
@@ -567,7 +567,7 @@ The algorithm will run for at most $K$ iterations. During every iteration, a ran
 
 We can assume that selecting a random sample of the state space does not depend on the already explored parts of the state space and that this operation time complexity is constant.
 
-The complexity of finding nearest neighbor and inserting a new node into an $k$-d tree with a fixed number of dimensions is logarithmic with respect to the number of nodes in the tree on average, in our case this means $O(\log K)$.
+The complexity of finding the nearest neighbor and inserting a new node into a $k$-d tree with a fixed number of dimensions is logarithmic with respect to the number of nodes in the tree on average, in our case this means $O(\log K)$.
 
 Finding an action which contributes to the largest progress towards the goal will be implemented by evaluating all the $m=|U_f|$ options and measuring the distance between the resulting state and the target state. The time complexity of this operation is $O(m)$.
 
@@ -581,7 +581,7 @@ In order to capture the state of the algorithm, we need to keep the tree of all 
 
 \paragraph{Completeness}
 
-All nodes added to the tree are added as leaves and an edge between two nodes in the tree always corresponds to application of some action $u\in U_f$. None of the nodes added to the tree corresponds of a state which would collide with some obstacle.
+All nodes added to the tree are added as leaves and an edge between two nodes in the tree always corresponds to application of some action $u\in U_f$. None of the nodes added to the tree corresponds of a state which would collide with an obstacle.
 
 All branches of the tree $T$ correspond to some feasible trajectory in the state space. The algorithm will stop as soon as the tree contains a branch which corresponds to a feasible solution trajectory or if the number of iterations exceeds the limit $K$.
 
@@ -591,7 +591,7 @@ All branches of the tree $T$ correspond to some feasible trajectory in the state
 
 The main difference between our modified algorithm and the original algorithm proposed by Steven LaValle is the early termination of the algorithm when the first solution is found \cite{RRT}. We do not try to find a better solution and we do not grow our tree in a way which would guarantee that the first solution we find will be an optimal solution.
 
-\gls*{RRT} does not have any mechanism for finding optimal trajectories. On contrary, it is proven that the paths found by \gls*{RRT} are optimal with probability of 0 \cite{RRT_star}.
+\gls*{RRT} does not have any mechanism for finding optimal trajectories. On contrary, it is proven that the paths found by \gls*{RRT} are optimal with the probability of 0 \cite{RRT_star}.
 
 There are modifications to the \gls*{RRT} algorithm which utilize the randomized sampling approach and probabilistic completeness of the algorithm, but which are optimal. One of these algorithms is called \gls{RRT*}. Unfortunately, this algorithm is not easily usable for us, because it is not designed for problems with differential constraints. The algorithm uses a ``rewiring'' procedure to optimize the tree edges after a new node is added. This procedure needs to be able to connect two states $x_1, x_2\in X$ with an action trajectory. This would be near impossible in the discrete-time model we chose and even with variable time, this operation would be very expensive and impractical.
 
@@ -648,7 +648,7 @@ There is one problem with the discretization which is worth solving. Depending o
 
 The A* algorithm is driven towards the goal by a heuristic function. Designing a good heuristic function can help us converge towards the goal faster by expanding the most promising nodes first. The heuristic function estimates the remaining cost to go from any state to the goal. Our cost function represents time it takes to drive from one state to another. Our heuristic function therefore must estimate the remaining time it will take to reach the goal from a given state.
 
-To guarantee optimality of A* for graph searching, we require the heuristic to be admissible and monotonous. This means that the along any direct path from the initial node and a goal node the value of the heuristic must not increase and therefore maintain a form of triangle inequality.
+To guarantee optimality of A* for graph searching, we require the heuristic to be admissible and monotonous. This means that along any direct path from the initial node and a goal node the value of the heuristic must not increase and therefore maintain a form of triangle inequality.
 
 The inspiration for our heuristic functions were taken from the Stanford Racing Team entry in the DARPA Urban Challenge \cite{dolgov08gppSTAIR}.
 
@@ -752,11 +752,11 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 
 In this section we will analyze the pseudo-code shown in Algorithm~\ref{alg:hybrid_astar}. We will explain how it differs from the original version of the A* algorithm \cite{Nilsson_astar} and we will then also analyze the time and memory complexity of the algorithm based on our choice of data structures.
 
-The main procedure of the algorithm \texttt{HybridAStar} is very similar to what one could expect from the A* algorithm. We initialize an \textit{open set} $O$ with the initial state search record and also an empty \textit{closed set} $C$. We will say that a state is \textit{opened} if it has a record in $O$ and that it is \textit{closed} when the cell in which it falls into is in $C$.
+The main procedure of the algorithm \texttt{HybridAStar} is very similar to what one could expect from the A* algorithm. We initialize an \textit{open set} $O$ with the initial state search record and also an empty \textit{closed set} $C$. We will say that a state is \textit{opened} if it has a record in $O$ and that it is \textit{closed} when the cell which it falls into is in $C$.
 
 In the main loop, we obtain the most promising state $x\in O$ by comparing the total cost estimate of the open states. If $x$ reaches the goal region, we reconstruct the state trajectory by traversing the parent search records using a helper function \texttt{ReconstructTrajectory}. We test if the cell in which the state belongs has not been closed yet and only if it has not and the cost-to-come does not exceed the limit do we continue to expansion of the state. We close the cell into which the state $x$ belongs so that we will not expand any further states from this cell.
 
-The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, the in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set.
+The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set.
 
 The simulation of the movement of the vehicle happens in the \texttt{Unfold} procedure. This function uses the system simulator function $f_{\Delta t}$ repeatedly until the vehicle stops (none of the properties of the vehicle state does not change after an action is applied), or until the vehicle leaves the cell of the parent state in the discretized state space.
 
@@ -768,7 +768,7 @@ The time complexity of the A* algorithm depends mainly on the number of nodes wh
 
 Since our cost function is constant for all actions, we will only expand nodes at the ends of action sequences of at most $g_{max}/\Delta t$ steps. Due to the implementation of the \texttt{Unfold} procedure which might apply a single action multiple times in a row, the length of the sequence and therefore the number of expanded nodes can be even smaller. The expanded nodes form a tree with at most $l=\left\lceil g_{max}/\Delta t\right\rceil$ levels with a branching factor of $b=|U_f|$. Each of the states $x$ will be expanded at most once, because if it were to be expanded the second time, its cell would already be closed ($d(x)\in C$). This means that in the worst case when there are no obstacles and each state would be in a different cell, the number of expanded nodes would be $O(b^l)$.
 
-The number of reachable in the discretized state space also limits the number of expanded states, as at most one state will be expanded per each discrete cell. If the state space has $d$ dimensions and the maximum number of discrete cells in the individual dimensions is $\vec{n}=\left(n_1, n_2, \ldots, n_d\right)\in \mathbb{N}^d$, the upper limit for the number of cells is $\max(\vec{n})^d$.
+The number of reachable states in the discretized state space also limits the number of expanded states, as at most one state will be expanded per each discrete cell. If the state space has $d$ dimensions and the maximum number of discrete cells in the individual dimensions is $\vec{n}=\left(n_1, n_2, \ldots, n_d\right)\in \mathbb{N}^d$, the upper limit for the number of cells is $\max(\vec{n})^d$.
 
 \paragraph{Open set operations} In order to keep track of which element should be expanded next, we need to keep the data in the open set arranged in a priority queue by their total cost estimate $g+h(x)$. We use three operations of the priority queue: adding an element, and getting and removing an element with the minimum key. When implemented as a binary heap, all of these operations will have time complexity of $O(\log n)$, where $n$ is the number of nodes in the queue\footnote{The complexity of insertion can be reduced to constant time with an advanced heap, such as a binomial or Fibonacci heap. The choice of the binary heap is motivated by the priority queue in the C++ STL, which implements a binary heap.}. This can be at most $b^l$ and so the time complexity would be $O(\log b^l)=O(l \log b)$.
 
@@ -803,7 +803,7 @@ Space exploration is a pre-processing step of the planning algorithm. We are loo
 
 The exploration step can be implemented with a basic \textit{A*} search starting at the initial state location. During the expansion step of \textit{A*}, we will create a fixed number of new circles $n\in \mathbb{N}$ evenly spaced on the circumference of the expanded circle. The radius for each new circle will be calculated by measuring the distance to the closest obstacle and trimming this value to be within the interval of accepted radii. We will not open any circles with a smaller radius than $r_{min}$. The search will end once we expand a circle which includes some endpoint $\vec{x_{goal}}\in \mathbb{R}^2$. The cost function will be the length of the path measured by the distances between the centers of the circles, which is incidentally just the sum of the radii of the circles along the path. The heuristic function $h_{\vec{x_{goal}}}$ will be a simple euclidean distance between the center of a circle and the goal point $\vec{x_{goal}}$.
 
-Our goal is defined by a sequence of waypoints. We will start from the position of the initial state and use the center of the first waypoint as a goal. From the final circle in this path, we will run the algorithm again with the center of the second waypoint as a goal, and so on. The result will be a path through all of the waypoints, which is exactly what we need.
+Our goal is defined by a sequence of waypoints. We will start from the position of the initial state and use the center of the first waypoint as a goal. From the final circle in this path, we will run the algorithm again with the center of the second waypoint as a goal. The result will be a path through all of the waypoints, which is exactly what we need.
 
 \begin{algorithm}[]
 	\caption{The Space Exploration algorithm.}
@@ -895,7 +895,7 @@ The path of circles can be further optimized to find a shorter path between the 
 The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $d_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
 
 \paragraph{State Space Discretization}
-We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}, \vec{c_i}\in\mathbb{R}^2$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $d_{x,y}:\mathbb{R}^2\times X_c$ effectively defines a Voronoi diagram:
+We will use the centers of the circles $X_c=\left\{\vec{c_1}, \vec{c_2}, \ldots, \vec{c_k} \right\}, \vec{c_i}\in\mathbb{R}^2$ obtained from the pre-processing to define the discretization of the $x$ and $y$ dimensions of the configuration space $C$. Any point $\vec{x}\in \mathbb{R}^2$ will be projected on the closest circle in $X_c$. The function $d_{x,y}:\mathbb{R}^2\times X_c$ effectively defines the Voronoi diagram:
 
 \begin{equation*}
 \begin{aligned}
@@ -935,7 +935,7 @@ In this section we will describe an algorithm we chose to find points close to c
 
 The definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and a sequence of at least two checkpoints $\vec{p_i}\in\mathbb{R}^2$ which defines the direction in which the vehicle has to drive along the circuit and which parts of the grid it should go through in the case when there are multiple ways to reach a goal or of the track intersects itself at some point. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
 
-Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. If we relax our problem and imagine, that robot robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its $z$ axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that some corners it would require several consequent turns to go around the corner, (e.g., a so-called ``hairpin'' corner as shown in the bottom left corner of Figure~\ref{fig:corner_detection_hairpin_corner}) and so not every change of direction could be simply interpreted as a corner.
+Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. We can relax our problem for a moment and imagine, that robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its vertical axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that it would require several turns within a short distance of each other to go around the corner, (e.g., a so-called ``hairpin'' corner as shown in the bottom left corner of Figure~\ref{fig:corner_detection_hairpin_corner}) and so not every change of direction could be simply interpreted as a corner and some of them should be merged.
 
 We will implement an algorithm based on this thought experiment which will have three steps:
 \begin{itemize}
@@ -979,7 +979,7 @@ We will implement an algorithm based on this thought experiment which will have 
 \subsection{Finding Pivot Points}
 The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the radius of the car $r_{car}$ (i.e., the diagonal of its bounding rectangle), then the final path will not go through any narrow corridors, where the car could not fit.
 
-We forced the robot to change direction after at most $r_{max}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
+We can force the robot to change direction after at most $r_{max}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
 
 \begin{algorithm}[]
 	\caption{Find Pivot Points}
@@ -1116,7 +1116,7 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 
 \subsubsection{Algorithm Analysis}
 
-The algorithm will always complete and return a sequence of points, such that for any of two consecutive points the distance between these points is at least $d_{min}$. 
+The algorithm will always be complete and return a sequence of points such that for any of two consecutive points the distance between these points is at least $d_{min}$. 
 
 If during an iteration in \texttt{MergeClosePoints} no two consecutive points which are closer than $d_{min}$ are found in $\hat{p}$, the algorithm stops. If at least one cluster of points is merged, then at least two points from the original sequence are removed and only one point is added. In every iteration the length of the sequence therefore decreases. After at most $k-1=|\hat{p}|-1$ iterations, the number of points in the sequence will drop to a single point, and the algorithm will stop.
 
@@ -1136,7 +1136,7 @@ The only thing our algorithm has to remember is the input sequence of points. Th
 \section{Differential Constraints}
 \label{sec:vehicle_model}
 
-In order to make any trajectory planning possible, we must be able to predict the behavior of the vehicle based on its state and the actions we execute. Without a good understanding of how the state of the vehicle evolves over time, we might collide with an obstacle, plan a sub-optimal trajectory, or even plan a trajectory which cannot be followed by the physical vehicle.
+In order to make the trajectory planning possible at all, we must be able to predict the behavior of the vehicle based on its state and the actions we execute. Without a good understanding of how the state of the vehicle evolves over time, we might collide with an obstacle, plan a sub-optimal trajectory, or even plan a trajectory which cannot be followed by the physical vehicle.
 
 Car-like robots are typically underactuated. The configuration space $C$ has three degrees of freedom: the $x, y$ position and the heading angle $\theta$. On the other hand, the actions which control the vehicle, have only two degrees of freedom: a steering angle of the front wheels and the motor throttle. The vehicle moves only in the direction in which it is pointing and it changes the heading direction only while it is moving. Systems with such limited directions of motion are called non-holonomic in literature.
 
