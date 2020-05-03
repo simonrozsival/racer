@@ -946,44 +946,42 @@ We will implement an algorithm based on this thought experiment which will have 
 
 \begin{figure}[]%
 	\centering
-	\begin{subfigure}[b]{0.49\textwidth}%
-		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_simple}
-		\caption{Circuit ``Simple''}
-	\end{subfigure}
-	\hfill
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_handdrawn}
+		\includegraphics[width=\textwidth]{../img/track-analysis/race_track}
 		\caption{Circuit ``U''}
+	\end{subfigure}
+	\hfill
+	\begin{subfigure}[b]{0.49\textwidth}%
+	\centering
+	\includegraphics[width=\textwidth]{../img/track-analysis/simple}
+	\caption{Circuit ``Simple''}
 	\end{subfigure}
 	\vskip\baselineskip
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_circuit_a}
+		\includegraphics[width=\textwidth]{../img/track-analysis/tornado}
 		\caption{Circuit ``Tornado''}
 		\label{fig:corner_detection_hairpin_corner}
 	\end{subfigure}	
 	\hfill
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
-		\includegraphics[width=\textwidth]{../img/corner_detection_zurich}
+		\includegraphics[width=\textwidth]{../img/track-analysis/zurich}
 		\caption{Circuit ``Zurich''}
 	\end{subfigure}
 	
 	\label{fig:corner_detection}
-	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The green circles represent the detected corners with their centers being marked. The arrow shows the starting position and orientation of the vehicle. All of the tracks are $500\times 500$ grids with a resolution of \protect \SI{0.05}{\meter} per cell. The radius of the car is set to $r_{car}=$ \protect\SI{0.5}{\meter}, the radii of the circles during space exploration were limited to $\left[r_{car}, 10\cdot r_{car}\right]$ and the number of expanded neighbor circles is $n=8$. The minimum distance between two waypoints is $d_{min}$=\protect\SI{3}{\meter}.}
+	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The blue circles represent the detected corners.}
 \end{figure}
 
 
 \subsection{Finding Pivot Points}
-The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the radius of the car $r_{car}$ (i.e., the diagonal of its bounding rectangle), then the final path will not go through any narrow corridors, where the car could not fit.
-
-We can force the robot to change direction after at most $r_{max}$ meters, but that might not be necessary. We will traverse the path and find long stretches, where the robot could move in a straight line. We will re-use the direct visibility relation $D$ in an occupancy grid $O_r^{m\times n}$ given in Definition~\ref{def:directly_visible_points} to do this.
+The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the half of the track width, then we will find a line resembling a center line of the track. Because the width of the track can vary along the circuit, we allow the radii of the circles to be between \SI{60}{\percent} and \SI{200}{\percent} of half of the width of the track at the starting position.
 
 \begin{algorithm}[]
 	\caption{Find Pivot Points}
-	\label{alg:find_apexes}
+	\label{alg:find_pivots}
 	
 	\SetAlgoLined
 	\DontPrintSemicolon
@@ -1001,15 +999,11 @@ We can force the robot to change direction after at most $r_{max}$ meters, but t
 		
 	\BlankLine
 	
-	\algorithm{\FindPivotPoints{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{car}$}}{
-		$\hat{q}_l\gets $ \SpaceExploration{$O_r^{m\times n}$, $\kappa_{x,y}(x_0)$, $\hat{p}_k$, $\left[r_{car}, r_{car}\right]$}\;
+	\algorithm{\FindPivotPoints{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{track}$}}{
+		$\hat{q}_l\gets $ \SpaceExploration{$O_r^{m\times n}$, $\kappa_{x,y}(x_0)$, $\hat{p}_k$, $\left[0.6 r_{track}, 2 r_{track}\right]$}\;
 		$W\gets \emptyset$\;
 		$i_{last}\gets 1$\;
 		\ForEach{$i\in \left\{2,3,\ldots,l\right\}$} {
-			$(W, i_{last})\gets $ \ProcessNext{$W$, $i_{last}$, $i$}\;
-		}
-		$i_{first}\gets \min W$\;
-		\ForEach{$i\in \left\{1,2,\ldots,i_{first}-1\right\}$} {	
 			$(W, i_{last})\gets $ \ProcessNext{$W$, $i_{last}$, $i$}\;
 		}
 		\KwRet{subsequence $\hat{w}_m\subseteq\hat{q}_l: m=|W| \land \forall q_i\in \hat{w}_m: i\in W$}
@@ -1026,11 +1020,9 @@ We can force the robot to change direction after at most $r_{max}$ meters, but t
 	}
 \end{algorithm}
 
-The outcome of the \texttt{FindPivotPoints} algorithm, the pseudo-code of which is shown in Algorithm~\ref{alg:find_apexes}, is a sequence of pivot points such that two adjacent points in the sequence are \textit{directly visible} and the distances between these points are as long as possible. We use the \texttt{SpaceExploration} algorithm to find the initial path $\hat{q}_l$ with $l$ steps of constant length. We then go around the track and we try to merge these steps into longer straight lines.
+The outcome of the \texttt{FindPivotPoints} algorithm, the pseudo-code of which is shown in Algorithm~\ref{alg:find_pivots}, is a sequence of pivot points such that two adjacent points in the sequence are \textit{directly visible} and the distances between these points are as long as possible. We use the \texttt{SpaceExploration} algorithm to find the ``center line'' $\hat{q}_l$ consisting of $l$ points. We then go around the track and we try to merge these steps into longer straight lines.
 
-In the first loop, we start from the initial position and pretend that this is the last marked pivot point. We find the furthest point along $\hat{q}_l$, which is directly visible from the last waypoint, and mark it as an index of the next waypoint. We then repeat this process from next waypoint until we reach the end of the track. Because our track is a closed circuit, we try to connect the last pivot point we found with the first pivot point we found. It might be possible, that all of the points between these two pivot points are directly visible, but it might be necessary to mark another waypoint between the two. In the second loop, we continue from the beginning until we reach the first waypoint. Remember that we only pretended that the initial position of the vehicle is a pivot point and we have not actually marked it.
-
-In the case when we choose to mark the point $1<i<i_{first}$ as a pivot point, the length of the final path might be sub-optimal. We placed the first pivot point as the furthest visible point from the initial position, but the furthest visible point from $\vec{q_i}$ might be further along the path. Because our ultimate goal is to find the corners of the circuit and the path for the differential drive robot is just helping us find the approximate positions of the corners, this is not a real issue for us.
+We start from the initial position and pretend that this is the last marked pivot point. We find the furthest point along $\hat{q}_l$, which is directly visible from the last waypoint, and mark it as an index of the next waypoint. We then repeat this process from next waypoint until we reach the end of the track.
 
 \paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, then all of the points will be visible from each other and the whole sequence would collapse into a single waypoint. We will ignore this edge case and assume that the racing circuit has a non-trivial layout.
 
