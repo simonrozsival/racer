@@ -1,3 +1,0 @@
-#!/bin/bash
-
-rviz -d race.rviz
