@@ -89,8 +89,6 @@ The data from the odometry sensors is inherently noisy and inaccurate and the es
 	\label{fig:tf_tree_racing}
 \end{figure}
 
-% \todo[inline]{Update the figure with a one with base_footprint}
-
 Tuning odometry and localization ROS libraries to obtain reliable data at high rates proved to be difficult. In some scenarios, the robot would ``get lost'' when the localization algorithm would match the scan incorrectly and it would report incorrect location of the robot on the map. This can easily lead into a crash of the robot with a wall or an obstacle. The \gls*{AMCL} algorithm will sometimes manage to find the correct location after a few seconds, but in these cases it was necessary to take over control over the vehicle manually with a remote control and stop the vehicle until the robot corrects its location. The \gls*{AMCL} \gls*{ROS} node has many parameters which we spend many hours tuning them in order to get the best possible results. The final configuration is available in \newline\verb|/racer-jetson/catkin_ws/src/racer/launch/amcl_localization.launch|.
 
 \subsection{Agent Behavior}

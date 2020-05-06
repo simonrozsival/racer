@@ -446,7 +446,7 @@ The experiment consisted of two phases. First, we built a 2D map from the data c
 
 We struggled with unreliable odometry for several days. We tested several different localization libraries, adjusted data collected from the sensors, and tweaked the parameters of the libraries until we were able to get usable odometry data at least at low speeds. At higher speeds, the vehicle would quickly lose track of its actual position and orientation on the map and it would collide with a wall or with an obstacle.
 
-By the end of the testing, the vehicle was able to reliably circle around the track without hitting obstacles and without the odometry significantly diverging from the actual state of the vehicle. The car repeatedly completed a circuit which was approximately 20 meters long in 15 seconds at a steady speed of \SI{1.3}{\meter\per\second}~(\SI{4.68}{\kilo\meter\per\hour}) which corresponds to a speed of \SI{46.8}{\kilo\meter\per\hour} of a full-size vehicle. At this speed, the limitations of the kinematic model do not manifest, and the vehicle had no issues undershooting or overshooting turns. A photo from this test is shown in Figure~\ref{fig:real-world-testing-driving} and a video recording of this experiment is available in the attachment of this thesis \todo{Add the path to the file in a footnote}.
+By the end of the testing, the vehicle was able to reliably circle around the track without hitting obstacles and without the odometry significantly diverging from the actual state of the vehicle. The car repeatedly completed a circuit which was approximately 20 meters long in 15 seconds at a steady speed of \SI{1.3}{\meter\per\second}~(\SI{4.68}{\kilo\meter\per\hour}) which corresponds to a speed of \SI{46.8}{\kilo\meter\per\hour} of a full-size vehicle. At this speed, the limitations of the kinematic model do not manifest, and the vehicle had no issues undershooting or overshooting turns. A photo from this test is shown in Figure~\ref{fig:real-world-testing-driving} and video recordings of this experiment is available in the attachment of this thesis\footnote{The videos are locaded in the \texttt{/experiments/experimental-vehicle-gym} folder in the thesis attachment.}.
 
 \begin{figure}
 	\centering
@@ -463,20 +463,20 @@ Although the robot was able to navigate autonomously without collisions, the spe
 \label{sec:simulator}
 Due to the hardware issues we ran into and due to other factors, which did not allow further improvements and testing of the vehicle during the spring of 2020, we conducted further experiments only with the Gazebo simulator \cite{gazebo} configured for the F1/10 platform \cite{varundev_ros_19}. This change gave us the opportunity to test the algorithm with perfect odometry, but with the same interface between the algorithm and the simulated actuators of the virtual vehicle. To adapt the algorithm for the simulator, we had to modify our steering servo and motor models. We tweaked the parameters of our models to predict the behavior of the simulated vehicle as closely as possible.
 
-The F1/10 simulator repository\footnote{\url{https://github.com/f1tenth-dev/simulator}} contains a 3D map with several different types of corners and it is shown in Figure~\ref{fig:gazebo-track}. Especially the middle part which consists of a series of left-hand turn followed by a right-hand hairpin turn presents a challenge where the car must slow down to avoid collision while keeping as much speed as possible to still reach a good lap time. We ran the full-circuit planning for the modified vehicle model and for this track.
+The F1/10 simulator repository contains a 3D map\footnote{To view the state of the repository at the time of writing, see \url{https://github.com/f1tenth-dev/simulator/tree/140f8bd93b22b59d7cf7bfa753e1fdc73a4a8e59}. The repository has changed since then and the map we used has been removed.} with several different types of corners and it is shown in Figure~\ref{fig:gazebo-track}. Especially the middle part which consists of a series of left-hand turn followed by a right-hand hairpin turn presents a challenge where the car must slow down to avoid collision while keeping as much speed as possible to still reach a good lap time. We ran the full-circuit planning for the modified vehicle model and for this track.
 
 For this experiment, we turned off obstacle detection and we focused only on the lap times in a track without any obstacles. We tried a reference implementation against our four different combinations of algorithms and for each of them, we let it run for up to 10 consecutive laps. We ran each algorithm three times and we used the run in which it was able to complete all of the 10 laps and in which it reached the best average lap time.
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\textwidth]{../img/experiments/gazebo-track.png}
+	\includegraphics[width=0.75\textwidth]{../img/experiments/gazebo-track.png}
 	\caption{The testing track contains several long straights and several challenging turns. The Gazebo simulator allows us to monitor and modify the 3D scene.}
 	\label{fig:gazebo-track}
 \end{figure}
 
 \begin{figure}
 	\centering
-	\includegraphics[width=\textwidth]{../img/experiments/rviz-planned-track.jpg}
+	\includegraphics[width=0.5\textwidth]{../img/experiments/rviz-planned-track.jpg}
 	\caption{This figure captures a planned trajectory and a vehicle on the testing track as it is shown in Rviz. The circles represent the positions of the corners detected by the track analysis algorithm. The circles marked in red are the next three corners ahead of the vehicle. The mostly green line represents the last planned trajectory. Green parts of the trajectory show where the vehicle is expected to drive fast and red parts would show where the vehicle should slow down.}
 	\label{fig:rviz-planned-track}
 \end{figure}

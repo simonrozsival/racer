@@ -106,7 +106,7 @@
 \newacronym{SLAM}{SLAM}{Simultaneous Localization And Mapping}
 \newacronym{REP}{REP}{ROS Enhancement Proposal}
 \newacronym{DWA}{DWA}{Dynamic Window Approach}
-\newacronym{RPM}{RPM}{Rotations Per Minute}
+\newacronym{RPM}{RPM}{Revolutions Per Minute}
 \newacronym{RRT}{RRT}{Rapidly-Exploring Random Trees}
 \newacronym{RRT*}{RRT$^*$}{Optimal RRT}
 \newacronym{SEHS}{SEHS}{Space Exploration Guided Heuristic Search}
@@ -142,18 +142,18 @@
 
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, a person who lent the software, etc.)
-\def\Dedication{%
-Dedication.
-}
+%\def\Dedication{%
+%Dedication.
+%}
 
 % Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
 \def\Abstract{%
-Abstract.
+The goal of this thesis is to create an artificial agent for an autonomous racing vehicle.  This project is inspired by the F1/10 racing competition. The agent uses a planning algorithm to find a time-optimal trajectory. To achieve real-time performance, the agent analyzes the map of the track and it focuses only on the next two corners immediately ahead of the vehicle. The agent replans the trajectory several times per second to adjust the trajectory to the inherently imperfect trajectory following. We successfully tested the agent in a simulator with good results. We also tested the algorithm on a custom car-like robot equipped with an on-board computer and sensors, but with limited success.
 }
 
 % 3 to 5 keywords (recommended), each enclosed in curly braces
 \def\Keywords{%
-{planning} {autonomous vehicle}, {autonomous racing}
+{planning}, {autonomous vehicle}, {autonomous racing}
 }
 
 %% The hyperref package for clickable links in PDF and also for storing
