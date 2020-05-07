@@ -1,2 +1,0 @@
-algorithm, circuit name, number of actions, from waypoint, lookahead, finished within time limit, found solution, open nodes, closed nodes, time to finish, time to last but one waypoint, travelled distance, time step, discretization, success rate, number of repetitions, average computation time in ms, computation time variance
-hybrid_astar, u, 15, 0, 9, no, no, 7806669, 938082, 0, 0, 0, 0.04, x-1.08167_y-1.08167-rpm-307-theta-15, 0, 20, 21206, 0

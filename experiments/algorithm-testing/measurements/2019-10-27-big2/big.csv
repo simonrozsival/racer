@@ -1,7 +1,0 @@
-algorithm, circuit name, number of actions, from waypoint, lookahead, finished within time limit, found solution, open nodes, closed nodes, time to finish, time to last but one waypoint, travelled distance, time step, discretization, success rate, number of repetitions, average computation time in ms, computation time variance
-sehs, eight, 15, 0, 9, yes, yes, 298325, 36008, 6.88, 6.56, 37.7657, 0.04, c-67-rpm-307-theta-15, 1, 100, 563.19, 28.3139
-sehs, porto, 15, 0, 7, yes, yes, 93936, 11070, 5.4, 4.8, 26.8831, 0.04, c-49-rpm-307-theta-15, 1, 100, 165.3, 29.35
-sehs, simple, 15, 0, 7, yes, yes, 193095, 22003, 11.36, 9.88, 69.6041, 0.04, c-101-rpm-307-theta-15, 1, 100, 372.49, 271.93
-sehs, tornado, 15, 0, 8, yes, yes, 129022, 15232, 10.8, 9.4, 57.7269, 0.04, c-86-rpm-307-theta-15, 1, 100, 257.95, 108.027
-sehs, u, 15, 0, 9, yes, yes, 4949842, 590288, 12.56, 11.36, 75.9052, 0.04, c-95-rpm-307-theta-15, 1, 100, 14058.7, 5204.09
-sehs, zurich, 15, 0, 11, yes, yes, 1585340, 191481, 20.32, 19.88, 121.613, 0.04, c-177-rpm-307-theta-15, 1, 100, 4078.63, 44.3531
