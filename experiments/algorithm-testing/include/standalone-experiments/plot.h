@@ -8,7 +8,7 @@
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wregister"
-#include "matplotlibcpp/matplotlibcpp.h"
+#include "matplotlib-cpp/matplotlibcpp.h"
 #pragma GCC diagnostic pop
 
 #include "standalone-experiments/input.h"
@@ -59,7 +59,7 @@ void plot_path_of_circles(const std::string &name,
     circles_x.push_back(circle.center().x() / cell_size);
     circles_y.push_back(circle.center().y() / cell_size);
   }
-  plt::plot(circles_x, circles_y, format, {{"label", name}});
+  plt::named_plot(name, circles_x, circles_y, format);
 }
 
 void plot_circles(const std::vector<racer::math::point> &points,
@@ -98,8 +98,7 @@ void plot_circles(const std::vector<racer::math::point> &points,
 
 void plot_points(const std::string &name,
                  const std::vector<racer::math::point> &points,
-                 const std::string &format, const double cell_size,
-                 std::map<std::string, std::string> keywords = {})
+                 const std::string &format, const double cell_size)
 {
   std::vector<double> points_x, points_y;
   for (const auto &point : points)
@@ -108,8 +107,7 @@ void plot_points(const std::string &name,
     points_y.push_back(point.y() / cell_size);
   }
 
-  keywords["label"] = name;
-  plt::plot(points_x, points_y, format, keywords);
+  plt::named_plot(name, points_x, points_y, format);
 }
 
 void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
@@ -143,8 +141,6 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 
   plt::imshow(img, circuit->grid->rows(), circuit->grid->cols(), 4,
               {{"zorder", "6"}});
-  // plot_points("Waypoints", circuit->waypoints, "b+", circuit->grid->cell_size(),
-  //             {{"zorder", "20"}});
 }
 
 void plot_trajectory(
@@ -168,9 +164,6 @@ void plot_trajectory(
     }
   }
 
-  // plot_points("Seconds marks", every_second, "k*", cell_size,
-  //             {{"zorder", "110"}});
-
   const auto steps = trajectory.steps();
   auto prev = steps.front().state().position();
 
@@ -180,13 +173,12 @@ void plot_trajectory(
 
     std::map<std::string, std::string> keywords = {
         {"color", speed_color(speeds[i])},
-        {"zorder", "9"},
         {"linewidth",
          std::to_string(vehicle->chassis->radius() * 0.5 / cell_size)}};
 
     plt::plot(std::vector<double>{prev.x() / cell_size, pos.x() / cell_size},
               std::vector<double>{prev.y() / cell_size, pos.y() / cell_size},
-              "-", keywords);
+              keywords);
 
     prev = pos;
   }
@@ -238,11 +230,11 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
 
-  // plt::legend();
-  std::stringstream trajectory_file_name;
-  trajectory_file_name << config.name << ".pdf";
-  plt::save(trajectory_file_name.str());
-  // plt::show();
+  plt::legend();
+  // std::stringstream trajectory_file_name;
+  // trajectory_file_name << config.name << ".pdf";
+  // plt::save(trajectory_file_name.str());
+  plt::show();
 
   delete[] grid_img;
   delete[] circles_img;
@@ -307,12 +299,10 @@ void plot_trajectory(
                              config.occupancy_grid->cell_size());
 
   plt::legend();
-
-  std::stringstream trajectory_file_name;
-  trajectory_file_name << name << "_trajectory.pdf";
-  plt::save(trajectory_file_name.str());
-
-  // plt::show();
+  // std::stringstream trajectory_file_name;
+  // trajectory_file_name << name << "_trajectory.pdf";
+  // plt::save(trajectory_file_name.str());
+  plt::show();
 
   // actuators state profile
   plt::subplot(3, 1, 1);
@@ -347,7 +337,6 @@ void plot_trajectory(
   plot_points(max_speed_label.str(), max_speed_points, "k--", 1.0);
   plot_points(avg_speed_label.str(), avg_speed_points, "k--", 1.0);
 
-  // plot_points("Speed profile", speed_points, "r-", 1.0);
   // colored speed profile
   racer::math::point prev = speed_points.front();
   for (auto speed_pt : speed_points)
@@ -355,18 +344,16 @@ void plot_trajectory(
     std::map<std::string, std::string> keywords = {{"color", speed_color(speed_pt.y() / vehicle->top_speed())}};
     plt::plot(std::vector<double>{prev.x(), speed_pt.x()},
               std::vector<double>{prev.y(), speed_pt.y()},
-              "-", keywords);
+              keywords);
 
     prev = speed_pt;
   }
 
   plt::legend();
-
-  std::stringstream actuators_file_name;
-  actuators_file_name << name << "_actuators.pdf";
-  plt::save(actuators_file_name.str());
-
-  // plt::show();
+  // std::stringstream actuators_file_name;
+  // actuators_file_name << name << "_actuators.pdf";
+  // plt::save(actuators_file_name.str());
+  plt::show();
 
   delete[] grid_img;
   delete[] circles_img;

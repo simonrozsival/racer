@@ -1,4 +1,7 @@
-all: track_analysis track_analysis_benchmark planning_benchmark
+all: prepare track_analysis planning_benchmark
+
+prepare:
+	mkdir -p bin
 
 track_analysis:
 	g++ src/analyze_track.cpp \
@@ -8,19 +11,9 @@ track_analysis:
 		-O3 \
 		-ffast-math \
 		-I./include \
-		-I../../racer-jetson/catkin_ws/src/racer/include \
+		-I../../catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \
 		-lpython2.7
-
-track_analysis_benchmark:
-	g++ src/analyze_track_benchmark.cpp \
-		-o bin/track_analysis_benchmark \
-		-std=c++17 \
-		-Wall \
-		-O3 \
-		-ffast-math \
-		-I./include \
-		-I../../racer-jetson/catkin_ws/src/racer/include
 
 planning_benchmark:
 	g++ src/planning_benchmark.cpp \
@@ -31,7 +24,7 @@ planning_benchmark:
 		-O3 \
 		-ffast-math \
 		-I./include \
-		-I../../racer-jetson/catkin_ws/src/racer/include \
+		-I../../catkin_ws/src/racer/include \
 		-I/usr/include/python2.7 \
 		-lpython2.7
 
