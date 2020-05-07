@@ -1,4 +1,41 @@
-\chapter{User Documentation}
+\chapter{Attachments}
 \label{chapter:user_documentation}
 
-\todo[inline]{Write this chapter once the source code is stable.}
+\todo[inline]{Give some brief introduction and set the expectations.}
+
+\section{Trajectory Planning And Track Analysis Algorithms}
+
+In order to test the \gls{SEHS} and Hybrid A* track analysis algorithm from Section~\ref{sec:track_segmentation} and the \gls{SEHS} and Hybrid A* trajectory planning algorithms described in Chapter~\ref{chapter:trajectory_planning}, we wrote two C++ programs to test these algorithms on different inputs and to visualize their outcomes.
+
+\subsection{Requirements and Compilation}
+
+In order to compile and run these test programs, we recommend using a PC running a Linux distribution. Both programs were also successfully tested on Microsoft Windows 10 with \textit{Windows Subsystem for Linux} (WSL) 2 and the \textit{X Window System}, such as \textit{Xming X Server}\footnote{\url{http://www.straightrunning.com/XmingNotes/}}, installed. The programs are written using C++17 and they are meant to be compiled using the G++ 9.2 compiler\footnote{\url{https://gcc.gnu.org/gcc-9/}}.
+
+To visualize the outputs of the algorithms, we use the \textit{Matplotib} library and its C++ binding library \texttt{matplotlib-cpp}. The source code of this library and other resources are available in a Git repository hosted at \url{https://github.com/lava/matplotlib-cpp}\footnote{At the time of writing, the latest version of the library had the checksum of \texttt{d612b524e10ebdd43d3a8889a95e84c017ad65af}. Our code might not be compatible with future revisions of the library.}. In order to set up this library, install the dependencies of the library first\footnote{The instructions are available at \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af#installation}.} and then clone the repository using the \textit{Git} tool\footnote{https://git-scm.com/} and change the repository to the version needed in our code:
+
+\begin{lstlisting}
+cd experiments/algorithm-testing/include
+git clone https://github.com/lava/matplotlib-cpp
+cd matplotlib-cpp
+git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
+\end{lstlisting}
+
+To compile and link the source code into executable binaries, use the prepared \texttt{Makefile}:
+
+\begin{lstlisting}
+make -C experiments/algorithm-testing
+\end{lstlisting}
+
+The two binaries will be located in the \texttt{experiments/algorithm-testing/bin} directory.
+
+\subsection{Usage}
+
+\todo[inline]{Describe how to use both commands.}
+
+\subsection{Circuit Definition File Format}
+
+\todo[inline]{Describe the format of the file.}
+
+\section{ROS Nodes}
+
+\todo[inline]{Describe everything.}
