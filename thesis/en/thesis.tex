@@ -25,9 +25,6 @@
 % \setlength\headheight{0mm}
 % \let\openright=\cleardoublepage
 
-%% Generate PDF/A-2u
-\usepackage[a-2u]{pdfx}
-
 %% Character encoding: usually latin2, cp1250 or utf8:
 \usepackage[utf8]{inputenc}
 
@@ -74,6 +71,15 @@
 %\usepackage{tabularx}
 \usepackage{dirtree} % for the attachments docs
 
+%% Generate PDF/A-2u
+\usepackage{setspace} % Always before hyperref -- Enable correct footnote link
+\usepackage[a-2u]{pdfx}
+%% The hyperref package for clickable links in PDF and also for storing
+%% metadata to PDF (including the table of contents).
+%% Most settings are pre-set by the pdfx package.
+\hypersetup{unicode}
+\hypersetup{breaklinks=true}
+
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
 \usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
 \SetKwComment{Comment}{$\triangleright$\ }{}
@@ -88,13 +94,7 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator{\sign}{sgn}
 \newcommand{\bftab}{\fontseries{b}\selectfont}
-
-%% The hyperref package for clickable links in PDF and also for storing
-%% metadata to PDF (including the table of contents).
-%% Most settings are pre-set by the pdfx package.
-\usepackage{hyperref}
-\hypersetup{unicode}
-\hypersetup{breaklinks=true}
+\pdfsuppresswarningpagegroup=1
 
 %% Glossaries
 \makeglossaries
@@ -102,8 +102,8 @@
 \newacronym{AMCL}{AMCL}{Adaptive Monte Carlo Localization}
 \newacronym{ROS}{ROS}{Robot Operating System}
 \newacronym{EKF}{EKF}{Extended Kalmann Filter}
-\newglossaryentry{LIDAR}{name={LIDAR},description={Light Detection And Ranging}}
-\newglossaryentry{PID}{name={PID},description={Proportional-integral-derivative controller}}
+\newacronym{LIDAR}{LIDAR}{Light Detection And Ranging}
+\newacronym{PID}{PID}{Proportional-integral-derivative controller}
 \newacronym{IMU}{IMU}{Inertial Measurement Unit}
 \newacronym{PWM}{PWM}{Pulse Width Modulation}
 \newacronym{ESC}{ESC}{Electronic Speed Controller}
@@ -165,8 +165,8 @@ The goal of this thesis is to create an artificial agent for an autonomous racin
 % Definitions of macros (see description inside)
 \include{macros}
 
+
 % Title page and various mandatory informational pages
-\usepackage{hyperref}
 \begin{document}
 \include{title}
 
