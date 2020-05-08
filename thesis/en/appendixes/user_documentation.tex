@@ -1,41 +1,77 @@
 \chapter{Attachments}
 \label{chapter:user_documentation}
 
-\todo[inline]{Give some brief introduction and set the expectations.}
+This chapter describes the contents of the files attached to this thesis. These files include the C++ source code of the algorithms described in this thesis, several Python scripts which were used to identify the parameters of the servo and motor models, and code for integration with \gls{ROS} and with the hardware of the experimental RC vehicle and with the F1/10 Gazebo simulator. The files are organized in the following directory structure:
 
-\section{Trajectory Planning And Track Analysis Algorithms}
+\vspace{0.25cm}
+\dirtree{%
+.1 /.
+.2 arduino\DTcomment{C code for two Arduino microcontrollers}.
+.3 steering\_node.
+.3 motor\_shaft\_encoder.
+.2 \textbf{catkin\_ws}\DTcomment{ROS Catkin workspace of the Racer project}.
+.3 \textbf{src}.
+.4 \textbf{racer}\DTcomment{our main ROS package}.
+.5 circuits\DTcomment{circuit definiton files (YAML)}.
+.5 \textbf{include}.
+.6 \textbf{racer}\DTcomment{C++ code under the \texttt{racer} namespace}.
+.6 racer\_ros\DTcomment{code for integration with ROS (C++)}.
+.5 launch\DTcomment{custom launch files}.
+.5 maps\DTcomment{maps recorded using SLAM (YAML+PGM)}.
+.5 scripts\DTcomment{ROS nodes for debugging and telemetry (Python)}.
+.5 src\DTcomment{ROS nodes for the racing agent (C++)}.
+.4 racer\_msgs\DTcomment{custom ROS messages}.
+.4 racer\_sensors\DTcomment{sensor adjustments and odometry}.
+.4 racer\_simulator\DTcomment{integration with the F1tenth simulator}.
+.5 launch\DTcomment{launch and Rviz configuration files}.
+.5 src\DTcomment{ROS nodes for integration with the simulator (Python)}.
+.4 $\dots$~\DTcomment{third party ROS packages (SLAM, localization, sensors)}.
+.2 \textbf{experiments}.
+.3 \textbf{algorithm\_testing}\DTcomment{testing the algorithms outside of ROS (C++)}.
+.3 model\_fitting\DTcomment{identification of actuator models (Python)}.
+.4 motor\_rpm.
+.4 servo\_pwm\_to\_steering\_angle.
+.4 servo\_setting\_time.
+.2 media.
+.3 experimental\_vehicle\_gym\DTcomment{Videos of the self-driving RC car}.
+.3 simulator\DTcomment{Screenshots from Rviz and Gazebo}.
+}
+\vspace{0.5cm}
 
-In order to test the \gls{SEHS} and Hybrid A* track analysis algorithm from Section~\ref{sec:track_segmentation} and the \gls{SEHS} and Hybrid A* trajectory planning algorithms described in Chapter~\ref{chapter:trajectory_planning}, we wrote two C++ programs to test these algorithms on different inputs and to visualize their outcomes.
+In rest of this chapter, we will go over the different parts of the project and explain how to use them and how to work with them. We will first describe how to use the ``standalone'' experiments in the \texttt{experiments} directory and later we describe how to build and launch the ROS project located in the \texttt{catkin\_ws} directory in the simulator and on custom hardware. Finally, we will describe the ideas behind the C++ code of the algorithms located in the \texttt{catkin\_ws/src/racer/include/racer} directory.
+
+\section{Trajectory Planning and Track Analysis}
+
+In order to test the track analysis algorithm from Section~\ref{sec:track_segmentation} and the \gls{SEHS} and Hybrid A* trajectory planning algorithms described in Chapter~\ref{chapter:trajectory_planning}, we wrote two C++ programs to test these algorithms on different inputs and to visualize their outcomes.
 
 \subsection{Requirements and Compilation}
 
 In order to compile and run these test programs, we recommend using a PC running a Linux distribution. Both programs were also successfully tested on Microsoft Windows 10 with \textit{Windows Subsystem for Linux} (WSL) 2 and the \textit{X Window System}, such as \textit{Xming X Server}\footnote{\url{http://www.straightrunning.com/XmingNotes/}}, installed. The programs are written using C++17 and they are meant to be compiled using the G++ 9.2 compiler\footnote{\url{https://gcc.gnu.org/gcc-9/}}.
 
-To visualize the outputs of the algorithms, we use the \textit{Matplotib} library and its C++ binding library \texttt{matplotlib-cpp}. The source code of this library and other resources are available in a Git repository hosted at \url{https://github.com/lava/matplotlib-cpp}\footnote{At the time of writing, the latest version of the library had the checksum of \texttt{d612b524e10ebdd43d3a8889a95e84c017ad65af}. Our code might not be compatible with future revisions of the library.}. In order to set up this library, install the dependencies of the library first\footnote{The instructions are available at \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af#installation}.} and then clone the repository using the \textit{Git} tool\footnote{https://git-scm.com/} and change the repository to the version needed in our code:
+To visualize the outputs of the algorithms, we use the \textit{Matplotib} library and its C++ binding library \texttt{matplotlib-cpp}. The source code of this library is available in a public Git repository under the MIT licence hosted on GitHub\footnote{To see the code of the libraryt at the time of writing, see \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af}. Our code might not be compatible with newer revisions of the library.}. In order to set up this library, install the dependencies of the library first\footnote{The instructions are available at \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af#installation}.} and then clone the repository using \texttt{git}\footnote{\url{https://git-scm.com/}} and change the repository to the version needed in our code:
 
-\begin{lstlisting}
-cd experiments/algorithm-testing/include
-git clone https://github.com/lava/matplotlib-cpp
-cd matplotlib-cpp
-git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
-\end{lstlisting}
+\begin{verbatim}
+ > cd /experiments/algorithm-testing/include
+ > git clone https://github.com/lava/matplotlib-cpp
+ > cd matplotlib-cpp
+ > git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
+\end{verbatim}
 
 To compile and link the source code into executable binaries, use the prepared \texttt{Makefile}:
 
-\begin{lstlisting}
-make -C experiments/algorithm-testing
-\end{lstlisting}
+\begin{verbatim}
+ > cd /experiments/algorithm-testing
+ > make
+\end{verbatim}
 
-The two binaries will be located in the \texttt{experiments/algorithm-testing/bin} directory.
+This script will create a new subdirectory \texttt{bin} and place the newly created binaries in there.
+
+The C++ code includes header files from the \texttt{catkin\_ws/src/racer/include} directory. If you make adjustments to the directory structure, compilation might fail because \texttt{g++} will not be able to find the included files. In such case, edit the \texttt{Makefile} and fix the paths of the \texttt{-I} options to match your directory structure.
 
 \subsection{Usage}
 
-\todo[inline]{Describe how to use both commands.}
-
 \subsection{Circuit Definition File Format}
 
-\todo[inline]{Describe the format of the file.}
+\section{ROS Project}
 
-\section{ROS Nodes}
-
-\todo[inline]{Describe everything.}
+\section{C++ code structure}

@@ -483,7 +483,7 @@ In the previous sections, we described and defined the individual components of 
 The vehicle starts in an initial state $x_0$. It is controlled through an input sequence of actions applied over time at a constant rate, because we chose a fixed time interval $\Delta t>0$ between application of any two consequent actions. We can calculate the expected evolution of the state of the vehicle by integrating the velocity from a state transition function. If we take snapshots of the state every $\Delta t$ interval, we will get a sequence of states which we call a state trajectory:
 
 \begin{defn}[Feasible State Trajectory]
-	We say that a sequence of states $\hat{x_k}=\langle x_0,x_1,x_2,…,x_k \rangle ,x_i\in X$ is a feasible state trajectory starting in the state $x_0$ when for a fixed time interval $\Delta t>0$:
+	We say that a sequence of states $\hat{x_k}=\langle x_0,x_1,x_2,\dots,x_k \rangle ,x_i\in X$ is a feasible state trajectory starting in the state $x_0$ when for a fixed time interval $\Delta t>0$:
 	\[
 	\forall i \in \left\{ 0,\ldots,k-1\right\} \exists u\in U_f(x_i): x_{i+1}=f_{\Delta t} (x_i,u).
 	\]
@@ -685,7 +685,7 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 
 \subsubsection{Algorithm Analysis}
 
-\begin{algorithm}[]
+\begin{algorithm}
 	\caption{The Hybrid A* algorithm.}
 	\label{alg:hybrid_astar}
 	
@@ -806,7 +806,7 @@ The exploration step can be implemented with a basic \textit{A*} search starting
 
 Our goal is defined by a sequence of waypoints. We will start from the position of the initial state and use the center of the first waypoint as a goal. From the final circle in this path, we will run the algorithm again with the center of the second waypoint as a goal. The result will be a path through all of the waypoints, which is exactly what we need.
 
-\begin{algorithm}[]
+\begin{algorithm}
 	\caption{The Space Exploration algorithm.}
 	\label{alg:space_exploration}
 	
@@ -945,7 +945,7 @@ We will implement an algorithm based on this thought experiment which will have 
 	\item We will find clusters of the remaining pivot points along the path and keep only one of them, this point will be one of the final waypoints.
 \end{itemize}
 
-\begin{figure}[]%
+\begin{figure}%
 	\centering
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
@@ -980,7 +980,7 @@ We will implement an algorithm based on this thought experiment which will have 
 \subsection{Finding Pivot Points}
 The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the half of the track width, then we will find a line resembling a center line of the track. Because the width of the track can vary along the circuit, we allow the radii of the circles to be between \SI{60}{\percent} and \SI{200}{\percent} of half of the width of the track at the starting position.
 
-\begin{algorithm}[]
+\begin{algorithm}
 	\caption{Find Pivot Points}
 	\label{alg:find_pivots}
 	
@@ -1041,7 +1041,7 @@ where $\cdot$ represents the scalar product between the two vectors.
 
 It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path, where there are several pivot points close to each other. We will try to merge these close pivot points into a single point, to reduce the number of very short segments. This complete algorithm is summarized as pseudocode in Algorithm~\ref{alg:find_corners}.
 
-\begin{algorithm}[]
+\begin{algorithm}
 	\caption{Find Corners}
 	
 	\SetAlgoLined
@@ -1178,7 +1178,7 @@ PWM(\delta)=12.701\cdot\delta + 1476.686,
 
 where $\delta\in\left[\ang{-21.16}, \ang{26.57}\right]$ is the steering angle expressed in degrees and $\ang{-21.16}$ is the maximum steering angle to the right and $\ang{26.57}$ is the maximum steering angle to the left. The relationship between the steering angle and the \gls*{PWM} value is shown in Figure~\ref{fig:steering_angle_to_pwm}. This measurement was in part inspired by the experiments in \cite{ctu_martin_vajnar} and \cite{rc_identification}.
 
-\begin{figure}[h]
+\begin{figure}[ht]
 	\centering
 	
 	\begin{tikzpicture}[
@@ -1249,7 +1249,7 @@ where $\delta\in\left[\ang{-21.16}, \ang{26.57}\right]$ is the steering angle ex
 	\label{fig:steering_angle_radius_geometry}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[b]
 	\includegraphics[width=\textwidth]{../img/steering_angle_to_pwm}
 	\caption{The measurement shows the imperfections in the hardware construction. The vehicle is able to go around circles with smaller radii when it is turning left (positive steering angles) than when it is turning right (negative steering angles).}
 	\label{fig:steering_angle_to_pwm}
@@ -1261,11 +1261,11 @@ It takes non-trivial time for the steering servo to move from its previous posit
 
 The position of the servo is set through a \gls{PWM} value between \SI{1200}{\micro\second} (rightmost position), \SI{1500}{\micro\second} (center position), and \SI{1800}{\micro\second} (leftmost position). In this procedure, the vehicle switches between a right position $r$ and a left position $l$ a hundred times while the vehicle is stationary and it is placed on a flat surface. The servo produces a noise during the whole setting period and is mostly quiet during the periods between adjustments.
 
-We record the sound the servo makes through a microphone. The audio track is then edited using \textit{Audacity}\footnote{https://www.audacityteam.org/} to remove background noise and low frequency ``buzzing'' of the servo and to use the ``Sound Finder'' analysis tool to label periods of sound in the cleaned audio track (see Figure~\ref{fig:audacity}). The start and end times of the labeled intervals are then exported into a text file for further analysis.
+We record the sound the servo makes through a microphone. The audio track is then edited using \textit{Audacity}\footnote{\url{https://www.audacityteam.org/}} to remove background noise and low frequency ``buzzing'' of the servo and to use the ``Sound Finder'' analysis tool to label periods of sound in the cleaned audio track (see Figure~\ref{fig:audacity}). The start and end times of the labeled intervals are then exported into a text file for further analysis.
 
 We carried out this procedure for five pairs of \gls*{PWM} values: $(1800, 1200)$, $(1750, 1250)$, $(1700, 1300)$, $(1650, 1450)$, $(1600, 1400)$. Each of these pairs is symmetrical around the center position \SI{1500}{\micro\second} and the \textit{distance} between the two positions decreases from \SI{600}{\micro\second} to \SI{200}{\micro\second}. This might have biased the results and decrease the accuracy of our result.
 
-\begin{figure}
+\begin{figure}[b]
 	\includegraphics[width=\textwidth]{../img/servo_experiment_audacity}
 	\protect\caption{The servo setting periods are clearly identifiable in an audio recording after background noise and low frequency sounds are removed. This figure shows the interface of the \textit{Audacity} tool used to analyze a recording of adjustments between the PWM signal of \SI{1400}{\micro\second} and \SI{1600}{\micro\second}.}
 	\label{fig:audacity}
@@ -1273,7 +1273,7 @@ We carried out this procedure for five pairs of \gls*{PWM} values: $(1800, 1200)
 
 We used the method of least squares to find a best fitting line in the form of $t=ad+b$, where $t$ is the setting time in seconds and $d$ is the distance between the \gls*{PWM} values. Based on the data we recorded, the relationship between the distance to the new servo position and the setting time is visualized in the Figure~\ref{fig:servo_linear_regression} and in the following equation:
 
-\begin{equation}
+\begin{equation}[h!]
 \label{eq:servo_setting_time}
 \begin{aligned}
 t(d)&=0.000329\cdot d + 0.1174\\
@@ -1293,7 +1293,7 @@ where $\alpha,\beta\in\left[\delta_{min}, \delta_{max}\right]$.
 
 With the knowledge of how long it takes to adjust the steering angle of the front wheels, we can formulate the rate of change of the steering angle $\dot{\delta}$ in radians per second based on the current steering angle $\delta$ and target steering angle $\delta_t$:
 
-\begin{equation}
+\begin{equation}[h!]
 \begin{aligned}
 \Delta \delta&=\min\left\{\abs{\delta-\delta_t}, 2\pi-\abs{\delta-\delta_t}\right\}\\
 \dot{\delta}&=\nicefrac{\sign{} \Delta \delta}{t(\delta, \delta_t)}.
@@ -1334,7 +1334,7 @@ By integrating the $\dot{\omega}$ numerically over a time period $\Delta t$, we 
 
 An example prediction of our model with the fitted parameters as stated in Table~\ref{table:motor_model_params} is shown in Figure~\ref{fig:motor_rpm_model} for a time period of almost two minutes. The \gls*{RPM} shown in this figure is relative to the maximum \gls*{RPM} of the motor which we identified to be \SI{15500}{RPM}.
 
-\begin{table}[h]
+\begin{table}[ht]
 	\centering
 	\begin{tabular}{l | l}
 		$x_1$ & \num{7.33016701e+02} \\
@@ -1350,7 +1350,7 @@ An example prediction of our model with the fitted parameters as stated in Table
 
 We also tried training a neural network with three input neurons and one output neuron to predict $\dot{\omega}$ or $\omega$ directly. We experimented with supervised learning and with reinforcement learning using neuro-evolution (NEAT) but we were not able to obtain a neural network with better estimates of $\omega$ than the predictions from the model described in (\ref{eq:motor_model}).
 
-\begin{figure}
+\begin{figure}[b]
 	\centering
 	
 	\begin{tikzpicture}
@@ -1367,7 +1367,7 @@ We also tried training a neural network with three input neurons and one output 
 	\label{fig:torque_rpm_curve}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[b]
 	\centering
 	\includegraphics[width=\textwidth]{../img/fit_8000}
 	\caption{The first chart shows the throttle and steering inputs as well as the measured RPM (normalized). The second chart compares the measured and predicted RPMs for the same time period using the fitted parameters of our model.}
@@ -1378,7 +1378,7 @@ We also tried training a neural network with three input neurons and one output 
 
 The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite[Chapter~2]{rajamani} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
 
-\begin{figure}[h!]
+\begin{figure}[p]
 	\centering
 	
 	\begin{tikzpicture}[
@@ -1528,7 +1528,7 @@ The change of the coordinates center of gravity of the vehicle in the two dimens
 \end{aligned}
 \end{equation*}
 
-\begin{figure}[h!]
+\begin{figure}[p]
 	\centering
 	
 	\begin{tikzpicture}[

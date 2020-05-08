@@ -10,10 +10,10 @@ When a human driver drives on a racing circuit, his or her task is to complete s
 
 For a bend with a constant curvature there is a maximum speed at which a specific car can go and stay on the track. The exceeding of this speed will cause a loss of friction between the tires and the road surface and the tires will not be able to exert enough lateral force to keep the car on the curve and the car will start to travel along a curve with a greater radius than the one intended by the driver. This situation is called understeer or oversteer, depending on whether it is the front or rear wheels which lose the friction and which wheels are powered by the engine.
 
-\begin{figure}
+\begin{figure}[t]
 	\centering
 	\label{fig:oversteer_understeer}
-	\includegraphics[trim=250 180 20 0, clip,width=0.5\textwidth]{../img/understeer_oversteer}
+	\includegraphics[trim=250 180 20 0, clip,width=0.5\textwidth]{../img/understeer_oversteer.pdf}
 	\caption{This figure shows the difference between oversteer and understeer. The red (leftmost) arrow shows oversteer, when the vehicle turns more tightly than it should and it collides with the inner boundary of the track. The purple (rightmost) arrow shows understeer as the vehicle does not turn enough and it collides with the outer boundary of the track of the corner.}
 \end{figure}
 
@@ -21,7 +21,7 @@ On the other hand, for a constant vehicle speed, the vehicle can safely travel a
 
 The trajectory of the vehicle going through a corner can be split into several stages. First, the vehicle aligns itself with the outer edge of the track. Second, the vehicle must adjust its speed so it can safely stay on the curve. It is common to use the brakes mostly while the vehicle is moving straight to avoid locking the wheels in mid-turn. Third, the car starts turning at a turn-in point to go through the apex of the curve at the desired moment. Fourth, the vehicle goes through the apex, which is the point, where it is the closest to the inner edge of the track. Next, the vehicle starts exiting the corner and enters another part of the track.
 
-\begin{figure}
+\begin{figure}[b]
 	\centering
 	\includegraphics[trim=360 450 20 0, clip, width=0.75\textwidth]{../img/apex.pdf}
 	\caption{Apex of the racing line is the point where the car is the closest to the inner boundary of the track. This figure shows two racing lines in a left turn. The red line is a classical racing where the car starts and ends at the track and ends at the outer boundary of the track. The late apex line is purple where the car starts braking and turning into the corner later and exits the corner at the inner boundary of the track.}
@@ -54,7 +54,7 @@ In order to avoid describing the logic of the racing agent in a single complicat
 
 There is one more reason to break the task down into several sub-problems. The rate at which the individual sub-problems produce outputs is different and they work asynchronously. While the trajectory following algorithm should react to any location update with an action to correct the movement of the vehicle and it should do this many times per second, the planning process of a trajectory will take some non-trivial time and so the trajectory planning process will have a much lower output frequency.
 
-\begin{figure}[]\centering
+\begin{figure}[b]\centering
 	\includegraphics[width=125mm]{../img/racing_agent_diagram.pdf}
 	\caption{A diagram of the decision making process of the racing agent.}
 	\label{fig:racing_agent_diagram}

@@ -35,7 +35,7 @@
     <arg name="planning_frequency" value="1" />
   </include>
 
-  <node name="wheel_odometry_simulator" pkg="racer_simulator" type="wheel_encoder_from_gazebo.py" output="screen">
+  <node name="wheel_odometry_simulator" pkg="racer_simulator" type="motor_shaft_encoder_from_gazebo.py" output="screen">
     <param name="odom_topic" value="/$(arg car_name)/ground_truth" />
     <param name="topic" value="/$(arg car_name)/motor_rpm" />
   </node>

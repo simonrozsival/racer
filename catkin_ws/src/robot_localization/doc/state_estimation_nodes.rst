@@ -76,7 +76,7 @@ For each sensor, users need to define this parameter based on the message type. 
 .. code-block:: xml
 
    <param name="imu0" value="robot/imu/data"/>
-   <param name="odom0" value="wheel_encoder/odometry"/>
+   <param name="odom0" value="motor_shaft_encoder/odometry"/>
    <param name="odom1" value="visual_odometry/odometry"/>
 
 The index for each parameter name is 0-based (e.g., ``odom0``, ``odom1``, etc.) and must be defined sequentially (e.g., do *not* use ``pose0`` and ``pose2`` if you have not defined ``pose1``). The values for each parameter are the topic name for that sensor.

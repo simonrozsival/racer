@@ -29,10 +29,10 @@ int main(int argc, char **argv)
   nh.param<std::string>("odometry_frame", odometry_frame, "odom");
   nh.param<double>("gear_ratio", gear_ratio, 3.4);
 
-  std::string driving_topic, wheel_encoders_topic, motor_rpm_topic, odometry_topic;
+  std::string driving_topic, motor_shaft_encoder_topic, motor_rpm_topic, odometry_topic;
 
   nh.param<std::string>("driving_topic", driving_topic, "/racer/commands");
-  nh.param<std::string>("wheel_encoders_topic", wheel_encoders_topic, "/racer/wheel_encoders");
+  nh.param<std::string>("motor_shaft_encoder_topic", motor_shaft_encoder_topic, "/racer/motor_shaft_encoder");
   nh.param<std::string>("motor_rpm_topic", motor_rpm_topic, "/racer/motor_rpm");
   nh.param<std::string>("odometry_topic", odometry_topic, "/racer/odometry");
 
@@ -46,8 +46,8 @@ int main(int argc, char **argv)
   ros::Subscriber steering_sub =
       nh.subscribe<geometry_msgs::Twist>(driving_topic, 1, &odometry_subject::process_steering_command, &subject);
 
-  ros::Subscriber wheel_encoders_sub =
-      nh.subscribe<std_msgs::Float64>(wheel_encoders_topic, 1, &odometry_subject::process_wheel_odometry, &subject);
+  ros::Subscriber motor_shaft_encoder_sub =
+      nh.subscribe<std_msgs::Float64>(motor_shaft_encoder_topic, 1, &odometry_subject::process_wheel_odometry, &subject);
 
   ros::Rate loop_rate(50);
 

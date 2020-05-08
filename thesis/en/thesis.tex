@@ -52,28 +52,27 @@
 \usepackage{xcolor}  % typesetting in color
 
 %% Additional packages
-\usepackage{amsthm}
+%\usepackage{amsthm}
 \usepackage[allow-number-unit-breaks, detect-all]{siunitx}
-\usepackage{textcomp}
+%\usepackage{textcomp}
 \usepackage[acronym]{glossaries}
-\usepackage{fancyvrb}
+%\usepackage{fancyvrb}
 \usepackage{enumitem}
 \usepackage{mathtools}
 \usepackage{interval}
-\usepackage{cprotect}
-\usepackage{todonotes}
-\usepackage{graphicx}
-\usepackage{caption}
+%\usepackage{graphicx}
+%\usepackage{caption}
 \usepackage{subcaption}
 \usepackage{nicefrac}
 \usepackage{url}
-\usepackage{float}
+%\usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{calc}
 \usetikzlibrary{scopes}
 \usetikzlibrary{intersections}
 \usetikzlibrary{quotes,angles}
-\usepackage{tabularx}
+%\usepackage{tabularx}
+\usepackage{dirtree} % for the attachments docs
 
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
 \usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
@@ -89,6 +88,14 @@
 \DeclareMathOperator*{\argmax}{arg\,max}
 \DeclareMathOperator{\sign}{sgn}
 \newcommand{\bftab}{\fontseries{b}\selectfont}
+\pdfsuppresswarningpagegroup=1
+
+%% The hyperref package for clickable links in PDF and also for storing
+%% metadata to PDF (including the table of contents).
+%% Most settings are pre-set by the pdfx package.
+\usepackage{hyperref}
+\hypersetup{unicode}
+\hypersetup{breaklinks=true}
 
 %% Glossaries
 \makeglossaries
@@ -156,24 +163,17 @@ The goal of this thesis is to create an artificial agent for an autonomous racin
 {planning}, {autonomous vehicle}, {autonomous racing}
 }
 
-%% The hyperref package for clickable links in PDF and also for storing
-%% metadata to PDF (including the table of contents).
-%% Most settings are pre-set by the pdfx package.
-\hypersetup{unicode}
-\hypersetup{breaklinks=true}
-
 % Definitions of macros (see description inside)
 \include{macros}
 
 % Title page and various mandatory informational pages
+\usepackage{hyperref}
 \begin{document}
 \include{title}
 
 %%% A page with automatically generated table of contents of the master thesis
 
 \tableofcontents
-
-\listoftodos
 
 %%% Each chapter is kept in a separate file
 \include{chapters/introduction}

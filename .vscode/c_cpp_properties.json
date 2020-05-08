@@ -4,7 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/racer-jetson/catkin_ws/src/racer/include"
+                "${workspaceFolder}/catkin_ws/src/racer/include"
             ],
             "defines": [
                 "_DEBUG",
@@ -21,7 +21,7 @@
             "name": "Ubuntu",
             "includePath": [
                 "${workspaceFolder}/**",
-                "${workspaceFolder}/racer-jetson/catkin_ws/src/racer/include"
+                "${workspaceFolder}/catkin_ws/src/racer/include"
             ],
             "defines": [],
             "compilerPath": "/usr/bin/g++",

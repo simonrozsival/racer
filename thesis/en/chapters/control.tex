@@ -220,7 +220,7 @@ Another approach to trajectory following is to select the next control input bas
 
 At each time when we want to select the next control input for our vehicle, the DWA algorithm \cite{DWA} samples the control space of the robot and simulates the trajectories which the robot would travel if the action was applied for a short time period $T=k\cdot \Delta t,k\in\mathbb{N}$. The resulting trajectories, which do not result in a collision, are scored and the action of the best trajectory is used. The outline of the algorithm adapted for our problem can be seen in Algorithm~\ref{alg:dwa} and it is visualized in Figure~\ref{fig:dwa}.
 
-\begin{algorithm}[]
+\begin{algorithm}
 	\SetAlgoLined
 	\DontPrintSemicolon
 	

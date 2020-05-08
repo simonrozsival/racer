@@ -23,7 +23,7 @@ def encoder_callback(msg):
 
 rospy.init_node('max_rpm', anonymous=True)
 
-rospy.Subscriber("/racer/wheel_encoders", Float64, encoder_callback)
+rospy.Subscriber("/racer/motor_shaft_encoder", Float64, encoder_callback)
 
 rate = rospy.Rate(25)
 
