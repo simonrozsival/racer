@@ -23,8 +23,17 @@
 
 namespace racer_ros
 {
+
+class BasePlanner {
+public:
+  virtual std::optional<racer_msgs::Trajectory>
+  plan(const State &initial_state, const std::vector<racer::action> &available_actions,
+       const std::shared_ptr<racer::circuit> circuit,
+       const std::shared_ptr<racer::track::collision_detection> collision_detector, const int next_waypoint) const = 0;
+};
+
 template <typename State, typename DiscreteState>
-class Planner
+class Planner : public BasePlanner
 {
 public:
   Planner(std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
@@ -34,10 +43,10 @@ public:
   {
   }
 
-  std::optional<racer_msgs::Trajectory>
+  virtual std::optional<racer_msgs::Trajectory>
   plan(const State &initial_state, const std::vector<racer::action> &available_actions,
        const std::shared_ptr<racer::circuit> circuit,
-       const std::shared_ptr<racer::track::collision_detection> collision_detector, const int next_waypoint) const
+       const std::shared_ptr<racer::track::collision_detection> collision_detector, const int next_waypoint) const override
   {
     auto problem = std::make_unique<racer::astar::discretized_search_problem<DiscreteState, State>>(
         initial_state, time_step_s_, available_actions, discretization_, model_, circuit, collision_detector);

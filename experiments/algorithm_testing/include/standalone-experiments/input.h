@@ -17,20 +17,14 @@ public:
   const racer::vehicle_configuration initial_position;
   const std::vector<racer::math::point> checkpoints;
   const std::shared_ptr<racer::occupancy_grid> occupancy_grid;
-  const int neighbor_circles;
-  const double min_distance_between_waypoints;
 
 public:
   track_analysis_input(std::string name,
                        racer::vehicle_configuration initial_position,
                        std::vector<racer::math::point> checkpoints,
-                       std::shared_ptr<racer::occupancy_grid> occupancy_grid,
-                       int neighbor_circles,
-                       double min_distance_between_waypoints)
+                       std::shared_ptr<racer::occupancy_grid> occupancy_grid)
       : name(name), initial_position(initial_position),
-        checkpoints(checkpoints), occupancy_grid(occupancy_grid),
-        neighbor_circles(neighbor_circles),
-        min_distance_between_waypoints(min_distance_between_waypoints) {}
+        checkpoints(checkpoints), occupancy_grid(occupancy_grid) {}
 
   static std::unique_ptr<track_analysis_input>
   load(std::filesystem::path input_file_name)
@@ -69,12 +63,6 @@ public:
                 << "'." << std::endl;
       return nullptr;
     }
-
-    // load space exploration params
-    double min_distance_between_waypoints;
-    int neighbor_circles;
-    ss >> neighbor_circles;
-    ss >> min_distance_between_waypoints;
 
     // load initial position
     double ix, iy, itheta;

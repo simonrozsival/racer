@@ -8,11 +8,11 @@
   <arg name="number_laps" default="100" />
   <arg name="run_rviz" default="true" />
   <arg name="integration_step" default="0.04" />
-  <!--arg name="planning_safety_margin" default="0.12" /-->
   <arg name="planning_safety_margin" default="0.0" />
   <arg name="min_lookahead" default="1.0" />
-  <!--arg name="max_lookahead" default="1.75" /-->
   <arg name="max_lookahead" default="1.5" />
+  <arg name="use_sehs" default="true" />
+
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -26,6 +26,7 @@
   </include>
   <include file="$(find racer)/launch/agent.launch">
     <arg name="car_name" value="$(arg car_name)" />
+    <arg name="use_sehs" value="$(arg use_sehs)" />
     <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="strategy" value="pure_pursuit" />

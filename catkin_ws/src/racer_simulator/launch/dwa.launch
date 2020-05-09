@@ -11,6 +11,7 @@
   <arg name="integration_step" default="0.04" />
   <arg name="planning_safety_margin" default="0.0" />
   <arg name="planning_frequency" default="25" />
+  <arg name="use_sehs" default="true" />
 
   <include file="$(find f1tenth-sim)/launch/simulator.launch">
     <arg name="run_gazebo" value="true" />
@@ -24,6 +25,7 @@
   </include>
   <include file="$(find racer)/launch/agent.launch">
     <arg name="car_name" value="$(arg car_name)" />
+    <arg name="use_sehs" value="$(arg use_sehs)" />
     <arg name="circuit" value="$(find racer)/circuits/race_track.yaml" />
     <arg name="origin_is_center_of_rear_axle" value="true" />
     <arg name="horizon" value="$(arg horizon)" />

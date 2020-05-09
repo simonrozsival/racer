@@ -41,7 +41,7 @@ This thesis is accompanied with a number of file attachments. These files includ
 
 In rest of this chapter, we will go over the different parts of the project and explain how to use them and how to work with them. We will first describe how to use the ``standalone'' experiments in the \texttt{experiments} directory and later we describe the ROS project located in the \texttt{catkin\_ws} directory and we go over the steps necessary to build and run the project in the simulator and on custom hardware. Finally, we will describe the ideas behind the C++ code of the algorithms located in the \texttt{catkin\_ws/src/racer/include/racer} directory.
 
-\section{Trajectory Planning and Track Analysis}
+\section{Track Analysis and Trajectory Planning}
 
 In order to test the track analysis algorithm from Section~\ref{sec:track_segmentation} and the \gls{SEHS} and Hybrid A* trajectory planning algorithms described in Chapter~\ref{chapter:trajectory_planning}, we wrote two C++ programs to test these algorithms on different inputs and to visualize their outcomes.
 
@@ -52,17 +52,17 @@ In order to compile and run these test programs, we recommend using a PC running
 To visualize the outputs of the algorithms, we use the \textit{Matplotib} library and its C++ binding library \texttt{matplotlib-cpp}. The source code of this library is available in a public Git repository under the MIT licence hosted on GitHub\footnote{To see the code of the libraryt at the time of writing, see \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af}. Our code might not be compatible with newer revisions of the library.}. In order to set up this library, install the dependencies of the library first\footnote{The instructions are available at \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af#installation}.} and then clone the repository using \texttt{git}\footnote{\url{https://git-scm.com/}} and change the repository to the version needed in our code:
 
 \begin{verbatim}
-> cd /experiments/algorithm-testing/include
-> git clone https://github.com/lava/matplotlib-cpp
-> cd matplotlib-cpp
-> git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
+ > cd /experiments/algorithm-testing/include
+ > git clone https://github.com/lava/matplotlib-cpp
+ > cd matplotlib-cpp
+ > git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
 \end{verbatim}
 
 To compile and link the source code into executable binaries, use the prepared \texttt{Makefile}:
 
 \begin{verbatim}
-> cd /experiments/algorithm-testing
-> make
+ > cd /experiments/algorithm-testing
+ > make
 \end{verbatim}
 
 This script will create a new subdirectory \texttt{bin} and place the newly created binaries in there.
@@ -71,19 +71,73 @@ The C++ code includes header files from the \texttt{catkin\_ws/src/racer/include
 
 \subsection{Usage}
 
+\paragraph{Track Analysis}
+
+The track analysis algorithm is easy to test for a circuit:
+
+\begin{verbatim}
+ > ./bin/track_analysis <circuit-definition-file>
+\end{verbatim}
+
+The program will output the time each of the steps of the analysis takes and finally it will open a window with the map of the circuit and with marked corners which were detected.
+
+\paragraph{Trajectory Planning}
+To test the trajectory planning algorithm, run this command:
+
+\begin{verbatim}
+ > cd /experiments/algorithm-testing
+ > ./bin/planning_benchmark <n> <timeout> <circ-1> <circ-2>...
+\end{verbatim}
+
+The parameter \texttt{<n>} determines how many times each algorithm with a given set of parameters for a given circuit will be run in order to calculate the average search time. The parameter \texttt{<timeout>} determines the time limit for a single search in milliseconds. At least one path to a circuit definition file has to be provided, but the binary accepts multiple of them and it will loop over all of them and execute the search for each of them with all of the combinations of the parameters.
+
+The program tests both Hybrid A* and the \gls*{SEHS} algorithms with several different combinations of discretization parameters. The output of the program will be a comma separated values file with the summaries of each test. After each algorithm is tested with each different set of parameters, the found trajectory and the speed profile is shown in a pop-up window.
+
 \subsection{Circuit Definition File Format}
+
+Each circuit is defined with a simple text file with the following structure:
+
+\begin{verbatim}
+ <pgm-file>
+ <occupancy-grid-resolution>
+ <ix> <iy> <itheta>
+ <c1x> <c1y>
+ <c2x> <c2y>
+\end{verbatim}
+
+The first line contains the path to the occupancy grid file relative to the circuit definition file. The second line contains a decimal number specifying the resolution of the occupancy grid in meters (typical value is \num{0.05}). The third value describes the initial position and orientation of the vehicle. The rest of the file form lines of $x$ and $y$ coordinates of checkpoints along the circuit. At least two checkpoints are expected, but there is no hard upper limit. Examples of circuits can be found in the \texttt{/experiments/\-algorithm\-\_testing/\-test-inputs} directory.
+
+\paragraph{PGM File Format Limitations}
+
+The occupancy grid is loaded from a bitmap stored in a PGM file format\footnote{\url{http://netpbm.sourceforge.net/doc/pgm.html}}. We support only the \textit{Plain PGM format} with the magic number \texttt{P2} and the pixels represented by ASCII encoded decimal numbers. The numbers must be between \num{0} and \num{127}. Some bitmap editors, such as GIMP, produce images with pixel values outside of this range, and these files need to be edited manually before they can be supplied to the test programs.
 
 \section{Actuator Models}
 
+This section describes the scripts we wrote in order to fit the parameters of the actuator models as described in Section~\ref{sec:actuators_model}.
+
 \subsection{Requirements}
+
+In order to open and run the actuator model fitting scripts, you need to install Python 3.6\footnote{\url{https://www.python.org/}} and the Jupyter Notebook\footnote{\url{https://jupyter.org/}}. The scripts also need the following Python libraries installed on your computer:
+
+\begin{itemize}
+	\item Matplotlib\footnote{\url{https://matplotlib.org/}}
+	\item Pandas\footnote{\url{https://pandas.pydata.org/}}
+	\item Numpy\footnote{\url{https://numpy.org/}}
+	\item SciPy\footnote{\url{https://www.scipy.org/}}
+\end{itemize}
 
 \subsection{Usage}
 
-The implementation of our autonomous racing agent relies on a complex set of libraries and tools. In this chapter, we will describe the libraries and tools we used and we will briefly explain how some of them work. We will also discuss our implementation of the autonomous racing agent.
+To open the scripts, start the Jupyter notebook:
+
+\begin{verbatim}
+ > cd /experiments/model_fitting
+ > jupyter notebook
+\end{verbatim}
+
+Your browser should open with the Jupyter interface. From here, you can open one of the three subdirectories with the experiments: \texttt{motor\_rpm}, \texttt{servo\_pwm\-\_to\_\-steering\_angle}, and \texttt{servo\_setting\_time}. Each directory contains a \texttt{.ipynb} script which you can view and re-run and the data with the measurements.
 
 \section{ROS Project}
-
-\subsection{Robot Operating System}
 
 \gls{ROS} is an open-source set of libraries and tools built on top of Linux. Processes running under this operating system are referred to as nodes and they can be distributed across multiple computers connected over a wired or wireless network or through a serial port. Nodes can be programmed in many different programming languages but the most common and officially supported languages are Python and C++.
 
@@ -93,7 +147,7 @@ Each topic has an assigned message type which defines the structure of the data.
 
 \gls*{ROS} comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is \verb|Rviz|. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit.
 
-We use the latest stable release of \gls*{ROS} at the time of writing this thesis named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. Further information about \gls*{ROS} and tutorials which describe how to work with it are available on the official website of the \gls*{ROS} project\footnote{\url{https://www.ros.org}}.
+We use the latest stable release of \gls*{ROS} at the time of writing this thesis named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. All the installation instructions assume that the user is running this version of Ubuntu as their operating system. Further information about \gls*{ROS} and tutorials which describe how to work with it are available on the official website of the \gls*{ROS} project\footnote{\url{https://www.ros.org}}.
 
 \subsection{Architecture of the Distributed System}
 
@@ -106,7 +160,7 @@ The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted
 	\label{fig:ros_diagram}
 \end{figure}
 
-The communication between the Arduinos and the Jetson takes place over over USB. This is possible thanks to the \verb|rosserial| package\footnote{\url{http://wiki.ros.org/rosserial}}. The Arduinos need to include the \verb|ros_lib| library which allows it to subscribe to topics and to publish messages. On Jetson, the communication on each serial port is handled by an instance of a \verb|rosserial_python| node.
+The communication between the Arduinos and the Jetson takes place over USB. This is possible thanks to the \verb|rosserial| package\footnote{\url{http://wiki.ros.org/rosserial}}. The Arduinos need to include the \verb|ros_lib| library which allows it to subscribe to topics and to publish messages. On Jetson, the communication on each serial port is handled by an instance of a \verb|rosserial_python| node.
 
 \subsubsection{Coordinate Frames}
 
@@ -211,23 +265,11 @@ Later during the race, this node monitors the state of the vehicle and it produc
 
 \paragraph{Planning Node}
 
-REWRITE!
-
-The planning node plans a trajectory based on the last known state of the vehicle through the list of next waypoints and publishes it in the form of a custom message type \verb|racer_msgs/Trajectory|. The planning node uses the SEHS algorithm we described in this thesis because it is more efficient than Hybrid~A*. The source code of the node can be easily modify to switch to Hybrid~A* if necessary.
-
-This node will try to re-plan the trajectory as often as possible, but it is limited by a maximum updated frequency which is configurable. This is necessary because sometimes the vehicle passes close to an obstacle while following the last published trajectory and the localization algorithm briefly fails and determines the location of the vehicle in a way that the planning node detects an collision right in the initial state. The localization algorithm will recover with a new measurement of the sensors, but in the meantime, the planning algorithm could report tens or hundreds of failures because of the incorrect location. By limiting the maximum update frequency for example to \SI{2}{\hertz} we will still get frequent updates of the trajectory and the node will be more stable.
-
-Most of the time during a race, the vehicle drives forward. and it does not come to a full stop or even require driving in reverse. Therefore, we prefer planning just with actions for driving forward only. If it is not possible to find a trajectory like this, we will try again now also with actions which allow driving in reverse. This way we can generate trajectories faster than if we always allowed going in reverse most of the time by limiting the number of actions and therefore we decrease the size of the nodes we open.
+The planning node plans a trajectory based on the last known state of the vehicle through the next several waypoints directly ahead of the vehicle and publishes it in the form of a custom message type \texttt{racer\_msgs/\-Trajectory}. The planning node uses either the \gls*{SEHS} or the Hybrid A* algorithm based on an parameter passed from a \gls*{ROS} launch file.
 
 \subsubsection{Following Node}
 
-REWRITE!
-
-This node finds the best control input for the actuators in order to follow the planned trajectory based on the current state of the vehicle using the \gls{DWA} algorithm. \gls*{DWA} has a set of actions it chooses from. The algorithm simulates how the state of the vehicle would change if a given action was used for a given period of time and then it selects the one, which allows it to track the reference trajectory better than the others. We give the algorithm many different actions including actions for driving in reverse.
-
-The node publishes a standard message type \verb|geometry_msgs/Twist|\footnote{\url{http://docs.ros.org/melodic/api/geometry\_msgs/html/msg/Twist.html}}. By using this message type, we mimic the output of the open source \verb|move_base| \gls*{ROS} package\footnote{\url{http://wiki.ros.org/move\_base}}. The throttle level is stored in the \verb|linear.x| component ant the steering level is stored in \verb|angular.z|. This message is later translated into a \gls*{PWM} signal for the actuators by the hardware interface component.
-
-There is an alternative following node which implements the Pure Pursuit algorithm for steering and \gls*{PID} controller for regulating the speed. This node is called \verb|geometric_following_node| and it listens to and publishes the same topics as the \verb|dwa_following_node|. We included this node even though it is not used by default because it does not have the ability to avoid previously unknown obstacles and it does not support going in reverse. Both of the algorithms simple yet interesting and the node can be useful in certain scenarios.
+This node listens to the current vehicle state and the planned trajectory topics and it selects the actions for the vehicle using either the \gls{DWA} or the Pure Pursuit algorithms. The strategy which the node uses can be changed via a parameter. The node publishes the actions in two standard message types on two topics. These message types are \verb|geometry_msgs/Twist|\footnote{\url{http://docs.ros.org/melodic/api/geometry\_msgs/html/msg/Twist.html}} and \texttt{ackermann\_msgs/\-AckermannDrive}\footnote{\url{http://docs.ros.org/jade/api/ackermann_msgs/html/msg/AckermannDrive.html}}.. The \texttt{Twist} message type mimics the output of the open source \verb|move_base| \gls*{ROS} package\footnote{\url{http://wiki.ros.org/move\_base}}. The throttle level is stored in the \verb|linear.x| component ant the steering level is stored in \verb|angular.z|. This message is later translated into a \gls*{PWM} signal for the actuators by the hardware interface component. The \texttt{AckermannDrive} message type is necessary to control the vehicle in the simulator.
 
 \subsubsection{Hardware Interface}
 \label{sec:hardware-interface}
@@ -267,7 +309,7 @@ The code of the hardware interface described in Section~\ref{sec:hardware-interf
 
 \subsection{Requirements and Compilation}
 
-First, you need to install \gls{ROS} \textit{Melodic Morenia} according to the instructions provided on the official website of the project\footnote{\url{http://wiki.ros.org/melodic/Installation}}. Then, you need to clone the following open-source \gls*{ROS} packages from GitHub into the \texttt{/catkin\_ws/src} directory:
+First, you need to install \gls{ROS} \textit{Melodic Morenia} Desktop-Full Install according to the instructions provided on the official website of the project\footnote{\url{http://wiki.ros.org/melodic/Installation}}. Then, you need to clone the following open-source \gls*{ROS} packages from GitHub into the \texttt{/catkin\_ws/src} directory:
 
 \begin{Verbatim}[fontsize=\small]
  > cd /catkin_ws/src
@@ -300,11 +342,11 @@ If any of these packages is missing on your computer after you install ROS, you 
 To run the simulator, we also need to clone the repository from GitHub and switch to the state at the time of writing of this thesis. We also need to install the dependencies as they are stated in the installation guide in the \texttt{README.md} file of the repository:
 
 \begin{Verbatim}[fontsize=\small]
-> cd /catkin_ws/src
-> git clone https://github.com/f1tenth-dev/simulator
-> cd simulator
-> git checkout 140f8bd93b22b59d7cf7bfa753e1fdc73a4a8e59
-> sudo apt install -y ros-melodic-navigation \
+ > cd /catkin_ws/src
+ > git clone https://github.com/f1tenth-dev/simulator
+ > cd simulator
+ > git checkout 140f8bd93b22b59d7cf7bfa753e1fdc73a4a8e59
+ > sudo apt install -y ros-melodic-navigation \
                       ros-melodic-teb-local-planner \
                       ros-melodic-ros-control \
                       ros-melodic-ros-controllers \
@@ -317,17 +359,45 @@ To run the simulator, we also need to clone the repository from GitHub and switc
 With all the dependencies installed and cloned, we need to finish the setup and compile all the packages and nodes in the project:
 
 \begin{Verbatim}[fontsize=\small]
-> cd /catkin_ws
-> catkin_make install
-> source devel/setup.bash
-> catkin_make
+ > cd /catkin_ws
+ > catkin_make install
+ > source devel/setup.bash
+ > catkin_make
 \end{Verbatim}
 
 \subsection{Usage}
 
-\subsubsection{Simulator Launch Files}
+The parameters for the agent behavior nodes can be changed in the \texttt{/catkin\_ws/src/racer/launch/agent.launch} file. This file is included from all of the other launch files mentioned further in this section.
 
-\subsubsection{Experimental Vehicle Launch Files}
+\subsubsection{Simulator}
+
+In order to run the \gls*{SEHS} planning algorithm along with the \gls*{DWA} following algorithm, simply run these commands:
+
+\begin{Verbatim}[fontsize=\small]
+ > source catkin_ws/devel/setup.bash
+ > roslaunch racer_simulator dwa.launch _use_sehs:=true
+\end{Verbatim}
+
+When the \texttt{use\_sehs} parameter is set to \texttt{false}, the Hybrid A* algorithm is used instead. To run the Pure Pursuit algorithm instead of \gls*{DWA} and with the Hybrid A* planning algorithm, change the name of the launch file:
+
+\begin{Verbatim}[fontsize=\small]
+ > roslaunch racer_simulator pure_pursuit.launch  _use_sehs:=false
+\end{Verbatim}
+
+The semantics of the \texttt{use\_sehs} stays the same also for this launch file. After you run the \texttt{roslaunch} command, it will take a short while before the \textit{Rviz} and \textit{Gazebo} programs are launched and the vehicle starts moving along the circuit.
+
+\subsubsection{Experimental Vehicle}
+
+To run the code on the experimental vehicle, we first connect the onboard Nvidia Jetson Nano computer and a laptop to the same Wi-Fi network and we connect to the on-board computer over \texttt{ssh}. We then launch the main launch file on \textit{Jetson}:
+
+\begin{Verbatim}[fontsize=\small]
+ > source catkin_ws/devel/setup.bash
+ > roslaunch racer race.launch _map:=<map> _circuit:=<circuit>
+\end{Verbatim}
+
+where \texttt{<map>} is the name of the map definition file and \texttt{<circuit>} is the name of the circuit definition file. Both of these names must not include the \texttt{.yaml} suffix and the files must be placed in the \texttt{/catkin\_ws/src/racer/maps} and the \texttt{/catkin\_ws/src/racer/circuits} directory.
+
+Since both computers are connected to the same network, we can listen to the ROS topics on the laptop and visualize the data exchanged between these topics using \textit{Rviz}. In order to achieve this, the \texttt{ROS\_MASTER\_URI} and \texttt{ROS\_IP} environment variables must be set properly on both computers. Follow the \textit{Network Setup} tutorial on the \gls*{ROS} website\footnote{\url{http://wiki.ros.org/ROS/NetworkSetup}}.
 
 \section{Implementation of Algorithms}
 

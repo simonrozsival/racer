@@ -6,6 +6,7 @@
   <arg name="horizon" default="0.75" />
   <arg name="integration_step" default="0.04" />
   <arg name="strategy" default="dwa" />
+  <arg name="use_sehs" default="false" />
   <arg name="planning_safety_margin" default="0.3" />
   <arg name="planning_frequency" default="25" />
   <arg name="min_lookahead" default="0.75" />
@@ -39,6 +40,8 @@
       <param name="map_topic" value="/obstacles/costmap/costmap" />
       <param name="normal_frequency" value="$(arg planning_frequency)" />
       <param name="max_frequency" value="50" />
+
+      <param name="use_sehs" value="$(arg use_sehs)" />
 
       <param name="throttle_levels" value="6" />
       <param name="steering_levels" value="17" />

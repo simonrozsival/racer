@@ -65,7 +65,7 @@ We can imagine that the states form vertices of a graph $G=(V, E)$ and the appli
 
 This graph can in general have several subgraphs. We are only interested in the component, which contains the initial $x_0$ and all the vertices which are reachable from $x_0$ via a directed path. A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal states vertices. Finding a path in a graph is well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
 
-The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
+The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
 
 When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
@@ -757,7 +757,7 @@ The main procedure of the algorithm \texttt{HybridAStar} is very similar to what
 
 In the main loop, we obtain the most promising state $x\in O$ by comparing the total cost estimate of the open states. If $x$ reaches the goal region, we reconstruct the state trajectory by traversing the parent search records using a helper function \texttt{ReconstructTrajectory}. We test if the cell in which the state belongs has not been closed yet and only if it has not and the cost-to-come does not exceed the limit do we continue to expansion of the state. We close the cell into which the state $x$ belongs so that we will not expand any further states from this cell.
 
-The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set.
+The expansion of a state is implemented in the procedure \texttt{Expand}. We try to explore the outcome of every possible action in $x$. We simulate the application of each action using the function \texttt{Unfold}. If the application of the action did not result in a collision, we will add the final state $x'$ to $O$ if the cell $d(x')$, which was reached, has not been closed yet. In other versions of A*, it is common to check if the new state is currently in $O$. If $x'$ already is in $O$, in case when $x'$ was reached with a lower cost-to-come, the old $g$-value and the ancestor $p(x')$ would be replaced with the new values. We decided not to do this and instead keep both records in $O$. If any of these records for the same state are expanded before the algorithm finds a solution, its cell will be closed and so the consequent records of this state (with a higher cost-to-come), will be skipped when they are removed from the open set.
 
 The simulation of the movement of the vehicle happens in the \texttt{Unfold} procedure. This function uses the system simulator function $f_{\Delta t}$ repeatedly until the vehicle stops (none of the properties of the vehicle state does not change after an action is applied), or until the vehicle leaves the cell of the parent state in the discretized state space.
 
@@ -1273,7 +1273,7 @@ We carried out this procedure for five pairs of \gls*{PWM} values: $(1800, 1200)
 
 We used the method of least squares to find a best fitting line in the form of $t=ad+b$, where $t$ is the setting time in seconds and $d$ is the distance between the \gls*{PWM} values. Based on the data we recorded, the relationship between the distance to the new servo position and the setting time is visualized in the Figure~\ref{fig:servo_linear_regression} and in the following equation:
 
-\begin{equation}[h!]
+\begin{equation}
 \label{eq:servo_setting_time}
 \begin{aligned}
 t(d)&=0.000329\cdot d + 0.1174\\
@@ -1293,7 +1293,7 @@ where $\alpha,\beta\in\left[\delta_{min}, \delta_{max}\right]$.
 
 With the knowledge of how long it takes to adjust the steering angle of the front wheels, we can formulate the rate of change of the steering angle $\dot{\delta}$ in radians per second based on the current steering angle $\delta$ and target steering angle $\delta_t$:
 
-\begin{equation}[h!]
+\begin{equation}
 \begin{aligned}
 \Delta \delta&=\min\left\{\abs{\delta-\delta_t}, 2\pi-\abs{\delta-\delta_t}\right\}\\
 \dot{\delta}&=\nicefrac{\sign{} \Delta \delta}{t(\delta, \delta_t)}.
