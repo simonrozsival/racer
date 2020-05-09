@@ -154,7 +154,7 @@
 
 % Abstract (recommended length around 80-200 words; this is not a copy of your thesis assignment!)
 \def\Abstract{%
-The goal of this thesis is to create an artificial agent for an autonomous racing vehicle.  This project is inspired by the F1/10 racing competition. The agent uses a planning algorithm to find a time-optimal trajectory. To achieve real-time performance, the agent analyzes the map of the track and it focuses only on the next two corners immediately ahead of the vehicle. The agent replans the trajectory several times per second to adjust the trajectory to the inherently imperfect trajectory following. We successfully tested the agent in a simulator with good results. We also tested the algorithm on a custom car-like robot equipped with an on-board computer and sensors, but with limited success.
+The goal of this thesis is to create an artificial agent for an autonomous racing vehicle.  This project is inspired by the F1/10 racing competition. The agent uses a planning algorithm to find a time-optimal trajectory. To achieve real-time performance, the agent analyzes the map of the track and it plans only for the next two corners immediately ahead of the vehicle. The agent re-plans several times per second as it drives along the circuit to account for imprecise trajectory following. We successfully tested the agent in the Gazebo simulator with good results. We also tested the algorithm on a custom car-like robot equipped with an on-board computer and sensors, but with limited success.
 }
 
 % 3 to 5 keywords (recommended), each enclosed in curly braces
