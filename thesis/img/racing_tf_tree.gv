@@ -1,6 +1,6 @@
 digraph G {
 "base_link" -> "imu"[label="Broadcaster: /base_link_to_imu\nAverage rate: 49.757 Hz\nMost recent transform: 1566493221.062 ( -0.008 sec old)\nBuffer length: 4.884 sec\n"];
-"odom" -> "base_link"[label="Broadcaster: /robot_pose_ekf\nAverage rate: 25.567 Hz\nMost recent transform: 1566493220.985 ( 0.069 sec old)\nBuffer length: 4.850 sec\n"];
+"odom" -> "base_footprint"[label="Broadcaster: /robot_localization\nAverage rate: 25.567 Hz\nMost recent transform: 1566493220.985 ( 0.069 sec old)\nBuffer length: 4.850 sec\n"];
 "base_link" -> "laser"[label="Broadcaster: /laser_2_base_link\nAverage rate: 49.675 Hz\nMost recent transform: 1566493221.053 ( 0.001 sec old)\nBuffer length: 4.872 sec\n"];
 "map" -> "odom"[label="Broadcaster: /amcl\nAverage rate: 11.064 Hz\nMost recent transform: 1566493221.000 ( 0.054 sec old)\nBuffer length: 4.881 sec\n"];
 edge [style=invis];

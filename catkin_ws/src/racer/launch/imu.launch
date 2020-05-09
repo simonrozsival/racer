@@ -6,7 +6,7 @@
     <remap from="/imu" to="/imu_raw" />
   </node>
 
-  <!-- `bno055_usb_stick` does not include covariances which are neccessary for robot_pose_ekf -->
+  <!-- `bno055_usb_stick` does not include covariances which are neccessary for robot_localization -->
   <!-- we also need to remap the axes of the IMU (which cannot be done easily with a tf static_transform_publisher -->
   <node pkg="racer_sensors" type="fix_imu" name="fix_imu" output="screen">
     <param name="imu_frame_id" value="imu" />

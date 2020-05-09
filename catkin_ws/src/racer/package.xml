@@ -26,7 +26,6 @@
   <exec_depend>odometry</exec_depend>
   <exec_depend>racer_msgs</exec_depend>
   <exec_depend>hector_mapping</exec_depend>
-  <exec_depend>robot_pose_ekf</exec_depend>
   <exec_depend>ydlidar</exec_depend>
   <exec_depend>bno055_usb_stick</exec_depend>
   <exec_depend>rosserial</exec_depend>

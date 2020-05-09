@@ -1,9 +1,90 @@
 \chapter{Technical Documentation}
 \label{chapter:technical_documentation}
 
-The implementation of our autonomous racing agent relies on a complex set of libraries and tools. In this chapter, we will describe the libraries and tools we used and we will briefly explain how some of them work. We will also discuss our implementation the behavior of the autonomous racing agent. The installation instructions and instructions on how to deploy and use the software used and developed in this thesis are covered in the following chapter \ref{chapter:user_documentation}.
+\section{Attachments}
 
-\section{Robot Operating System}
+This thesis is accompanied with a number of file attachments. These files include the C++ source code of the algorithms described in this thesis, several Python scripts which were used to identify the parameters of the servo and motor models, and code for integration with \gls{ROS} and with the hardware of the experimental RC vehicle and with the F1/10 Gazebo simulator. The files are organized in the following directory structure:
+
+\vspace{0.25cm}
+\dirtree{%
+	.1 /.
+	.2 arduino\DTcomment{C code for two Arduino microcontrollers}.
+	.3 steering\_node.
+	.3 motor\_shaft\_encoder.
+	.2 \textbf{catkin\_ws}\DTcomment{ROS Catkin workspace of the Racer project}.
+	.3 \textbf{src}.
+	.4 \textbf{racer}\DTcomment{our main ROS package}.
+	.5 circuits\DTcomment{circuit definiton files (YAML)}.
+	.5 \textbf{include}.
+	.6 \textbf{racer}\DTcomment{C++ code under the \texttt{racer} namespace}.
+	.6 racer\_ros\DTcomment{code for integration with ROS (C++)}.
+	.5 launch\DTcomment{custom launch files}.
+	.5 maps\DTcomment{maps recorded using SLAM (YAML+PGM)}.
+	.5 scripts\DTcomment{ROS nodes for debugging and telemetry (Python)}.
+	.5 src\DTcomment{ROS nodes for the racing agent (C++)}.
+	.4 racer\_msgs\DTcomment{custom ROS messages}.
+	.4 racer\_sensors\DTcomment{sensor adjustments and odometry}.
+	.4 racer\_simulator\DTcomment{integration with the F1tenth simulator}.
+	.5 launch\DTcomment{launch and Rviz configuration files}.
+	.5 src\DTcomment{ROS nodes for integration with the simulator (Python)}.
+	.4 $\dots$~\DTcomment{third party ROS packages (SLAM, localization, sensors)}.
+	.2 \textbf{experiments}.
+	.3 \textbf{algorithm\_testing}\DTcomment{testing the algorithms outside of ROS (C++)}.
+	.3 model\_fitting\DTcomment{identification of actuator models (Python)}.
+	.4 motor\_rpm.
+	.4 servo\_pwm\_to\_steering\_angle.
+	.4 servo\_setting\_time.
+	.2 media.
+	.3 experimental\_vehicle\_gym\DTcomment{Videos of the self-driving RC car}.
+	.3 simulator\DTcomment{Screenshots from Rviz and Gazebo}.
+}
+\vspace{0.5cm}
+
+In rest of this chapter, we will go over the different parts of the project and explain how to use them and how to work with them. We will first describe how to use the ``standalone'' experiments in the \texttt{experiments} directory and later we describe the ROS project located in the \texttt{catkin\_ws} directory and we go over the steps necessary to build and run the project in the simulator and on custom hardware. Finally, we will describe the ideas behind the C++ code of the algorithms located in the \texttt{catkin\_ws/src/racer/include/racer} directory.
+
+\section{Trajectory Planning and Track Analysis}
+
+In order to test the track analysis algorithm from Section~\ref{sec:track_segmentation} and the \gls{SEHS} and Hybrid A* trajectory planning algorithms described in Chapter~\ref{chapter:trajectory_planning}, we wrote two C++ programs to test these algorithms on different inputs and to visualize their outcomes.
+
+\subsection{Requirements and Compilation}
+
+In order to compile and run these test programs, we recommend using a PC running a Linux distribution. Both programs were also successfully tested on Microsoft Windows 10 with \textit{Windows Subsystem for Linux} (WSL) 2 and the \textit{X Window System}, such as \textit{Xming X Server}\footnote{\url{http://www.straightrunning.com/XmingNotes/}}, installed. The programs are written using C++17 and they are meant to be compiled using the G++ 9.2 compiler\footnote{\url{https://gcc.gnu.org/gcc-9/}}.
+
+To visualize the outputs of the algorithms, we use the \textit{Matplotib} library and its C++ binding library \texttt{matplotlib-cpp}. The source code of this library is available in a public Git repository under the MIT licence hosted on GitHub\footnote{To see the code of the libraryt at the time of writing, see \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af}. Our code might not be compatible with newer revisions of the library.}. In order to set up this library, install the dependencies of the library first\footnote{The instructions are available at \url{https://github.com/lava/matplotlib-cpp/tree/d612b524e10ebdd43d3a8889a95e84c017ad65af#installation}.} and then clone the repository using \texttt{git}\footnote{\url{https://git-scm.com/}} and change the repository to the version needed in our code:
+
+\begin{verbatim}
+> cd /experiments/algorithm-testing/include
+> git clone https://github.com/lava/matplotlib-cpp
+> cd matplotlib-cpp
+> git checkout d612b524e10ebdd43d3a8889a95e84c017ad65af
+\end{verbatim}
+
+To compile and link the source code into executable binaries, use the prepared \texttt{Makefile}:
+
+\begin{verbatim}
+> cd /experiments/algorithm-testing
+> make
+\end{verbatim}
+
+This script will create a new subdirectory \texttt{bin} and place the newly created binaries in there.
+
+The C++ code includes header files from the \texttt{catkin\_ws/src/racer/include} directory. If you make adjustments to the directory structure, compilation might fail because \texttt{g++} will not be able to find the included files. In such case, edit the \texttt{Makefile} and fix the paths of the \texttt{-I} options to match your directory structure.
+
+\subsection{Usage}
+
+\subsection{Circuit Definition File Format}
+
+\section{Actuator Models}
+
+\subsection{Requirements}
+
+\subsection{Usage}
+
+The implementation of our autonomous racing agent relies on a complex set of libraries and tools. In this chapter, we will describe the libraries and tools we used and we will briefly explain how some of them work. We will also discuss our implementation of the autonomous racing agent.
+
+\section{ROS Project}
+
+\subsection{Robot Operating System}
 
 \gls{ROS} is an open-source set of libraries and tools built on top of Linux. Processes running under this operating system are referred to as nodes and they can be distributed across multiple computers connected over a wired or wireless network or through a serial port. Nodes can be programmed in many different programming languages but the most common and officially supported languages are Python and C++.
 
@@ -11,11 +92,11 @@ Nodes communicate between each other using a publisher/subscriber pattern. A nod
 
 Each topic has an assigned message type which defines the structure of the data. There is a large number of standard messages which are used by authors of public libraries. This way it is often possible to replace one library with a different one without additional changes to other nodes. This can be useful for example when one sensor is replaced by a device of the same type but from a different vendor whose \gls*{ROS} node publishes the same standard message type. Programmers can also define their custom message types which are better suited for their application.
 
-\gls*{ROS} comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is \verb|Rviz|. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit. The configuration we used during our experiments is included in the attached files as \verb|/ubuntu/mapping.rviz| and \verb|/ubuntu/race.rviz|.
+\gls*{ROS} comes with a variety of tools for debugging and visualization of the data passed through the topics. One of these tools is \verb|Rviz|. It is a convenient way of visualizing the current state of the system. We use this tool to visualize the telemetry data from the vehicle on a laptop while it is driving along the racing circuit.
 
 We use the latest stable release of \gls*{ROS} at the time of writing this thesis named ``Melodic Morenia'' which is compatible with Ubuntu 18.04 LTS. Further information about \gls*{ROS} and tutorials which describe how to work with it are available on the official website of the \gls*{ROS} project\footnote{\url{https://www.ros.org}}.
 
-\section{Architecture of the Distributed System}
+\subsection{Architecture of the Distributed System}
 
 The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted on the vehicle, two Arduinos which are connected to the Jetson through a serial port, and a notebook which is connected to Jetson over Wi-Fi. Jetson acts as a \gls*{ROS} master machine, Arduinos act as an interface between Jetson and low-level hardware, and the notebook is used only to monitor telemetry data. The graph of this architecture and the connected sensors is depicted in Figure~\ref{fig:ros_diagram}.
 
@@ -28,25 +109,28 @@ The setup of our robot consists of the NVIDIA Jetson Nano board which is mounted
 
 The communication between the Arduinos and the Jetson takes place over over USB. This is possible thanks to the \verb|rosserial| package\footnote{\url{http://wiki.ros.org/rosserial}}. The Arduinos need to include the \verb|ros_lib| library which allows it to subscribe to topics and to publish messages. On Jetson, the communication on each serial port is handled by an instance of a \verb|rosserial_python| node.
 
-\subsection{Coordinate Frames}
+\subsubsection{Coordinate Frames}
 
 \Gls{ROS} includes a very useful way of keeping track of the relative position between different parts of the robot and the position of the robot itself on a map. The package which provides this functionality is called \verb|tf|\footnote{\url{http://wiki.ros.org/tf}}. \verb|tf| maintains a tree structure of coordinate frames and it keeps track of transformations between these coordinate frames as they change over time. The updates to the transformations are shared through a regular \gls*{ROS} topic called \verb|tf| of the \texttt{tf/tfMessage}\footnote{\url{http://docs.ros.org/kinetic/api/tf/html/msg/tfMessage.html}} type. The \verb|tf| package provides libraries for both Python and C++ which make accessing the current state of the whole system and manipulating with the linear transformations easy.
 
 Our implementation adheres to the standard naming convention of coordinate frames as it is defined in \gls{REP} 105\footnote{\url{https://www.ros.org/reps/rep-0105.html}}. The vehicle has a \verb|base_link| frame attached to it. Each of the sensors has their own coordinate frame and there is a static transformation between the sensor and the base link using the \texttt{static\_\allowbreak transform\_\allowbreak publisher} node from the \verb|tf| package. The \gls*{IMU} gives us the current roll and pitch of the vehicle. We use the \texttt{hector\_imu\_attitude\_tf} node\footnote{\url{https://github.com/tu-darmstadt-ros-pkg/hector\_slam/tree/catkin}} to publish this transformation between \texttt{base\_link} and \texttt{base\_footprint}, which is the ``stabilized'' coordinate frame. The root (``fixed'') \verb|tf| frame is called \verb|map|. The transformation between the \verb|map| frame and the \verb|base_footprint| represents the pose of the vehicle on the map. This transformation is calculated and published through different nodes in the mapping and racing tasks and we will come back to it later.
 
-\subsection{Sensors}
+\subsubsection{Sensors}
+\label{sec:sensors}
 
-Each of the sensors connected through USB uses their own drivers for communication over the serial link. Luckily, open-source \gls*{ROS} packages for both the \gls*{LIDAR} and the \gls*{IMU} are available and both of them publish the data in the form of standard \verb|sensor_msgs/LaserScan|\footnote{\url{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html}} and \verb|sensor_msgs/Imu|\footnote{\url{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/Imu.html}} messages. The data from the motor shaft encoder is published in the form of \verb|std_msgs/Float64| message and it contains the number of revolutions since the Arduino was last powered or reset. The source code for the Arduino is available in the attached source files in \verb|/controller-arduino/motor_shaft_encoder/motor_shaft_encoder.ino|.
+Each of the sensors connected through USB uses their own drivers for communication over the serial link. Luckily, open-source \gls*{ROS} packages for both the \gls*{LIDAR} and the \gls*{IMU} are available and both of them publish the data in the form of standard \verb|sensor_msgs/LaserScan|\footnote{\url{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/LaserScan.html}} and \verb|sensor_msgs/Imu|\footnote{\url{http://docs.ros.org/melodic/api/sensor\_msgs/html/msg/Imu.html}} messages.
+
+The data from the motor shaft encoder is published as a \verb|std_msgs/Float64| message and it contains the number of revolutions since the Arduino was last powered or reset.
 
 The raw data we receive from the \gls*{LIDAR} and the \gls*{IMU} are not readily usable. We had to introduce a layer of preprocessing for both these sensors:
 
 \begin{enumerate}
-	\item The \gls*{LIDAR} is rigidly attached to the vehicle and so the laser scan is affected by the roll and pitch of the vehicle. We use \texttt{LaserScanBoxFilter} from the \texttt{laser\_filters} package\footnote{\url{http://wiki.ros.org/laser\_filters}} to remove points which are too close to the ground (the vehicle might see the ground when it is slowing down or braking) and which are too high above the ideal plane (the vehicle might see the ceiling or over the obstacles when it accelerates). The configuration for the \gls*{LIDAR} is stored in \texttt{/catkin\_ws/\allowbreak src\allowbreak racer/\allowbreak launch/ydlidar.launch}.
-	
-	\item The coordinate frame of the \gls*{IMU} is not ideally aligned with the coordinate frame of the vehicle. Even though it should be possible, we were not able to get correct roll and pitch transformations using the \texttt{static\_transform\_\-publisher} node of the \texttt{tf} package. To overcome this issue, we implemented a custom node in C++ called \texttt{fix\_imu} in the \texttt{racer\_sensors} package, which publishes the correct transformation. We also set positive values on the diagonals of covariance matrices to make the \gls*{IMU} message valid, because the \gls*{ROS} package for the IMU we use  \verb|bnp055_usb_stick|\footnote{\url{https://github.com/yoshito-n-students/bno055\_usb\_stick}} does not set them correctly. The configuration for the \gls*{IMU} is stored in \texttt{/catkin\_ws/\allowbreak src\allowbreak racer/\allowbreak launch/\allowbreak imu.launch}.
+	\item The coordinate frame of the \gls*{IMU} is not aligned with the coordinate frame of the vehicle. Even though it should be possible, we were not able to get correct roll and pitch transformations using the \texttt{static\_transform\_\-publisher} node of the \texttt{tf} package. To overcome this issue, we implemented a custom node in C++ called \texttt{fix\_imu} in the \texttt{racer\_sensors} package, which publishes the correct transformation. We also set positive values on the diagonals of covariance matrices to make the \gls*{IMU} message valid, because the \gls*{ROS} package for the \gls*{IMU} we use  \verb|bno055_usb_stick|\footnote{\url{https://github.com/yoshito-n-students/bno055\_usb\_stick}} does not set them correctly. The configuration for the \gls*{IMU} is stored in \texttt{/catkin\_ws/\allowbreak src/\allowbreak racer/\allowbreak launch/\allowbreak imu.launch}.
+
+	\item The \gls*{LIDAR} is rigidly attached to the vehicle and so the laser scan is affected by the roll and pitch of the vehicle. We use \texttt{LaserScanBoxFilter} from the \texttt{laser\_filters} package\footnote{\url{http://wiki.ros.org/laser\_filters}} to remove points which are too close to the ground (the vehicle might see the ground when it is slowing down or braking) and which are too high above the ideal plane (the vehicle might see the ceiling or over the obstacles when it accelerates). The configuration for the \gls*{LIDAR} is stored in \texttt{/catkin\_ws/\allowbreak src/\allowbreak racer/\allowbreak launch/ydlidar.launch}.
 \end{enumerate}
 
-\section{Mapping}
+\subsection{Mapping}
 
 In order to race, our vehicle needs a map of the racing track. The robot can create its own map using an algorithm called \gls{SLAM}. We use a library called Hector \gls*{SLAM} created by a team from the Technical University of Darmstadt.
 
@@ -58,27 +142,27 @@ $$
 
 where $S_i\left(\xi\right)$ are the world coordinates of scan point $s_i$ after applying the transform $\xi$ and the function $M$ gives the value of the occupancy grid at the given coordinates. After obtaining the transformation, the laser scan is aligned with the occupancy grid and each endpoint of a laser ray is marked as an obstacle into the occupancy grid.
 
-Hector SLAM provides a \gls*{ROS} node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan| messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{\url{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}}. The node also publishes a \verb|tf| transformation between the \verb|map| frame and the \verb|base_footprint| frame. An important parameter is the resolution of the occupancy grid which we chose to be \SI{5}{\centi\meter}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{\url{http://wiki.ros.org/map\_server\#map\_saver}}. We prepared a \gls*{ROS} launch file with the configuration of all nodes necessary for this task. This configuration is included in the attached files in \texttt{/catkin\_ws/\allowbreak  src/\allowbreak  racer/\allowbreak  launch/create\_map.launch}. The proper usage of this launch file is described in Chapter~\ref{chapter:user_documentation}.
+Hector SLAM provides a \gls*{ROS} node \verb|hector_mapping| which subscribes to a topic providing \verb|sensor_msgs/LaserScan| messages and publishes its output in a topic of type \verb|nav_msgs/OccupancyGrid|\footnote{\url{http://docs.ros.org/melodic/api/nav\_msgs/html/msg/OccupancyGrid.html}}. The node also publishes a \verb|tf| transformation between the \verb|map| frame and the \verb|base_footprint| frame. An important parameter is the resolution of the occupancy grid which we chose to be \SI{5}{\centi\meter}. When the mapping is complete, the final map can be saved into a file using a \verb|map_saver| node from the \verb|map_server| package\footnote{\url{http://wiki.ros.org/map\_server\#map\_saver}}. We prepared a \gls*{ROS} launch file with the configuration of all nodes necessary for this task. This configuration is included in the attached files in \texttt{/catkin\_ws/\allowbreak  src/\allowbreak  racer/\allowbreak  launch/create\_map.launch}.
 
-\section{Racing}
+\subsection{Racing}
 
-Racing is the most important and the most complicated part of the implementation. It can be split into three groups of \gls*{ROS} nodes: odometry and localization, agent behavior, and a hardware interface. We prepared a \gls*{ROS} launch file with the configuration of all nodes necessary for the racing task in the attached files in \newline\verb|/catkin_ws/src/racer/launch/race.launch|. This launch file requires two arguments: a map definition file and a circuit definition file. The proper usage of this launch file is described in Chapter~\ref{chapter:user_documentation}.
+Racing is the most important and the most complicated part of the implementation. It can be split into three groups of \gls*{ROS} nodes: odometry and localization, agent behavior, and the hardware interface.
 
-\subsection{Map}
+\subsubsection{Map}
 
 We use \verb|map_server| node of the \verb|map_server| package to serve the previously recorded occupancy grid to the other nodes. The map is stored in two files: a \verb|.yaml| file with map metadata and a \verb|.pgm| file with the occupancy grid stored as a bitmap. It is necessary that the \verb|.yaml| configuration file contains a correct relative path to the bitmap file. The map server publishes a topic called \verb|map| of type \verb|nav_msgs/OccupancyGrid|. This node also provides a service for one-time retrieving the map without subscribing to the topic.
 
-\subsubsection{Costmap} In order to prevent collisions, we use a \gls*{ROS} package \verb|costmap_2d|\footnote{\url{http://wiki.ros.org/costmap\_2d}} to inflate the areas around obstacles according to a bounding rectangle around the vehicle. The result of this node is another \verb|nav_msgs/OccupancyGrid| topic with cell values marking the ``cost'' of each cell instead of the regular ternary status (free/obstacle/unknown). The higher the cell cost is, the closer the cell is to an obstacle. Values above certain threshold value are considered ``lethal'' and if the center of the vehicle were in this position it would be colliding with an obstacle. Collision detection is then just a matter of a single query into the occupancy grid to check if the cell which contains the center point of the vehicle.
+\paragraph{Costmap} In order to prevent collisions, we use a \gls*{ROS} package \verb|costmap_2d|\footnote{\url{http://wiki.ros.org/costmap\_2d}} to inflate the areas around obstacles according to a bounding rectangle around the vehicle. The result of this node is another \verb|nav_msgs/OccupancyGrid| topic with cell values marking the ``cost'' of each cell instead of the regular ternary status (free/obstacle/unknown). The higher the cell cost is, the closer the cell is to an obstacle. Values above certain threshold value are considered ``lethal'' and if the center of the vehicle were in this position it would be colliding with an obstacle. Collision detection is then just a matter of a single query into the occupancy grid to check if the cell which contains the center point of the vehicle.
 
-This \verb|costmap_2d| can also work directly with the laser scan from the LIDAR and overlay it with the map using the latest \verb|tf| transformation between the \verb|map| and \verb|lidar| coordinate frames and mark obstacles which were not present during mapping into the resulting occupancy grid. Unfortunately, this feature was flaky and we had to disable it in the final version of our configuration. The laser frame would often be misaligned with the original map for a brief moment and it would mark certain areas of free space as obstacles. The ``clearing'' feature, which is supposed to remove obstacles from the costmap based on new laser scans, did not work properly and the map soon became filled with ghost obstacles.
+This \verb|costmap_2d| can also work directly with the laser scan from the \gls*{LIDAR} and overlay it with the map using the latest \verb|tf| transformation between the \verb|map| and \verb|lidar| coordinate frames and mark obstacles which were not present during mapping into the resulting occupancy grid. Unfortunately, this feature was flaky and we had to disable it in the final version of our configuration when we tested it on the RC car. The laser frame would often be misaligned with the original map for a brief moment and it would mark certain areas of free space as obstacles. The ``clearing'' feature, which is supposed to remove obstacles from the costmap based on new laser scans, did not work properly and the map soon became filled with ghost obstacles. When we tested this package in the simulator, it yielded better results, but we still observed many ghost obstacles.
 
-\subsection{Odometry and Localization}
+\subsubsection{Odometry and Localization}
 
 Odometry is an estimate of how position of the robot changes over time based on data from sensors which measure the movement of the robot. Odometry is supposed to be continuous and there should not be any sudden changes in the position of the vehicle.
 
-Our vehicle has two sources of odometry: the number of revolutions of the motor shaft and the accelerations measured by the IMU. We implemented a simple \gls*{ROS} node called \verb|odometry_node| in C++ which subscribes to the motor shaft encoder and the steering commands supplied to the vehicle. From the number of revolutions and an assumption that the wheels are not skidding we can estimate the distance the vehicle travelled since the last update. From the steering command, we can estimate the steering angle of the front wheels of the vehicle. From these two inputs, we can estimate how the vehicle body translated and rotated using a simple kinematic vehicle model. This approach was inspired by the MIT RACECAR VESC odometry \gls*{ROS} node\footnote{\url{https://github.com/mit-racecar/vesc}}. Source code of the odometry node is located in the attachments in \verb|/catkin\_ws/src/racer_sensors|.
+Our vehicle has two sources of odometry: the number of revolutions of the motor shaft and the accelerations measured by the IMU. We implemented a simple \gls*{ROS} node called \verb|odometry_node| in C++ which subscribes to the motor shaft encoder and the steering commands supplied to the vehicle. From the number of revolutions and an assumption that the wheels are not skidding we can estimate the distance the vehicle travelled since the last update. From the steering command, we can estimate the steering angle of the front wheels of the vehicle. From these two inputs, we can estimate how the vehicle body translated and rotated using a simple kinematic vehicle model. This approach was inspired by the MIT RACECAR VESC odometry \gls*{ROS} node\footnote{\url{https://github.com/mit-racecar/vesc}}. Source code of the odometry node is located in the attachments in \texttt{/catkin\_ws/src/racer\_sensors}.
 
-The data from the odometry node and the \gls*{IMU} are then fused into a single estimate using the \verb|robot_pose_ekf| node\footnote{\url{https://wiki.ros.org/robot\_pose\_ekf}}. This node uses \gls*{EKF} to estimate the most likely location from the input sources and their covariances. This node produces a \verb|tf| transform between the \verb|odom| and \verb|base_footprint| frames. We also tried to use a newer \gls*{ROS} package \texttt{robot\_\-localization} which also implements an \gls*{EKF}, but the results were less accurate.
+The data from the odometry node and the \gls*{IMU} are then fused into a single estimate using the \verb|ekf_localization_node| node from the \texttt{robot\_localization} package\footnote{\url{http://docs.ros.org/melodic/api/robot\_localization/html/index.html}}. This node uses \gls*{EKF} to estimate the most likely location from the input sources and their covariances. This node produces a \verb|tf| transform between the \verb|odom| and \verb|base_footprint| frames. We also tried to use the \gls*{ROS} package \texttt{robot\_pose\_ekf} which also implements an \gls*{EKF}, but the results were less accurate.
 
 The data from the odometry sensors is inherently noisy and inaccurate and the estimated position of the robot will become more and more inaccurate over time. This phenomenon is referred to as drift. To counteract the drift, we perform a correction using the \gls*{AMCL} algorithm. This algorithm uses the data from the \gls*{LIDAR} to determine the position of the vehicle in the map based on the distances to the obstacles around it. Unlike odometry, the sequence of position updates is not expected to be continuous and the resulting location can in theory be a point anywhere on the map. We use an implementation of this algorithm in the \verb|amcl| \gls*{ROS} package\footnote{\url{http://wiki.ros.org/amcl}}. The \verb|amcl| node from this package publishes a \verb|tf| transformation between \verb|map| and \verb|odom| to correct the odometry drift. The \verb|tf| tree is captured in Figure~\ref{fig:tf_tree_racing}.
 
@@ -91,7 +175,7 @@ The data from the odometry sensors is inherently noisy and inaccurate and the es
 
 Tuning odometry and localization ROS libraries to obtain reliable data at high rates proved to be difficult. In some scenarios, the robot would ``get lost'' when the localization algorithm would match the scan incorrectly and it would report incorrect location of the robot on the map. This can easily lead into a crash of the robot with a wall or an obstacle. The \gls*{AMCL} algorithm will sometimes manage to find the correct location after a few seconds, but in these cases it was necessary to take over control over the vehicle manually with a remote control and stop the vehicle until the robot corrects its location. The \gls*{AMCL} \gls*{ROS} node has many parameters which we spend many hours tuning them in order to get the best possible results. The final configuration is available in \newline\verb|/catkin_ws/src/racer/launch/amcl_localization.launch|.
 
-\subsection{Agent Behavior}
+\subsubsection{Agent Behavior}
 \label{sec:agent_impl}
 
 We implemented the individual components of the behavior of the agent, as it was described in Chapter~\ref{chapter:agent} and visualized in Figure~\ref{fig:racing_agent_diagram}, with four \gls*{ROS} nodes as part of the \verb|racer| package we implemented:
@@ -105,7 +189,7 @@ We implemented the individual components of the behavior of the agent, as it was
 
 The C++17 implementation of the \verb|racer| package is located in \texttt{/catkin\_ws/\-src/racer/} and it contains the source code of the individual \gls*{ROS} nodes as well as the source code of the algorithms which were described in this thesis. The definitions of the messages are located in a separate package \texttt{/catkin\_ws/\allowbreak src/racer\_msgs/}. All of the coordinates used by \verb|racer| package nodes are in the global \verb|map| coordinate frame unless stated otherwise.
 
-\subsubsection{Current State Node}
+\paragraph{Current State Node}
 
 This node listens to the \verb|tf| transformations and converts them into a custom message format \verb|racer_msgs/State|. This message contains the 2D position of the vehicle, its orientation, and its immediate speed in the heading direction in the \verb|map| \verb|tf| coordinate frame.
 
@@ -113,9 +197,9 @@ To achieve the highest possible update rate, we had to manually combine the late
 
 If we assume that the fused odometry gives us reasonable movement estimates over short time periods and that we use a very recent drift correction, this workaround is reasonable. The maximum rate at which we can control the actuators is \SI{50}{\hertz} and we are able to achieve vehicle state updates at the rate of \SI{25}{\hertz} (see Figure~\ref{fig:tf_tree_racing}).
 
-\subsubsection{Circuit Node}
+\paragraph{Circuit Node}
 
-The circuit node analyzes the occupancy grid of the current track based on a circuit definition for the track at the start of the race using Algorithm~\ref{alg:find_pivots}. The circuit definition is a list of checkpoints on the map. The vehicle is supposed to drive along the track in a way such that it passes these checkpoints in the given order. The starting position is considered to be an implicit checkpoint. This list is loaded from a \verb|.yaml| configuration file which contains an array of 2D~point coordinates under the key \verb|check_points|. The coordinates are strings with the $x$ and $y$ coordinate separated by a whitespace. An example of such configuration file with two would look like this:
+The circuit node analyzes the occupancy grid of the current track based on a circuit definition for the track at the start of the race using Algorithm~\ref{alg:find_pivots}. The circuit definition is a list of checkpoints on the map. The vehicle is supposed to drive along the track in a way such that it passes these checkpoints in the given order. The starting position is considered to be an implicit checkpoint. This list is loaded from a \verb|.yaml| configuration file which contains an array of 2D~point coordinates under the key \verb|check_points|. The coordinates are strings with the $x$ and $y$ coordinate separated by a whitespace. An example of such configuration file with two checkpoints follows:
 
 \begin{verbatim}
 check_points:
@@ -126,7 +210,9 @@ check_points:
 Later during the race, this node monitors the state of the vehicle and it produces a list of the next waypoitns in a custom message format
 \texttt{racer\_msgs/\allowbreak Waypoints}. The number of waypoints which are published can be configured using the \texttt{lookahead} parameter of the node.
 
-\subsubsection{Planning Node}
+\paragraph{Planning Node}
+
+REWRITE!
 
 The planning node plans a trajectory based on the last known state of the vehicle through the list of next waypoints and publishes it in the form of a custom message type \verb|racer_msgs/Trajectory|. The planning node uses the SEHS algorithm we described in this thesis because it is more efficient than Hybrid~A*. The source code of the node can be easily modify to switch to Hybrid~A* if necessary.
 
@@ -136,13 +222,16 @@ Most of the time during a race, the vehicle drives forward. and it does not come
 
 \subsubsection{Following Node}
 
+REWRITE!
+
 This node finds the best control input for the actuators in order to follow the planned trajectory based on the current state of the vehicle using the \gls{DWA} algorithm. \gls*{DWA} has a set of actions it chooses from. The algorithm simulates how the state of the vehicle would change if a given action was used for a given period of time and then it selects the one, which allows it to track the reference trajectory better than the others. We give the algorithm many different actions including actions for driving in reverse.
 
 The node publishes a standard message type \verb|geometry_msgs/Twist|\footnote{\url{http://docs.ros.org/melodic/api/geometry\_msgs/html/msg/Twist.html}}. By using this message type, we mimic the output of the open source \verb|move_base| \gls*{ROS} package\footnote{\url{http://wiki.ros.org/move\_base}}. The throttle level is stored in the \verb|linear.x| component ant the steering level is stored in \verb|angular.z|. This message is later translated into a \gls*{PWM} signal for the actuators by the hardware interface component.
 
 There is an alternative following node which implements the Pure Pursuit algorithm for steering and \gls*{PID} controller for regulating the speed. This node is called \verb|geometric_following_node| and it listens to and publishes the same topics as the \verb|dwa_following_node|. We included this node even though it is not used by default because it does not have the ability to avoid previously unknown obstacles and it does not support going in reverse. Both of the algorithms simple yet interesting and the node can be useful in certain scenarios.
 
-\subsection{Hardware Interface}
+\subsubsection{Hardware Interface}
+\label{sec:hardware-interface}
 
 The \verb|Arduino 2| from Figure~\ref{fig:ros_diagram} has two responsibilities:
 
@@ -151,9 +240,7 @@ The \verb|Arduino 2| from Figure~\ref{fig:ros_diagram} has two responsibilities:
 	\item monitor the input from the radio controller and in case that there is a strong signal, disable the autonomous mode and forward the signal to the actuators to allow the human supervisor to control the vehicle directly.
 \end{enumerate}
 
-The implementation of the behavior for \verb|Arduino 2| is included in the attached \verb|*.ino| files in \verb|/controller-arduino/steering_node/|.
-
-\subsubsection{Conversion of Commands to PWM}
+\paragraph{Conversion of Commands to PWM}
 
 The agent behavior produces actions in the form of two real numbers between $-1$ and $1$ for the steering angle and for the throttle level. These numbers are mapped to \gls*{PWM} duty cycles which are then passed to the actuators through PWM-capable digital pins of the Arduino.
 
@@ -171,6 +258,78 @@ The mapping of the signal for the \gls*{DC} motor is a bit more complicated. The
 
 The limits can be adjusted for different needs, e.g. the maximum speed can be limited by lowering the maximum duty cycle.
 
-\subsubsection{Manual Override}
+\paragraph{Manual Override}
 
 The two signals from the radio receiver are connected to two interrupt pins of the Arduino. By measuring the time difference between the detection of a raising edge and a falling edge of the signal we can determine the width of the duty input cycle. If one of the two signals falls out of the range of $\interval{\SI{1400}{\micro\second}}{\SI{1600}{\micro\second}}$, we consider it to be the supervisors intervention and we will start forwarding the \gls*{PWM} signal directly to the actuators and we will stop processing the commands from the agent. The autonomous mode can be restored by physically pressing the reset button on the board.
+
+\paragraph{Deployment}
+
+The code of the hardware interface described in Section~\ref{sec:hardware-interface} is located in the \texttt{/arduino/steering\_node} directory. The code for the motor shaft encoder described in Section~\ref{sec:sensors} is located in the \texttt{/arduino/motor\_\-shaft\_encoder} directory. In order to upload the code to an Arduino board, use the Arduino IDE\footnote{\url{https://www.arduino.cc/en/Main/Software}}.
+
+\subsection{Requirements and Compilation}
+
+First, you need to install \gls{ROS} \textit{Melodic Morenia} according to the instructions provided on the official website of the project\footnote{\url{http://wiki.ros.org/melodic/Installation}}. Then, you need to clone the following open-source \gls*{ROS} packages from GitHub into the \texttt{/catkin\_ws/src} directory:
+
+\begin{Verbatim}[fontsize=\small]
+ > cd /catkin_ws/src
+ > git clone --branch 0.4.0 https://github.com/tu-darmstadt-ros-pkg/hector_slam
+ > git clone --branch 1.8.8 https://github.com/ros-perception/laser_filters
+ > git clone --branch 2.6.5 https://github.com/cra-ros-pkg/robot_localization
+\end{Verbatim}
+
+Depending on the \gls*{LIDAR} and the \gls*{IMU} you use, add the corresponding ROS packages. In the case of the sensors described in Appendix~\ref{chapter:hardware}, we installed the following packages:
+
+\begin{Verbatim}[fontsize=\small]
+ > cd /catkin_ws/src
+ > git clone --branch 1.4.1 https://github.com/YDLIDAR/ydlidar_ros
+ > git clone https://github.com/yoshito-n-students/bno055_usb_stick
+ > git clone https://github.com/yoshito-n-students/bno055_usb_stick_msgs
+\end{Verbatim}
+
+Further, our project depends on these packages, which are part of the full installation of ROS:
+
+\begin{itemize}
+	\item \texttt{amcl}\footnote{\url{http://wiki.ros.org/amcl}}
+	\item \texttt{tf2}\footnote{\url{http://wiki.ros.org/tf2/}}
+	\item \texttt{map\_server}\footnote{\url{http://wiki.ros.org/map_server}}
+	\item \texttt{costmap\_2d}\footnote{\url{http://wiki.ros.org/costmap_2d}}
+	\item \texttt{rosserial\_python}\footnote{\url{http://wiki.ros.org/rosserial}}
+\end{itemize}
+
+If any of these packages is missing on your computer after you install ROS, you might have to install them manually.
+
+To run the simulator, we also need to clone the repository from GitHub and switch to the state at the time of writing of this thesis. We also need to install the dependencies as they are stated in the installation guide in the \texttt{README.md} file of the repository:
+
+\begin{Verbatim}[fontsize=\small]
+> cd /catkin_ws/src
+> git clone https://github.com/f1tenth-dev/simulator
+> cd simulator
+> git checkout 140f8bd93b22b59d7cf7bfa753e1fdc73a4a8e59
+> sudo apt install -y ros-melodic-navigation \
+                      ros-melodic-teb-local-planner \
+                      ros-melodic-ros-control \
+                      ros-melodic-ros-controllers \
+                      ros-melodic-gazebo-ros-control \
+                      ros-melodic-ackermann-msgs \
+                      ros-melodic-serial \
+                      qt4-default
+\end{Verbatim}
+
+With all the dependencies installed and cloned, we need to finish the setup and compile all the packages and nodes in the project:
+
+\begin{Verbatim}[fontsize=\small]
+> cd /catkin_ws
+> catkin_make install
+> source devel/setup.bash
+> catkin_make
+\end{Verbatim}
+
+\subsection{Usage}
+
+\subsubsection{Simulator Launch Files}
+
+\subsubsection{Experimental Vehicle Launch Files}
+
+\section{Implementation of Algorithms}
+
+The C++ code docs...
