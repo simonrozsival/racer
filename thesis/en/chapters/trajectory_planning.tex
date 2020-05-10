@@ -15,7 +15,7 @@ In this section, we will give a brief overview of the basic concepts of automati
 
 Planning is the task of solving a problem by finding a sequence of actions, which transforms the world to some desired state. The world of a planning problem is defined in terms of states and actions.
 
-A single state is a full description of all of the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or a vector of an $n$-dimensional vector of real numbers. All of the possible states of the world form a state space.
+A single state is a full description of all of the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or an $n$-dimensional vector of real numbers. All of the possible states of the world form a state space.
 
 An action is a way of changing a state of the world into a different state. Not all actions can be applied in all states and so the set of possible actions can differ from state to state. All of the actions together then form an action space.
 
@@ -54,7 +54,7 @@ With the intuition of what a planning problem is, we can formulate it formally:
 
 \subsubsection{Reachability Graph}
 
-We can imagine that the states form vertices of a graph $G=(V, E)$ and the applications of actions through the state transition function form directed edges between the vertices:
+We can imagine the states as vertices of a graph $G=(V, E)$ and the applications of actions through the state transition function define directed edges between the vertices:
 
 \begin{equation*}
 \begin{aligned}
@@ -63,13 +63,13 @@ We can imagine that the states form vertices of a graph $G=(V, E)$ and the appli
 \end{aligned}
 \end{equation*}
 
-This graph can in general have several subgraphs. We are only interested in the component, which contains the initial $x_0$ and all the vertices which are reachable from $x_0$ via a directed path. A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal states vertices. Finding a path in a graph is well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
+This graph can in general have several subgraphs. We are only interested in the component, which contains the initial state $x_0$ and all the vertices which are reachable from $x_0$ via a directed path. A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal state vertices. Finding a path in a graph is a  well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
 
-The size of the state space and the action spaces has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
+The size of the state space and the action space has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
 
 When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
-We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all of the combinations of the state variables of the world.
+We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all of the combinations of possible values across all of the dimensions.
 
 \subsection{Planning Under Differential Constraints}
 \label{sec:planning_under_differential_constraints}
@@ -253,7 +253,7 @@ The minimum turning radius $r_{min}\in\mathbb{R}$ is a constant specific for a g
 \end{defn}
 
 \begin{defn}[Trajectory planning problem for a fast moving car]
-	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints. The solution of this problem is a collision-free time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} is describes both a path and a speed profile for the given vehicle and track.
+	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints. The solution of this problem is a collision-free time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} describes both a path and a speed profile for the given vehicle and track.
 \end{defn}
 
 
@@ -300,7 +300,7 @@ A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divide
 
 The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
 
-The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $x\in X_{obs} \iff c_x\in C_{obs} \wedge x\in X_{free} \iff c_x\in C_{free}$.
+The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $(x\in X_{obs} \iff c_x\in C_{obs}) \wedge (x\in X_{free} \iff c_x\in C_{free})$.
 
 \paragraph{Representation of Obstacles}
 We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$ where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
