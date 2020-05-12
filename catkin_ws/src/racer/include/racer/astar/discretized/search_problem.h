@@ -2,34 +2,28 @@
 
 #include <iostream>
 
-#include "astar.h"
+#include "racer/astar/base_search_problem.h"
 #include "racer/track/circuit.h"
 #include "racer/track/occupancy_grid.h"
 #include "racer/track/collision_detection.h"
 #include "racer/vehicle/base_model.h"
 
-using namespace racer::vehicle;
+#include "racer/astar/discretized/base_discretization.h"
 
-namespace racer::astar
+namespace racer::astar::discretized
 {
-template <typename DiscreteState, typename State>
-class discretization
-{
-public:
-  virtual ~discretization() = default;
-  virtual DiscreteState operator()(const State &state) = 0;
-  virtual std::string description() const = 0;
-};
 
 template <typename DiscreteState, typename State>
-class discretized_search_problem : public racer::astar::base_search_problem<DiscreteState, State>
+class search_problem : public racer::astar::base_search_problem<DiscreteState, State>
 {
 public:
-  discretized_search_problem(State initial_state, double time_step_s, const std::vector<action> &available_actions,
-                             const std::shared_ptr<discretization<DiscreteState, State>> discretize,
-                             const std::shared_ptr<racer::vehicle::base_vehicle_model<State>> model,
-                             const std::shared_ptr<racer::track::circuit> circuit,
-                             const std::shared_ptr<racer::track::collision_detection> detector)
+  search_problem(State initial_state,
+                 double time_step_s,
+                 const std::vector<racer::vehicle::action> &available_actions,
+                 const std::shared_ptr<base_discretization<DiscreteState, State>> discretize,
+                 const std::shared_ptr<racer::vehicle::base_vehicle_model<State>> model,
+                 const std::shared_ptr<racer::track::circuit> circuit,
+                 const std::shared_ptr<racer::track::collision_detection> detector)
     : initial_state_{ initial_state }
     , time_step_s_(time_step_s)
     , penalization_weight_{ 0.0 }
@@ -135,8 +129,8 @@ private:
   const State initial_state_;
   double time_step_s_, penalization_weight_;
   const std::shared_ptr<racer::vehicle::base_vehicle_model<State>> vehicle_model_;
-  const std::vector<action> available_actions_;
-  const std::shared_ptr<discretization<DiscreteState, State>> discretize_;
+  const std::vector<racer::vehicle::action> available_actions_;
+  const std::shared_ptr<base_discretization<DiscreteState, State>> discretize_;
   const std::shared_ptr<racer::track::circuit> circuit_;
   const std::shared_ptr<racer::track::collision_detection> collision_detector_;
 

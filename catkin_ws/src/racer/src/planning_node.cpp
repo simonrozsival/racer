@@ -10,100 +10,19 @@
 #include "racer/math.h"
 #include "racer/vehicle/trajectory.h"
 
-#include "racer/astar/hybrid_astar.h"
-#include "racer/astar/sehs.h"
+#include "racer/astar/hybrid_astar/discretization.h"
+#include "racer/astar/sehs/discretization.h"
+
 #include "racer/sehs/space_exploration.h"
 #include "racer/track/collision_detection.h"
 #include "racer/track/analysis.h"
 #include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/chassis.h"
 
-#include "racer_ros/Planner.h"
+#include "racer_ros/base_planner.h"
+#include "racer_ros/sehs_planner.h"
+#include "racer_ros/hybrid_astar_planner.h"
 #include "racer_ros/utils.h"
-
-using State = racer::vehicle::kinematic::state;
-using SehsDiscreteState = racer::astar::sehs::kinematic::discrete_state;
-using HybridAstarDiscreteState = racer::astar::hybrid_astar::discrete_state;
-
-std::mutex mutex;
-
-State last_known_state;
-std::shared_ptr<racer::track::occupancy_grid> occupancy_grid;
-std::shared_ptr<racer::track::occupancy_grid> inflated_grid;
-std::shared_ptr<racer::track::circuit> circuit;
-double safety_margin;
-std::shared_ptr<racer::track::collision_detection> collision_detector;
-
-int next_waypoint;
-double waypoint_radius;
-std::vector<racer::math::point> next_waypoints;
-
-ros::Publisher debug_map_pub;
-
-bool use_sehs = false;
-std::unique_ptr<racer_ros::BasePlanner<State>> planner;
-
-auto model = std::make_shared<racer::vehicle::kinematic::model>(
-    racer::vehicle::chassis::simulator());
-
-double time_step_s;
-
-void map_update(const nav_msgs::OccupancyGrid::ConstPtr &map) {
-  occupancy_grid = racer_ros::msg_to_grid(*map);
-  collision_detector = std::make_shared<racer::track::collision_detection>(
-      occupancy_grid, model->chassis, 72, safety_margin);
-  debug_map_pub.publish(
-      racer_ros::grid_to_msg(*collision_detector->inflated_grid()));
-}
-
-void state_update(const racer_msgs::State::ConstPtr &state) {
-  last_known_state = racer_ros::msg_to_state(state);
-}
-
-void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
-  std::lock_guard<std::mutex> guard(mutex);
-
-  // have we already successfully processed these next waypoints?
-  if (next_waypoint == waypoints->next_waypoint && planner) {
-    return;
-  }
-
-  planner = nullptr;
-
-  next_waypoints.clear();
-  waypoint_radius = waypoints->waypoints[0].radius;
-  next_waypoint = waypoints->next_waypoint;
-
-  for (const auto &wp : waypoints->waypoints) {
-    next_waypoints.emplace_back(wp.position.x, wp.position.y);
-  }
-
-  circuit = std::make_shared<racer::track::circuit>(next_waypoints, waypoint_radius,
-                                             occupancy_grid);
-
-  if (use_sehs) {
-    auto discretization = racer::astar::sehs::kinematic::discretization::from(
-        last_known_state.cfg(), occupancy_grid, next_waypoints,
-        model->chassis->radius(), model->chassis->motor->max_rpm());
-    if (!discretization) {
-      ROS_ERROR("space exploration failed, goal is inaccessible.");
-      return;
-    }
-
-    planner = std::make_unique<racer_ros::Planner<State, SehsDiscreteState>>(
-        model, std::move(discretization), time_step_s);
-  } else {
-    auto cell_size = 3 * model->chassis->radius();
-    auto discretization =
-        std::make_unique<racer::astar::hybrid_astar::discretization>(
-            cell_size, cell_size, 2 * M_PI / 18.0,
-            model->chassis->motor->max_rpm() / 20.0);
-
-    planner =
-        std::make_unique<racer_ros::Planner<State, HybridAstarDiscreteState>>(
-            model, std::move(discretization), time_step_s);
-  }
-}
 
 int main(int argc, char *argv[]) {
   ros::init(argc, argv, "racing_trajectory_planning");
@@ -125,35 +44,43 @@ int main(int argc, char *argv[]) {
   node.param<int>("throttle_levels", throttle_levels, 5);
   node.param<int>("steering_levels", steering_levels, 3);
 
+  double time_step_s, safety_margin;
+  bool use_sehs;
   node.param<double>("time_step_s", time_step_s, 0.1);
+  node.param<double>("safety_margin", safety_margin, 0.1);
   node.param<bool>("use_sehs_over_hybrid_astar", use_sehs, false);
-
-  ros::Subscriber map_sub =
-      node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, map_update);
-  ros::Subscriber state_sub =
-      node.subscribe<racer_msgs::State>(state_topic, 1, state_update);
-  ros::Subscriber waypoints_sub = node.subscribe<racer_msgs::Waypoints>(
-      waypoints_topic, 1, waypoints_update);
-  ros::Publisher trajectory_pub =
-      node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
-  debug_map_pub =
-      node.advertise<nav_msgs::OccupancyGrid>(inflated_map_topic, 1);
 
   double min_throttle, max_throttle, max_right, max_left;
   node.param<double>("min_throttle", min_throttle, -1.0);
   node.param<double>("max_throttle", max_throttle, 1.0);
   node.param<double>("max_right", max_right, -1.0);
   node.param<double>("max_left", max_left, 1.0);
+
   const auto actions = racer::vehicle::action::create_actions(
       throttle_levels, steering_levels, min_throttle, max_throttle, max_right,
       max_left);
+  auto model = std::make_shared<racer::vehicle::kinematic::model>(
+    racer::vehicle::chassis::simulator());
+  auto debug_map_pub =
+      node.advertise<nav_msgs::OccupancyGrid>(inflated_map_topic, 1);
 
-  node.param<double>("safety_margin", safety_margin, 0.1);
+  std::unique_ptr<racer_ros::base_planner> planner =
+    use_sehs
+      ? std::make_unique<recer_ros::sehs_planner>(model, actions, time_step_s, safety_margin, debug_map_pub)
+      : std::make_unique<recer_ros::hybrid_astar_planner>(model, actions, time_step_s, safety_margin, debug_map_pub);
+
+  auto map_sub =
+      node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &racer_ros::planner::map_update, &planner);
+  auto state_sub =
+      node.subscribe<racer_msgs::State>(state_topic, 1, &racer_ros::planner::state_update, &planner);
+  auto waypoints_sub = node.subscribe<racer_msgs::Waypoints>(
+      waypoints_topic, 1, &racer_ros::planner::waypoints_update, &planner);
+
+  auto trajectory_pub =
+      node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
 
   // blocks until map is ready
-  occupancy_grid = racer_ros::load_map(node);
-  collision_detector = std::make_shared<racer::track::collision_detection>(
-      occupancy_grid, model->chassis, 72, safety_margin);
+  planner->load_initial_map();
 
   double max_frequency, normal_frequency;
   node.param<double>("normal_frequency", normal_frequency, 1);
@@ -168,8 +95,7 @@ int main(int argc, char *argv[]) {
       std::lock_guard<std::mutex> guard(mutex);
       const auto start_clock = std::chrono::steady_clock::now();
 
-      const auto trajectory = planner->plan(last_known_state, actions, circuit,
-                                            collision_detector, next_waypoint);
+      const auto trajectory = planner->plan();
 
       const auto end_clock = std::chrono::steady_clock::now();
       const auto elapsed_time =

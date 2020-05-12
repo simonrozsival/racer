@@ -26,11 +26,10 @@
 #include "racer/vehicle/base_model.h"
 #include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/chassis.h"
-#include "racer_ros/Follower.h"
+#include "racer_ros/follower.h"
 
 using kinematic_model = racer::vehicle::kinematic::model;
 using kinematic_state = racer::vehicle::kinematic::state;
-using Follower = racer_ros::Follower<kinematic_state>;
 
 std::unique_ptr<racer::following_strategies::following_strategy<kinematic_state>>
 create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model> model)
@@ -126,14 +125,14 @@ int main(int argc, char *argv[])
   double integration_step_s, prediction_horizon_s;
   node.param<double>("integration_step_s", integration_step_s, 1.0 / 25.0);
 
-  Follower follower{std::move(strategy), integration_step_s};
+  racer_ros::follower follower{std::move(strategy), integration_step_s};
 
-  auto map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &Follower::map_observed, &follower);
+  auto map_sub = node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &racer_ros::follower::map_observed, &follower);
   auto trajectory_sub =
-      node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &Follower::trajectory_observed, &follower);
+      node.subscribe<racer_msgs::Trajectory>(trajectory_topic, 1, &racer_ros::follower::trajectory_observed, &follower);
   auto waypoints_sub =
-      node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &Follower::waypoints_observed, &follower);
-  auto state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &Follower::state_observed, &follower);
+      node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, &racer_ros::follower::waypoints_observed, &follower);
+  auto state_sub = node.subscribe<racer_msgs::State>(state_topic, 1, &racer_ros::follower::state_observed, &follower);
 
   auto twist_pub = node.advertise<geometry_msgs::Twist>(twist_topic, 1);
   auto ackermann_pub = node.advertise<ackermann_msgs::AckermannDrive>(ackermann_topic, 1);

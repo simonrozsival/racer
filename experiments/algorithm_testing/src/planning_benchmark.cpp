@@ -16,26 +16,28 @@
 #include "racer/vehicle/action.h"
 #include "racer/math.h"
 #include "racer/sehs/space_exploration.h"
+#include "racer/track/collision_detection.h"
 #include "racer/vehicle/trajectory.h"
 #include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/chassis.h"
 
-#include "racer/astar/hybrid_astar.h"
-#include "racer/astar/sehs.h"
+#include "racer/astar/discretized/search_problem.h"
+#include "racer/astar/hybrid_astar/discretization.h"
+#include "racer/astar/sehs/discretization.h"
 
 using state = racer::vehicle::kinematic::state;
 using kinematic_model = racer::vehicle::kinematic::model;
 using trajectory = racer::vehicle::trajectory<state>;
 using search_result = racer::astar::search_result<state>;
 
-using sehs_discrete_state = racer::astar::sehs::kinematic::discrete_state;
-using sehs_discretization = racer::astar::sehs::kinematic::discretization;
+using sehs_discrete_state = racer::astar::sehs::discrete_state;
+using sehs_discretization = racer::astar::sehs::discretization;
 
 using hybrid_astar_discrete_state = racer::astar::hybrid_astar::discrete_state;
 using hybrid_astar_discretization = racer::astar::hybrid_astar::discretization;
 
 std::unique_ptr<
-    racer::astar::discretization<hybrid_astar_discrete_state, state>>
+    racer::astar::discretized::base_discretization<hybrid_astar_discrete_state, state>>
 create_hybrid_astar_discretization(
     const racer::vehicle::chassis &vehicle,
     const double cell_size, const std::size_t heading_angle_bins,
@@ -46,7 +48,7 @@ create_hybrid_astar_discretization(
       vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
 
-std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>>
+std::unique_ptr<racer::astar::discretized::base_discretization<sehs_discrete_state, state>>
 create_sehs_discretization(
     const racer::vehicle::chassis &vehicle,
     const std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
@@ -63,7 +65,7 @@ create_sehs_discretization(
     return nullptr;
   }
 
-  return std::make_unique<racer::astar::sehs::kinematic::discretization>(
+  return std::make_unique<racer::astar::sehs::discretization>(
       path_of_circles, 2 * M_PI / double(heading_angle_bins),
       vehicle.motor->max_rpm() / double(motor_rpm_bins));
 }
@@ -71,7 +73,7 @@ create_sehs_discretization(
 template <typename DiscreteState>
 output::planning::benchmark_result measure_search(
     std::shared_ptr<
-        racer::astar::discretized_search_problem<DiscreteState, state>>
+        racer::astar::discretized::search_problem<DiscreteState, state>>
         problem,
     std::chrono::milliseconds time_limit)
 {
@@ -113,7 +115,7 @@ void run_benchmark_for(
     const track_analysis_input &config,
     const std::shared_ptr<racer::track::circuit> circuit,
     const std::shared_ptr<racer::track::collision_detection> collision_detector,
-    const std::shared_ptr<racer::astar::discretization<DiscreteState, state>>
+    const std::shared_ptr<racer::astar::discretized::base_discretization<DiscreteState, state>>
         state_discretization,
     const std::vector<racer::vehicle::action> actions,
     const racer::vehicle::configuration initial_config, const std::size_t start,
@@ -135,7 +137,7 @@ void run_benchmark_for(
   for (std::size_t i = 0; i < repetitions; ++i)
   {
     auto problem = std::make_shared<
-        racer::astar::discretized_search_problem<DiscreteState, state>>(
+        racer::astar::discretized::search_problem<DiscreteState, state>>(
         initial_state, time_step_s, actions, state_discretization,
         vehicle_model, shifted_circut, collision_detector);
 

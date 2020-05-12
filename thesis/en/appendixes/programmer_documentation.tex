@@ -401,9 +401,11 @@ Since both computers are connected to the same network, we can listen to the ROS
 
 \section{Implementation of Algorithms}
 
-In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms, which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
+In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms, which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The location of a file corresponds to its namespace. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
 
 \subsection{The \texttt{racer} namespace}
+
+This namespace contains all of the algorithms described in this thesis. This includes the trajectory analysis algorithm, the Hybrid A* and \gls*{SEHS} algorithms, and the \gls*{DWA} and the Pure Pursuit algorithms.
 
 \subsubsection{The \texttt{racer::math} namespace}
 
@@ -416,6 +418,16 @@ This namespace includes several important math primitives, operations between th
 \paragraph{\texttt{rectangle}} is a representation of a rectangle in a two dimensional plane. It contains a function to rotate the whole object around the origin of the coordinate system and to check if two rectangles intersect each other. These functions are necessary mostly for collision detection.
 
 \paragraph{\texttt{circle}} is a representation of a circle in a two dimensional plane. It contains functions for generating points on the circumference of a circle and for checking if one circle overlaps with another one. This type was created mostly for the needs of the \gls{SEHS} algorithm, but it is used also in other parts of the codebase.
+
+\subsection{The \texttt{racer::track} namespace}
+
+\subsection{The \texttt{racer::vehicle} namespace}
+
+\subsection{The \texttt{racer::sehs} namespace}
+
+\subsection{The \texttt{racer::following\_strategies} namespace}
+
+\subsection{The \texttt{racer::astar} namespace}
 
 \subsection{The \texttt{racer\_ros} namespace}
 
