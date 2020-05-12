@@ -11,16 +11,17 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include "racer/math.h"
+#include "racer/vehicle/chassis.h"
 #include "racer/vehicle/configuration.h"
 #include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/motor_model.h"
 #include "racer/vehicle/steering_servo_model.h"
+#include "racer/vehicle/trajectory.h"
 
 #include "racer_ros/utils.h"
 
-using namespace racer::vehicle;
-
-std::optional<racer::vehicle::trajectory<kinematic::state>> trajectory;
+std::optional<racer::vehicle::trajectory<racer::vehicle::kinematic::state>>
+    trajectory;
 
 void trajectory_callback(const racer_msgs::Trajectory::ConstPtr &msg) {
   const double time_step_s = 0.1;
@@ -42,8 +43,8 @@ int main(int argc, char *argv[]) {
   auto visualization_pub = node.advertise<visualization_msgs::MarkerArray>(
       visualization_topic, 1, true);
 
-  const auto model =
-      std::make_shared<kinematic::model>(chassis::simulator());
+  const auto model = std::make_shared<racer::vehicle::kinematic::model>(
+      racer::vehicle::chassis::simulator());
   int seq = 0;
 
   double frequency = 25.0;
@@ -73,8 +74,8 @@ int main(int argc, char *argv[]) {
         marker.pose.position.x = step.state().position().x();
         marker.pose.position.y = step.state().position().y();
 
-        marker.pose.orientation = tf::createQuaternionMsgFromYaw(
-            step.state().cfg().heading_angle());
+        marker.pose.orientation =
+            tf::createQuaternionMsgFromYaw(step.state().cfg().heading_angle());
 
         marker.scale.x = 0.01 + 0.49 * speed_proportion;
         marker.scale.y = 0.05;

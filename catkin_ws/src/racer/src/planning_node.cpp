@@ -1,27 +1,20 @@
 #include <iostream>
-#include <mutex>
 #include <ros/ros.h>
 
 #include "racer_msgs/State.h"
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racer/vehicle/action.h"
 #include "racer/math.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/action.h"
+#include "racer/vehicle/chassis.h"
+#include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/trajectory.h"
 
-#include "racer/astar/hybrid_astar/discretization.h"
-#include "racer/astar/sehs/discretization.h"
-
-#include "racer/sehs/space_exploration.h"
-#include "racer/track/collision_detection.h"
-#include "racer/track/analysis.h"
-#include "racer/vehicle/kinematic/model.h"
-#include "racer/vehicle/chassis.h"
-
 #include "racer_ros/base_planner.h"
-#include "racer_ros/sehs_planner.h"
 #include "racer_ros/hybrid_astar_planner.h"
+#include "racer_ros/sehs_planner.h"
 #include "racer_ros/utils.h"
 
 int main(int argc, char *argv[]) {
@@ -60,27 +53,35 @@ int main(int argc, char *argv[]) {
       throttle_levels, steering_levels, min_throttle, max_throttle, max_right,
       max_left);
   auto model = std::make_shared<racer::vehicle::kinematic::model>(
-    racer::vehicle::chassis::simulator());
+      racer::vehicle::chassis::simulator());
   auto debug_map_pub =
       node.advertise<nav_msgs::OccupancyGrid>(inflated_map_topic, 1);
 
-  std::unique_ptr<racer_ros::base_planner> planner =
-    use_sehs
-      ? std::make_unique<recer_ros::sehs_planner>(model, actions, time_step_s, safety_margin, debug_map_pub)
-      : std::make_unique<recer_ros::hybrid_astar_planner>(model, actions, time_step_s, safety_margin, debug_map_pub);
+  std::shared_ptr<racer_ros::base_planner> planner;
 
-  auto map_sub =
-      node.subscribe<nav_msgs::OccupancyGrid>(map_topic, 1, &racer_ros::planner::map_update, &planner);
-  auto state_sub =
-      node.subscribe<racer_msgs::State>(state_topic, 1, &racer_ros::planner::state_update, &planner);
-  auto waypoints_sub = node.subscribe<racer_msgs::Waypoints>(
-      waypoints_topic, 1, &racer_ros::planner::waypoints_update, &planner);
+  if (use_sehs) {
+    planner = std::make_shared<racer_ros::sehs_planner>(
+        model, actions, time_step_s, safety_margin, debug_map_pub);
+  } else {
+    planner = std::make_shared<racer_ros::hybrid_astar_planner>(
+        model, actions, time_step_s, safety_margin, debug_map_pub);
+  }
+
+  auto map_sub = node.subscribe<nav_msgs::OccupancyGrid>(
+      map_topic, 1, [&planner](const auto &msg) { planner->map_update(msg); });
+  auto state_sub = node.subscribe<racer_msgs::State>(
+      state_topic, 1,
+      [&planner](const auto &msg) { planner->state_update(msg); });
+  auto wpts_sub = node.subscribe<racer_msgs::Waypoints>(
+      waypoints_topic, 1,
+      [&planner](const auto &msg) { planner->waypoints_update(msg); });
 
   auto trajectory_pub =
       node.advertise<racer_msgs::Trajectory>(trajectory_topic, 1);
 
   // blocks until map is ready
-  planner->load_initial_map();
+  auto map = racer_ros::load_map(node);
+  planner->set_initial_map(std::move(map));
 
   double max_frequency, normal_frequency;
   node.param<double>("normal_frequency", normal_frequency, 1);
@@ -91,8 +92,7 @@ int main(int argc, char *argv[]) {
   ROS_INFO("==> PLANNING NODE is ready to go");
 
   while (ros::ok()) {
-    if (planner && last_known_state.is_valid() && !next_waypoints.empty()) {
-      std::lock_guard<std::mutex> guard(mutex);
+    if (planner->is_ready()) {
       const auto start_clock = std::chrono::steady_clock::now();
 
       const auto trajectory = planner->plan();

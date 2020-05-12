@@ -1,2 +1,0 @@
-geometry_msgs/Point point
-std_msgs/Float64 maximum_speed

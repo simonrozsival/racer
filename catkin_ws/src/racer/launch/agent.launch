@@ -36,7 +36,7 @@
       <param name="odom_frame_id" value="odom" />
     </node>
 
-    <node pkg="racer" name="planning" type="planning_node">
+    <node pkg="racer" name="planning" type="planning_node" output="screen">
       <param name="map_topic" value="/obstacles/costmap/costmap" />
       <param name="normal_frequency" value="$(arg planning_frequency)" />
       <param name="max_frequency" value="50" />

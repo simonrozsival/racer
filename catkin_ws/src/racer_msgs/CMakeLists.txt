@@ -38,9 +38,6 @@ find_package(catkin REQUIRED COMPONENTS
 add_message_files(
   FILES
   Circuit.msg
-  RacingLinePoint.msg
-  RacingLineCorner.msg
-  RacingLine.msg
   State.msg
   TrajectoryState.msg
   Trajectory.msg
