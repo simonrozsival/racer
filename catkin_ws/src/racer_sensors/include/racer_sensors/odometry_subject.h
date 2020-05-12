@@ -8,15 +8,15 @@
 #include <geometry_msgs/Twist.h>
 #include <std_msgs/Float64.h>
 
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/kinematic/model.h"
 
 class odometry_subject
 {
 public:
     odometry_subject(
         const double gear_ratio,
-        std::unique_ptr<racer::vehicle_model::steering_servo_model> servo_model,
-        std::unique_ptr<racer::vehicle_model::kinematic::model> vehicle_model,
+        std::unique_ptr<racer::vehicle::steering_servo_model> servo_model,
+        std::unique_ptr<racer::vehicle::kinematic::model> vehicle_model,
         const std::string &odometry_frame,
         const std::string &base_link,
         tf::TransformBroadcaster &transform_broadcaster,
@@ -28,10 +28,10 @@ public:
 
 private:
     void publish_state_estimate(
-        const racer::vehicle_configuration &prediction,
+        const racer::vehicle::configuration &prediction,
         const double angular_velocity) const;
 
-    racer::vehicle_configuration configuration_;
+    racer::vehicle::configuration configuration_;
 
     double last_motor_update_time_;
     double total_revolutions_;
@@ -43,8 +43,8 @@ private:
 
     double last_update_time_;
 
-    const std::unique_ptr<racer::vehicle_model::steering_servo_model> servo_model_;
-    const std::unique_ptr<racer::vehicle_model::kinematic::model> vehicle_model_;
+    const std::unique_ptr<racer::vehicle::steering_servo_model> servo_model_;
+    const std::unique_ptr<racer::vehicle::kinematic::model> vehicle_model_;
 
     std::mutex lock_;
 

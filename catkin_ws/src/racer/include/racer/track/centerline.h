@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "racer/math.h"
-#include "racer/occupancy_grid.h"
+#include "racer/track/occupancy_grid.h"
 #include "racer/sehs/space_exploration.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/vehicle/configuration.h"
 
 namespace racer::track
 {
@@ -31,8 +31,8 @@ namespace racer::track
     };
 
   public:
-    static centerline find(const racer::vehicle_configuration &start,
-                           const std::shared_ptr<racer::occupancy_grid> grid,
+    static centerline find(const racer::vehicle::configuration &start,
+                           const std::shared_ptr<racer::track::occupancy_grid> grid,
                            const std::vector<racer::math::point> &checkpoints)
     {
       const auto adjusted_start = grid->move_towards_center(start);

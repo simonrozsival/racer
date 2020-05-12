@@ -2,11 +2,11 @@
 
 #include <vector>
 
-#include "racer/occupancy_grid.h"
+#include "racer/track/occupancy_grid.h"
 #include "racer/sehs/space_exploration.h"
-#include "racer/track_analysis.h"
+#include "racer/track/analysis.h"
 
-namespace racer
+namespace racer::track
 {
 class circuit
 {

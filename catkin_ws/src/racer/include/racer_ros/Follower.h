@@ -11,13 +11,13 @@
 
 #include "racer_ros/utils.h"
 
-#include "racer/action.h"
+#include "racer/vehicle/action.h"
 #include "racer/following_strategies/following_strategy.h"
-#include "racer/occupancy_grid.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/kinematic/model.h"
 
-using namespace racer::vehicle_model;
+using namespace racer::vehicle;
 
 namespace racer_ros
 {
@@ -42,7 +42,7 @@ namespace racer_ros
 
     void state_observed(const racer_msgs::State::ConstPtr &state)
     {
-      racer::vehicle_configuration position = {state->x, state->y, state->heading_angle};
+      racer::vehicle::configuration position = {state->x, state->y, state->heading_angle};
       state_ = {position, state->motor_rpm, state->steering_angle};
     }
 
@@ -56,7 +56,7 @@ namespace racer_ros
       next_waypoint_ = waypoints->next_waypoint;
     }
 
-    racer::action select_driving_command() const
+    racer::vehicle::action select_driving_command() const
     {
       if (reference_trajectory_.is_valid())
       {
@@ -69,7 +69,7 @@ namespace racer_ros
       }
     }
 
-    racer::action stop() const
+    racer::vehicle::action stop() const
     {
       bool is_moving_forward = state_.motor_rpm() > 250;
       bool is_moving_backward = state_.motor_rpm() < -250;
@@ -97,19 +97,19 @@ namespace racer_ros
       return state_;
     }
 
-    const racer::trajectory<State> &reference_trajectory() const
+    const racer::vehicle::trajectory<State> &reference_trajectory() const
     {
       return reference_trajectory_;
     }
 
   private:
     const std::shared_ptr<racer::following_strategies::following_strategy<State>> strategy_;
-    const racer::action stop_;
+    const racer::vehicle::action stop_;
     const double time_step_s_;
 
     int next_waypoint_;
-    std::shared_ptr<racer::occupancy_grid> map_;
-    racer::trajectory<State> reference_trajectory_;
+    std::shared_ptr<racer::track::occupancy_grid> map_;
+    racer::vehicle::trajectory<State> reference_trajectory_;
     State state_;
   };
 

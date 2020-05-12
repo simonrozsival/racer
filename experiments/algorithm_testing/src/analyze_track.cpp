@@ -8,7 +8,7 @@
 #include "racer/sehs/space_exploration.h"
 
 #include "racer/track/centerline.h"
-#include "racer/track_analysis.h"
+#include "racer/track/analysis.h"
 
 void stop_stopwatch(
     std::string name,
@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
   // Step 2
   std::cout << "RUN find pivot points" << std::endl;
   const auto find_pivot_points_start = std::chrono::steady_clock::now();
-  racer::track_analysis analysis{centerline.width()};
+  racer::track::analysis analysis{centerline.width()};
   const auto pivot_points =
       analysis.find_pivot_points(centerline.circles(), config->occupancy_grid);
   stop_stopwatch("find pivot points", find_pivot_points_start);

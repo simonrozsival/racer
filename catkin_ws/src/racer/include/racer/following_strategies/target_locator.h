@@ -4,8 +4,8 @@
 
 #include "racer/math.h"
 #include "racer/track/racing_line.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/configuration.h"
 
 namespace racer::following_strategies
 {
@@ -23,7 +23,7 @@ public:
     auto sub_trajectory = trajectory.find_reference_subtrajectory(state, passed_waypoints);
     if (sub_trajectory.steps().empty())
     {
-      return state.configuration();
+      return state.cfg();
     }
 
     const auto closest = sub_trajectory.steps().front().state().position();
@@ -43,7 +43,7 @@ public:
     return target->state();
   }
 
-  racer::vehicle_configuration find_target(const State &state, const racer::track::racing_line &racing_line) const
+  racer::vehicle::configuration find_target(const State &state, const racer::track::racing_line &racing_line) const
   {
     const auto vehicle_pos = state.position();
     const auto closest = racing_line.closest_point_along_the_spline(vehicle_pos);
@@ -73,7 +73,7 @@ public:
     } while (lookahead_sq > 0.01);
 
     // We should never get to this point in practice.
-    return state.configuration();
+    return state.cfg();
   }
 
 private:

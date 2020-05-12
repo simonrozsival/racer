@@ -3,12 +3,12 @@
 #include <iostream>
 
 #include "astar.h"
-#include "racer/circuit.h"
-#include "racer/occupancy_grid.h"
+#include "racer/track/circuit.h"
+#include "racer/track/occupancy_grid.h"
 #include "racer/track/collision_detection.h"
-#include "racer/vehicle_model/base_model.h"
+#include "racer/vehicle/base_model.h"
 
-using namespace racer::vehicle_model;
+using namespace racer::vehicle;
 
 namespace racer::astar
 {
@@ -27,8 +27,8 @@ class discretized_search_problem : public racer::astar::base_search_problem<Disc
 public:
   discretized_search_problem(State initial_state, double time_step_s, const std::vector<action> &available_actions,
                              const std::shared_ptr<discretization<DiscreteState, State>> discretize,
-                             const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
-                             const std::shared_ptr<racer::circuit> circuit,
+                             const std::shared_ptr<racer::vehicle::base_vehicle_model<State>> model,
+                             const std::shared_ptr<racer::track::circuit> circuit,
                              const std::shared_ptr<racer::track::collision_detection> detector)
     : initial_state_{ initial_state }
     , time_step_s_(time_step_s)
@@ -62,7 +62,7 @@ public:
         ++steps;
 
         const auto next_state = vehicle_model_->predict_next_state(prediction, action, time_step_s_);
-        if (collision_detector_->collides(next_state.configuration()))
+        if (collision_detector_->collides(next_state.cfg()))
         {
           skip = true;
           break;
@@ -110,9 +110,9 @@ public:
     return dist / vehicle_model_->maximum_theoretical_speed();
   }
 
-  const racer::trajectory<State> reconstruct_trajectory(const search_node<DiscreteState, State> &node) const override
+  const racer::vehicle::trajectory<State> reconstruct_trajectory(const search_node<DiscreteState, State> &node) const override
   {
-    std::vector<racer::trajectory_step<State>> steps;
+    std::vector<racer::vehicle::trajectory_step<State>> steps;
 
     double timestamp = prepend_states(steps, node, node.cost_to_come);
 
@@ -134,10 +134,10 @@ public:
 private:
   const State initial_state_;
   double time_step_s_, penalization_weight_;
-  const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> vehicle_model_;
+  const std::shared_ptr<racer::vehicle::base_vehicle_model<State>> vehicle_model_;
   const std::vector<action> available_actions_;
   const std::shared_ptr<discretization<DiscreteState, State>> discretize_;
-  const std::shared_ptr<racer::circuit> circuit_;
+  const std::shared_ptr<racer::track::circuit> circuit_;
   const std::shared_ptr<racer::track::collision_detection> collision_detector_;
 
 private:

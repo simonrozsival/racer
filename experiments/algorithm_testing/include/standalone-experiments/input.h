@@ -7,22 +7,22 @@
 #include "parse_pgm.h"
 
 #include "racer/math.h"
-#include "racer/occupancy_grid.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/configuration.h"
 
 class track_analysis_input
 {
 public:
   const std::string name;
-  const racer::vehicle_configuration initial_position;
+  const racer::vehicle::configuration initial_position;
   const std::vector<racer::math::point> checkpoints;
-  const std::shared_ptr<racer::occupancy_grid> occupancy_grid;
+  const std::shared_ptr<racer::track::occupancy_grid> occupancy_grid;
 
 public:
   track_analysis_input(std::string name,
-                       racer::vehicle_configuration initial_position,
+                       racer::vehicle::configuration initial_position,
                        std::vector<racer::math::point> checkpoints,
-                       std::shared_ptr<racer::occupancy_grid> occupancy_grid)
+                       std::shared_ptr<racer::track::occupancy_grid> occupancy_grid)
       : name(name), initial_position(initial_position),
         checkpoints(checkpoints), occupancy_grid(occupancy_grid) {}
 
@@ -69,7 +69,7 @@ public:
     ss >> ix;
     ss >> iy;
     ss >> itheta;
-    racer::vehicle_configuration initial_position(
+    racer::vehicle::configuration initial_position(
         ix * occupancy_grid_resolution, iy * occupancy_grid_resolution, itheta);
 
     // load checkpoints
@@ -88,8 +88,7 @@ public:
     // put it all together
     return std::make_unique<track_analysis_input>(
         input_file_name.stem(), initial_position, checkpoints,
-        std::move(occupancy_grid), neighbor_circles,
-        min_distance_between_waypoints);
+        std::move(occupancy_grid));
   }
 
   static std::optional<std::vector<std::shared_ptr<track_analysis_input>>>

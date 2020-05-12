@@ -401,4 +401,24 @@ Since both computers are connected to the same network, we can listen to the ROS
 
 \section{Implementation of Algorithms}
 
-The C++ code docs...
+In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms, which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
+
+\subsection{The \texttt{racer} namespace}
+
+\subsubsection{The \texttt{racer::math} namespace}
+
+This namespace includes several important math primitives, operations between them, and helper functions which are used throughout the codebase. The code is located in the \texttt{include/racer/math} directory.
+
+\paragraph{\texttt{angle}} is a simple typed representation of an angle in radians. The structure contains several helper functions for conversion between degrees and radians and for manipulation with an angle value.
+
+\paragraph{\texttt{vector}} is a two dimensional representation of a vector with several methods for manipulation with vectors. This structure has a type alias \texttt{point}.
+
+\paragraph{\texttt{rectangle}} is a representation of a rectangle in a two dimensional plane. It contains a function to rotate the whole object around the origin of the coordinate system and to check if two rectangles intersect each other. These functions are necessary mostly for collision detection.
+
+\paragraph{\texttt{circle}} is a representation of a circle in a two dimensional plane. It contains functions for generating points on the circumference of a circle and for checking if one circle overlaps with another one. This type was created mostly for the needs of the \gls{SEHS} algorithm, but it is used also in other parts of the codebase.
+
+\subsection{The \texttt{racer\_ros} namespace}
+
+This namespace contains the bindings between the code in the \texttt{racer} namespace and the \gls{ROS} libraries and our custom \gls*{ROS} nodes.
+
+The most interesting set of functions is in the \texttt{include/racer\_ros/utils.h} file. This file contains functions for converting our types into \gls*{ROS} message types.

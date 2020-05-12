@@ -1,12 +1,12 @@
 #pragma once
 
-#include "racer/vehicle_model/motor_model.h"
-#include "racer/vehicle_model/simulated_motor_model.h"
-#include "racer/vehicle_model/steering_servo_model.h"
+#include "racer/vehicle/motor_model.h"
+#include "racer/vehicle/simulated_motor_model.h"
+#include "racer/vehicle/steering_servo_model.h"
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
-  struct vehicle_chassis
+  struct chassis
   {
     const double distance_of_center_of_gravity_to_rear_axle, wheelbase;
     const double width, length;
@@ -16,7 +16,7 @@ namespace racer::vehicle_model
     const std::unique_ptr<steering_servo_model> steering_servo;
     const std::unique_ptr<base_motor_model> motor;
 
-    vehicle_chassis(double cog_offset, double wheelbase, double width,
+    chassis(double cog_offset, double wheelbase, double width,
                     double length, double wheel_radius,
                     double motor_to_wheel_gear_ratio,
                     std::unique_ptr<steering_servo_model> steering_servo,
@@ -28,15 +28,15 @@ namespace racer::vehicle_model
           steering_servo(std::move(steering_servo)),
           motor(std::move(motor)) {}
 
-    vehicle_chassis(const vehicle_chassis &other) = delete;
-    vehicle_chassis &operator=(const vehicle_chassis &other) = delete;
+    chassis(const chassis &other) = delete;
+    chassis &operator=(const chassis &other) = delete;
 
-    vehicle_chassis(vehicle_chassis &&other) = delete;
-    vehicle_chassis &operator=(vehicle_chassis &&other) = delete;
+    chassis(chassis &&other) = delete;
+    chassis &operator=(chassis &&other) = delete;
 
-    static std::unique_ptr<vehicle_chassis> rc_beast()
+    static std::unique_ptr<chassis> rc_beast()
     {
-      return std::make_unique<vehicle_chassis>(0.155, // cog_offset
+      return std::make_unique<chassis>(0.155, // cog_offset
                                                0.31,  // wheelbase
                                                0.30,  // safe width
                                                0.45,  // safe length
@@ -46,9 +46,9 @@ namespace racer::vehicle_model
                                                motor_model::rc_beast());
     }
 
-    static std::unique_ptr<vehicle_chassis> simulator()
+    static std::unique_ptr<chassis> simulator()
     {
-      return std::make_unique<vehicle_chassis>(
+      return std::make_unique<chassis>(
           0.16,  // cog_offset
           0.32,  // wheelbase
           0.40,  // safe width
@@ -68,4 +68,4 @@ namespace racer::vehicle_model
     }
   };
 
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

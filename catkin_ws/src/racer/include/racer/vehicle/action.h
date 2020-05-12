@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-namespace racer
+namespace racer::vehicle
 {
   struct action
   {

@@ -9,9 +9,9 @@
 #include <cmath>
 
 #include "racer/math.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/vehicle/configuration.h"
 
-namespace racer
+namespace racer::track
 {
 class occupancy_grid
 {
@@ -153,7 +153,7 @@ public:
     return true;
   }
 
-  racer::vehicle_configuration move_towards_center(const racer::vehicle_configuration &cfg) const
+  racer::vehicle::configuration move_towards_center(const racer::vehicle::configuration &cfg) const
   {
     const double max_radius = 5.0; // meters
     const racer::math::angle left = cfg.heading_angle() + racer::math::angle::from_degrees(90);

@@ -6,9 +6,9 @@
 
 #include <math.h>
 
-#include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/steering_servo_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/kinematic/model.h"
+#include "racer/vehicle/steering_servo_model.h"
+#include "racer/vehicle/chassis.h"
 #include "racer_sensors/odometry_subject.h"
 
 int main(int argc, char **argv)
@@ -16,9 +16,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "odometry_node");
   ros::NodeHandle nh("~");
 
-  auto servo_model = racer::vehicle_model::steering_servo_model::rc_beast();
-  auto vehicle = racer::vehicle_model::vehicle_chassis::rc_beast();
-  auto vehicle_model = std::make_unique<racer::vehicle_model::kinematic::model>(std::move(vehicle));
+  auto servo_model = racer::vehicle::steering_servo_model::rc_beast();
+  auto vehicle = racer::vehicle::chassis::rc_beast();
+  auto vehicle_model = std::make_unique<racer::vehicle::kinematic::model>(std::move(vehicle));
 
   std::string base_link, odometry_frame;
   bool publish_tf;

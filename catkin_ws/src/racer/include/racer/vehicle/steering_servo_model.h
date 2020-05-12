@@ -7,11 +7,11 @@
 #include <cmath>
 
 #include "racer/math.h"
-#include "racer/vehicle_model/base_model.h"
+#include "racer/vehicle/base_model.h"
 
 using racer::math::angle;
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
   class steering_servo_model : public base_model<racer::math::angle>
   {
@@ -49,7 +49,7 @@ namespace racer::vehicle_model
     }
 
     angle predict_next_state(const angle &current_steering_angle,
-                             const racer::action &action, const double dt) const
+                             const racer::vehicle::action &action, const double dt) const
     {
       const angle target_angle = target_steering_angle(action);
       const angle angle_distance =
@@ -60,7 +60,7 @@ namespace racer::vehicle_model
       return std::clamp(current_steering_angle + angle_change_rate * dt, -0.85, 0.85);
     }
 
-    angle target_steering_angle(const racer::action &action) const
+    angle target_steering_angle(const racer::vehicle::action &action) const
     {
       const double target_steering_angle_percentage =
           action.target_steering_angle();
@@ -93,4 +93,4 @@ namespace racer::vehicle_model
     }
   };
 
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

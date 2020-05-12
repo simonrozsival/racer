@@ -6,9 +6,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle_model/base_model.h"
+#include "racer/vehicle/base_model.h"
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
   class motor_model : public base_motor_model
   {
@@ -79,4 +79,4 @@ namespace racer::vehicle_model
     }
   };
 
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

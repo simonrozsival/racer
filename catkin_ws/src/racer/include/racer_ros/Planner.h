@@ -11,12 +11,12 @@
 
 #include "racer_ros/utils.h"
 
-#include "racer/action.h"
+#include "racer/vehicle/action.h"
 #include "racer/math.h"
 #include "racer/track/collision_detection.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_configuration.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/configuration.h"
+#include "racer/vehicle/kinematic/model.h"
 
 #include "racer/astar/discretized_search_problem.h"
 #include "racer/astar/sehs.h"
@@ -27,8 +27,8 @@ template <typename State> class BasePlanner {
 public:
   virtual std::optional<racer_msgs::Trajectory>
   plan(const State &initial_state,
-       const std::vector<racer::action> &available_actions,
-       const std::shared_ptr<racer::circuit> circuit,
+       const std::vector<racer::vehicle::action> &available_actions,
+       const std::shared_ptr<racer::track::circuit> circuit,
        const std::shared_ptr<racer::track::collision_detection>
            collision_detector,
        const int next_waypoint) const = 0;
@@ -37,20 +37,21 @@ public:
 template <typename State, typename DiscreteState>
 class Planner : public BasePlanner<State> {
 public:
-  Planner(std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model,
+  Planner(std::shared_ptr<racer::vehicle::model<State>> model,
           std::unique_ptr<racer::astar::discretization<DiscreteState, State>>
               discretization,
-          const double time_step_s, const std::string map_frame_id)
+          const double time_step_s)
       : model_(model), discretization_(std::move(discretization)),
-        time_step_s_(time_step_s), map_frame_(map_frame_id) {}
+        time_step_s_(time_step_s) {}
 
   virtual std::optional<racer_msgs::Trajectory>
   plan(const State &initial_state,
-       const std::vector<racer::action> &available_actions,
-       const std::shared_ptr<racer::circuit> circuit,
+       const std::vector<racer::vehicle::action> &available_actions,
+       const std::shared_ptr<racer::track::circuit> circuit,
        const std::shared_ptr<racer::track::collision_detection>
            collision_detector,
        const int next_waypoint) const override {
+
     auto problem = std::make_unique<
         racer::astar::discretized_search_problem<DiscreteState, State>>(
         initial_state, time_step_s_, available_actions, discretization_, model_,
@@ -64,41 +65,14 @@ public:
       return {};
     }
 
-    racer_msgs::Trajectory trajectory;
-    trajectory.header.stamp = ros::Time::now();
-    trajectory.header.frame_id = map_frame_;
-
-    const auto final_trajectory = result.found_trajectory;
-
-    for (const auto &step : final_trajectory.steps()) {
-      racer_msgs::TrajectoryState state;
-
-      // the plan only considers the list of waypoints passed to the planner
-      // - the first waypoint will have index 0, so its index has to be offset
-      // by the actual index of the first waypoint
-      state.next_waypoint.data = next_waypoint + step.passed_waypoints();
-
-      state.pose.position.x = step.state().position().x();
-      state.pose.position.y = step.state().position().y();
-      state.pose.position.z = 0;
-
-      state.pose.orientation = tf::createQuaternionMsgFromYaw(
-          step.state().configuration().heading_angle());
-
-      state.motor_rpm.data = step.state().motor_rpm();
-
-      trajectory.trajectory.push_back(state);
-    }
-
-    return trajectory;
+    return racer_ros::trajectory_to_msg(result.found_trajectory, next_waypoint);
   }
 
 private:
-  const std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model_;
+  const std::shared_ptr<racer::vehicle::model<State>> model_;
   const double time_step_s_;
   const std::shared_ptr<racer::astar::discretization<DiscreteState, State>>
       discretization_;
-  const std::string map_frame_;
 };
 
 } // namespace racer_ros

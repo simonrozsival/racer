@@ -6,7 +6,7 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
     struct rpm
     {
@@ -40,4 +40,4 @@ namespace racer::vehicle_model
             return rpm_ * (2 * M_PI / 60);
         }
     };
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

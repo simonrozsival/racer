@@ -3,8 +3,8 @@
 #include <vector>
 
 #include "racer/astar/discretized_search_problem.h"
-#include "racer/nearest_neighbor.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/sehs/nearest_neighbor.h"
+#include "racer/vehicle/kinematic/model.h"
 
 namespace racer::astar::sehs::kinematic
 {
@@ -42,14 +42,12 @@ namespace racer::astar::sehs::kinematic
 
   struct discretization
       : public racer::astar::discretization<
-            discrete_state, racer::vehicle_model::kinematic::state>
+            discrete_state, racer::vehicle::kinematic::state>
   {
   private:
     const double motor_rpm_;
     const racer::math::angle heading_;
-    // const racer::nearest_neighbor::cached_linear_search nn_;
-    const racer::nearest_neighbor::linear_search nn_;
-    // const racer::nearest_neighbor::kd_tree::tree nn_;
+    const racer::sehs::nearest_neighbor nn_;
 
   public:
     discretization(const std::vector<racer::math::circle> &circles,
@@ -60,11 +58,11 @@ namespace racer::astar::sehs::kinematic
     discretization(discretization &&other) = delete;
 
     discrete_state
-    operator()(const racer::vehicle_model::kinematic::state &state) override
+    operator()(const racer::vehicle::kinematic::state &state) override
     {
       return {
           (int)nn_.find_nearest_neighbor(state.position()),
-          (int)floor(racer::math::angle(state.configuration().heading_angle()) /
+          (int)floor(racer::math::angle(state.cfg().heading_angle()) /
                      heading_),
           (int)floor(state.motor_rpm() / motor_rpm_)};
     }
@@ -78,8 +76,8 @@ namespace racer::astar::sehs::kinematic
     }
 
     static std::unique_ptr<discretization>
-    from(racer::vehicle_configuration start,
-         std::shared_ptr<racer::occupancy_grid> occupancy_grid,
+    from(racer::vehicle::configuration start,
+         std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
          std::vector<racer::math::point> next_waypoints, double vehicle_radius,
          double max_rpm)
     {

@@ -13,19 +13,19 @@
 #include "standalone-experiments/output.h"
 #include "standalone-experiments/plot.h"
 
-#include "racer/action.h"
+#include "racer/vehicle/action.h"
 #include "racer/math.h"
 #include "racer/sehs/space_exploration.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/kinematic/model.h"
+#include "racer/vehicle/chassis.h"
 
 #include "racer/astar/hybrid_astar.h"
 #include "racer/astar/sehs.h"
 
-using state = racer::vehicle_model::kinematic::state;
-using trajectory = racer::trajectory<state>;
-using model = racer::vehicle_model::kinematic::model;
+using state = racer::vehicle::kinematic::state;
+using kinematic_model = racer::vehicle::kinematic::model;
+using trajectory = racer::vehicle::trajectory<state>;
 using search_result = racer::astar::search_result<state>;
 
 using sehs_discrete_state = racer::astar::sehs::kinematic::discrete_state;
@@ -37,7 +37,7 @@ using hybrid_astar_discretization = racer::astar::hybrid_astar::discretization;
 std::unique_ptr<
     racer::astar::discretization<hybrid_astar_discrete_state, state>>
 create_hybrid_astar_discretization(
-    const racer::vehicle_model::vehicle_chassis &vehicle,
+    const racer::vehicle::chassis &vehicle,
     const double cell_size, const std::size_t heading_angle_bins,
     const std::size_t motor_rpm_bins)
 {
@@ -48,9 +48,9 @@ create_hybrid_astar_discretization(
 
 std::unique_ptr<racer::astar::discretization<sehs_discrete_state, state>>
 create_sehs_discretization(
-    const racer::vehicle_model::vehicle_chassis &vehicle,
-    const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
-    const racer::vehicle_configuration start,
+    const racer::vehicle::chassis &vehicle,
+    const std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
+    const racer::vehicle::configuration start,
     const std::vector<racer::math::point> waypoints,
     const std::size_t heading_angle_bins, const std::size_t motor_rpm_bins)
 {
@@ -108,21 +108,22 @@ output::planning::benchmark_result measure_search(
 
 template <typename DiscreteState>
 void run_benchmark_for(
-    const std::string algorithm, const std::shared_ptr<model> vehicle_model,
+    const std::string algorithm,
+    const std::shared_ptr<kinematic_model> vehicle_model,
     const track_analysis_input &config,
-    const std::shared_ptr<racer::circuit> circuit,
+    const std::shared_ptr<racer::track::circuit> circuit,
     const std::shared_ptr<racer::track::collision_detection> collision_detector,
     const std::shared_ptr<racer::astar::discretization<DiscreteState, state>>
         state_discretization,
-    const std::vector<racer::action> actions,
-    const racer::vehicle_configuration initial_config, const std::size_t start,
+    const std::vector<racer::vehicle::action> actions,
+    const racer::vehicle::configuration initial_config, const std::size_t start,
     const std::size_t lookahead, const double time_step_s,
     const std::size_t repetitions, const std::chrono::milliseconds time_limit,
     const bool plot)
 {
   const auto initial_state = state{initial_config, 0, 0};
 
-  const std::shared_ptr<racer::circuit> shifted_circut =
+  const std::shared_ptr<racer::track::circuit> shifted_circut =
       circuit->for_waypoint_subset(start, lookahead);
 
   std::vector<double> measurement_times;
@@ -197,10 +198,9 @@ void test_full_circuit_search(
     const std::size_t repetitions, const std::chrono::milliseconds time_limit,
     const bool plot)
 {
-  std::shared_ptr<racer::vehicle_model::vehicle_chassis> vehicle =
-      racer::vehicle_model::vehicle_chassis::simulator();
-  // racer::vehicle_model::vehicle_chassis::rc_beast();
-  const auto vehicle_model = std::make_shared<model>(vehicle);
+  std::shared_ptr<racer::vehicle::chassis> vehicle =
+      racer::vehicle::chassis::simulator();
+  const auto vehicle_model = std::make_shared<kinematic_model>(vehicle);
 
   const std::vector<std::size_t> steering{11, 21, 31};
   const std::vector<std::size_t> throttle{5, 9, 21};
@@ -225,7 +225,7 @@ void test_full_circuit_search(
                 << std::endl;
       continue;
     }
-    racer::track_analysis analysis(centerline.width());
+    racer::track::analysis analysis(centerline.width());
     const auto raw_waypoints = analysis.find_pivot_points(
         centerline.circles(), config->occupancy_grid);
     auto sharp_turns =
@@ -236,7 +236,7 @@ void test_full_circuit_search(
     sharp_turns.push_back(config->initial_position.location());
 
     auto waypoints = analysis.merge_close(sharp_turns);
-    const auto circuit = std::make_shared<racer::circuit>(
+    const auto circuit = std::make_shared<racer::track::circuit>(
         waypoints, centerline.width(), config->occupancy_grid);
 
     const auto collision_detector =
@@ -259,7 +259,7 @@ void test_full_circuit_search(
             for (const auto s : steering)
             {
               const std::size_t lookahead = waypoints.size();
-              const auto actions = racer::action::create_actions(t, s, 0.0, 1.0, -1.0, 1.0);
+              const auto actions = racer::vehicle::action::create_actions(t, s, 0.0, 1.0, -1.0, 1.0);
 
               const double time_step_s = 1.0 / frequency;
 

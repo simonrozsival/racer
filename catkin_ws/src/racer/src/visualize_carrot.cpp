@@ -9,13 +9,13 @@
 #include <visualization_msgs/Marker.h>
 
 #include "racer/following_strategies/dwa_strategy.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/kinematic/model.h"
 #include "racer/following_strategies/target_locator.h"
 
 #include "racer_ros/utils.h"
 
-std::optional<racer::vehicle_model::kinematic::state> state;
-std::optional<racer::trajectory<racer::vehicle_model::kinematic::state>> trajectory;
+std::optional<racer::vehicle::kinematic::state> state;
+std::optional<racer::vehicle::trajectory<racer::vehicle::kinematic::state>> trajectory;
 std::size_t next_waypoint;
 
 void trajectory_callback(const racer_msgs::Trajectory::ConstPtr &msg)
@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
       node.subscribe<racer_msgs::Waypoints>(waypoints_topic, 1, waypoints_observed);
 
   auto model =
-      std::make_unique<racer::vehicle_model::kinematic::model>(racer::vehicle_model::vehicle_chassis::simulator());
-  racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
+      std::make_unique<racer::vehicle::kinematic::model>(racer::vehicle::chassis::simulator());
+  racer::following_strategies::target_locator<racer::vehicle::kinematic::state> target_locator{
       min_lookahead, max_lookahead, model->chassis->motor->max_rpm()};
 
   int seq = 0;

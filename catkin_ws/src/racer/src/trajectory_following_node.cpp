@@ -16,20 +16,20 @@
 #include <racer_msgs/Trajectory.h>
 #include <racer_msgs/Waypoints.h>
 
-#include "racer/action.h"
-#include "racer/trajectory.h"
+#include "racer/vehicle/action.h"
+#include "racer/vehicle/trajectory.h"
 
 #include "racer/following_strategies/dwa_strategy.h"
 #include "racer/following_strategies/pure_pursuit_strategy.h"
 #include "racer/following_strategies/three_stage_dwa_strategy.h"
 
-#include "racer/vehicle_model/base_model.h"
-#include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/kinematic/model.h"
+#include "racer/vehicle/chassis.h"
 #include "racer_ros/Follower.h"
 
-using kinematic_model = racer::vehicle_model::kinematic::model;
-using kinematic_state = racer::vehicle_model::kinematic::state;
+using kinematic_model = racer::vehicle::kinematic::model;
+using kinematic_state = racer::vehicle::kinematic::state;
 using Follower = racer_ros::Follower<kinematic_state>;
 
 std::unique_ptr<racer::following_strategies::following_strategy<kinematic_state>>
@@ -45,7 +45,7 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<double>("max_right", max_right, -1.0);
   node.param<double>("max_left", max_left, 1.0);
 
-  const auto actions = racer::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle, max_right, max_left);
+  const auto actions = racer::vehicle::action::create_actions(throttle_levels, steering_levels, min_throttle, max_throttle, max_right, max_left);
   double position_weight, heading_weight, velocity_weight, distance_to_obstacle_weight, acceleration_weight;
   node.param<double>("position_weight", position_weight, 30.0);
   node.param<double>("heading_weight", heading_weight, 20.0);
@@ -58,7 +58,7 @@ create_dwa_strategy(ros::NodeHandle &node, const std::shared_ptr<kinematic_model
   node.param<double>("prediction_horizon_s", prediction_horizon_s, 0.5);
 
   const int lookahead = static_cast<int>(ceil(prediction_horizon_s / integration_step_s));
-  const racer::following_strategies::unfolder<racer::vehicle_model::kinematic::state> unfolder{model,
+  const racer::following_strategies::unfolder<racer::vehicle::kinematic::state> unfolder{model,
                                                                                                integration_step_s};
 
   const racer::following_strategies::target_error_calculator<kinematic_state> error_calculator = {
@@ -75,10 +75,10 @@ create_pure_pursuit_strategy(ros::NodeHandle &node, const std::shared_ptr<kinema
   node.param<double>("min_lookahead", min_lookahead, 1.0);
   node.param<double>("max_lookahead", max_lookahead, 5.0);
 
-  racer::following_strategies::target_locator<racer::vehicle_model::kinematic::state> target_locator{
+  racer::following_strategies::target_locator<racer::vehicle::kinematic::state> target_locator{
       min_lookahead, max_lookahead, model->chassis->motor->max_rpm()};
 
-  racer::following_strategies::pure_pursuit<racer::vehicle_model::kinematic::state> pure_pursuit{
+  racer::following_strategies::pure_pursuit<racer::vehicle::kinematic::state> pure_pursuit{
       model->chassis->wheelbase};
 
   return std::make_unique<racer::following_strategies::pure_pursuit_strategy<kinematic_state>>(target_locator,
@@ -110,7 +110,7 @@ int main(int argc, char *argv[])
   node.param<std::string>("twist_topic", twist_topic, "/racer/commands");
   node.param<std::string>("ackermann_topic", ackermann_topic, "/racer/ackermann_commands");
 
-  const auto model = std::make_shared<kinematic_model>(racer::vehicle_model::vehicle_chassis::simulator());
+  const auto model = std::make_shared<kinematic_model>(racer::vehicle::chassis::simulator());
 
   std::string strategy_type;
   node.param<std::string>("strategy", strategy_type, "dwa");

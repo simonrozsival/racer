@@ -7,23 +7,23 @@
 #include <vector>
 
 #include "racer/math.h"
-#include "racer/occupancy_grid.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/configuration.h"
 
 using namespace racer::math;
 
-namespace racer
+namespace racer::track
 {
 
-  class track_analysis
+  class analysis
   {
   public:
-    track_analysis(const double d_min)
+    analysis(const double d_min)
         : min_distance_between_waypoints_sq_{d_min * d_min} {}
 
     const std::vector<point>
     find_pivot_points(const std::vector<circle> &circle_path,
-                      const std::shared_ptr<racer::occupancy_grid> grid) const
+                      const std::shared_ptr<racer::track::occupancy_grid> grid) const
     {
       std::vector<point> pivot_points;
 

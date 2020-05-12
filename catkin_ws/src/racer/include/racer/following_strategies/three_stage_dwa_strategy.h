@@ -9,8 +9,8 @@
 #include "racer/following_strategies/following_strategy.h"
 #include "racer/following_strategies/target_error_calculator.h"
 #include "racer/following_strategies/unfolder.h"
-#include "racer/vehicle_model/base_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/chassis.h"
 
 namespace racer::following_strategies
 {
@@ -18,7 +18,7 @@ template <typename State>
 class three_stage_dwa_strategy : public following_strategy<State>
 {
 public:
-  three_stage_dwa_strategy(const std::vector<racer::action> available_actions, const unfolder<State> unfolder,
+  three_stage_dwa_strategy(const std::vector<racer::vehicle::action> available_actions, const unfolder<State> unfolder,
                            const target_error_calculator<State> &target_error_calculator, const std::size_t lookahead)
     : available_actions_{ available_actions }
     , unfolder_{ unfolder }
@@ -27,9 +27,9 @@ public:
   {
   }
 
-  racer::action select_action(const State &current_state, const std::size_t passed_waypoints,
-                              const racer::trajectory<State> &reference_trajectory,
-                              const std::shared_ptr<racer::occupancy_grid> map) const override
+  racer::vehicle::action select_action(const State &current_state, const std::size_t passed_waypoints,
+                              const racer::vehicle::trajectory<State> &reference_trajectory,
+                              const std::shared_ptr<racer::track::occupancy_grid> map) const override
   {
     return select_action(current_state, passed_waypoints, reference_trajectory, map, false);
   }
@@ -40,11 +40,11 @@ private:
   target_error_calculator<State> target_error_calculator_;
   std::size_t lookahead_;
 
-  racer::action select_action(const State &current_state, const std::size_t passed_waypoints,
-                              const racer::trajectory<State> &reference_trajectory,
-                              const std::shared_ptr<racer::occupancy_grid> map, bool unsafe) const
+  racer::vehicle::action select_action(const State &current_state, const std::size_t passed_waypoints,
+                              const racer::vehicle::trajectory<State> &reference_trajectory,
+                              const std::shared_ptr<racer::track::occupancy_grid> map, bool unsafe) const
   {
-    racer::action best_so_far{};
+    racer::vehicle::action best_so_far{};
     double lowest_error = HUGE_VAL;
 
     const auto should_follow = reference_trajectory.find_reference_subtrajectory(current_state, passed_waypoints);
@@ -56,7 +56,7 @@ private:
       {
         for (const auto third_action : available_actions_)
         {
-          racer::action actions[3] = { first_action, second_action, third_action };
+          racer::vehicle::action actions[3] = { first_action, second_action, third_action };
           auto trajectory = unfold(current_state, actions, map, unsafe);
           if (!trajectory.empty())
           {
@@ -85,8 +85,8 @@ private:
     return best_so_far;
   }
 
-  std::vector<State> unfold(const State &current_state, const racer::action actions[3],
-                            const std::shared_ptr<racer::occupancy_grid> map, bool unsafe) const
+  std::vector<State> unfold(const State &current_state, const racer::vehicle::action actions[3],
+                            const std::shared_ptr<racer::track::occupancy_grid> map, bool unsafe) const
   {
     std::vector<State> trajectory{ current_state };
     trajectory.reserve(lookahead_);

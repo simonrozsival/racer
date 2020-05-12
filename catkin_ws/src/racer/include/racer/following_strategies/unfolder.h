@@ -6,8 +6,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle_model/base_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/chassis.h"
 
 namespace racer::following_strategies
 {
@@ -15,14 +15,14 @@ template <typename State>
 class unfolder
 {
 public:
-  unfolder(std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model, double time_step_s)
+  unfolder(std::shared_ptr<racer::vehicle::model<State>> model, double time_step_s)
     : model_{ model }, time_step_s_{ time_step_s }
   {
   }
 
 public:
-  std::vector<State> unfold(const State &origin, const racer::action &action,
-                            const std::shared_ptr<racer::occupancy_grid> grid, std::size_t steps) const
+  std::vector<State> unfold(const State &origin, const racer::vehicle::action &action,
+                            const std::shared_ptr<racer::track::occupancy_grid> grid, std::size_t steps) const
   {
     std::vector<State> next_states{};
 
@@ -45,7 +45,7 @@ public:
     return next_states;
   }
 
-  std::vector<State> unfold_unsafe(const State &origin, const racer::action &action, std::size_t steps) const
+  std::vector<State> unfold_unsafe(const State &origin, const racer::vehicle::action &action, std::size_t steps) const
   {
     std::vector<State> next_states{};
 
@@ -62,7 +62,7 @@ public:
   }
 
 private:
-  std::shared_ptr<racer::vehicle_model::vehicle_model<State>> model_;
+  std::shared_ptr<racer::vehicle::model<State>> model_;
   double time_step_s_;
 };
 

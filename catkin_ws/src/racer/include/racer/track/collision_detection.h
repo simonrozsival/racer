@@ -5,9 +5,9 @@
 #include <vector>
 
 #include "racer/math.h"
-#include "racer/occupancy_grid.h"
-#include "racer/vehicle_configuration.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/configuration.h"
+#include "racer/vehicle/chassis.h"
 
 namespace racer::track
 {
@@ -23,7 +23,7 @@ private:
 
 public:
   collision_detection(std::shared_ptr<occupancy_grid> grid,
-                      std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis, const std::size_t precision,
+                      std::shared_ptr<racer::vehicle::chassis> chassis, const std::size_t precision,
                       const double safety_margin)
   {
     grid_ = grid->inflate(safety_margin);
@@ -37,7 +37,7 @@ public:
     }
   }
 
-  bool collides(const racer::vehicle_configuration &configuration) const
+  bool collides(const racer::vehicle::configuration &configuration) const
   {
     return maybe_collides(configuration) && definitely_collides(configuration);
   }
@@ -48,12 +48,12 @@ public:
   }
 
 private:
-  bool maybe_collides(const racer::vehicle_configuration &configuration) const
+  bool maybe_collides(const racer::vehicle::configuration &configuration) const
   {
     return uniformly_inflated_grid_->collides(configuration.location());
   }
 
-  bool definitely_collides(const racer::vehicle_configuration &configuration) const
+  bool definitely_collides(const racer::vehicle::configuration &configuration) const
   {
     auto fp = footprint_for(configuration.heading_angle());
     return std::any_of(std::begin(fp), std::end(fp), [&](const auto &cell_offset) {
@@ -67,7 +67,7 @@ private:
     return footprints_[index];
   }
 
-  static footprint calculate_footprint_of(double angle, std::shared_ptr<racer::vehicle_model::vehicle_chassis> chassis,
+  static footprint calculate_footprint_of(double angle, std::shared_ptr<racer::vehicle::chassis> chassis,
                                           double cell_size)
   {
     std::list<racer::math::point> cells;

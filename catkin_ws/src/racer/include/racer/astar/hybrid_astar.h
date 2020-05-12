@@ -1,7 +1,7 @@
 #pragma once
 
 #include "racer/astar/discretized_search_problem.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/kinematic/model.h"
 
 namespace racer::astar::hybrid_astar
 {
@@ -36,7 +36,7 @@ struct discrete_state
 };
 
 struct discretization
-    : public racer::astar::discretization<discrete_state, racer::vehicle_model::kinematic::state>
+    : public racer::astar::discretization<discrete_state, racer::vehicle::kinematic::state>
 {
 private:
     const double x_, y_, motor_rpm_;
@@ -48,12 +48,12 @@ public:
     {
     }
 
-    discrete_state operator()(const racer::vehicle_model::kinematic::state &state) override
+    discrete_state operator()(const racer::vehicle::kinematic::state &state) override
     {
         return {
             (int)floor(state.position().x() / x_),
             (int)floor(state.position().y() / y_),
-            (int)floor(racer::math::angle(state.configuration().heading_angle()) / heading_),
+            (int)floor(racer::math::angle(state.cfg().heading_angle()) / heading_),
             (int)floor(state.motor_rpm() / motor_rpm_)};
     }
 

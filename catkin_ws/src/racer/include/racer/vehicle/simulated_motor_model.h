@@ -6,10 +6,10 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle_model/motor_model.h"
-#include "racer/vehicle_model/base_model.h"
+#include "racer/vehicle/motor_model.h"
+#include "racer/vehicle/base_model.h"
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
     class simulated_motor_model : public base_motor_model
     {
@@ -44,4 +44,4 @@ namespace racer::vehicle_model
         }
     };
 
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

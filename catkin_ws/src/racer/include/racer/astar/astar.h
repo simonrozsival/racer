@@ -7,22 +7,22 @@
 #include <unordered_set>
 #include <vector>
 
-#include "racer/action.h"
-#include "racer/trajectory.h"
+#include "racer/vehicle/action.h"
+#include "racer/vehicle/trajectory.h"
 
 namespace racer::astar
 {
 template <typename TKey, typename State>
 struct neighbor_transition
 {
-  neighbor_transition(TKey key, std::vector<State> states, racer::action previous_action, const double cost)
+  neighbor_transition(TKey key, std::vector<State> states, racer::vehicle::action previous_action, const double cost)
       : key{key}, states{states}, previous_action{previous_action}, cost{cost}
   {
   }
 
   const TKey key;
   const std::vector<State> states;
-  const racer::action previous_action;
+  const racer::vehicle::action previous_action;
 
   const double cost;
 
@@ -37,13 +37,13 @@ struct search_node
 {
   const TKey key;
   const std::vector<State> states;
-  const racer::action previous_action;
+  const racer::vehicle::action previous_action;
   const double cost_to_come;
   const double cost_estimate;
   const std::size_t passed_waypoints;
   const std::weak_ptr<search_node<TKey, State>> parent;
 
-  search_node(TKey key, std::vector<State> states, racer::action previous_action,
+  search_node(TKey key, std::vector<State> states, racer::vehicle::action previous_action,
               std::weak_ptr<search_node<TKey, State>> parent, double cost_to_come, double cost_estimate,
               std::size_t passed_waypoints)
       : key{key}, states{states}, previous_action{previous_action}, cost_to_come{cost_to_come}, cost_estimate{cost_estimate}, passed_waypoints{passed_waypoints}, parent{parent}
@@ -52,7 +52,7 @@ struct search_node
 
   static auto for_initial_state(TKey key, State state)
   {
-    return std::make_unique<search_node<TKey, State>>(key, std::vector<State>{state}, action{0, 0},
+    return std::make_unique<search_node<TKey, State>>(key, std::vector<State>{state}, racer::vehicle::action{0, 0},
                                                       std::weak_ptr<search_node<TKey, State>>(), 0, 0, 0);
   }
 
@@ -76,7 +76,7 @@ public:
   virtual const bool is_goal(std::size_t passed_waypoints) const = 0;
   virtual const bool passes_waypoint(const std::vector<State> &examined_state, size_t passed_waypoints) const = 0;
   virtual const double estimate_cost_to_go(const State &state, std::size_t passed_waypoints) const = 0;
-  virtual const trajectory<State> reconstruct_trajectory(const search_node<TKey, State> &node) const = 0;
+  virtual const racer::vehicle::trajectory<State> reconstruct_trajectory(const search_node<TKey, State> &node) const = 0;
   virtual std::unique_ptr<search_node<TKey, State>> initial_search_node() const = 0;
 };
 
@@ -160,7 +160,7 @@ public:
 template <typename State>
 struct search_result
 {
-  racer::trajectory<State> found_trajectory;
+  racer::vehicle::trajectory<State> found_trajectory;
   std::size_t number_of_opened_nodes;
   std::size_t number_of_expanded_nodes;
   double final_cost;
@@ -174,7 +174,7 @@ struct search_result
   {
   }
 
-  search_result(racer::trajectory<State> found_trajectory, std::size_t number_of_opened_nodes,
+  search_result(racer::vehicle::trajectory<State> found_trajectory, std::size_t number_of_opened_nodes,
                 std::size_t number_of_expanded_nodes, double final_cost)
       : found_trajectory{found_trajectory}, number_of_opened_nodes{number_of_opened_nodes}, number_of_expanded_nodes{number_of_expanded_nodes}, final_cost{final_cost}
   {

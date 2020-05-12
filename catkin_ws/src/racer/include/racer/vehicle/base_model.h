@@ -2,10 +2,10 @@
 
 #include <iostream>
 
-#include "racer/action.h"
-#include "racer/vehicle_model/rpm.h"
+#include "racer/vehicle/action.h"
+#include "racer/vehicle/rpm.h"
 
-namespace racer::vehicle_model
+namespace racer::vehicle
 {
 
     template <typename State>
@@ -17,10 +17,10 @@ namespace racer::vehicle_model
     };
 
     template <typename State>
-    class vehicle_model : public base_model<State>
+    class base_vehicle_model : public base_model<State>
     {
     public:
-        virtual ~vehicle_model() = default;
+        virtual ~base_vehicle_model() = default;
         virtual double maximum_theoretical_speed() const = 0;
         virtual double speed_in_state(const State &state) const = 0;
     };
@@ -32,4 +32,4 @@ namespace racer::vehicle_model
         virtual rpm max_rpm() const = 0;
     };
 
-} // namespace racer::vehicle_model
+} // namespace racer::vehicle

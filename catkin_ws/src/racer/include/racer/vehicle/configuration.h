@@ -2,10 +2,10 @@
 
 #include "racer/math.h"
 
-namespace racer
+namespace racer::vehicle
 {
 
-struct vehicle_configuration
+struct configuration
 {
 private:
     racer::math::point location_;
@@ -13,28 +13,28 @@ private:
     bool is_valid_;
 
 public:
-    vehicle_configuration(double x, double y, double heading_angle)
+    configuration(double x, double y, double heading_angle)
         : location_{x, y}, heading_angle_{heading_angle}, is_valid_{true}
     {
     }
 
-    vehicle_configuration(racer::math::point location, double heading_angle)
+    configuration(racer::math::point location, double heading_angle)
         : location_{location}, heading_angle_{heading_angle}, is_valid_{true}
     {
     }
 
-    vehicle_configuration()
+    configuration()
         : location_{0, 0}, heading_angle_{0}, is_valid_{false}
     {
     }
 
-    vehicle_configuration(const vehicle_configuration &copy_from) = default;
-    vehicle_configuration &operator=(const vehicle_configuration &copy_from) = default;
+    configuration(const configuration &copy_from) = default;
+    configuration &operator=(const configuration &copy_from) = default;
 
-    vehicle_configuration(vehicle_configuration &&pos) = default;
-    vehicle_configuration &operator=(vehicle_configuration &&pos) = default;
+    configuration(configuration &&pos) = default;
+    configuration &operator=(configuration &&pos) = default;
 
-    inline bool operator==(const vehicle_configuration &other) const
+    inline bool operator==(const configuration &other) const
     {
         return location_ == other.location_ && heading_angle_ == other.heading_angle_;
     }
@@ -44,9 +44,9 @@ public:
         return is_valid_;
     }
 
-    vehicle_configuration operator+(const vehicle_configuration &other) const
+    configuration operator+(const configuration &other) const
     {
-        return vehicle_configuration(location_ + other.location_, heading_angle_ + other.heading_angle_);
+        return configuration(location_ + other.location_, heading_angle_ + other.heading_angle_);
     }
 
     inline const racer::math::point &location() const { return location_; }

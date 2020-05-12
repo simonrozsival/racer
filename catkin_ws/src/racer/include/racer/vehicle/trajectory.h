@@ -3,9 +3,9 @@
 #include <iostream>
 #include <vector>
 
-#include "racer/action.h"
+#include "racer/vehicle/action.h"
 
-namespace racer
+namespace racer::vehicle
 {
 template <typename State>
 struct trajectory_step

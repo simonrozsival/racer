@@ -6,31 +6,31 @@
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racer/action.h"
+#include "racer/vehicle/action.h"
 #include "racer/math.h"
-#include "racer/trajectory.h"
+#include "racer/vehicle/trajectory.h"
 
 #include "racer/astar/hybrid_astar.h"
 #include "racer/astar/sehs.h"
 #include "racer/sehs/space_exploration.h"
 #include "racer/track/collision_detection.h"
-#include "racer/track_analysis.h"
-#include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/track/analysis.h"
+#include "racer/vehicle/kinematic/model.h"
+#include "racer/vehicle/chassis.h"
 
 #include "racer_ros/Planner.h"
 #include "racer_ros/utils.h"
 
-using State = racer::vehicle_model::kinematic::state;
+using State = racer::vehicle::kinematic::state;
 using SehsDiscreteState = racer::astar::sehs::kinematic::discrete_state;
 using HybridAstarDiscreteState = racer::astar::hybrid_astar::discrete_state;
 
 std::mutex mutex;
 
 State last_known_state;
-std::shared_ptr<racer::occupancy_grid> occupancy_grid;
-std::shared_ptr<racer::occupancy_grid> inflated_grid;
-std::shared_ptr<racer::circuit> circuit;
+std::shared_ptr<racer::track::occupancy_grid> occupancy_grid;
+std::shared_ptr<racer::track::occupancy_grid> inflated_grid;
+std::shared_ptr<racer::track::circuit> circuit;
 double safety_margin;
 std::shared_ptr<racer::track::collision_detection> collision_detector;
 
@@ -41,11 +41,10 @@ std::vector<racer::math::point> next_waypoints;
 ros::Publisher debug_map_pub;
 
 bool use_sehs = false;
-std::string map_frame_id;
 std::unique_ptr<racer_ros::BasePlanner<State>> planner;
 
-auto model = std::make_shared<racer::vehicle_model::kinematic::model>(
-    racer::vehicle_model::vehicle_chassis::simulator());
+auto model = std::make_shared<racer::vehicle::kinematic::model>(
+    racer::vehicle::chassis::simulator());
 
 double time_step_s;
 
@@ -79,12 +78,12 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
     next_waypoints.emplace_back(wp.position.x, wp.position.y);
   }
 
-  circuit = std::make_shared<racer::circuit>(next_waypoints, waypoint_radius,
+  circuit = std::make_shared<racer::track::circuit>(next_waypoints, waypoint_radius,
                                              occupancy_grid);
 
   if (use_sehs) {
     auto discretization = racer::astar::sehs::kinematic::discretization::from(
-        last_known_state.configuration(), occupancy_grid, next_waypoints,
+        last_known_state.cfg(), occupancy_grid, next_waypoints,
         model->chassis->radius(), model->chassis->motor->max_rpm());
     if (!discretization) {
       ROS_ERROR("space exploration failed, goal is inaccessible.");
@@ -92,7 +91,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
     }
 
     planner = std::make_unique<racer_ros::Planner<State, SehsDiscreteState>>(
-        model, std::move(discretization), time_step_s, map_frame_id);
+        model, std::move(discretization), time_step_s);
   } else {
     auto cell_size = 3 * model->chassis->radius();
     auto discretization =
@@ -102,7 +101,7 @@ void waypoints_update(const racer_msgs::Waypoints::ConstPtr &waypoints) {
 
     planner =
         std::make_unique<racer_ros::Planner<State, HybridAstarDiscreteState>>(
-            model, std::move(discretization), time_step_s, map_frame_id);
+            model, std::move(discretization), time_step_s);
   }
 }
 
@@ -112,8 +111,6 @@ int main(int argc, char *argv[]) {
 
   std::string map_topic, state_topic, trajectory_topic, path_topic,
       waypoints_topic, inflated_map_topic;
-
-  node.param<std::string>("map_frame_id", map_frame_id, "map");
 
   node.param<std::string>("map_topic", map_topic, "/obstacles/costmap/costmap");
   node.param<std::string>("state_topic", state_topic, "/racer/state");
@@ -147,7 +144,7 @@ int main(int argc, char *argv[]) {
   node.param<double>("max_throttle", max_throttle, 1.0);
   node.param<double>("max_right", max_right, -1.0);
   node.param<double>("max_left", max_left, 1.0);
-  const auto actions = racer::action::create_actions(
+  const auto actions = racer::vehicle::action::create_actions(
       throttle_levels, steering_levels, min_throttle, max_throttle, max_right,
       max_left);
 

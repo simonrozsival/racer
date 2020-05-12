@@ -5,9 +5,9 @@
 #include <iostream>
 #include <vector>
 
-#include "racer/occupancy_grid.h"
+#include "racer/track/occupancy_grid.h"
 
-std::unique_ptr<racer::occupancy_grid>
+std::unique_ptr<racer::track::occupancy_grid>
 load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size,
                              bool print_map = false) {
   std::ifstream file(file_name, std::ifstream::in);
@@ -72,7 +72,7 @@ load_occupancy_grid_from_pgm(std::filesystem::path file_name, double cell_size,
       }
     }
 
-    return std::make_unique<racer::occupancy_grid>(data, cols, rows, cell_size,
+    return std::make_unique<racer::track::occupancy_grid>(data, cols, rows, cell_size,
                                                    racer::math::point(0, 0));
   }
 

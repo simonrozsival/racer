@@ -12,10 +12,10 @@
 
 #include "racer_ros/config/circuit.h"
 
-#include "racer/occupancy_grid.h"
+#include "racer/track/occupancy_grid.h"
 #include "racer/track/centerline.h"
-#include "racer/track_analysis.h"
-#include "racer/vehicle_configuration.h"
+#include "racer/track/analysis.h"
+#include "racer/vehicle/configuration.h"
 
 #include "racer_ros/utils.h"
 
@@ -29,7 +29,7 @@ namespace racer_ros
     std::mutex state_lock_;
     std::mutex analysis_lock_;
 
-    std::shared_ptr<racer::occupancy_grid> grid_;
+    std::shared_ptr<racer::track::occupancy_grid> grid_;
     std::string frame_id_;
 
     std::size_t next_waypoint_;
@@ -44,7 +44,7 @@ namespace racer_ros
       if (!grid_)
         return;
 
-      racer::vehicle_configuration current_configuration{state->x, state->y,
+      racer::vehicle::configuration current_configuration{state->x, state->y,
                                                          state->heading_angle};
 
       if (waypoints_.empty())
@@ -100,7 +100,7 @@ namespace racer_ros
 
   private:
     void calculate_positions_of_waypoints(
-        const racer::vehicle_configuration &current_configuration)
+        const racer::vehicle::configuration &current_configuration)
     {
       if (!current_configuration.is_valid() || !grid_)
       {
@@ -124,7 +124,7 @@ namespace racer_ros
       }
 
       // Step 2
-      racer::track_analysis analysis{centerline.width()};
+      racer::track::analysis analysis{centerline.width()};
       const auto pivot_points =
           analysis.find_pivot_points(centerline.circles(), grid_);
       if (pivot_points.empty())

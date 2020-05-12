@@ -14,17 +14,17 @@
 #include <std_msgs/Float64.h>
 
 #include "racer/math.h"
-#include "racer/vehicle_configuration.h"
-#include "racer/vehicle_model/kinematic_model.h"
-#include "racer/vehicle_model/motor_model.h"
-#include "racer/vehicle_model/steering_servo_model.h"
+#include "racer/vehicle/configuration.h"
+#include "racer/vehicle/kinematic/model.h"
+#include "racer/vehicle/motor_model.h"
+#include "racer/vehicle/steering_servo_model.h"
 
 #include "racer_ros/utils.h"
 
 // params
 std::string map_frame_id, odom_frame_id, base_link_frame_id;
 bool origin_is_rear_axle;
-auto chassis = racer::vehicle_model::vehicle_chassis::simulator();
+auto chassis = racer::vehicle::chassis::simulator();
 
 // motor
 double current_motor_rpm = 0;
@@ -43,7 +43,7 @@ void command_callback(const geometry_msgs::Twist::ConstPtr &msg)
   if (last_servo_update_time > 0)
   {
     const auto dt = t - last_servo_update_time;
-    racer::action action{msg->linear.x, msg->angular.z};
+    racer::vehicle::action action{msg->linear.x, msg->angular.z};
     current_steering_angle = chassis->steering_servo->predict_next_state(current_steering_angle, action, dt);
   }
 
@@ -55,7 +55,7 @@ void motor_rpm_callback(const std_msgs::Float64::ConstPtr &msg)
   current_motor_rpm = msg->data;
 }
 
-racer::vehicle_configuration get_current_configuration(const tf::Transform &transform)
+racer::vehicle::configuration get_current_configuration(const tf::Transform &transform)
 {
   auto origin = transform.getOrigin();
   auto rotation = tf::getYaw(transform.getRotation());
@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
         tf_listener.lookupTransform(map_frame_id, odom_frame_id, ros::Time(0), map_to_odom);
 
         const auto configuration = get_current_configuration(map_to_odom * odom_to_base_link);
-        racer::vehicle_model::kinematic::state state{configuration, current_motor_rpm, current_steering_angle};
+        racer::vehicle::kinematic::state state{configuration, current_motor_rpm, current_steering_angle};
 
         state_pub.publish(racer_ros::state_to_msg(state, odom_frame_id));
       }

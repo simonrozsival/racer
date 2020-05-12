@@ -4,9 +4,9 @@
 
 #include "racer/math.h"
 #include "racer/track/racing_line.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_configuration.h"
-#include "racer/vehicle_model/motor_model.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/configuration.h"
+#include "racer/vehicle/motor_model.h"
 
 namespace racer::following_strategies
 {
@@ -18,12 +18,12 @@ public:
   {
   }
 
-  racer::math::angle select_steering_angle(const State state, const racer::vehicle_configuration target) const
+  racer::math::angle select_steering_angle(const State state, const racer::vehicle::configuration target) const
   {
-    auto rear_axle_center = calculate_rear_axle_center_from_cog(state.configuration());
+    auto rear_axle_center = calculate_rear_axle_center_from_cog(state.cfg());
 
     auto to_target = target.location() - rear_axle_center;
-    auto alpha = to_target.angle() - state.configuration().heading_angle();
+    auto alpha = to_target.angle() - state.cfg().heading_angle();
     auto delta = std::atan2(2 * wheelbase_ * sin(alpha), sqrt(to_target.length()));
 
     return delta;
@@ -32,7 +32,7 @@ public:
 private:
   const double wheelbase_;
 
-  inline racer::math::point calculate_rear_axle_center_from_cog(const racer::vehicle_configuration &cfg) const
+  inline racer::math::point calculate_rear_axle_center_from_cog(const racer::vehicle::configuration &cfg) const
   {
     auto rear_wheel_offset = racer::math::vector(-wheelbase_ / 2, 0).rotate(cfg.heading_angle());
     return cfg.location() + rear_wheel_offset;

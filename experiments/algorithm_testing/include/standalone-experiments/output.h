@@ -4,12 +4,12 @@
 #include <iostream>
 
 #include "racer/astar/astar.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/kinematic/model.h"
 
 namespace output::planning
 {
 
-  using state = racer::vehicle_model::kinematic::state;
+  using state = racer::vehicle::kinematic::state;
   using search_result = racer::astar::search_result<state>;
 
   struct benchmark_result
@@ -38,7 +38,7 @@ namespace output::planning
       const auto step_it = std::max_element(
           std::begin(result.found_trajectory.steps()),
           std::end(result.found_trajectory.steps()),
-          [](racer::trajectory_step<state> a, racer::trajectory_step<state> b) {
+          [](racer::vehicle::trajectory_step<state> a, racer::vehicle::trajectory_step<state> b) {
             return a.passed_waypoints() < b.passed_waypoints();
           });
 
@@ -48,7 +48,7 @@ namespace output::planning
       const auto first_step_passing_desired_waypoint = std::find_if(
           std::begin(result.found_trajectory.steps()),
           std::end(result.found_trajectory.steps()),
-          [=](racer::trajectory_step<state> step) {
+          [=](racer::vehicle::trajectory_step<state> step) {
             return step.passed_waypoints() == number_of_waypoints - 1;
           });
 

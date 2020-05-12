@@ -9,25 +9,8 @@
 
 #include "racer/astar/astar.h"
 #include "racer/math.h"
-#include "racer/occupancy_grid.h"
-#include "racer/vehicle_configuration.h"
-
-namespace std
-{
-template <>
-struct hash<std::pair<int, int>>
-{
-  size_t operator()(const std::pair<int, int> &obj) const
-  {
-    size_t seed = 0;
-
-    racer::math::hash_combine(seed, obj.first);
-    racer::math::hash_combine(seed, obj.second);
-
-    return seed;
-  }
-};
-}  // namespace std
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/configuration.h"
 
 namespace racer::sehs
 {
@@ -83,8 +66,8 @@ public:
   {
   }
 
-  const std::vector<racer::math::circle> explore_grid(const std::shared_ptr<racer::occupancy_grid> grid,
-                                                      const racer::vehicle_configuration &initial_position,
+  const std::vector<racer::math::circle> explore_grid(const std::shared_ptr<racer::track::occupancy_grid> grid,
+                                                      const racer::vehicle::configuration &initial_position,
                                                       const std::vector<racer::math::point> &waypoints) const
   {
     std::vector<racer::math::circle> path;
@@ -129,7 +112,7 @@ private:
   const int number_of_expanded_points_;
 
   racer::math::circle generate_circle_around(racer::math::point point,
-                                             const std::shared_ptr<racer::occupancy_grid> grid) const
+                                             const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     double radius = grid->distance_to_closest_obstacle(point, max_radius_);
     return { point, radius };
@@ -137,7 +120,7 @@ private:
 
   const std::vector<racer::math::circle> find_path(const racer::math::circle &from, double initial_heading_angle,
                                                    const racer::math::point &to,
-                                                   const std::shared_ptr<racer::occupancy_grid> grid) const
+                                                   const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     std::priority_queue<std::shared_ptr<circle_node>, std::vector<std::shared_ptr<circle_node>>, distance_estimate>
         open{ distance_estimate() };
@@ -175,7 +158,7 @@ private:
 
   std::vector<std::shared_ptr<circle_node>> expand(const std::shared_ptr<circle_node> &node,
                                                    const racer::math::point &goal,
-                                                   const std::shared_ptr<racer::occupancy_grid> grid) const
+                                                   const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     std::vector<std::shared_ptr<circle_node>> nodes;
     const double sector_angle = 2 * M_PI;  // this could be changed to narrow the search direction
@@ -200,7 +183,7 @@ private:
   }
 
   const std::vector<racer::math::circle> optimize_path(std::vector<racer::math::circle> &circles,
-                                                       const std::shared_ptr<racer::occupancy_grid> grid) const
+                                                       const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     std::vector<bool> can_be_optimized(circles.size(), true);
 
@@ -229,14 +212,14 @@ private:
 
   racer::math::circle try_to_optimize(const racer::math::circle &a, const racer::math::circle &b,
                                       const racer::math::circle &c,
-                                      const std::shared_ptr<racer::occupancy_grid> grid) const
+                                      const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     racer::math::point interpolated_center = a.center().interpolate_with(c.center(), a.radius(), b.radius());
     const double radius = grid->distance_to_closest_obstacle(interpolated_center, max_radius_);
     return radius >= b.radius() ? racer::math::circle(interpolated_center, radius) : b;
   }
 
-  bool all_waypoints_are_accessible(const std::shared_ptr<racer::occupancy_grid> grid,
+  bool all_waypoints_are_accessible(const std::shared_ptr<racer::track::occupancy_grid> grid,
                                     const std::vector<racer::math::point> &waypoints) const
   {
     bool all_are_accessible = true;

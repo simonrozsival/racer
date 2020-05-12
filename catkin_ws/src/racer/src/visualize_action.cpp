@@ -7,12 +7,12 @@
 #include <visualization_msgs/Marker.h>
 
 #include "racer/following_strategies/dwa_strategy.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/kinematic/model.h"
 
 #include "racer_ros/utils.h"
 
-std::optional<racer::vehicle_model::kinematic::state> state;
-std::optional<racer::action> action;
+std::optional<racer::vehicle::kinematic::state> state;
+std::optional<racer::vehicle::action> action;
 
 void command_callback(const geometry_msgs::Twist::ConstPtr &msg) {
   action = racer_ros::twist_to_action(msg);
@@ -43,10 +43,10 @@ int main(int argc, char *argv[]) {
   auto visualization_pub = node.advertise<visualization_msgs::Marker>(
       visualization_topic, 100, false);
 
-  auto model = std::make_unique<racer::vehicle_model::kinematic::model>(
-      racer::vehicle_model::vehicle_chassis::simulator());
+  auto model = std::make_unique<racer::vehicle::kinematic::model>(
+      racer::vehicle::chassis::simulator());
   const racer::following_strategies::unfolder<
-      racer::vehicle_model::kinematic::state>
+      racer::vehicle::kinematic::state>
       unfolder{std::move(model), time_step_s};
   std::size_t steps = std::ceil(prediction_horizon / time_step_s);
 

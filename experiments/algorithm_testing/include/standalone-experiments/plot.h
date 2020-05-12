@@ -13,14 +13,14 @@
 
 #include "standalone-experiments/input.h"
 
-#include "racer/circuit.h"
+#include "racer/track/circuit.h"
 #include "racer/math.h"
 #include "racer/track/centerline.h"
-#include "racer/trajectory.h"
-#include "racer/vehicle_configuration.h"
-#include "racer/vehicle_model/kinematic_model.h"
+#include "racer/vehicle/trajectory.h"
+#include "racer/vehicle/configuration.h"
+#include "racer/vehicle/kinematic/model.h"
 
-using namespace racer::vehicle_model;
+using namespace racer::vehicle;
 namespace plt = matplotlibcpp;
 
 std::string speed_color(double speed_percentage)
@@ -34,7 +34,7 @@ std::string speed_color(double speed_percentage)
 }
 
 void plot_vehicle_configuration(
-    const racer::vehicle_configuration &configuration, std::string color,
+    const racer::vehicle::configuration &configuration, std::string color,
     const double cell_size)
 {
   auto direction =
@@ -63,7 +63,7 @@ void plot_path_of_circles(const std::string &name,
 }
 
 void plot_circles(const std::vector<racer::math::point> &points,
-                  const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
+                  const std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
                   const double radius, unsigned char *img)
 {
   img = new unsigned char[occupancy_grid->cols() * occupancy_grid->rows() * 4];
@@ -110,7 +110,7 @@ void plot_points(const std::string &name,
   plt::named_plot(name, points_x, points_y, format);
 }
 
-void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
+void plot_waypoints(const std::shared_ptr<racer::track::circuit> circuit,
                     unsigned char *img)
 {
   img = new unsigned char[circuit->grid->cols() * circuit->grid->rows() * 4];
@@ -144,9 +144,9 @@ void plot_waypoints(const std::shared_ptr<racer::circuit> circuit,
 }
 
 void plot_trajectory(
-    const racer::trajectory<kinematic::state> trajectory,
+    const racer::vehicle::trajectory<kinematic::state> trajectory,
     const double cell_size,
-    const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle)
+    const std::shared_ptr<racer::vehicle::kinematic::model> vehicle)
 {
   std::vector<racer::math::point> states, every_second;
   std::vector<double> speeds;
@@ -184,7 +184,7 @@ void plot_trajectory(
   }
 }
 
-void plot_grid(const std::shared_ptr<racer::occupancy_grid> occupancy_grid,
+void plot_grid(const std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
                unsigned char *img)
 {
   img = new unsigned char[occupancy_grid->cols() * occupancy_grid->rows() * 4];
@@ -224,7 +224,7 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_circles(waypoints, config.occupancy_grid, waypoint_radius,
                circles_img);
 
-  auto circuit = std::make_shared<racer::circuit>(waypoints, waypoint_radius, config.occupancy_grid);
+  auto circuit = std::make_shared<racer::track::circuit>(waypoints, waypoint_radius, config.occupancy_grid);
   plot_waypoints(circuit, waypoints_img);
   plot_points("Corners", waypoints, "bo", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(config.initial_position, "green",
@@ -243,10 +243,10 @@ void plot_track_analysis(const track_analysis_input &config,
 
 void plot_trajectory(
     const track_analysis_input &config,
-    const racer::vehicle_configuration initial_configuration,
-    const racer::trajectory<kinematic::state> &trajectory,
-    const std::shared_ptr<racer::vehicle_model::kinematic::model> vehicle,
-    const std::shared_ptr<racer::circuit> circuit, const std::string name)
+    const racer::vehicle::configuration initial_configuration,
+    const racer::vehicle::trajectory<kinematic::state> &trajectory,
+    const std::shared_ptr<racer::vehicle::kinematic::model> vehicle,
+    const std::shared_ptr<racer::track::circuit> circuit, const std::string name)
 {
   std::vector<racer::math::point> rpm_points, steering_angle_points,
       speed_points, throttle, steering;
@@ -293,7 +293,7 @@ void plot_trajectory(
   plot_waypoints(circuit, waypoints_img);
 
   plot_trajectory(trajectory, config.occupancy_grid->cell_size(), vehicle);
-  plot_vehicle_configuration(trajectory.steps().back().state().configuration(),
+  plot_vehicle_configuration(trajectory.steps().back().state().cfg(),
                              "red", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(initial_configuration, "green",
                              config.occupancy_grid->cell_size());

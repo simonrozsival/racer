@@ -69,7 +69,6 @@ add_executable(trajectory_following_node src/trajectory_following_node.cpp)
 add_executable(planning_node src/planning_node.cpp)
 add_executable(circuit_node src/circuit_node.cpp)
 add_executable(current_state_node src/current_state_node.cpp)
-add_executable(racing_line_planning_node src/racing_line_planning_node.cpp)
 add_executable(visualize_action src/visualize_action.cpp)
 add_executable(visualize_plan src/visualize_plan.cpp)
 add_executable(visualize_carrot src/visualize_carrot.cpp)
@@ -80,7 +79,6 @@ add_dependencies(trajectory_following_node ${${PROJECT_NAME}_EXPORTED_TARGETS} $
 add_dependencies(planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(circuit_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(current_state_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-add_dependencies(racing_line_planning_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualize_action ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualize_plan ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(visualize_carrot ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -99,10 +97,6 @@ target_link_libraries(circuit_node
 )
 
 target_link_libraries(current_state_node
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(racing_line_planning_node
   ${catkin_LIBRARIES}
 )
 

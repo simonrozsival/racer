@@ -9,8 +9,8 @@
 
 odometry_subject::odometry_subject(
     const double gear_ratio,
-    std::unique_ptr<racer::vehicle_model::steering_servo_model> servo_model,
-    std::unique_ptr<racer::vehicle_model::kinematic::model> vehicle_model,
+    std::unique_ptr<racer::vehicle::steering_servo_model> servo_model,
+    std::unique_ptr<racer::vehicle::kinematic::model> vehicle_model,
     const std::string &odometry_frame,
     const std::string &base_link,
     tf::TransformBroadcaster &transform_broadcaster,
@@ -40,7 +40,7 @@ void odometry_subject::process_steering_command(const geometry_msgs::Twist::Cons
     const double t = ros::Time::now().toSec();
     const double dt = t - last_servo_update_time_;
 
-    const auto action = racer::action{0, msg->angular.z}; // we don't care about the throttle
+    const auto action = racer::vehicle::action{0, msg->angular.z}; // we don't care about the throttle
     steering_angle_ = servo_model_->predict_next_state(steering_angle_, action, dt);
 
     last_servo_update_time_ = t;
@@ -70,13 +70,13 @@ void odometry_subject::publish_odometry(bool publish_tf)
 
     const double current_time = ros::Time::now().toSec();
     const double elapsed_time = current_time - last_update_time_;
-    const auto current_state = racer::vehicle_model::kinematic::state{configuration_, current_rpm_, steering_angle_};
+    const auto current_state = racer::vehicle::kinematic::state{configuration_, current_rpm_, steering_angle_};
 
-    const auto prediction = vehicle_model_->predict_next_state(current_state, racer::action{0, 0}, elapsed_time);
-    const auto angular_velocity = configuration_.heading_angle().distance_to(prediction.configuration().heading_angle()) / elapsed_time;
+    const auto prediction = vehicle_model_->predict_next_state(current_state, racer::vehicle::action{0, 0}, elapsed_time);
+    const auto angular_velocity = configuration_.heading_angle().distance_to(prediction.cfg().heading_angle()) / elapsed_time;
 
-    publish_state_estimate(prediction.configuration(), angular_velocity);
-    configuration_ = prediction.configuration();
+    publish_state_estimate(prediction.cfg(), angular_velocity);
+    configuration_ = prediction.cfg();
 
     last_update_time_ = ros::Time::now().toSec();
 
@@ -102,7 +102,7 @@ void odometry_subject::publish_odometry(bool publish_tf)
 }
 
 void odometry_subject::publish_state_estimate(
-    const racer::vehicle_configuration &predicted_configuration,
+    const racer::vehicle::configuration &predicted_configuration,
     const double angular_velocity) const
 {
     nav_msgs::Odometry odom;

@@ -6,8 +6,8 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle_model/base_model.h"
-#include "racer/vehicle_model/vehicle_chassis.h"
+#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/chassis.h"
 
 namespace racer::following_strategies
 {
@@ -24,7 +24,7 @@ public:
   }
 
   target_error_calculator(double position_error_weight, double heading_error_weight, double motor_rpm_error_weight,
-                          double obstacle_proximity_error_weight, racer::vehicle_model::rpm max_rpm)
+                          double obstacle_proximity_error_weight, racer::vehicle::rpm max_rpm)
     : position_error_weight_(position_error_weight)
     , heading_error_weight_(heading_error_weight)
     , motor_rpm_error_weight_(motor_rpm_error_weight)
@@ -39,8 +39,8 @@ public:
   target_error_calculator(const target_error_calculator<State> &other) = default;
   target_error_calculator<State> &operator=(const target_error_calculator<State> &other) = default;
 
-  double calculate_error(const std::vector<State> &prediction, const racer::trajectory<State> &reference,
-                         const std::shared_ptr<racer::occupancy_grid> map) const
+  double calculate_error(const std::vector<State> &prediction, const racer::vehicle::trajectory<State> &reference,
+                         const std::shared_ptr<racer::track::occupancy_grid> map) const
   {
     double total_error = 0;
     auto it_a{ prediction.begin() };
@@ -58,7 +58,7 @@ public:
     return total_error;
   }
 
-  double calculate_error(const State a, const State b, const std::shared_ptr<racer::occupancy_grid> map) const
+  double calculate_error(const State a, const State b, const std::shared_ptr<racer::track::occupancy_grid> map) const
   {
     return position_error_weight_ * position_error(a, b) + heading_error_weight_ * heading_error(a, b) +
            motor_rpm_error_weight_ * motor_rpm_error(a, b) +
@@ -76,8 +76,8 @@ private:
 
   double heading_error(const State &a, const State &reference) const
   {
-    const auto heading_a = a.configuration().heading_angle().to_normal_angle();
-    const auto heading_b = reference.configuration().heading_angle().to_normal_angle();
+    const auto heading_a = a.cfg().heading_angle().to_normal_angle();
+    const auto heading_b = reference.cfg().heading_angle().to_normal_angle();
 
     return std::abs(heading_a.distance_to(heading_b) / M_PI);
   }
@@ -87,15 +87,15 @@ private:
     return std::abs(reference.motor_rpm() - a.motor_rpm()) / max_rpm_;
   }
 
-  double obstacle_proximity_error(const State &a, const std::shared_ptr<racer::occupancy_grid> grid) const
+  double obstacle_proximity_error(const State &a, const std::shared_ptr<racer::track::occupancy_grid> grid) const
   {
     const double head_on_clearance = 2.0;
     const double head_on_dist = std::min(
-        grid->find_distance(a.position(), a.configuration().heading_angle(), head_on_clearance),
+        grid->find_distance(a.position(), a.cfg().heading_angle(), head_on_clearance),
         std::min(
-            grid->find_distance(a.position(), a.configuration().heading_angle() + racer::math::angle::from_degrees(7),
+            grid->find_distance(a.position(), a.cfg().heading_angle() + racer::math::angle::from_degrees(7),
                                 head_on_clearance),
-            grid->find_distance(a.position(), a.configuration().heading_angle() - racer::math::angle::from_degrees(7),
+            grid->find_distance(a.position(), a.cfg().heading_angle() - racer::math::angle::from_degrees(7),
                                 head_on_clearance)));
 
     return 1 - head_on_dist / head_on_clearance;
