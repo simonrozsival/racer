@@ -411,7 +411,7 @@ This namespace contains all of the algorithms described in this thesis. This inc
 
 \subsubsection{The \texttt{racer::math} namespace}
 
-This namespace includes several important math primitives, operations between them, and helper functions which are used throughout the codebase. The code is located in the \texttt{include/racer/math} directory.
+This namespace includes several important math primitives, operations between them, and helper functions which are used throughout the codebase.
 
 \paragraph{\texttt{angle}} is a simple typed representation of an angle in radians. The structure contains several helper functions for conversion between degrees and radians and for manipulation with an angle value.
 
@@ -425,14 +425,20 @@ This namespace includes several important math primitives, operations between th
 
 This namespace contains code related to the race track and to the collisions between the vehicle and the track.
 
-\paragraph{analysis} is a class which contains the implementation of the trajectory analysis algorithm described in Section~\ref{sec:track_segmentation}.
+\paragraph{\texttt{analysis}} is a class which contains the implementation of the trajectory analysis algorithm described in Section~\ref{sec:track_segmentation}.
 
-\paragraph{centerline} is a simple class which contains an algorithm to find an approximation of a centerline in an occupancy grid.
+\paragraph{\texttt{centerline}} is a simple class which contains an algorithm to find an approximation of a center line in an occupancy grid.
+
+\paragraph{\texttt{occupancy\_grid}} is a class which implements all the necessary functionality for accessing the occupancy grid data. The class contains functions to find an approximate distance to the closest obstacle to a given point of the grid and to check if there is a clear line of sight between two points of the grid.
+
+\paragraph{\texttt{collision\_detection}} is a class which checks for collision in a given occupancy grid as described in Section~\ref{sec:collision-detection}.
+
+\paragraph{\texttt{circuit}} is a class which implements functions for monitoring the waypoints of the circuit and whether a vehicle passed a waypoint or not.
 
 \subsection{The \texttt{racer::vehicle} namespace}
 
 \subsubsection{The \texttt{racer::vehicle::kinematic} namespace}
-
+7
 \subsection{The \texttt{racer::sehs} namespace}
 
 \subsection{The \texttt{racer::following\_strategies} namespace}

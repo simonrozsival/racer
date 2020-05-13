@@ -288,6 +288,7 @@ At the start of the race, the vehicle is expected to be situated at a predefined
 During the race, the speed and the steering angle have to be measured using sensors. We must take into account that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
 
 \subsubsection{Collision Detection}
+\label{sec:collision-detection}
 
 A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divides the configuration space into two parts $C_{free}$ and $C_{obs}$:
 
