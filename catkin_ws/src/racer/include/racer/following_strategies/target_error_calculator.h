@@ -6,9 +6,6 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle/base_model.h"
-#include "racer/vehicle/chassis.h"
-
 namespace racer::following_strategies
 {
 template <typename State>

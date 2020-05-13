@@ -11,6 +11,7 @@
 
 namespace racer::track
 {
+
 class collision_detection
 {
   using footprint = std::vector<racer::math::point>;
@@ -23,7 +24,8 @@ private:
 
 public:
   collision_detection(std::shared_ptr<occupancy_grid> grid,
-                      std::shared_ptr<racer::vehicle::chassis> chassis, const std::size_t precision,
+                      std::shared_ptr<racer::vehicle::chassis> chassis,
+                      const std::size_t precision,
                       const double safety_margin)
   {
     grid_ = grid->inflate(safety_margin);
@@ -106,6 +108,6 @@ private:
     cells.unique();
     return {std::vector<racer::math::point>{std::begin(cells), std::end(cells)}};
   }
-}; // namespace racer::track
+};
 
 } // namespace racer::track

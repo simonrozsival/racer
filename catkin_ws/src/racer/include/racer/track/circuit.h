@@ -8,6 +8,7 @@
 
 namespace racer::track
 {
+
 class circuit
 {
 public:
@@ -87,4 +88,4 @@ public:
   }
 };
 
-}  // namespace racer
+}  // namespace racer::track

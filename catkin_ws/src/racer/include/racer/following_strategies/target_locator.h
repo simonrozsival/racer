@@ -2,12 +2,12 @@
 
 #include <iostream>
 
-#include "racer/math.h"
-#include "racer/vehicle/configuration.h"
 #include "racer/vehicle/trajectory.h"
 
 namespace racer::following_strategies {
-template <typename State> class target_locator {
+
+template <typename State>
+class target_locator {
 public:
   target_locator(double min_lookahead, double max_lookahead, double max_rpm)
       : min_lookahead_(min_lookahead), max_lookahead_(max_lookahead),

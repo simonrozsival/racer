@@ -367,7 +367,7 @@ With all the dependencies installed and cloned, we need to finish the setup and 
 
 \subsection{Usage}
 
-The parameters for the agent behavior nodes can be changed in the \texttt{/catkin\_ws/src/racer/launch/agent.launch} file. This file is included from all of the other launch files mentioned further in this section.
+The parameters for the agent behavior nodes can be changed in the \texttt{/catkin\_ws/\-src/\-racer/launch/\-agent.launch} file. This file is included from all of the other launch files mentioned further in this section.
 
 \subsubsection{Simulator}
 
@@ -401,7 +401,9 @@ Since both computers are connected to the same network, we can listen to the ROS
 
 \section{Implementation of Algorithms}
 
-In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms, which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The location of a file corresponds to its namespace. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
+In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
+
+\paragraph{Conventions} Each \texttt{struct} or \texttt{class} is located in a separate header file. The name of the type matches the file name. The location of each type in the directory structure corresponds to its namespace.
 
 \subsection{The \texttt{racer} namespace}
 
@@ -421,13 +423,27 @@ This namespace includes several important math primitives, operations between th
 
 \subsection{The \texttt{racer::track} namespace}
 
+This namespace contains code related to the race track and to the collisions between the vehicle and the track.
+
+\paragraph{analysis} is a class which contains the implementation of the trajectory analysis algorithm described in Section~\ref{sec:track_segmentation}.
+
+\paragraph{centerline} is a simple class which contains an algorithm to find an approximation of a centerline in an occupancy grid.
+
 \subsection{The \texttt{racer::vehicle} namespace}
+
+\subsubsection{The \texttt{racer::vehicle::kinematic} namespace}
 
 \subsection{The \texttt{racer::sehs} namespace}
 
 \subsection{The \texttt{racer::following\_strategies} namespace}
 
 \subsection{The \texttt{racer::astar} namespace}
+
+\subsubsection{The \texttt{racer::astar::discretized} namespace}
+
+\subsubsection{The \texttt{racer::astar::hybrid\_astar} namespace}
+
+\subsubsection{The \texttt{racer::astar::sehs} namespace}
 
 \subsection{The \texttt{racer\_ros} namespace}
 

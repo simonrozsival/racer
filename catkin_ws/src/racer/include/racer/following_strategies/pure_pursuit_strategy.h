@@ -4,7 +4,7 @@
 
 #include "racer/following_strategies/pure_pursuit.h"
 #include "racer/following_strategies/target_locator.h"
-#include "racer/math.h"
+#include "racer/math/angle.h"
 #include "racer/vehicle/action.h"
 #include "racer/vehicle/configuration.h"
 #include "racer/vehicle/kinematic/model.h"

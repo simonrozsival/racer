@@ -2,8 +2,6 @@
 
 #include <vector>
 
-#include "racer/sehs/nearest_neighbor.h"
-
 namespace racer::astar::sehs
 {
 

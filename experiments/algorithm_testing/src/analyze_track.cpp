@@ -60,33 +60,50 @@ int main(int argc, char *argv[])
       config->initial_position, config->occupancy_grid, final_check_points);
   stop_stopwatch("centerline", se_start);
 
-  if (centerline.circles().empty())
+  if (centerline.empty())
   {
     std::cout << "Finding centerline failed, cannot proceed to track analysis."
               << std::endl;
     return 3;
   }
+  else
+  {
+    std::cout << "Number of centerline points: " << centerline.points().size() << std::endl;
+  }
+  
 
   // Step 2
   std::cout << "RUN find pivot points" << std::endl;
   const auto find_pivot_points_start = std::chrono::steady_clock::now();
   racer::track::analysis analysis{centerline.width()};
   const auto pivot_points =
-      analysis.find_pivot_points(centerline.circles(), config->occupancy_grid);
+      analysis.find_pivot_points(centerline.points(), config->occupancy_grid);
   stop_stopwatch("find pivot points", find_pivot_points_start);
+
+  std::cout << "Number of pivot points: " << pivot_points.size() << std::endl;
 
   // Step 3
   std::cout << "RUN find corners" << std::endl;
   const auto find_corners_start = std::chrono::steady_clock::now();
   const auto sharp_turns =
       analysis.remove_insignificant_turns(pivot_points);
-  const auto waypoints = analysis.merge_close(sharp_turns);
+  const auto corners = analysis.merge_close(sharp_turns);
   stop_stopwatch("find corners", find_corners_start);
 
-  // This requires Linux or WSL+Xserver
-  std::cout << "Show interactive plot" << std::endl;
-  plot_track_analysis(*config, centerline, pivot_points, waypoints, centerline.width());
+  std::cout << "Number of detected corners: " << corners.size() << std::endl;
+
+  if (!corners.empty())
+  {
+    // This requires Linux or WSL+Xserver
+    std::cout << "Show interactive plot" << std::endl;
+    plot_track_analysis(*config, centerline, pivot_points, corners, centerline.width());
+  }
+  else
+  {
+    std::cout << "Could not detect any corners. Is the map empty?" << std::endl;
+  }
 
   std::cout << "Done." << std::endl;
   return 0;
+
 }

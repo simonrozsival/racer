@@ -7,9 +7,9 @@
 #include <cassert>
 #include <unordered_map>
 
-#include "racer/math.h"
+#include "racer/math/point.h"
 
-namespace racer::sehs {
+namespace racer::astar::sehs {
 
 class nearest_neighbor {
 private:

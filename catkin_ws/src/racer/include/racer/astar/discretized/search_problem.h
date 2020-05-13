@@ -6,7 +6,7 @@
 #include "racer/track/circuit.h"
 #include "racer/track/collision_detection.h"
 #include "racer/track/occupancy_grid.h"
-#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/base_vehicle_model.h"
 
 #include "racer/astar/discretized/base_discretization.h"
 

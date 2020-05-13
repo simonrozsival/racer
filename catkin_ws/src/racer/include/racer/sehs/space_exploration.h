@@ -1,54 +1,21 @@
 #pragma once
 
 #include <algorithm>
-#include <filesystem>
 #include <vector>
+#include <queue>
 
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/astar/astar.h"
-#include "racer/math.h"
+#include "racer/math/point.h"
+#include "racer/math/circle.h"
 #include "racer/track/occupancy_grid.h"
 #include "racer/vehicle/configuration.h"
 
+#include "racer/sehs/circle_node.h"
+#include "racer/sehs/distance_estimate.h"
+
 namespace racer::sehs {
-struct circle_node {
-  const racer::math::circle examined_circle;
-  const double distance_from_start;
-  const double distance_estimate;
-  const double heading_angle;
-  std::shared_ptr<circle_node> parent;
-
-  circle_node(racer::math::circle examined_circle, double distance,
-              double distance_to_go, double heading_angle,
-              std::shared_ptr<circle_node> parent)
-      : examined_circle(examined_circle), distance_from_start(distance),
-        distance_estimate(distance + distance_to_go),
-        heading_angle(heading_angle), parent(parent) {}
-
-  std::vector<racer::math::circle> reconstruct_path() {
-    std::vector<racer::math::circle> path;
-
-    path.push_back(examined_circle);
-    auto node = parent;
-
-    while (node) {
-      path.push_back(node->examined_circle);
-      node = node->parent;
-    }
-
-    std::reverse(std::begin(path), std::end(path));
-    return path;
-  }
-};
-
-struct distance_estimate {
-  bool operator()(const std::shared_ptr<circle_node> &a,
-                  const std::shared_ptr<circle_node> &b) const {
-    return a->distance_estimate > b->distance_estimate;
-  }
-};
 
 class space_exploration {
 public:
@@ -226,4 +193,5 @@ private:
     return all_are_accessible;
   }
 };
+
 } // namespace racer::sehs

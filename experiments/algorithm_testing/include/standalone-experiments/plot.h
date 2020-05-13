@@ -182,8 +182,8 @@ void plot_grid(
 
 void plot_track_analysis(const track_analysis_input &config,
                          const racer::track::centerline &centerline,
-                         const std::vector<racer::math::point> &raw_waypoints,
-                         const std::vector<racer::math::point> &waypoints,
+                         const std::vector<racer::math::point> &pivot_points,
+                         const std::vector<racer::math::point> &corners,
                          const double waypoint_radius) {
   plt::title(config.name);
   plt::grid(true);
@@ -195,17 +195,17 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_grid(config.occupancy_grid, grid_img);
   plot_points("Centerline", centerline.points(), "k.",
               config.occupancy_grid->cell_size());
-  plot_points("Skipped candidates", raw_waypoints, "ro",
+  plot_points("Skipped candidates", pivot_points, "ro",
               config.occupancy_grid->cell_size());
 
   unsigned char *circles_img = nullptr;
-  unsigned char *waypoints_img = nullptr;
-  plot_circles(waypoints, config.occupancy_grid, waypoint_radius, circles_img);
+  unsigned char *corners_img = nullptr;
+  plot_circles(corners, config.occupancy_grid, waypoint_radius, circles_img);
 
   auto circuit = std::make_shared<racer::track::circuit>(
-      waypoints, waypoint_radius, config.occupancy_grid);
-  plot_waypoints(circuit, waypoints_img);
-  plot_points("Corners", waypoints, "bo", config.occupancy_grid->cell_size());
+      corners, waypoint_radius, config.occupancy_grid);
+  plot_waypoints(circuit, corners_img);
+  plot_points("Corners", corners, "bo", config.occupancy_grid->cell_size());
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
 
@@ -217,7 +217,7 @@ void plot_track_analysis(const track_analysis_input &config,
 
   delete[] grid_img;
   delete[] circles_img;
-  delete[] waypoints_img;
+  delete[] corners_img;
 }
 
 void plot_trajectory(

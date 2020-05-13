@@ -3,12 +3,12 @@
 #include <vector>
 
 #include "racer/astar/discretized/base_discretization.h"
-#include "racer/sehs/nearest_neighbor.h"
 #include "racer/sehs/space_exploration.h"
 #include "racer/track/occupancy_grid.h"
 #include "racer/vehicle/kinematic/state.h"
 
 #include "racer/astar/sehs/discrete_state.h"
+#include "racer/astar/sehs/nearest_neighbor.h"
 
 namespace racer::astar::sehs {
 
@@ -17,7 +17,7 @@ struct discretization : public racer::astar::discretized::base_discretization<
 private:
   const double motor_rpm_;
   const racer::math::angle heading_;
-  const racer::sehs::nearest_neighbor nn_;
+  const nearest_neighbor nn_;
 
 public:
   discretization(const std::vector<racer::math::circle> &circles,

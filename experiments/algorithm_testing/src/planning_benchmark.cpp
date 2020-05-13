@@ -221,7 +221,7 @@ void test_full_circuit_search(
     // prepare circuit
     const auto centerline = racer::track::centerline::find(
         config->initial_position, config->occupancy_grid, final_check_points);
-    if (centerline.circles().empty())
+    if (centerline.empty())
     {
       std::cout << "Finding centerline failed for " << config->name
                 << std::endl;
@@ -229,7 +229,7 @@ void test_full_circuit_search(
     }
     racer::track::analysis analysis(centerline.width());
     const auto raw_waypoints = analysis.find_pivot_points(
-        centerline.circles(), config->occupancy_grid);
+        centerline.points(), config->occupancy_grid);
     auto sharp_turns =
         analysis.remove_insignificant_turns(raw_waypoints);
 

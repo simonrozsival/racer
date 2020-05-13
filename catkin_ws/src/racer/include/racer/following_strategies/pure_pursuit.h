@@ -2,7 +2,9 @@
 
 #include <iostream>
 
-#include "racer/math.h"
+#include "racer/math/angle.h"
+#include "racer/math/point.h"
+#include "racer/math/vector.h"
 #include "racer/vehicle/configuration.h"
 #include "racer/vehicle/motor_model.h"
 #include "racer/vehicle/trajectory.h"

@@ -10,7 +10,7 @@
 
 #include "racer/math.h"
 #include "racer/vehicle/action.h"
-#include "racer/vehicle/base_model.h"
+#include "racer/vehicle/base_vehicle_model.h"
 #include "racer/vehicle/chassis.h"
 #include "racer/vehicle/configuration.h"
 #include "racer/vehicle/motor_model.h"

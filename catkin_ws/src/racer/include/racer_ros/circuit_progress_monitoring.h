@@ -117,7 +117,7 @@ namespace racer_ros
       const auto centerline = racer::track::centerline::find(
           current_configuration, grid_, final_check_points);
 
-      if (centerline.circles().empty())
+      if (centerline.empty())
       {
         ROS_ERROR("cannot find center line");
         return;
@@ -126,7 +126,7 @@ namespace racer_ros
       // Step 2
       racer::track::analysis analysis{centerline.width()};
       const auto pivot_points =
-          analysis.find_pivot_points(centerline.circles(), grid_);
+          analysis.find_pivot_points(centerline.points(), grid_);
       if (pivot_points.empty())
       {
         ROS_ERROR("cannot find pivot points");

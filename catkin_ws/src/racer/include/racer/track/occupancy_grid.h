@@ -13,6 +13,7 @@
 
 namespace racer::track
 {
+
 class occupancy_grid
 {
 public:
@@ -137,7 +138,7 @@ public:
 
   bool are_directly_visible(const racer::math::point &a, const racer::math::point &b) const
   {
-    double distance = (a - b).length();
+    double distance = a.distance(b);
     auto step = (b - a) * (cell_size_ / distance);
 
     auto pt = a;
@@ -213,4 +214,4 @@ private:
   }
 };
 
-} // namespace racer
+} // namespace racer::track
