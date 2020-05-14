@@ -6,7 +6,9 @@
 #define _USE_MATH_DEFINES
 #include <cmath>
 
-#include "racer/vehicle/base_model.h"
+#include "racer/track/occupancy_grid.h"
+#include "racer/vehicle/action.h"
+#include "racer/vehicle/base_vehicle_model.h"
 #include "racer/vehicle/chassis.h"
 
 namespace racer::following_strategies {
