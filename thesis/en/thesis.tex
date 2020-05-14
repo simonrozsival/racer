@@ -121,6 +121,7 @@
 
 % Thesis title in English (exactly as in the formal assignment)
 \def\ThesisTitle{Trajectory planning for fast moving cars}
+\def\NazevPrace{Plánování dráhy pro rychle se pohybující automobily}
 
 % Author of the thesis
 \def\ThesisAuthor{Šimon Rozsíval}
@@ -132,19 +133,26 @@
 % (according to the Organizational Structure of MFF UK in English,
 % or a full name of a department outside MFF)
 \def\Department{Department of Theoretical Computer Science and Mathematical Logic}
+\def\Katedra{Katedra teoretické informatiky a matematické logiky}
 
 % Is it a department (katedra), or an institute (ústav)?
-\def\DeptType{Department of Theoretical Computer Science and Mathematical Logic}
+\def\DeptType{Department}
+\def\TypPracoviste{Katedra}
 
 % Thesis supervisor: name, surname and titles
 \def\Supervisor{Prof. RNDr. Roman Barták, Ph.D.}
+\def\Vedouci{prof. RNDr. Roman Barták, Ph.D.}
 
 % Supervisor's department (again according to Organizational structure of MFF)
 \def\SupervisorsDepartment{Department of Theoretical Computer Science and Mathematical Logic}
+\def\KatedraVedouciho{Katedra teoretické informatiky a matematické logiky}
 
 % Study programme and specialization
 \def\StudyProgramme{Computer Science}
 \def\StudyBranch{Artificial Intelligence}
+
+\def\StudijniProgram{Informatika}
+\def\StudijniObor{Umělá inteligence}
 
 % An optional dedication: you can thank whomever you wish (your supervisor,
 % consultant, a person who lent the software, etc.)
@@ -157,9 +165,17 @@
 The goal of this thesis is to create an artificial agent for an autonomous racing vehicle.  This project is inspired by the F1/10 racing competition. The agent uses a planning algorithm to find a time-optimal trajectory. To achieve real-time performance, the agent analyzes the map of the track and it plans only for the next two corners immediately ahead of the vehicle. The agent re-plans several times per second as it drives along the circuit to account for imprecise trajectory following. We successfully tested the agent in the Gazebo simulator with good results. We also tested the algorithm on a custom car-like robot equipped with an on-board computer and sensors, but with limited success.
 }
 
+\def\Abstrakt{%
+Cílem této práce je vytvořit umělého agenta pro autonomní závodní vozidlo. Tento projekt je inspirován soutěží F1/10. Agent používá plánovací algoritmus pro nalezení trajektorie minimalizující dobu cesty do cíle. Pro dosažení plánování v reálném čase provádí agent nejprve analýzu trati a plánuje svůj pohyb pouze pro dvě nejbližší zatáčky. Agent opětovně plánuje trajektorii několikrát za vteřinu zatímco se pohybuje podél závodního okruhu, aby kompenzoval nedokonalé sledování naplánované trajektorie. Úspěšně jsme agenta otestovali pomocí simulátoru Gazebo a dosáhli jsme uspokojivých výsledků. Algoritmus jsme testovali také na vlastním robotovi vybaveným palubním počítačem a senzory, ovšem jen částečně uspokojivými výsledky.
+}
+
 % 3 to 5 keywords (recommended), each enclosed in curly braces
 \def\Keywords{%
-{planning}, {autonomous vehicle}, {autonomous racing}
+{planning}, {trajectory}, {mobile robots}
+}
+
+\def\KlicovaSlova{%
+{plánování}, {trasa}, {mobilní roboti}
 }
 
 % Definitions of macros (see description inside)
