@@ -401,9 +401,9 @@ Since both computers are connected to the same network, we can listen to the ROS
 
 \section{Implementation of Algorithms}
 
-In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}.
+In this section, we will provide a high-level overview of the C++ implementation of the racing agent. We will focus on the code of the algorithms which is located in the \texttt{/catkin\_ws/src/racer/include} directory. The code is organized into two root namespaces: \texttt{racer} and \texttt{racer\_ros}. In this section, we will go over the nested namespaces and we will mention their responsibilities and we will introduce the most notable classes and structures in these namespaces.
 
-\paragraph{Conventions} Each \texttt{struct} or \texttt{class} is located in a separate header file. The name of the type matches the file name. The location of each type in the directory structure corresponds to its namespace.
+\paragraph{Convention} Each \texttt{struct}, \texttt{class}, or standalone function is located in a separate header file. The name of the type matches the file name. The location of each type in the directory structure corresponds to its namespace.
 
 \subsection{The \texttt{racer} namespace}
 
@@ -411,48 +411,108 @@ This namespace contains all of the algorithms described in this thesis. This inc
 
 \subsubsection{The \texttt{racer::math} namespace}
 
-This namespace includes several important math primitives, operations between them, and helper functions which are used throughout the codebase.
+This namespace includes several important math primitives, operations between them, and helper functions which are used throughout the codebase:
 
-\paragraph{\texttt{angle}} is a simple typed representation of an angle in radians. The structure contains several helper functions for conversion between degrees and radians and for manipulation with an angle value.
+\begin{itemize}
+	\item \texttt{angle} is a simple typed representation of an angle in radians. The structure contains several helper functions for conversion between degrees and radians and for manipulation with an angle value.
 
-\paragraph{\texttt{vector}} is a two dimensional representation of a vector with several methods for manipulation with vectors. This structure has a type alias \texttt{point}.
+	\item \texttt{vector} is a two dimensional representation of a vector with several methods for manipulation with vectors. This structure has a type alias \texttt{point}.
 
-\paragraph{\texttt{rectangle}} is a representation of a rectangle in a two dimensional plane. It contains a function to rotate the whole object around the origin of the coordinate system and to check if two rectangles intersect each other. These functions are necessary mostly for collision detection.
+	\item \texttt{rectangle} is a representation of a rectangle in a two dimensional plane. It contains a function to rotate the whole object around the origin of the coordinate system and to check if two rectangles intersect each other. These functions are necessary mostly for collision detection.
 
-\paragraph{\texttt{circle}} is a representation of a circle in a two dimensional plane. It contains functions for generating points on the circumference of a circle and for checking if one circle overlaps with another one. This type was created mostly for the needs of the \gls{SEHS} algorithm, but it is used also in other parts of the codebase.
+	\item \texttt{circle} is a representation of a circle in a two dimensional plane. It contains functions for generating points on the circumference of a circle and for checking if one circle overlaps with another one. This type was created mostly for the needs of the \gls{SEHS} algorithm, but it is used also in other parts of the codebase.
+\end{itemize}
 
-\subsection{The \texttt{racer::track} namespace}
+\subsubsection{The \texttt{racer::track} namespace}
 
-This namespace contains code related to the race track and to the collisions between the vehicle and the track.
+This namespace contains code related to the race track and to the collisions between the vehicle and the track:
 
-\paragraph{\texttt{analysis}} is a class which contains the implementation of the trajectory analysis algorithm described in Section~\ref{sec:track_segmentation}.
+\begin{itemize}
+	\item \texttt{analysis} is a class which contains the implementation of the trajectory analysis algorithm for detecting race track corners in an occupancy grid described in Section~\ref{sec:track_segmentation}.
 
-\paragraph{\texttt{centerline}} is a simple class which contains an algorithm to find an approximation of a center line in an occupancy grid.
+	\item \texttt{centerline} is a simple class which contains an algorithm for finding an approximation of a center line in an occupancy grid.
 
-\paragraph{\texttt{occupancy\_grid}} is a class which implements all the necessary functionality for accessing the occupancy grid data. The class contains functions to find an approximate distance to the closest obstacle to a given point of the grid and to check if there is a clear line of sight between two points of the grid.
+	\item \texttt{occupancy\_grid} is a class which implements all the necessary functionality for accessing the occupancy grid data. The class contains functions to find an approximate distance to the closest obstacle to a given point of the grid and to check if there is a clear line of sight between two points of the grid.
 
-\paragraph{\texttt{collision\_detection}} is a class which checks for collision in a given occupancy grid as described in Section~\ref{sec:collision-detection}.
+	\item \texttt{collision\_detection} is a class which checks for collision in a given occupancy grid as described in Section~\ref{sec:collision-detection}.
 
-\paragraph{\texttt{circuit}} is a class which implements functions for monitoring the waypoints of the circuit and whether a vehicle passed a waypoint or not.
+	\item \texttt{circuit} is a class which implements functions for monitoring the waypoints of the circuit and whether a vehicle passed a waypoint or not.
+\end{itemize}
 
-\subsection{The \texttt{racer::vehicle} namespace}
+\paragraph{The \texttt{racer::vehicle} namespace}
 
-\subsubsection{The \texttt{racer::vehicle::kinematic} namespace}
-7
-\subsection{The \texttt{racer::sehs} namespace}
+This namespace contains classes and structures related to vehicle movement modeling:
 
-\subsection{The \texttt{racer::following\_strategies} namespace}
+\begin{itemize}
+	\item \texttt{action} is the input for the vehicle. It contains a factory method which creates a list of actions from a predefined range of throttle and steering angle values.
+	
+	\item \texttt{configuration} is a simple structure which contains the position and the orientation of a vehicle.
+	
+	\item \texttt{trajectory} is a structure which represents a trajectory found by the planning algorithm. It contains functions to find the closest step of the trajectory to any given vehicle configuration which is used both in the DWA algorithm implementation and in Pure Pursuit.
+	
+	\item \texttt{motor\_model} and \texttt{steering\_servo\_model} are classes which model the behavior of a DC motor and the steering servo. They both contain factories to create an instance of the model with the fitted values of parameters. \texttt{chassis} is a class which holds all the parameters of the vehicle.
+	
+	\item \texttt{base\_vehicle\_model} is a pure abstract class which is meant as a base to any vehicle model implementation (e.g., kinematic or dynamic vehicle model).
+	
+	\item \texttt{kinematic::state} and \texttt{kinematic::model} are an implementation of the kinematic bicycle model described in Section~\ref{sec:kinematic-bicycle-model}.
+\end{itemize}
 
-\subsection{The \texttt{racer::astar} namespace}
+\subsubsection{The \texttt{racer::space\_exploration} namespace}
 
-\subsubsection{The \texttt{racer::astar::discretized} namespace}
+This namespace contains classes related to the \gls{SEHS} algorithm for the \texttt{space exploration} part of the algorithm as described in Section~\ref{sec:space_exploration}. The rest of the SEHS algorithm is located under the \texttt{racer::astar} namespace.
 
-\subsubsection{The \texttt{racer::astar::hybrid\_astar} namespace}
+\begin{itemize}
+	\item \texttt{space\_exploration} is a class contains the \texttt{explore\_grid} function which contains an implementation of the A* algorithm and which finds the path of circles through a series of waypoints.
+\end{itemize}
 
-\subsubsection{The \texttt{racer::astar::sehs} namespace}
+\subsubsection{The \texttt{racer::astar} namespace}
+
+This namespace contains all the code of the generic A* algorithm implementation.
+
+\begin{itemize}	
+	\item \texttt{open\_set} and \texttt{closed\_set} are wrappers around the standard C++ containers \texttt{std::priority\_queue} and \texttt{std::unordered\_set} with an interface tailored for the A* algorithm.
+
+	\item \texttt{search} is a function which implements the A* algorithm itself as described in Section~\ref{sec:hybrid-astar} and Section~\ref{sec:heuristic-search}. The function finds a solution to an instance of a search problem in the form of a class derived from \texttt{base\-\_search\-\_problem}.
+	
+	\item \texttt{discretized} is a nested namespace which contains a generic implementation of a search problem in a discretized state space.
+	\begin{itemize}
+		\item \texttt{discretized::search\_problem} is an implementation of \texttt{base\-\_search\-\_problem} designed for autonomous racing. This problem requires an implementation of the \texttt{discretized::base\_discretization} pure abstract class. By injecting a specific discretization, this problem can represent either the Hybrid A* or the \gls*{SEHS} algorithm.
+	\end{itemize}
+	
+	\item \texttt{sehs} is a nested namespace which contains the specific discretization for the \gls{SEHS} algorithm.
+	\begin{itemize}
+		\item \texttt{sehs::discretization} is a class which implements the discretization of the state space based on the path of circles obtained from from \textit{space exploration}
+		\item \texttt{sehs::nearest\_neighbor} is a class which implements linear search to find the nearest circle to any vehicle configuration.
+	\end{itemize}
+
+	\item \texttt{hybrid\_astar} is a nested namespace which contains the specific discretization for the Hybrid A* algorithm.
+	\begin{itemize}
+		\item \texttt{hybrid\_astar::discretization} is a class which implements the discretization of the state space into a uniform grid.
+	\end{itemize}
+\end{itemize}
+
+\subsubsection{The \texttt{racer::following\_strategies} namespace}
+
+This namespace contains code for the \gls{DWA} and Pure Pursuit trajectory following algorithms:
+
+\begin{itemize}
+	\item \texttt{following\_strategy} is a pure abstract class which contains the definition of the API of a trajectory following strategy. A following strategy must implement the \texttt{select\_action} function which selects an appropriate action based on the current state of the vehicle and the planned trajectory.
+	\item \texttt{target\_error\_calculator} is a class which implements scoring a trajectory considered by \texttt{dwa\_strategy} based on weight parameters as described in Section~\ref{sec:trajectory-tracking-error}.
+	\item \texttt{dwa\_strategy} is a class which implements the \texttt{following\_strategy} and the \gls*{DWA} algorithm.
+	\item \texttt{pure\_pursuit} is a class which contains the implementation of the Pure Pursuit algorithm for selecting the steering angle.
+	\item \texttt{pure\_pursuit\_strategy} is a class which implements the \texttt{following\_strategy} interface and it combines the steering angle obtained from the \texttt{pure\_pursuit} class and the throttle based on the reference trajectory.
+\end{itemize}
 
 \subsection{The \texttt{racer\_ros} namespace}
 
 This namespace contains the bindings between the code in the \texttt{racer} namespace and the \gls{ROS} libraries and our custom \gls*{ROS} nodes.
 
 The most interesting set of functions is in the \texttt{include/racer\_ros/utils.h} file. This file contains functions for converting our types into \gls*{ROS} message types.
+
+\begin{itemize}
+	\item \texttt{discretized\_planner} is an abstract class which observes map updates, vehicle state updates, and waypoint updates and triggers the discretized planning algorithm based using a discretization object implemented by a derived class.
+	\item \texttt{hybrid\_astar\_planner} extends \texttt{discretized\_planner} and it provides the Hybrid A* discretization.
+	\item \texttt{sehs\_planner} extends \texttt{discretized\_planner} and it provides the \gls{SEHS} discretization.
+	\item \texttt{follower} is a class which observes the map updates, vehicle state updates, waypoint updates, and planned trajectory updates and it can select the next action from the last known vehicle state based on the injected trajectory following strategy.
+	\item \texttt{circuit\_progress\_monitoring} is a class which detects corners in observed circuit map and which publishes the coordinates of the next \texttt{n} corners ahead of the vehicle and updates this list whenever the vehicle reaches the next waypoint ahead of it.
+\end{itemize}

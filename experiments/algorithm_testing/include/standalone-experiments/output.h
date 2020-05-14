@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <iostream>
 
-#include "racer/astar/astar.h"
+#include "racer/astar/search_result.h"
 #include "racer/vehicle/kinematic/model.h"
 
 namespace output::planning

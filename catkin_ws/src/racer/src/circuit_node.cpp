@@ -5,7 +5,7 @@
 
 #include "racer/math.h"
 #include "racer/track/occupancy_grid.h"
-#include "racer/sehs/space_exploration.h"
+#include "racer/space_exploration/space_exploration.h"
 #include "racer/track/analysis.h"
 #include "racer/vehicle/base_model.h"
 

@@ -2,9 +2,9 @@
 
 #include <iostream>
 
-#include "racer/sehs/circle_node.h"
+#include "racer/space_exploration/circle_node.h"
 
-namespace racer::sehs {
+namespace racer::space_exploration {
 
 struct distance_estimate {
   bool operator()(const std::shared_ptr<circle_node> &a,

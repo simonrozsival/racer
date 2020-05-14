@@ -3,7 +3,7 @@
 #include <vector>
 
 #include "racer/astar/discretized/base_discretization.h"
-#include "racer/sehs/space_exploration.h"
+#include "racer/space_exploration/space_exploration.h"
 #include "racer/track/occupancy_grid.h"
 #include "racer/vehicle/kinematic/state.h"
 
@@ -47,7 +47,7 @@ public:
        std::shared_ptr<racer::track::occupancy_grid> occupancy_grid,
        std::vector<racer::math::point> next_waypoints, double vehicle_radius,
        double max_rpm) {
-    racer::sehs::space_exploration exploration{vehicle_radius,
+    racer::space_exploration::space_exploration exploration{vehicle_radius,
                                                5.0 * vehicle_radius, 16};
     const auto path_of_circles =
         exploration.explore_grid(occupancy_grid, start, next_waypoints);

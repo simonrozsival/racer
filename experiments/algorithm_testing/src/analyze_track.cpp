@@ -5,7 +5,7 @@
 #include "standalone-experiments/plot.h"
 
 #include "racer/math.h"
-#include "racer/sehs/space_exploration.h"
+#include "racer/space_exploration/space_exploration.h"
 
 #include "racer/track/centerline.h"
 #include "racer/track/analysis.h"

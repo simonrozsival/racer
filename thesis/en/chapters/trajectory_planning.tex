@@ -612,6 +612,7 @@ The sampling schema is the most important part of the algorithm when it comes to
 The \gls*{RRT} is a very interesting algorithm. One of its biggest advantages is its simplicity. The algorithm is easy to understand and easy to implement. There are many extensions of the original idea which improve the rate of conversion to the goal. The algorithm is complete, if we allow it to search for a solution long enough. On the other hand, the algorithm finds a trajectory without any guarantee of optimality. The optimal extension of the algorithm \gls{RRT*} is hard to adapt to our use case, when we must consider the differential constraints of the vehicle.
 
 \subsection{Hybrid A*}
+\label{sec:hybrid-astar}
 
 Due to the infinite number of states reachable from an initial state $x_0\in X$ through actions from the infinite set of actions $U$ and the transition function $f_{\Delta t}$, it is impossible to exhaustively search for an optimal trajectory in the configuration space. Even if we limit the number of actions to a finite set of motion primitives $U_f$ and limit the maximum length of a trajectory, uninformed search for a trajectory will be impractically slow. In order to converge to a goal faster, informed search algorithms estimate graph nodes based on knowledge of the nature of the searched space.
 
@@ -893,6 +894,7 @@ The path of circles can be further optimized to find a shorter path between the 
 \end{figure}
 
 \subsubsection{Heuristic Search (HS)}
+\label{sec:heuristic-search}
 
 The second phase of the \gls*{SEHS} algorithm is identical to \textit{Hybrid A*} as we defined it in Algorithm~\ref{alg:hybrid_astar}. We must only define a state space discretization function $d_{SEHS}: X\rightarrow X$ and a heuristic function $h_{SEHS}: X\rightarrow \mathbb{R}$. Both of these parameters will be derived from the path of circles obtained from the pre-processing phase.
 
@@ -1376,6 +1378,7 @@ We also tried training a neural network with three input neurons and one output 
 \end{figure}
 
 \subsection{Kinematic Bicycle Model}
+\label{sec:kinematic-bicycle-model}
 
 The name of the bicycle model, sometimes also referred to as one-track or single-track model in literature, comes from the fact, that we combine the effects of the two front wheels and the two rear wheels into a single virtual wheel located at the centers of the axles. Our kinematic model is based on a model described by Dr. Rajesh Rajamani \cite[Chapter~2]{rajamani} and it is visualized in Figure~\ref{fig:kinematic_bicycle}.
 

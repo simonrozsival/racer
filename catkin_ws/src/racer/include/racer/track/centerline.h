@@ -6,7 +6,7 @@
 
 #include "racer/math.h"
 #include "racer/track/occupancy_grid.h"
-#include "racer/sehs/space_exploration.h"
+#include "racer/space_exploration/space_exploration.h"
 #include "racer/vehicle/configuration.h"
 
 namespace racer::track
@@ -29,7 +29,7 @@ namespace racer::track
       const auto radius =
           grid->distance_to_closest_obstacle(adjusted_start.location(), 5.0);
 
-      racer::sehs::space_exploration space_exploration{0.6 * radius, 2.0 * radius,
+      racer::space_exploration::space_exploration space_exploration{0.6 * radius, 2.0 * radius,
                                                        12};
       const auto circles =
           space_exploration.explore_grid(grid, adjusted_start, checkpoints);

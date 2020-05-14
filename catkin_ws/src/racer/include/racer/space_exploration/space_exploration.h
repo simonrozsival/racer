@@ -12,10 +12,10 @@
 #include "racer/track/occupancy_grid.h"
 #include "racer/vehicle/configuration.h"
 
-#include "racer/sehs/circle_node.h"
-#include "racer/sehs/distance_estimate.h"
+#include "racer/space_exploration/circle_node.h"
+#include "racer/space_exploration/distance_estimate.h"
 
-namespace racer::sehs {
+namespace racer::space_exploration {
 
 class space_exploration {
 public:
@@ -194,4 +194,4 @@ private:
   }
 };
 
-} // namespace racer::sehs
+} // namespace racer::space_exploration

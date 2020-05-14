@@ -10,7 +10,7 @@
 #include "racer_msgs/Trajectory.h"
 #include "racer_msgs/Waypoints.h"
 
-#include "racer/astar/astar.h"
+#include "racer/astar/search.h"
 #include "racer/astar/discretized/search_problem.h"
 #include "racer/track/circuit.h"
 #include "racer/track/collision_detection.h"

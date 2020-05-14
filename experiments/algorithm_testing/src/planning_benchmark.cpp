@@ -15,12 +15,13 @@
 
 #include "racer/vehicle/action.h"
 #include "racer/math.h"
-#include "racer/sehs/space_exploration.h"
+#include "racer/space_exploration/space_exploration.h"
 #include "racer/track/collision_detection.h"
 #include "racer/vehicle/trajectory.h"
 #include "racer/vehicle/kinematic/model.h"
 #include "racer/vehicle/chassis.h"
 
+#include "racer/astar/search.h"
 #include "racer/astar/discretized/search_problem.h"
 #include "racer/astar/hybrid_astar/discretization.h"
 #include "racer/astar/sehs/discretization.h"
@@ -56,7 +57,7 @@ create_sehs_discretization(
     const std::vector<racer::math::point> waypoints,
     const std::size_t heading_angle_bins, const std::size_t motor_rpm_bins)
 {
-  racer::sehs::space_exploration exploration{vehicle.radius(),
+  racer::space_exploration::space_exploration exploration{vehicle.radius(),
                                              5.0 * vehicle.radius(), 16};
   const auto path_of_circles =
       exploration.explore_grid(occupancy_grid, start, waypoints);

@@ -24,6 +24,7 @@ where $\kappa_{x,y}: X\rightarrow \mathbb{R}^2$ is the function we defined in Se
 We will consider the reference state to be the point which splits the trajectory into the already traveled part and the rest. If $i$ is the index of the reference state in $\hat{x}_k$, then the reference sub-trajectory which should still be followed is $\hat{x}_{ref}=\left\langle x_i, x_{i+1}, \ldots, x_k \right\rangle$.
 
 \section{Trajectory Tracking Error}
+\label{sec:trajectory-tracking-error}
 
 To evaluate which control input to select and to evaluate the choice of this input, we must define an error function $e: X\times X\rightarrow \left[0, 1\right]$ which tells us how far apart the two states are from each other. This function will allow us to compare vehicle states between each other and determine which one of them is better. We will also define a second error $\hat{e}_{\Delta t}: X^*\times X^*\rightarrow \left[0, 1\right]$ function to calculate an error between two sequences of states.
 

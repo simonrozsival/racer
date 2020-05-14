@@ -5,7 +5,7 @@
 
 #include "racer/math/circle.h"
 
-namespace racer::sehs {
+namespace racer::space_exploration {
 
 struct circle_node {
   const racer::math::circle examined_circle;
@@ -37,4 +37,4 @@ struct circle_node {
   }
 };
 
-} // namespace racer::sehs
+} // namespace racer::space_exploration
