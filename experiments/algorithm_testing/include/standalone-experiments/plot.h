@@ -181,6 +181,7 @@ void plot_grid(
 }
 
 void plot_track_analysis(const track_analysis_input &config,
+                         const std::vector<racer::math::point> &checkpoints,
                          const racer::track::centerline &centerline,
                          const std::vector<racer::math::point> &pivot_points,
                          const std::vector<racer::math::point> &corners,
@@ -193,6 +194,17 @@ void plot_track_analysis(const track_analysis_input &config,
 
   unsigned char *grid_img = nullptr;
   plot_grid(config.occupancy_grid, grid_img);
+
+  plot_points("Checkpoints", checkpoints, "gx",
+              config.occupancy_grid->cell_size());
+
+  std::cout << checkpoints.size() << std::endl;
+  for (std::size_t i{0}; i < checkpoints.size() - 1; ++i) {
+    std::stringstream ss;
+    ss << i + 1 << std::endl;
+    plt::annotate(ss.str(), checkpoints[i].x() / config.occupancy_grid->cell_size(), checkpoints[i].y() / config.occupancy_grid->cell_size());
+  }
+
   plot_points("Centerline", centerline.points(), "k.",
               config.occupancy_grid->cell_size());
   plot_points("Skipped candidates", pivot_points, "ro",
@@ -209,11 +221,11 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
 
-  plt::legend();
-  // std::stringstream trajectory_file_name;
-  // trajectory_file_name << config.name << ".pdf";
-  // plt::save(trajectory_file_name.str());
-  plt::show();
+  // plt::legend();
+  std::stringstream trajectory_file_name;
+  trajectory_file_name << config.name << ".pdf";
+  plt::save(trajectory_file_name.str());
+  // plt::show();
 
   delete[] grid_img;
   delete[] circles_img;

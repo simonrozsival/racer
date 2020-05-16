@@ -69,7 +69,7 @@ The size of the state space and the action space has great impact on the way how
 
 When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
-We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all of the combinations of possible values across all of the dimensions.
+We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all combinations of the possible values across all state space dimensions.
 
 \subsection{Planning Under Differential Constraints}
 \label{sec:planning_under_differential_constraints}
@@ -820,7 +820,7 @@ Chao Chen presents a different approach to the discretization of the state space
 \subsubsection{Space Exploration (SE)}
 \label{sec:space_exploration}
 
-Space exploration is a pre-processing step of the planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The centers of each circle lies on the circumference the previous circle along the path. The radii of the circles are in some closed interval $\left[r_{min}, r_{max}\right]\subset \mathbb{R}_{>0}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal.
+Space exploration is a pre-processing step of this planning algorithm. We are looking for the shortest path of overlapping circles in $\mathbb{R}^2$ form the initial state position to the goal location. The center of each circle lies on the circumference of the previous circle along the path. The radii of the circles must be within the closed interval $\left[r_{min}, r_{max}\right]\subset \mathbb{R}^{+}$ and each radius is chosen so that it is as large as possible, but none of the circles can overlap a cell with an obstacle in the occupancy grid map of the track. The path of circles does not give us only the shortest path from the initial state to a goal, but it also avoids paths where the vehicle would not fit due to its size.
 
 The exploration step can be implemented with a basic \textit{A*} search starting at the initial state location. During the expansion step of \textit{A*}, we will create a fixed number of new circles $n\in \mathbb{N}$ evenly spaced on the circumference of the expanded circle. The radius for each new circle will be calculated by measuring the distance to the closest obstacle and trimming this value to be within the interval of accepted radii. We will not open any circles with a smaller radius than $r_{min}$. The search will end once we expand a circle which includes some endpoint $\vec{x_{goal}}\in \mathbb{R}^2$. The cost function will be the length of the path measured by the distances between the centers of the circles, which is incidentally just the sum of the radii of the circles along the path. The heuristic function $h_{\vec{x_{goal}}}$ will be a simple euclidean distance between the center of a circle and the goal point $\vec{x_{goal}}$.
 
@@ -955,7 +955,9 @@ Another benefit of splitting the track into smaller segments and planning the tr
 
 In this section we will describe an algorithm we chose to find points close to corners of a racing circuit. We will use this algorithm just once before a race starts.
 
-The definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and a sequence of at least two checkpoints $\vec{p_i}\in\mathbb{R}^2$ which defines the direction in which the vehicle has to drive along the circuit and which parts of the grid it should go through in the case when there are multiple ways to reach a goal or of the track intersects itself at some point. The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
+The definition of a racing circuit as an occupancy grid $O_r^{m\times n}$, initial configuration of the vehicle $c_0\in C$, and a sequence of at least two checkpoints $\vec{p_i}\in\mathbb{R}^2$ which defines the direction in which the vehicle has to drive along the circuit. If the circuit is more complicated and there are multiple ways of completing the circuit, for example when the track intersects itself at some point (e.g., a circuit in the shape of the number eight as shown in Figure~\ref{fig:self-intersect}), it might be necessary to define more than two waypoints to force correct completion of the circuit.
+
+The question is, how do we find a corner of a track in an occupancy grid? We can make a simple observation and derive an algorithm which will produce good approximate solutions.
 
 Intuitively, a corner is point where the track bends and we are not able to keep driving in a straight line anymore. We can relax our problem for a moment and imagine, that robot has a differential drive. This allows it to move straight in the direction where it is heading, then stop, rotate around its vertical axis, and then start moving in the new direction. If we found a collision-free path for this robot in the occupancy grid through all the checkpoints of the track, the pivot points of the robot would be in the vicinity of the corners. It might be possible that it would require several turns within a short distance of each other to go around the corner, (e.g., a so-called ``hairpin'' corner as shown in the bottom left corner of Figure~\ref{fig:corner_detection_hairpin_corner}) and so not every change of direction could be simply interpreted as a corner and some of them should be merged.
 
@@ -978,6 +980,7 @@ We will implement an algorithm based on this thought experiment which will have 
 	\centering
 	\includegraphics[width=\textwidth]{../img/track-analysis/eight}
 	\caption{Circuit ``Eight''}
+	\label{fig:self-intersect}
 	\end{subfigure}
 	\vskip\baselineskip
 	\begin{subfigure}[b]{0.49\textwidth}
@@ -994,12 +997,12 @@ We will implement an algorithm based on this thought experiment which will have 
 	\end{subfigure}
 	
 	\label{fig:corner_detection}
-	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The blue circles represent the detected corners.}
+	\caption{This figure shows several different tracks on which we applied the track segmentation algorithm. The tracks have different layouts and feature different density and types of corners. The numbered green $\times$ marks show the checkpoints which define the circuit. The blue circles represent the detected corners.}
 \end{figure}
 
 
 \subsection{Finding Pivot Points}
-The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the half of the track width, then we will find a line resembling a center line of the track. Because the width of the track can vary along the circuit, we allow the radii of the circles to be between \SI{60}{\percent} and \SI{200}{\percent} of half of the width of the track at the starting position.
+The shortest path can be found in several different ways. We can reuse the \textit{Space Exploration} algorithm which was described in Section~\ref{sec:space_exploration}. The final path will consists of steps where the robot picks one of the fixed number of possible directions, and it will move forward in this direction, before it picks another direction. If we set the minimum radius of the circles to the half of the track width, then we will find a line resembling the center line of the track. Because the width of the track can vary along the circuit, we allow the radii of the circles to be between \SI{60}{\percent} and \SI{200}{\percent} of half of the width of the track at the starting position.
 
 \begin{algorithm}
 	\caption{Find Pivot Points}
@@ -1011,9 +1014,11 @@ The shortest path can be found in several different ways. We can reuse the \text
 	\SetKwFunction{FindPivotPoints}{FindPivotPoints}
 	\SetKwFunction{SpaceExploration}{SpaceExploration}
 	\SetKwFunction{ProcessNext}{ProcessNext}
+	\SetKwFunction{FindCenterline}{FindCenterline}
+	\SetKwFunction{SelectSubsequence}{SelectSubsequence}
 	\SetKwFunction{CorrectTailToHeadConnection}{CorrectTailToHeadConnection}
 	
-	\KwIn{Occupancy grid $O_r^{m\times n}$, initial state $x_0$, directly visible points relation $O_r^{m\times n}$, sequence of checkpoints $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$}
+	\KwIn{Occupancy grid $O_r^{m\times n}$, initial state $x_0$, directly visible points relation $D$, sequence of checkpoints $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$}
 	\KwOut{Sequence of pivot points}
 		
 	\SetKwProg{algorithm}{Algorithm}{:}{}
@@ -1022,13 +1027,19 @@ The shortest path can be found in several different ways. We can reuse the \text
 	\BlankLine
 	
 	\algorithm{\FindPivotPoints{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{track}$}}{
-		$\hat{q}_l\gets $ \SpaceExploration{$O_r^{m\times n}$, $\kappa_{x,y}(x_0)$, $\hat{p}_k$, $\left[0.6 r_{track}, 2 r_{track}\right]$}\;
+		$\hat{q}\gets $ \FindCenterline{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{track}$}\;
 		$W\gets \emptyset$\;
 		$i_{last}\gets 1$\;
-		\ForEach{$i\in \left\{2,3,\ldots,l\right\}$} {
+		\ForEach{$i\in \left\{2,3,\ldots,|\hat{q}|\right\}$} {
 			$(W, i_{last})\gets $ \ProcessNext{$W$, $i_{last}$, $i$}\;
 		}
-		\KwRet{subsequence $\hat{w}_m\subseteq\hat{q}_l: m=|W| \land \forall q_i\in \hat{w}_m: i\in W$}
+		\KwRet{\SelectSubsequence{$\hat{q}$, $W$}}\;
+	}
+
+	\BlankLine
+
+	\procedure{\FindCenterline{$O_r^{m\times n}$, $x_0$, $\hat{p}_k$, $r_{track}$}}{
+		\KwRet{\SpaceExploration{$O_r^{m\times n}$, $\kappa_{x,y}(x_0)$, $\hat{p}_k$, $\left[0.6 r_{track}, 2 r_{track}\right]$}}
 	}
 
 	\BlankLine
@@ -1040,13 +1051,25 @@ The shortest path can be found in several different ways. We can reuse the \text
 		}
 		\KwRet{$(W, i_{last})$}\;
 	}
+
+	\BlankLine
+
+	\procedure{\SelectSubsequence{$\hat{q}$, $I$}}{
+		$\hat{s} \gets \langle \rangle$\;
+		\ForEach{$i\in \left\{1,2,3,\ldots,|\hat{q}|\right\}$} {
+			\If{$i\in I$}{
+				$\hat{s}\gets \hat{s} + \langle \hat{q}_i \rangle$\;
+			}
+		}
+		\KwRet{$\hat{s}$}\;
+	}
 \end{algorithm}
 
 The outcome of the \texttt{FindPivotPoints} algorithm, the pseudo-code of which is shown in Algorithm~\ref{alg:find_pivots}, is a sequence of pivot points such that two adjacent points in the sequence are \textit{directly visible} and the distances between these points are as long as possible. We use the \texttt{SpaceExploration} algorithm to find the ``center line'' $\hat{q}_l$ consisting of $l$ points. We then go around the track and we try to merge these steps into longer straight lines.
 
 We start from the initial position and pretend that this is the last marked pivot point. We find the furthest point along $\hat{q}_l$, which is directly visible from the last waypoint, and mark it as an index of the next waypoint. We then repeat this process from next waypoint until we reach the end of the track.
 
-\paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, then all of the points will be visible from each other and the whole sequence would collapse into a single waypoint. We will ignore this edge case and assume that the racing circuit has a non-trivial layout.
+\paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, all of the points will be visible from each other and the set $W$ will be empty and consequently the list of pivot points would be empty. We can ignore this edge case and assume that the racing circuit has a non-trivial layout with at least two corners (a narrow oval).
 
 \subsection{Estimating Positions of Corners}
 
@@ -1071,11 +1094,11 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 	
 	\SetKwFunction{FindCorners}{FindCorners}
 	\SetKwFunction{MergeClosePoints}{MergeClosePoints}
-	\SetKwFunction{CloseNeighbors}{CloseNeighbors}
+	\SetKwFunction{Neighbourhood}{Neighbourhood}
 	\SetKwFunction{Walk}{Walk}
 	\SetKwFunction{Next}{Next}
 	\SetKwFunction{Prev}{Prev}
-	\SetKwFunction{SelectSubsequenceBySkipping}{SelectSubsequenceBySkipping}
+	\SetKwFunction{SelectSubsequence}{SelectSubsequence}
 	
 	\KwIn{Sequence of points $\hat{p}_k=\left\langle \vec{p_1}, \vec{p_2}, \ldots, \vec{p_k} \right\rangle$, minimum distance between corners $d_{min}\in\mathbb{R}_{>0}$}
 	\KwOut{Sequence of locations of corners}
@@ -1087,8 +1110,8 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 	\BlankLine
 		
 	\algorithm{\FindCorners{$\hat{p}$, $\alpha_{max}$, $d_{min}$}}{
-		$R\gets \left\{i\in\left\{1,\ldots,|\hat{p}|\right\}\mid \alpha(\vec{p_{i-1}}-\vec{p_i},\vec{p_{i+1}}-\vec{p_i})>\alpha_{max}\right\}$\;
-		$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $R$}\;
+		$R\gets \left\{i\in\left\{1,\ldots,|\hat{p}|\right\}\mid \alpha(\vec{p_{i-1}}-\vec{p_i},\vec{p_{i+1}}-\vec{p_i})\leq\alpha_{max}\right\}$\;
+		$\hat{p}'\gets $ \SelectSubsequence{$\hat{p}$, $R$}\;
 		\KwRet{\MergeClosePoints{$\hat{p}'$, $d_{min}$}}\;
 	}
 	
@@ -1098,20 +1121,20 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 		$\hat{p}'\gets \hat{p}$\;
 		\Repeat{$\hat{p}'\neq\hat{p}$}{
 			$\hat{p}\gets\hat{p}', k\gets |\hat{p}|$\;
-			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,k\right\}} |$\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}$|$\;
-			$N\gets $ \CloseNeighbors{$i_{max}$, $\hat{p}$, $d_{min}$}\;
+			$i_{max}\gets \argmax_{i\in \left\{1,\ldots,k\right\}} |$\Neighbourhood{$i$, $\hat{p}$, $d_{min}$}$|$\;
+			$N\gets $ \Neighbourhood{$i_{max}$, $\hat{p}$, $d_{min}$}\;
 			$i_{corner}\gets \argmin_{i\in N} \alpha(\vec{p_{i-1}}-\vec{p_i}, \vec{p_{i+1}}-\vec{p_i})$\;
-			$\hat{p}'\gets $ \SelectSubsequenceBySkipping{$\hat{p}$, $N\cup\left\{i_{max}\right\}\setminus\left\{i_{corner}\right\}$}\;
+			$\hat{p}'\gets $ \SelectSubsequence{$\hat{p}$, $\left\{1,\ldots,k\right\}\setminus N\cup\left\{i_{corner}\right\}$}\;
 		}
 		\KwRet{$\hat{p}$}\;
 	}
 
 	\BlankLine
 
-	\procedure{\CloseNeighbors{$i$, $\hat{p}$, $d_{min}$}}{
+	\procedure{\Neighbourhood{$i$, $\hat{p}$, $d_{min}$}}{
 		$N_{ahead}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i-1$}\;
 		$N_{after}\gets $ \Walk{$i$, $\hat{p}$, $d_{min}$, $i\mapsto i+1$}\;
-		\KwRet{$N_{ahead}\cup N_{after}$}\;
+		\KwRet{$N_{ahead}\cup\left\{i\right\}\cup N_{after}$}\;
 	}
 
 	\BlankLine
@@ -1137,11 +1160,11 @@ In every iteration, we find the biggest cluster of points along the sequence and
 
 \paragraph{Time Complexity}
 
-At the beginning of the algorithm, we iterate over all of the pivot points and remove the points with large obtuse angles. Calculating the angle is a constant operation and so this part requires $O(k)$ time.
+At the beginning of the algorithm, we iterate over all of the $k$ pivot points and remove the points with large obtuse angles. Calculating the angle is a constant operation and so this part requires $O(k)$ time.
 
-As we discussed earlier in this section, the main loop in \texttt{MergeClosePoints} will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is a linear operation.
+As we discussed earlier in this section, the main loop in \texttt{MergeClosePoints} will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is a quadratic operation.
 
-The total time complexity of the proposed algorithm is quadratic in the length of the size of the input sequence $O(k^2)$. In practice, we expect the number of pivot points $k$ to be quite low. Also, the algorithm is used only once at the very beginning of the race. The quadratic algorithm is sufficient for this task and it is insignificant when compared to \texttt{FindPivotPoints}.
+The total time complexity of the proposed algorithm is quadratic in the length of the size of the input sequence $O(k^3)$. In practice, we expect the number of pivot points $k$ to be low, and so even its third power will be very low. Also, the algorithm is used only once at the very beginning of the race. This algorithm is sufficient for this task and its time complexity is insignificant when compared to \texttt{FindPivotPoints}.
 
 \paragraph{Memory Complexity}
 The only thing our algorithm has to remember is the input sequence of points. This requires $O(k)$ of memory. The total memory complexity is therefore linear.

@@ -46,18 +46,12 @@ int main(int argc, char *argv[])
     return 2;
   }
 
-  // Step 0
-  std::vector<racer::math::point> final_check_points{
-      config->checkpoints.begin(), config->checkpoints.end()};
-  final_check_points.push_back(
-      config->initial_position.location()); // back to the start
-
   std::cout << "Find centerline" << std::endl;
   const auto se_start = std::chrono::steady_clock::now();
 
   // Step 1
   const auto centerline = racer::track::centerline::find(
-      config->initial_position, config->occupancy_grid, final_check_points);
+      config->initial_position, config->occupancy_grid, config->checkpoints);
   stop_stopwatch("centerline", se_start);
 
   if (centerline.empty())
@@ -96,7 +90,9 @@ int main(int argc, char *argv[])
   {
     // This requires Linux or WSL+Xserver
     std::cout << "Show interactive plot" << std::endl;
-    plot_track_analysis(*config, centerline, pivot_points, corners, centerline.width());
+    std::vector<racer::math::point> checkpoints_loop{config->checkpoints.begin(), config->checkpoints.end()};
+    checkpoints_loop.insert(checkpoints_loop.begin(), config->checkpoints.back());
+    plot_track_analysis(*config, checkpoints_loop, centerline, pivot_points, corners, centerline.width());
   }
   else
   {
