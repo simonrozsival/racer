@@ -192,7 +192,7 @@ From our results, it is hard to declare a winner of the two algorithms. Both pre
 		\begin{subfigure}[c]{0.49\textwidth}
 			\includegraphics[width=\textwidth]{../img/experiments/simple_sehs_actuators}
 		\end{subfigure}
-		\caption{Soultion found by SEHS in \SI{449.20}{\milli\second}}
+		\caption{Solution found by SEHS in \SI{449.20}{\milli\second}}
 		\label{fig:simple-sehs}
 	\end{subfigure}
 	
@@ -425,7 +425,7 @@ To further test the algorithms, we implemented the complete Artificial Racing Ag
 
 In the following experiments, we tried to test the racing capabilities of the vehicle. The vehicle was given a complete map of the circuit at the beginning of the race. The goal was to go around the circuit repeatedly without colliding with walls and obstacles and reaching the best lap times as possible.
 
-The agent repeatedly triggers the \gls{SEHS} based trajectory planning algorithm from the latest known state of the vehicle with the latest known state of the map with the obstacles marked in it through the current list of waypoints. At the same time, the vehicle is already driving and following the last published trajectory. Once the planning algorithm comes up with a new plan, it replaces the old plan and it can start planning again with the latest known state.
+The agent repeatedly triggers the trajectory planning algorithm from the latest known state of the vehicle with the latest known state of the map with the obstacles marked in it through the current list of waypoints. At the same time, the vehicle is already driving and following the last published trajectory. Once the planning algorithm comes up with a new plan, it replaces the old plan and it can start planning again with the latest known state. We tested both the \gls{SEHS} and the Hybrid A* algorithms.
 
 \subsection{Testing Criteria}
 For the planning algorithm to be viable, it must calculate the trajectory in a short period of time before the vehicle physically moves to the end of the previous trajectory. We were also interested in the safety of the planned trajectory and the distance the vehicle keeps from the obstacles while following the trajectory. Finally, our goal is to achieve fast lap times and we are interested in the maximum speed our vehicle can achieve while driving safely.

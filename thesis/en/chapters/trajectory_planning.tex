@@ -537,7 +537,7 @@ In this chapter we will introduce several well-known sampling-based algorithms a
 
 The \gls{RRT} is a simple randomized algorithm designed by Steven M. LaValle with differential constraints of mobile robots in mind \cite{RRT}. The core idea of this algorithm is to build a tree structure rooted in the initial state $x_0$ with branches representing state trajectories by randomly sampling the state space and using the system simulator function to find feasible trajectories in the state space.
 
-The tree is grown iteratively by randomly sampling a state $x_{rand}\in X$ using some sampling scheme and choosing an action $u$ from $U_f$ which will steer the robot to a new state $x_{new}$ towards $x_{rand}$ without colliding with an obstacle from an existing tree node $x_{near}$ which is the closest to $x_rand$ according to some metric $\rho$ on $X$. The new node is added as a vertex to the tree and it is connected via an edge to its parent node $x_{near}$. This process is repeated until a state trajectory which ends in the goal region is found or until a fixed number of iterations is exceeded, in which case the search ends with a failure. The pseudocode of RRT is included in Algorithm~\ref{alg:rrt}.
+The tree is grown iteratively by randomly sampling a state $x_{rand}\in X$ using some sampling scheme and choosing an action $u$ from $U_f$ which will steer the robot to a new state $x_{new}$ towards $x_{rand}$ without colliding with an obstacle from an existing tree node $x_{near}$ which is the closest to $x_{rand}$ according to some metric $\rho$ on $X$. The new node is added as a vertex to the tree and it is connected via an edge to its parent node $x_{near}$. This process is repeated until a state trajectory which ends in the goal region is found or until a fixed number of iterations is exceeded, in which case the search ends with a failure. The pseudocode of RRT is included in Algorithm~\ref{alg:rrt}.
 
 \begin{algorithm}
 	\SetAlgoLined
@@ -577,7 +577,7 @@ The tree is grown iteratively by randomly sampling a state $x_{rand}\in X$ using
 
 \paragraph{Nearest Neighbor Search}
 
-The algorithm performs a search for the closest state to the sampled state among the nodes in the tree according to the metric $\rho$ in every iteration of the algorithm and this search can have considerable impact on the performance of the algorithm.
+The algorithm searches for the closest state to the sampled state among the nodes in the tree according to the metric $\rho$ in every iteration of the algorithm and this search can have considerable impact on the performance of the algorithm.
 
 A naïve solution would be to go over all tree nodes and find a node with minimum distance to the sampled state, but this approach would have linear time complexity with respect to the number of nodes of the tree. A better solution is to use a space partitioning data structure which is designed for nearest neighbor search. A good choice is a balanced $k$-d tree \cite{kd-tree}, where $k$ is the dimension of the partitioned space, in our case the dimension of $X$.
 
@@ -613,7 +613,7 @@ The main difference between our modified algorithm and the original algorithm pr
 
 \gls*{RRT} does not have any mechanism for finding optimal trajectories. On contrary, it is proven that the paths found by \gls*{RRT} are optimal with the probability of 0 \cite{RRT_star}.
 
-There are modifications to the \gls*{RRT} algorithm which utilize the randomized sampling approach and probabilistic completeness of the algorithm, but which are optimal. One of these algorithms is called \gls{RRT*}. Unfortunately, this algorithm is not easily usable for us, because it is not designed for problems with differential constraints. The algorithm uses a ``rewiring'' procedure to optimize the tree edges after a new node is added. This procedure needs to be able to connect two states $x_1, x_2\in X$ with an action trajectory. This would be near impossible in the discrete-time model we chose and even with variable time, this operation would be very expensive and impractical.
+There are modifications to the \gls*{RRT} algorithm which utilize the randomized sampling approach and probabilistic completeness of the algorithm, but which are optimal. One of these algorithms is called \gls{RRT*} \cite{RRT_star}. Unfortunately, this algorithm is not easily usable for us, because it is not designed for problems with differential constraints. The algorithm uses a ``rewiring'' procedure to optimize the tree edges after a new node is added. This procedure needs to be able to connect two states $x_1, x_2\in X$ with an action trajectory. This would be near impossible in the discrete-time model we chose and even with variable time, this operation would be very expensive and impractical.
 
 \subsubsection{Sampling Schema}
 
@@ -640,7 +640,7 @@ This modified algorithm is referred to as \textit{Hybrid-State A* Search}. It wa
 
 \subsubsection{State Space Discretization}
 
-The advantage of A* is that it visits every state at most once and whenever we reach a graph node is visited, we have an assurance that the path through which we came from the initial node is the best possible one and we can ignore this node in the future if we find a different route to it. This works well for discrete search spaces where it is easy to compare two nodes between themselves and determine whether it was already visited or not. In a continuous state space, this can be problematic. Even though we come very close to an already visited node, it does not have to be equal to the node. Let us consider the following example.
+The advantage of A* is that it visits every state at most once and whenever we reach a graph node, we have an assurance that the path through which we came from the initial node is the best possible one and we can ignore this node in the future if we find a different route to it. This works well for discrete search spaces where it is easy to compare two nodes between themselves and determine whether it was already visited or not. In a continuous state space, this can be problematic. Even though we come very close to an already visited node, it does not have to be equal to the node. Let us consider the following example.
 
 \begin{example}
 	Imagine we have a robot which moves in a two-dimensional plane and it is subject to differential constraints. The state space will be the configuration space $X=C$. We will focus on one action $u$ which moves the robot forward and steers to the left. In a fixed time of $\Delta t=1$ second the robot should travel around a quarter of a circle and turns by ninety degrees ($\dfrac{\pi}{2}$ radians). If we start from an initial state $x_0=\left(0,0,0\right)$ then after applying $u$ four times in a row, we would expect to go through states $x_1=\left(1,1,\dfrac{\pi}{2}\right),x_2=\left(0,2,\pi\right),x_3=\left(-1,1,\dfrac{3\pi}{2}\right)$, and arrive to a final state $x_4=\left(0,0,0\right)=x_0$ after 4 seconds. If we try to implement and run this example in a simulation, we might get a slightly different result caused by accumulated rounding errors and other numerical approximations. For example, we might use only a finite number of the decimals of the number $\pi$ and arrive to a heading angle of $\theta<2\pi$. The A* algorithm will consider $x_0$ and $x_4$ as different nodes of the graph and it will continue with the expansion of $x_4$. This example is visualized in Figure~\ref{fig:no_discretization_example}.
@@ -803,7 +803,7 @@ The time complexity of ``unfolding`` depends on the number of repetitions of the
 \paragraph{The \texttt{Expand} procedure}
 The expansion tries to apply all of the available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
 
-\paragraph{Total time complexity} For we get each expanded state from the heap and run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because motion planning was shown to be PSPACE-hard \cite[Chapter~6.5.1]{lavalle_2006}.
+\paragraph{Total time complexity} For each expanded state we remove the minimum item from the heap and we run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because motion planning was shown to be PSPACE-hard \cite[Chapter~6.5.1]{lavalle_2006}.
 
 \subsubsection{Memory Complexity}
 
@@ -971,13 +971,13 @@ We will implement an algorithm based on this thought experiment which will have 
 	\begin{subfigure}[b]{0.49\textwidth}
 		\centering
 		\includegraphics[width=\textwidth]{../img/track-analysis/race_track}
-		\caption{Circuit ``U''}
+		\caption{Circuit ``Race Track''}
 	\end{subfigure}
 	\hfill
 	\begin{subfigure}[b]{0.49\textwidth}%
 	\centering
-	\includegraphics[width=\textwidth]{../img/track-analysis/simple}
-	\caption{Circuit ``Simple''}
+	\includegraphics[width=\textwidth]{../img/track-analysis/eight}
+	\caption{Circuit ``Eight''}
 	\end{subfigure}
 	\vskip\baselineskip
 	\begin{subfigure}[b]{0.49\textwidth}
@@ -1064,6 +1064,7 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 
 \begin{algorithm}
 	\caption{Find Corners}
+	\label{alg:find_corners}
 	
 	\SetAlgoLined
 	\DontPrintSemicolon
@@ -1124,8 +1125,6 @@ It might be possible, that the \texttt{FindPivotPoints} algorithm returns a path
 		}		
 		\KwRet{$N$}\;
 	}
-
-	\label{alg:find_corners}
 \end{algorithm}
 
 \subsubsection{Algorithm Analysis}
@@ -1179,9 +1178,9 @@ In this section, we will describe the behavior of the actuators of our vehicle a
 
 \subsubsection{Steering Servo Model}
 
-\paragraph{Steering Angle to PWM Mapping}
+\paragraph{Steering Angle to \gls{PWM} Mapping}
 
-The position of the steering servo is transferred to the front wheels through mechanical linkages. The inner wheel is steered more than the outer wheel, because the outer wheel will circumscribe a circle with a larger radius than the inner wheel. When the wheels are rolling perfectly against the surface at slow speed, the vehicle will keep going around a circle with a constant radius.
+The position of the steering servo is transferred to the front wheels through mechanical linkages. The inner wheel is steered more than the outer wheel, because the outer wheel will circumscribe a circle with a larger radius than the inner wheel. When the wheels are rolling perfectly against the surface at slow speed, the vehicle will keep going around a circle with a constant radius. \gls{PWM} is the electrical impulse we use to control the steering servo. More information about this signal is available in Appendix~\ref{sec:chassis} and Figure~\ref{fig:pwm}.
 
 We measured the radius $R$ of the inner wheel as it circumscribes a circle, with the steering servo set to several constant \gls{PWM} values. From this radius, we can calculate the steering angle $\delta$ of a virtual front wheel in the middle of the front axis from the geometry of the vehicle:
 
