@@ -273,35 +273,25 @@ We can now summarize the discussion in this section into a set of requirements f
 
 \subsection{Problem Analysis}
 
-\subsubsection{The Configuration Space and the State Space}
-\label{sec:configuration_and_state_space}
+\subsubsection{The Configuration Space}
 
 We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all of the parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
 
 Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ consisting of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$ where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
 
-The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$ and additional variables representing the kinematics and dynamics required by the differential constraints. We will define a function $\kappa: X\rightarrow C$ which returns the configuration of the vehicle in the given state, and also $\kappa_{x,y}: X\rightarrow \mathbb{R}^2$ and $\kappa_\theta: X\rightarrow \left[0, 2\pi\right)$ to obtain just the position or the heading angle of the given state. We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
-
-\paragraph{Initial State}
-At the start of the race, the vehicle is expected to be situated at a predefined starting location of the racing circuit with its heading angle identical to the direction of the race. The vehicle starts from a standstill with the wheels not spinning and the front wheels pointing the heading direction of the car.
-
-During the race, the speed and the steering angle have to be measured using sensors. We must take into account that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
-
 \subsubsection{Collision Detection}
 \label{sec:collision-detection}
 
-A collision detection function $c_{R}: C \rightarrow \left\{T, F\right\}$ divides the configuration space into two parts $C_{free}$ and $C_{obs}$:
+A collision detection function $c_{R}: C \rightarrow \left\{0, 1\right\}$ divides the configuration space into two parts $C_{free}$ and $C_{obs}$:
 
 \begin{equation*}
 \begin{aligned}
-	C_{obs} &= \left\{x\in C \mid c_{R}(x)=T\right\} \\
-	C_{free} &= C \setminus C_{obs}.
+C_{obs} &= \left\{x\in C \mid c_{R}(x)=1\right\} \\
+C_{free} &= C \setminus C_{obs}.
 \end{aligned}
 \end{equation*}
 
-The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
-
-The planning algorithm does not work directly with the configuration space, but rather with a state space. An extension of the partitioning into $C_{free}$ and $C_{obs}$ into the state space is very straightforward because a collision is dependent only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. For a state $x\in X$, which is an extension a configuration $c_x \in C$, it holds $(x\in X_{obs} \iff c_x\in C_{obs}) \wedge (x\in X_{free} \iff c_x\in C_{free})$.
+The value of the function is $1$ when a collision between the vehicle and the obstacles occurs and $0$ otherwise. The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
 
 \paragraph{Representation of Obstacles}
 We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$ where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
@@ -310,19 +300,19 @@ To check if a single point of the world $\left(x,y\right)\in \mathbb{R}^2$ colli
 
 \begin{equation*}
 \begin{aligned}
-	x_r &= \left\lceil \frac{x}{r} \right\rceil \\
-	y_r &= \left\lceil \frac{y}{r} \right\rceil
+x_r &= \left\lceil \frac{x}{r} \right\rceil \\
+y_r &= \left\lceil \frac{y}{r} \right\rceil
 \end{aligned}
 \end{equation*}
 
 If the point lies outside of the area covered by the occupancy grid, we can treat it as an obstacle. Otherwise we look into the appropriate cell of the matrix. The collision detection function $c_1$ for a single point can be:
 
 \begin{equation*}
-	c_1(O_{r}^{m\times n}, x, y) =
-	\begin{cases}
-		1 & x_r < 1 \lor y_r < 1 \lor y_r > m \lor x_r > n \\
-		\left(O_{r}^{m\times n}\right)_{y_r, x_r} & \text{otherwise}.
-	\end{cases}
+c_1(O_{r}^{m\times n}, x, y) =
+\begin{cases}
+1 & x_r < 1 \lor y_r < 1 \lor y_r > m \lor x_r > n \\
+\left(O_{r}^{m\times n}\right)_{y_r, x_r} & \text{otherwise}.
+\end{cases}
 \end{equation*}
 
 We assume that the occupancy grid is aligned with the origin of the world reference frame and that the column indexes grow parallel to the $x$ axis and the indexes of rows parallel to the $y$ axis. If there is a transformation between the origin of the world reference frame and the occupancy grid, the point $(x, y)$ has to be rotated and translated appropriately before the coordinates of the corresponding tile can be determined. Please note that matrix rows and columns are indexed from 1, unlike for example arrays in the C and many other programming languages, which start indexing at 0.
@@ -368,6 +358,58 @@ The obvious advantage of the first method is its higher accuracy. The second met
 
 In the end, we implemented a combined approach. We first use the \textit{second} method to efficiently rule out collision whenever the vehicle is far from any obstacle. If the center of the gravity of the vehicle is in a dangerous cell though, we use the more expensive \textit{first} method to get a more precise collision detection.
 
+\subsubsection{Waypoints}
+
+When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $l>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track $\hat{w}=\langle \vec{w_0}, \vec{w_1}, \ldots, \vec{w_l} \rangle$.
+
+To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
+
+\begin{defn}[Directly Visible Points]
+	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the line between these two points. The set $D(O_r^{m\times n})\subseteq \mathbb{R}^2\times\mathbb{R}^2$ for the given occupancy grid captures this relation:
+	\[
+	(\vec{x}, \vec{y}) \in D(O_r^{m\times n}) \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
+	\]
+	\label{def:directly_visible_points}.
+\end{defn}
+
+\begin{defn}[Waypoint]
+	Waypoint goal region in an occupancy grid $O_r^{m\times n}$ is a set of configurations
+	\[
+	G_r(\vec{w})=\left\{c\in C \mid \norm{(c_x, c_y)-\vec{w}}<r \land ((c_x,c_y), \vec{w}) \in D(O_r^{m\times n}) \right\},
+	\]
+	where $r\in \mathbb{R}$ is the radius of the goal region and $\vec{w}\in\mathbb{R}^2$ is the center of the waypoint. $G_r(\vec{w})$ is a set of all configurations which are considered to \textit{pass the waypoint}.
+\end{defn}
+
+The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The choice of the radius of the \textit{waypoint goal region} is not too important. The radius should be large enough to cover the whole width of the track, so that it does not force the vehicle to change the trajectory just to pass the artificially added waypoint. On the other hand, the waypoints should not overlap very much. The requirement of \textit{direct visibility} is there to prevent scenarios when the vehicle could pass a waypoint ``behind a wall'' if the radius is too large, as is shown in Figure~\ref{fig:waypoints}.
+
+\begin{figure}
+	\centering
+	\includegraphics[width=\textwidth,trim=0 0 80 0, clip]{../img/waypoint_behind_wall}
+	\caption{If the waypoint did not require direct visibility, the blue car would pass the waypoint whose radius is marked with the dashed line. The green area represents the actual waypoint area.}
+	\label{fig:waypoints}
+\end{figure}
+
+\subsubsection{The State Space}
+
+The complete \textit{state space} $X$ of the vehicle will be a combination of the configuration space $C$, the number of passed waypoints, and several additional variables representing the kinematics and dynamics required by the differential constraints.
+
+We will define a function $\kappa: X\rightarrow C$ which returns the configuration of the vehicle in the given state, and also $\kappa_{x,y}: X\rightarrow \mathbb{R}^2$ to obtain just the position of the given state.
+
+The state space also has to contain an addition finite dimension for the number of waypoints which have already been reached. The size of this dimension will always depend on the number of waypoints $l$. To denote the number of passed waypoints of a state, we will use a function $\mu: X \rightarrow \left\{0, 1, 2,\dots, l\right\}$.
+
+We will discuss the choice of appropriate vehicle models in Section~\ref{sec:vehicle_model} and we will define a concrete state space for each of the vehicle models.
+
+We can also extend of the partitioning of the configuration space into $C_{free}$ and $C_{obs}$ for the state space. Collision depends only on the configuration of the vehicle body, not on the kinematics and dynamics of the vehicle. We can therefore define $X_{free}$ and $X_{obs}$ by the following expression:
+
+\begin{equation*}
+\forall x\in X: \left(x\in X_{obs} \iff \kappa(x)\in C_{obs}\right) \wedge \left(x\in X_{free} \iff \kappa(x)\in C_{free}\right).
+\end{equation*}
+
+\paragraph{Initial State}
+At the start of the race, the vehicle is expected to be situated at a predefined starting location of the racing circuit with its heading angle identical to the direction of the race. The number of passed waypoints is zero. The vehicle starts from a standstill with the wheels not spinning and the front wheels pointing the heading direction of the car.
+
+During the race, the speed and the steering angle have to be measured using sensors. We must take into account that this state is most likely slightly inaccurate due to the errors in the measurements and due to a delay between the measurement and the start of planning. By the time the planning algorithm finds a trajectory, the state vehicle will have already changed and it will be different from the initial conditions of the planning algorithm.
+
 \subsubsection{Action Space}
 
 Our vehicle has two actuators which can be controlled by:
@@ -391,7 +433,7 @@ The action space $U$ as we defined it is infinite. In practice, our actuators ca
 
 Earlier in Section~\ref{sec:planning_under_differential_constraints}, we described an action trajectory as a continuous function of time which specifies the action at any given moment. This concept is unrealistic for our use case because we want to apply it to real hardware. The speed of an electric motor controlled by a \gls{PWM} signal can be adjusted only once per a duty cycle period. This information alone gives us a good reason to treat time not as a continuous function, but as a sequence of evenly spaced samples of time points, in which the planning algorithm can choose the next action. The choice of the sampling period will be a trade off between maximum possible control over the hardware and the number of decisions the planning algorithm will make.
 
-We will integrate state transition function to integrate the velocity in the state space over a constant time period $\Delta t$ with a constant action $u\in U_f(x(t))$ based on (\ref{eq:integrate_state_trajectory}) and we will call the resulting function $f_{\Delta t}$ the \textit{system simulator}:
+We will integrate state transition function over a constant time period $\Delta t$ with a constant action $u\in U_f(x(t))$ based on (\ref{eq:integrate_state_trajectory}) and we will call the resulting function $f_{\Delta t}$ the \textit{system simulator}:
 
 \begin{equation}
 	x(t+\Delta t)=f_{\Delta t}(x(t), u)=x(t) + \int_{0}^{\Delta t} f\left(x(t+\tau), u \right) d\tau,
@@ -406,56 +448,32 @@ where $\forall \tau \in [t, t+\Delta t]: x(\tau)\in X \wedge u\in U_f(x(\tau))$.
 Executing some actions for a time period $\Delta t$ might result in a collision with an obstacle. To avoid this problem, we will limit the action set of a vehicle state by incorporating the collision detection function and the system simulator $f_{\Delta t}$ to allow only safe actions:
 
 \[
-U_f(x)=\left\{u\in U_f \mid c(f_{\Delta t}(x, u)) = F\right\}.
+U_f(x)=\left\{u\in U_f \mid c(f_{\Delta t}(x, u)) = 0\right\}.
 \]
 
 It is worth noting that if the vehicle is in state when its action set is empty, the vehicle is in a state when a collision within $\Delta t$ is inevitable.
 
-\subsubsection{Goal Region}
-
-When we analyzed the problem earlier in this chapter, we decided to plan a trajectory for the next $l>0$ track segments ahead (each segment should ideally correspond to a corner of the track or to a straight stretch between two corners). These segments will be given in the form of a list of points at the end of each segment in the coordinate frame of the track $\hat{w}=\langle \vec{w_0}, \vec{w_1}, \ldots, \vec{w_l} \rangle$.
-
-To ensure that our vehicle goes around the circuit in the correct direction and it follows the track correctly even in cases, when the track intersects itself and forms loops, the trajectory of the vehicle must pass these waypoints in the given order. The concept of ``passing a sequence of waypoints'' is formulated by the following definitions:
-
-\begin{defn}[Directly Visible Points]
-	We say that two vectors $\vec{x},\vec{y}\in\mathbb{R}^2$ are \textit{directly visible points}, if there is no obstacle in an occupancy grid $O_r^{m\times n}$ on the line between these two points. The set $D(O_r^{m\times n})\subseteq \mathbb{R}^2\times\mathbb{R}^2$ for the given occupancy grid captures this relation:
-	\[
-		(\vec{x}, \vec{y}) \in D(O_r^{m\times n}) \iff \forall t \in \left[0, 1\right]: c_1(O_{r}^{m\times n}, \vec{x} + t(\vec{y}-\vec{x})) = 0.
-	\]
-\label{def:directly_visible_points}.
-\end{defn}
-
-\begin{defn}[Waypoint]
-	Waypoint goal region in an occupancy grid $O_r^{m\times n}$ is a set of states
-	\[
-		G_r(\vec{w})=\left\{x\in X \mid \norm{\kappa_{x,y}(x)-\vec{w}}<r \land (\kappa_{x,y}(x), \vec{w}) \in D(O_r^{m\times n}) \right\},
-	\]
-	where $r\in \mathbb{R}$ is the radius of the goal region and $\vec{w}\in\mathbb{R}^2$ is the center of the waypoint. $G_r(\vec{w})$ is a set of all states which are considered to \textit{pass the waypoint}.
-\end{defn}
-
-The notation $\norm{\cdot}$ represents the Euclidean norm in $\mathbb{R}^2$. The choice of the radius of the \textit{waypoint goal region} is not too important. The radius should be large enough to cover the whole width of the track, so that it does not force the vehicle to change the trajectory just to pass the artificially added waypoint. On the other hand, the waypoints should not overlap very much. The requirement of \textit{direct visibility} is there to prevent scenarios when the vehicle could pass a waypoint ``behind a wall'' if the radius is too large, as is shown in Figure~\ref{fig:waypoints}.
-
-\begin{figure}
-	\centering
-	\includegraphics[width=\textwidth,trim=0 0 80 0, clip]{../img/waypoint_behind_wall}
-	\caption{If the waypoint did not require direct visibility, the blue car would pass the waypoint whose radius is marked with the dashed line. The green area represents the actual waypoint area.}
-	\label{fig:waypoints}
-\end{figure}
-
-To implement this goal condition, we must extend the state space $X$ with one extra discrete dimension. This dimension will denote how many waypoints the vehicle has passed since the initial state and we will define a function $\mu: X\rightarrow \mathbb{N}$ which returns this number. For the initial state $x_0$ the number of passed waypoints will always be 0. For a state $x\in X$ the value is defined based on the state from which it was reached $x'\in X$: 
+The \textit{system simulator} function describes the motion of the vehicle, but it does not model how the discrete state dimension of the number of passed waypoints $\mu$ behaves. We must extend the function $f_{\Delta t}$ to increase the number of passed waypoints when the next waypoint region is entered:
 
 \begin{equation*}
-	\mu(x)=
-	\begin{cases}
-		\mu(x')+1 & x\in G_r(\vec{w_{\mu(x')+1}}) \\
-		\mu(x') & otherwise.
-	\end{cases}
+\mu(c)=
+\begin{cases}
+\mu(c')+1 & c' \not\in G_r(\vec{w_{\mu(c')+1}}) \wedge c\in G_r(\vec{w_{\mu(c')+1}}) \\
+\mu(c') & otherwise,
+\end{cases}
 \end{equation*}
 
-The goal region $X_g$ will be a set of all states, which pass all $l$ waypoints:
+where $c=\kappa(x)$, $c'=\kappa(x')$, $x=f_{\Delta t}(x, u)$ for some action $u\in U_f$.
+
+
+\subsubsection{Goal Region}
+
+One we find a trajectory starting in the initial state $x_0$ such that the sequence of states passes all the waypoints in the correct order, we found the trajectory we were looking for. The last state of the trajectory $x_k$ must be a state in which the trajectory enters the region of the last waypoint, i.e. $\mu(\kappa(x_k)) = l$. At the same time, any trajectory which contains a state $x$ such that $\mu(\kappa(x)) = l$ necessarily passes all the waypoints in the correct order thanks to the way we defined the transition function in the previous section.
+
+The goal region $X_g$ of our search problem for a sequence of $l$ waypoints will be a set of all states which pass the $l$-th waypoint:
 
 \[
-	X_g=\left\{x\in X \mid \mu(x)=l\right\}.
+	X_g=\left\{x\in X_{free} \mid \mu(\kappa(x))=l\right\}.
 \]
 
 \subsubsection{Problem Formulation}
@@ -469,7 +487,7 @@ In the previous sections, we described and defined the individual components of 
 	\begin{itemize}
 		\item A non-empty continuous set $X\subseteq\mathbb{R}^n$, which is the state space of the vehicle. Each state of the vehicle is represented by $n\in\mathbb{N}:n\geq4$ state variables and it contains the dimensions of the configuration of the vehicle in a two dimensional plane, a discrete dimension for the number of passed waypoints, and other state variables as defined by the vehicle model which is used.
 
-		\item A non-empty finite set $U_f$ of actions, such that $\forall x\in X, \forall u\in U_f(x): c(f_{\Delta t}(x, u)) = F$, where $c$ is a collision detection function.
+		\item A non-empty finite set $U_f$ of actions, such that $\forall x\in X, \forall u\in U_f(x): c(f_{\Delta t}(x, u))=0$, where $c$ is a collision detection function.
 
 		\item A \textit{system simulator} $f_{\Delta t}:X\times U_f \rightarrow X$ for a fixed time period $\Delta t>0$.
 		
@@ -498,7 +516,7 @@ This sequence contains all the information we need to reconstruct the full conti
 	For an instance of a trajectory planning problem for a fast moving car $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$, a feasible state trajectory $\hat{x_k}=\langle x_0, x_1, \ldots, x_k \rangle$ is a time-optimal feasible solution of the problem if:
 	\begin{itemize}
 		\item the final state is in the goal region: $x_k \in X_g$,
-		\item and for every other feasible state trajectory $\hat{y_l}$, which ends in the goal region, it takes longer or the same time to reach the goal (i.e. $l \geq k$).
+		\item and for every other feasible state trajectory $\hat{y_j}$, which ends in the goal region, it takes longer or the same time to reach the goal (i.e. $j \geq k$).
 	\end{itemize}
 \end{defn}
 
@@ -745,7 +763,7 @@ We will conduct search over the state space of our vehicle. Besides the state ve
 		\Repeat{$x_{last}=x_{prev}\lor d(x_{start})\neq d(x_{last})$}{
 			$x_{prev}\gets x_{last}$\;
 			$x_{last}\gets f_{\Delta t}(x_{last}, u)$\;
-			\lIf{$c(x_{last})=T$}{\KwRet{$\left(null, -1\right)$}}
+			\lIf{$c(x_{last})=1$}{\KwRet{$\left(null, -1\right)$}}
 			$k\gets k+1$\;
 		}
 		\KwRet{$\left(x_{last}, k\right)$}\;
@@ -1491,10 +1509,10 @@ The linear and rotational velocity of the body of the vehicle in the global refe
 \end{aligned}
 \end{equation*}
 
-The kinematic model does not require any extra state variables on top of the configuration and the state variables of the actuators. The final state space $X$ would therefore have five continuous dimensions:
+The kinematic model does not require any extra state variables on top of the configuration and the state variables of the actuators. The final state space $X$ would therefore have five continuous dimensions and one discrete dimension for the number of passed waypoints:
 
 \begin{equation*}
-	X=\left\{\left(x,y,\theta,\delta,\omega\right)\mid x,y,\omega\in\mathbb{R}, \theta,\delta\in\left[0, 2\pi\right)\right\}.
+	X=\left\{\left(x,y,\theta,m,\delta,\omega\right)\mid x,y,\omega\in\mathbb{R},m\in\left\{0,1,2,\dots,l\right\},\theta,\delta\in\left[0, 2\pi\right)\right\}.
 \end{equation*}
 
 \subsection{Dynamic Bicycle Model}
