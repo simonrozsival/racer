@@ -474,7 +474,7 @@ Due to the hardware issues we ran into and due to other factors, which did not a
 
 The F1/10 simulator repository contains a 3D map\footnote{To view the state of the repository at the time of writing, see \url{https://github.com/f1tenth-dev/simulator/tree/140f8bd93b22b59d7cf7bfa753e1fdc73a4a8e59}. The repository has changed since then and the map we used has been removed.} with several different types of corners and it is shown in Figure~\ref{fig:gazebo-track}. Especially the middle part which consists of a series of left-hand turn followed by a right-hand hairpin turn presents a challenge where the car must slow down to avoid collision while keeping as much speed as possible to still reach a good lap time. We ran the full-circuit planning for the modified vehicle model and for this track.
 
-For this experiment, we turned off the obstacle detection and we focused only on the lap times in a track without any obstacles. We tried a reference implementation against our four different combinations of algorithms and for each of them, we let it run for up to 10 consecutive laps. We ran each algorithm three times and we used the run in which it was able to complete all of the 10 laps and in which it reached the best average lap time.
+For this experiment, we turned off the obstacle detection and we focused only on the lap times in a track without any obstacles. We tried a reference implementation against our four different combinations of algorithms and for each of them, we let it run for up to 10 consecutive laps. We ran each algorithm three times and we used the run in which it was able to complete all 10 laps and in which it reached the best average lap time.
 
 \begin{figure}
 	\centering

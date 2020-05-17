@@ -5,19 +5,19 @@ The main focus of this thesis is the problem of trajectory planning for a fast m
 
 With the knowledge of the theory, we will formulate our trajectory planning problem. We will consider several well-known search algorithms used to solve planning problems and adapt them to our problem.
 
-The solution of the planning problem will be a trajectory. A trajectory is the description of both the path the vehicle should follow and the speed profile. If a robot is able to follow this trajectory, it will have an advantage over reactive steering algorithms, such as end-to-end driving, as it will be able to go through a series of corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line. We will discuss a way of following the trajectory later in Chapter~\ref{chapter:following}.
+The solution to the planning problem will be a trajectory which is both the path and the speed profile the vehicle should follow. If a robot is able to follow this trajectory, it will have an advantage over reactive steering algorithms, such as end-to-end driving, as it will be able to go through a series of corners efficiently by slowing down and accelerating at convenient times and by following an appropriate racing line. We will discuss a way of following the trajectory later in Chapter~\ref{chapter:following}.
 
 \section{Introduction to Planning}
 
-In this section, we will give a brief overview of the basic concepts of automatic planning and planning under differential constraints. The main source of the information for this chapter is a book by Steven M. LaValle called \textit{Planning Algorithms} \cite{lavalle_2006}. This book describes all of the topics in this section in much more detail and it is a good source of further information on this topic.
+In this section, we will give a brief overview of the basic concepts of automatic planning and planning under differential constraints. The main source of the information for this chapter is a book by Steven M. LaValle called \textit{Planning Algorithms} \cite{lavalle_2006}. This book describes all the topics in this section in much more detail and it is a good source of further information on this topic.
 
 \subsection{Automatic Planning}
 
 Planning is the task of solving a problem by finding a sequence of actions, which transforms the world to some desired state. The world of a planning problem is defined in terms of states and actions.
 
-A single state is a full description of all of the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or an $n$-dimensional vector of real numbers. All of the possible states of the world form a state space.
+A single state is a full description of all the important aspects of the world. A state can be encoded in many different ways, for example it can be a set of logical propositions which hold true in the given state or an $n$-dimensional vector of real numbers. All possible states of the world form a state space.
 
-An action is a way of changing a state of the world into a different state. Not all actions can be applied in all states and so the set of possible actions can differ from state to state. All of the actions together then form an action space.
+An action is a way of changing a state of the world into a different state. Not all actions can be applied in all states and so the set of possible actions can differ from state to state. All actions together then form an action space.
 
 The planning task is to find a sequence of actions, which changes the state of the world from a given initial state to some desired state. Such sequence of actions is referred to as a feasible plan.
 
@@ -65,9 +65,9 @@ We can imagine the states as vertices of a graph $G=(V, E)$ and the applications
 
 This graph can in general have several subgraphs. We are only interested in the component, which contains the initial state $x_0$ and all the vertices which are reachable from $x_0$ via a directed path. A feasible plan is then a directed path in the graph starting in the initial state vertex $x_0$ and ending in any of the goal state vertices. Finding a path in a graph is a  well-studied problem and there are several efficient algorithms to solve it, such as the Dijkstra algorithm or its extension called A*.
 
-The size of the state space and the action space has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will be trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
+The size of the state space and the action space has great impact on the way how we approach the planning problem and how we find a solution. If the graph is finite or if the number of vertices is countably infinite and the branching factor is finite, we can find the solution (if one exists) with a systematic search algorithm in a finite amount of time. If no solution exists and the graph is infinite, the algorithm will keep trying different plans infinitely. In practice this can be avoided with a limiting criterion, such as maximum length of a plan.
 
-When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon see that the state space of all of the vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
+When the number of vertices is uncountably infinite or the branching factor is infinite, the problem becomes much harder and we cannot rely on a simple graph search anymore. We will soon show that the state space of all vehicle configurations in our problem is uncountably infinite. These problems can be solved using \textit{sampling algorithms}.
 
 We must keep in mind that the number of states of the system can be very high even if it is finite because the state space represents all combinations of the possible values across all state space dimensions.
 
@@ -224,7 +224,7 @@ In order to be able to plan in a world with a continuous state space and continu
 
 Ideally, every segment of a state trajectory obtained by integrating an action from a state over a time period should be checked for collision. In practice, this could be very resource intensive, and so only a few samples (sometimes only the end state of the segment) are tested using a ``black box'' collision detection function to see if the segment is in $X_{obs}$ or $X_{free}$.
 
-If the action space is infinite, it should be sampled as well and only a finite number of actions should be considered. This makes it possible to construct a graph where samples of $X$ are the vertices and the edges between them are actions. Starting from $x_0$, we compute all of the possible state trajectories starting in this state with all the actions in the finite set of actions over a time period (either a fixed $\Delta t$ or a time associated with the action) and add the final states as vertices to the graph and connect them with directed edges to the origin state. We repeat this for all added states over and over again.
+If the action space is infinite, it should be sampled as well and only a finite number of actions should be considered. This makes it possible to construct a graph where samples of $X$ are the vertices and the edges between them are actions. Starting from $x_0$, we compute all possible state trajectories starting in this state with all the actions in the finite set of actions over a time period (either a fixed $\Delta t$ or a time associated with the action) and add the final states as vertices to the graph and connect them with directed edges to the origin state. We repeat this for all added states over and over again.
 
 The size of the graph is affected also by the discretization of time. The shorter the time interval is, the larger the graph will be. Nevertheless, we can perform graph search over and find solutions to planning problems with differential constraints. We will describe concrete search algorithms for our problem in Section~\ref{sec:trajectory_planning_algorithms}.
 
@@ -253,7 +253,7 @@ The minimum turning radius $r_{min}\in\mathbb{R}$ is a constant specific for a g
 \end{defn}
 
 \begin{defn}[Trajectory planning problem for a fast moving car]
-	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints. The solution of this problem is a collision-free time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} describes both a path and a speed profile for the given vehicle and track.
+	We say that a trajectory planning problem for a fast moving car is a planning problem under differential constraints. The solution to this problem is a collision-free time-optimal state trajectory and the vehicle does not at any point in time exceed its handling limits. The \textit{state trajectory} describes both a path and a speed profile for the given vehicle and track.
 \end{defn}
 
 
@@ -275,7 +275,7 @@ We can now summarize the discussion in this section into a set of requirements f
 
 \subsubsection{The Configuration Space}
 
-We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all of the parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
+We only consider the motion of our vehicle on a two-dimensional flat surface. For simplicity, we will consider the shape of the vehicle to be a rectangle of a constant width and height, which fully encloses all parts of the body of the vehicle. This gives us a simple way of checking collisions with obstacles and by adjusting the size of the rectangle we can also add a small safety margin around the vehicle to stay on the ``safe side'' when closely passing obstacles.
 
 Any position of the boundary rectangle in the 2D plane can be expressed as a rigid body transformation. We will define a \textit{configuration space} $C$ consisting of all these possible transformations of the vehicle. Each transformation can be expressed as a vector $\left( x, y, \theta\right)\in \mathbb{R}^2\times \left[0, 2\pi\right)$ where $\left( x, y\right)$ are the coordinates of the center of gravity of the vehicle (corresponding to the center of the rectangle) and $\theta$ is the angle between the $x$ axis of the coordinate system and the longitudinal axis of the vehicle, i.e. the heading angle of the vehicle.  This configuration space is continuous.
 
@@ -294,7 +294,7 @@ C_{free} &= C \setminus C_{obs}.
 The value of the function is $1$ when a collision between the vehicle and the obstacles occurs and $0$ otherwise. The subscript $R$ represents a specific instance of the collision detection function for a rectangular shape of a specific width and height. The task of the collision detection function is to determine if the boundary rectangle of the vehicle in the given configuration $x\in C$ collides with some obstacle in the world or not. This function is the only way how the planning algorithm can determine the shape of the track and any additional obstacles which appear on the track.
 
 \paragraph{Representation of Obstacles}
-We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$ where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: either it can be traversed freely, or there is some obstacle in the tile and so the tile must be avoided. This is represented by the values $0$ (free space) and $1$ (an obstacle) in our definition.
+We represent the obstacles in the world as an occupancy grid. An \textit{occupancy grid} is a matrix $O_r^{m\times n}\in \left\{0, 1\right\}^{m\times n}$ where $m,n\in\mathbb{N}$ is the size of the grid and $r\in\mathbb{R}$ is the resolution. Every element of the matrix represents a square tile of $r\times r$ meters placed in a grid covering an area of $rm\times rn$ square meters. The tiles can be in two states: free ($0$) or blocked ($1$).
 
 To check if a single point of the world $\left(x,y\right)\in \mathbb{R}^2$ collides with an obstacle or not, we must first determine the coordinates of the tile in which it belongs:
 
@@ -305,7 +305,7 @@ y_r &= \left\lceil \frac{y}{r} \right\rceil
 \end{aligned}
 \end{equation*}
 
-If the point lies outside of the area covered by the occupancy grid, we can treat it as an obstacle. Otherwise we look into the appropriate cell of the matrix. The collision detection function $c_1$ for a single point can be:
+If the point lies outside of the area covered by the occupancy grid, we treat it as an obstacle. Otherwise we look into the appropriate cell of the matrix. The collision detection function $c_1$ for a single point is defined as follows:
 
 \begin{equation*}
 c_1(O_{r}^{m\times n}, x, y) =
@@ -317,7 +317,7 @@ c_1(O_{r}^{m\times n}, x, y) =
 
 We assume that the occupancy grid is aligned with the origin of the world reference frame and that the column indexes grow parallel to the $x$ axis and the indexes of rows parallel to the $y$ axis. If there is a transformation between the origin of the world reference frame and the occupancy grid, the point $(x, y)$ has to be rotated and translated appropriately before the coordinates of the corresponding tile can be determined. Please note that matrix rows and columns are indexed from 1, unlike for example arrays in the C and many other programming languages, which start indexing at 0.
 
-We chose the occupancy grid because it is a standard way of representing 2D maps in \gls{ROS}, especially when a robot is equipped with a \gls{LIDAR}. We used these technologies to build our custom experimental vehicle and therefore we also used this map representation.
+We chose the occupancy grid because it is a standard way of representing 2D maps in \gls{ROS}. We used these technologies to build our custom experimental vehicle and therefore we also used this map representation.
 
 \paragraph{Moving Obstacles}
 In this thesis, we will not consider moving obstacles. If it was necessary, we would have to extend the definition of the collision detection function to include a time parameter and it would have to extrapolate and predict a state of the world at the given time and check the collision against this prediction. The rest of the planning algorithm would not be affected by this extension.
@@ -468,7 +468,7 @@ where $c=\kappa(x)$, $c'=\kappa(x')$, $x=f_{\Delta t}(x, u)$ for some action $u\
 
 \subsubsection{Goal Region}
 
-One we find a trajectory starting in the initial state $x_0$ such that the sequence of states passes all the waypoints in the correct order, we found the trajectory we were looking for. The last state of the trajectory $x_k$ must be a state in which the trajectory enters the region of the last waypoint, i.e. $\mu(\kappa(x_k)) = l$. At the same time, any trajectory which contains a state $x$ such that $\mu(\kappa(x)) = l$ necessarily passes all the waypoints in the correct order thanks to the way we defined the transition function in the previous section.
+Once we find a trajectory starting in the initial state $x_0$ such that the sequence of states passes all the waypoints in the correct order, we found the trajectory we were looking for. The last state of the trajectory $x_k$ must be a state in which the trajectory enters the region of the last waypoint, i.e. $\mu(\kappa(x_k)) = l$. At the same time, any trajectory which contains a state $x$ such that $\mu(\kappa(x)) = l$ necessarily passes all the waypoints in the correct order thanks to the way we defined the transition function in the previous section.
 
 The goal region $X_g$ of our search problem for a sequence of $l$ waypoints will be a set of all states which pass the $l$-th waypoint:
 
@@ -510,10 +510,10 @@ The vehicle starts in an initial state $x_0$. It is controlled through an input 
 
 We say that the state trajectory is feasible to emphasize the fact that it is collision-free. Remember that for each state $x$ we do not allow any actions which would lead to a crash to be in $U_f(x)$.
 
-This sequence contains all the information we need to reconstruct the full continuous trajectory by finding the corresponding sequence of actions. In practice, this is not very important to us though. As we mentioned earlier, we do not expect the robot to be able to follow any plan perfectly, so we cannot execute the actions one by one. It is important for us to know in which the state the robot should at any given moment. The solution to our problem is therefore not a sequence of actions, but a state trajectory:
+This sequence contains all the information we need to reconstruct the full continuous trajectory by finding the corresponding sequence of actions. As we mentioned earlier, we do not expect the robot to be able to follow any plan perfectly, so we cannot execute the actions one by one. It is important for us to know in which the state the robot should at any given moment. The solution to our problem is therefore not a sequence of actions, but a state trajectory:
 
 \begin{defn}[Feasible Solution]
-	For an instance of a trajectory planning problem for a fast moving car $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$, a feasible state trajectory $\hat{x_k}=\langle x_0, x_1, \ldots, x_k \rangle$ is a time-optimal feasible solution of the problem if:
+	For an instance of a trajectory planning problem for a fast moving car $\left(X, U_f, f_{\Delta t}, c, x_0, g_{\hat{w}}\right)$, a feasible state trajectory $\hat{x_k}=\langle x_0, x_1, \ldots, x_k \rangle$ is a time-optimal feasible solution to the problem if:
 	\begin{itemize}
 		\item the final state is in the goal region: $x_k \in X_g$,
 		\item and for every other feasible state trajectory $\hat{y_j}$, which ends in the goal region, it takes longer or the same time to reach the goal (i.e. $j \geq k$).
@@ -801,7 +801,7 @@ The number of reachable states in the discretized state space also limits the nu
 The time complexity of ``unfolding`` depends on the number of repetitions of the action, before the state leaves the original cell. Each evaluation of the system simulator function $f_{\Delta t}$ is a non-trivial operation, which includes numerical integration, but asymptotically this operation is still $O(1)$. The collision detection function performs a single query into the occupancy grid with inflated obstacles. This is a simple operation with the complexity of $O(1)$. We will assume that in most cases, the number of repetitions is low and it is bound by some small constant. We will assume that the \texttt{Unfold} procedure as a whole is constant.
 
 \paragraph{The \texttt{Expand} procedure}
-The expansion tries to apply all of the available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
+The expansion tries to apply all available actions and adds all collision-free extensions of the previous state to the open set, unless the cell is already closed. For each action, we call the \texttt{Unfold} procedure, check if an element is already in the closed set, and we may insert an element into the open set. This gives us a total time complexity of $O(bl \log(b))$.
 
 \paragraph{Total time complexity} For each expanded state we remove the minimum item from the heap and we run the \texttt{Expand} procedure. The total time complexity is therefore $O(b^l \cdot l\log b \cdot bl \log b)=O(l^{2}b^{l+1}\log^2 b)$. The dominating factor is the exponential $b^{l+1}$. This is expected, because motion planning was shown to be PSPACE-hard \cite[Chapter~6.5.1]{lavalle_2006}.
 
@@ -1069,7 +1069,7 @@ The outcome of the \texttt{FindPivotPoints} algorithm, the pseudo-code of which 
 
 We start from the initial position and pretend that this is the last marked pivot point. We find the furthest point along $\hat{q}_l$, which is directly visible from the last waypoint, and mark it as an index of the next waypoint. We then repeat this process from next waypoint until we reach the end of the track.
 
-\paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, all of the points will be visible from each other and the set $W$ will be empty and consequently the list of pivot points would be empty. We can ignore this edge case and assume that the racing circuit has a non-trivial layout with at least two corners (a narrow oval).
+\paragraph{No Obstacles Edge Case} In the case, when there are no obstacles in the occupancy grid, all points will be visible from each other and the set $W$ will be empty and consequently the list of pivot points would be empty. We can ignore this edge case and assume that the racing circuit has a non-trivial layout with at least two corners (a narrow oval).
 
 \subsection{Estimating Positions of Corners}
 
@@ -1160,9 +1160,9 @@ In every iteration, we find the biggest cluster of points along the sequence and
 
 \paragraph{Time Complexity}
 
-At the beginning of the algorithm, we iterate over all of the $k$ pivot points and remove the points with large obtuse angles. Calculating the angle is a constant operation and so this part requires $O(k)$ time.
+At the beginning of the algorithm, we iterate over all $k$ pivot points and remove the points with large obtuse angles. Calculating the angle is a constant operation and so this part requires $O(k)$ time.
 
-As we discussed earlier in this section, the main loop in \texttt{MergeClosePoints} will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is a quadratic operation.
+As we discussed earlier in this section, the main loop in \texttt{MergeClosePoints} will run at most $k-1=|\hat{p}|$ times. In each iteration, we first find the point with the highest number of close neighbors and then merge this cluster into a single point. Finding the point with the highest number of neighbors is a quadratic operation`.
 
 The total time complexity of the proposed algorithm is quadratic in the length of the size of the input sequence $O(k^3)$. In practice, we expect the number of pivot points $k$ to be low, and so even its third power will be very low. Also, the algorithm is used only once at the very beginning of the race. This algorithm is sufficient for this task and its time complexity is insignificant when compared to \texttt{FindPivotPoints}.
 
@@ -1539,7 +1539,7 @@ The kinematic model does not require any extra state variables on top of the con
 
 \subsection{Dynamic Bicycle Model}
 
-Forces are the cause of linear and angular acceleration of every rigid body. The dynamic bicycle model models the forces between the tires of the vehicle and the road surface and describes the resulting accelerations. To describe the translation and rotation of the vehicle on a two dimensional plane, we need to know the values of two forces: the longitudinal forces $F_x$, which cause the motion forward or backward, and lateral forces $F_y$, which allow the vehicle to turn and which cause rotation of the vehicle. An overview of all of the forces and other important variables is shown in Figure~\ref{fig:dynamic_bicycle}.
+Forces are the cause of linear and angular acceleration of every rigid body. The dynamic bicycle model models the forces between the tires of the vehicle and the road surface and describes the resulting accelerations. To describe the translation and rotation of the vehicle on a two dimensional plane, we need to know the values of two forces: the longitudinal forces $F_x$, which cause the motion forward or backward, and lateral forces $F_y$, which allow the vehicle to turn and which cause rotation of the vehicle. An overview of the forces and other important variables is shown in Figure~\ref{fig:dynamic_bicycle}.
 
 If we knew the longitudinal forces of the wheels $F_{xr}$ and $F_{xf}$, we could determine the total traction force acting at the center of gravity of the vehicle and the subsequent acceleration $\dot{v}$ of the vehicle:
 

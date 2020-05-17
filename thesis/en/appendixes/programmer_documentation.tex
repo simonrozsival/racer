@@ -89,7 +89,7 @@ To test the trajectory planning algorithm, run this command:
  > ./bin/planning_benchmark <n> <timeout> <circ-1> <circ-2>...
 \end{verbatim}
 
-The parameter \texttt{<n>} determines how many times each algorithm with a given set of parameters for a given circuit will be run in order to calculate the average search time. The parameter \texttt{<timeout>} determines the time limit for a single search in milliseconds. At least one path to a circuit definition file has to be provided, but the binary accepts multiple of them and it will loop over all of them and execute the search for each of them with all of the combinations of the parameters.
+The parameter \texttt{<n>} determines how many times each algorithm with a given set of parameters for a given circuit will be run in order to calculate the average search time. The parameter \texttt{<timeout>} determines the time limit for a single search in milliseconds. At least one path to a circuit definition file has to be provided, but the binary accepts multiple of them and it will loop over all of them and execute the search for each of them with all the combinations of the parameters.
 
 The program tests both Hybrid A* and the \gls*{SEHS} algorithms with several different combinations of discretization parameters. The output of the program will be a comma separated values file with the summaries of each test. After each algorithm is tested with each different set of parameters, the found trajectory and the speed profile is shown in a pop-up window.
 
@@ -240,7 +240,7 @@ We implemented the individual components of the behavior of the agent, as it was
 	\item \verb|dwa_planning_node|.
 \end{enumerate}
 
-The C++17 implementation of the \verb|racer| package is located in \texttt{/catkin\_ws/\-src/racer/} and it contains the source code of the individual \gls*{ROS} nodes as well as the source code of the algorithms which were described in this thesis. The definitions of the messages are located in a separate package \texttt{/catkin\_ws/\allowbreak src/racer\_msgs/}. All of the coordinates used by \verb|racer| package nodes are in the global \verb|map| coordinate frame unless stated otherwise.
+The C++17 implementation of the \verb|racer| package is located in \texttt{/catkin\_ws/\-src/racer/} and it contains the source code of the individual \gls*{ROS} nodes as well as the source code of the algorithms which were described in this thesis. The definitions of the messages are located in a separate package \texttt{/catkin\_ws/\allowbreak src/racer\_msgs/}. All the coordinates used by \verb|racer| package nodes are in the global \verb|map| coordinate frame unless stated otherwise.
 
 \paragraph{Current State Node}
 
@@ -367,7 +367,7 @@ With all the dependencies installed and cloned, we need to finish the setup and 
 
 \subsection{Usage}
 
-The parameters for the agent behavior nodes can be changed in the \texttt{/catkin\_ws/\-src/\-racer/launch/\-agent.launch} file. This file is included from all of the other launch files mentioned further in this section.
+The parameters for the agent behavior nodes can be changed in the \texttt{/catkin\_ws/\-src/\-racer/launch/\-agent.launch} file. This file is included from all the other launch files mentioned further in this section.
 
 \subsubsection{Simulator}
 
@@ -407,7 +407,7 @@ In this section, we will provide a high-level overview of the C++ implementation
 
 \subsection{The \texttt{racer} namespace}
 
-This namespace contains all of the algorithms described in this thesis. This includes the trajectory analysis algorithm, the Hybrid A* and \gls*{SEHS} algorithms, and the \gls*{DWA} and the Pure Pursuit algorithms.
+This namespace contains all the algorithms described in this thesis. This includes the trajectory analysis algorithm, the Hybrid A* and \gls*{SEHS} algorithms, and the \gls*{DWA} and the Pure Pursuit algorithms.
 
 \subsubsection{The \texttt{racer::math} namespace}
 
