@@ -49,26 +49,19 @@
 \usepackage{xcolor}  % typesetting in color
 
 %% Additional packages
-%\usepackage{amsthm}
 \usepackage[allow-number-unit-breaks, detect-all]{siunitx}
-%\usepackage{textcomp}
 \usepackage[acronym]{glossaries}
-%\usepackage{fancyvrb}
 \usepackage{enumitem}
 \usepackage{mathtools}
 \usepackage{interval}
-%\usepackage{graphicx}
-%\usepackage{caption}
 \usepackage{subcaption}
 \usepackage{nicefrac}
 \usepackage{url}
-%\usepackage{float}
 \usepackage{tikz}
 \usetikzlibrary{calc}
 \usetikzlibrary{scopes}
 \usetikzlibrary{intersections}
 \usetikzlibrary{quotes,angles}
-%\usepackage{tabularx}
 \usepackage{dirtree} % for the attachments docs
 
 %% Generate PDF/A-2u
@@ -78,7 +71,7 @@
 %% metadata to PDF (including the table of contents).
 %% Most settings are pre-set by the pdfx package.
 \hypersetup{unicode}
-%\hypersetup{breaklinks=true}
+\hypersetup{breaklinks=true}
 
 %% Algorithms (https://www.overleaf.com/learn/latex/algorithms)
 \usepackage[linesnumbered,algoruled,boxed,lined]{algorithm2e}
@@ -209,11 +202,10 @@ Cílem této práce je vytvořit umělého agenta pro autonomní závodní vozid
 %%% In mathematical theses, it could be better to move the list of tables to the beginning of the thesis.
 % \listoftables
 
-\printglossaries
-
 %%% Abbreviations used in the thesis, if any, including their explanation
 %%% In mathematical theses, it could be better to move the list of abbreviations to the beginning of the thesis.
 %\chapwithtoc{List of Abbreviations}
+\printglossaries
 
 %%% Attachments to the master thesis, if any. Each attachment must be
 %%% referred to at least once from the text of the thesis. Attachments
