@@ -313,6 +313,7 @@ First, you need to install \gls{ROS} \textit{Melodic Morenia} Desktop-Full Insta
 
 \begin{Verbatim}[fontsize=\small]
  > cd /catkin_ws/src
+ > catkin_init_workspace
  > git clone --branch 0.4.0 https://github.com/tu-darmstadt-ros-pkg/hector_slam
  > git clone --branch 1.8.8 https://github.com/ros-perception/laser_filters
  > git clone --branch 2.6.5 https://github.com/cra-ros-pkg/robot_localization
@@ -352,16 +353,15 @@ To run the simulator, we also need to clone the repository from GitHub and switc
                       ros-melodic-ros-controllers \
                       ros-melodic-gazebo-ros-control \
                       ros-melodic-ackermann-msgs \
+                      ros-melodic-geographic-msgs \
                       ros-melodic-serial \
                       qt4-default
 \end{Verbatim}
 
-With all the dependencies installed and cloned, we need to finish the setup and compile all the packages and nodes in the project:
+With all the dependencies installed and cloned, we can build all the binaries:
 
 \begin{Verbatim}[fontsize=\small]
  > cd /catkin_ws
- > catkin_make install
- > source devel/setup.bash
  > catkin_make
 \end{Verbatim}
 

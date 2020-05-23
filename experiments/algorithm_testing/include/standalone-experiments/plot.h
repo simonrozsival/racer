@@ -221,11 +221,11 @@ void plot_track_analysis(const track_analysis_input &config,
   plot_vehicle_configuration(config.initial_position, "green",
                              config.occupancy_grid->cell_size());
 
-  // plt::legend();
-  std::stringstream trajectory_file_name;
-  trajectory_file_name << config.name << ".pdf";
-  plt::save(trajectory_file_name.str());
-  // plt::show();
+  plt::legend();
+  // std::stringstream trajectory_file_name;
+  // trajectory_file_name << config.name << ".pdf";
+  // plt::save(trajectory_file_name.str());
+  plt::show();
 
   delete[] grid_img;
   delete[] circles_img;
